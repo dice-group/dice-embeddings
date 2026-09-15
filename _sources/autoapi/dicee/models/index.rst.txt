@@ -48,6 +48,16 @@ Classes
 
 .. autoapisummary::
 
+   dicee.models.ACLS
+   dicee.models.AdaptiveLabelRelaxationLoss
+   dicee.models.AdaptiveLabelSmoothingLoss
+   dicee.models.AggregatedLSandLR
+   dicee.models.CombinedAdaptiveLSandAdaptiveLR
+   dicee.models.CombinedLSandLR
+   dicee.models.ConfidenceBasedAdaptiveLabelRelaxationLoss
+   dicee.models.DefaultBCELoss
+   dicee.models.LabelRelaxationLoss
+   dicee.models.LabelSmoothingLoss
    dicee.models.ADOPT
    dicee.models.BaseKGELightning
    dicee.models.BaseKGE
@@ -110,6 +120,586 @@ Functions
 
 Package Contents
 ----------------
+
+.. py:class:: ACLS(pos_lambda: float = 1.0, neg_lambda: float = 0.1, alpha: float = 0.1, margin: float = 10.0, num_classes: int = 200, ignore_index: int = -100)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: pos_lambda
+      :value: 1.0
+
+
+
+   .. py:attribute:: neg_lambda
+      :value: 0.1
+
+
+
+   .. py:attribute:: alpha
+      :value: 0.1
+
+
+
+   .. py:attribute:: margin
+      :value: 10.0
+
+
+
+   .. py:attribute:: num_classes
+      :value: 200
+
+
+
+   .. py:attribute:: ignore_index
+      :value: -100
+
+
+
+   .. py:attribute:: cross_entropy
+
+
+   .. py:property:: names
+
+
+   .. py:method:: get_reg(inputs, targets)
+
+
+   .. py:method:: forward(inputs, targets)
+
+
+.. py:class:: AdaptiveLabelRelaxationLoss(min_alpha=0.01, max_alpha=0.2, alpha_step=0.01, initial_alpha=0.1)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: min_alpha
+      :value: 0.01
+
+
+
+   .. py:attribute:: max_alpha
+      :value: 0.2
+
+
+
+   .. py:attribute:: alpha_step
+      :value: 0.01
+
+
+
+   .. py:attribute:: alpha
+      :value: 0.1
+
+
+
+   .. py:attribute:: prev_loss
+      :value: None
+
+
+
+   .. py:attribute:: eps
+      :value: 1e-14
+
+
+
+   .. py:attribute:: gz_threshold
+      :value: 0.1
+
+
+
+   .. py:method:: forward(pred, target)
+
+
+.. py:class:: AdaptiveLabelSmoothingLoss(min_smoothing_factor=0.01, max_smoothing_factor=0.2, smoothing_factor_step=0.01, initial_smoothing_factor=0.1)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: min_smoothing_factor
+      :value: 0.01
+
+
+
+   .. py:attribute:: max_smoothing_factor
+      :value: 0.2
+
+
+
+   .. py:attribute:: smoothing_factor_step
+      :value: 0.01
+
+
+
+   .. py:attribute:: smoothing_factor
+      :value: 0.1
+
+
+
+   .. py:attribute:: prev_loss
+      :value: None
+
+
+
+   .. py:attribute:: eps
+      :value: 1e-14
+
+
+
+   .. py:method:: forward(logits, target, current_epoch)
+
+
+.. py:class:: AggregatedLSandLR(smoothness_ratio=0.1, alpha=0.1)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: smoothness_ratio
+      :value: 0.1
+
+
+
+   .. py:attribute:: alpha
+      :value: 0.1
+
+
+
+   .. py:method:: forward(pred, target, current_epoch)
+
+
+.. py:class:: CombinedAdaptiveLSandAdaptiveLR
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: adaptive_label_smoothing
+
+
+   .. py:attribute:: adaptive_label_relaxation
+
+
+   .. py:attribute:: criterion
+      :value: ''
+
+
+
+   .. py:method:: forward(pred, target, current_epoch)
+
+
+.. py:class:: CombinedLSandLR(smoothness_ratio=0.0, alpha=0.0)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: smoothness_ratio
+      :value: 0.0
+
+
+
+   .. py:attribute:: alpha
+      :value: 0.0
+
+
+
+   .. py:method:: forward(pred, target, current_epoch)
+
+
+.. py:class:: ConfidenceBasedAdaptiveLabelRelaxationLoss(alpha=0.1)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: alpha
+      :value: 0.1
+
+
+
+   .. py:attribute:: gz_threshold
+      :value: 0.1
+
+
+
+   .. py:attribute:: eps
+      :value: 1e-14
+
+
+
+   .. py:method:: forward(pred, target, current_epoch)
+
+
+.. py:class:: DefaultBCELoss
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:method:: forward(pred, target)
+
+
+.. py:class:: LabelRelaxationLoss(alpha=0.0)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: alpha
+      :value: 0.0
+
+
+
+   .. py:attribute:: gz_threshold
+      :value: 0.1
+
+
+
+   .. py:attribute:: eps
+      :value: 1e-14
+
+
+
+   .. py:method:: forward(pred, target)
+
+
+.. py:class:: LabelSmoothingLoss(smoothness_ratio=0.0)
+
+   Bases: :py:obj:`torch.nn.Module`
+
+
+   Base class for all neural network modules.
+
+   Your models should also subclass this class.
+
+   Modules can also contain other Modules, allowing them to be nested in
+   a tree structure. You can assign the submodules as regular attributes::
+
+       import torch.nn as nn
+       import torch.nn.functional as F
+
+
+       class Model(nn.Module):
+           def __init__(self) -> None:
+               super().__init__()
+               self.conv1 = nn.Conv2d(1, 20, 5)
+               self.conv2 = nn.Conv2d(20, 20, 5)
+
+           def forward(self, x):
+               x = F.relu(self.conv1(x))
+               return F.relu(self.conv2(x))
+
+   Submodules assigned in this way will be registered, and will also have their
+   parameters converted when you call :meth:`to`, etc.
+
+   .. note::
+       As per the example above, an ``__init__()`` call to the parent class
+       must be made before assignment on the child.
+
+   :ivar training: Boolean represents whether this module is in training or
+                   evaluation mode.
+   :vartype training: bool
+
+
+   .. py:attribute:: smoothness_ratio
+      :value: 0.0
+
+
+
+   .. py:method:: forward(pred, target)
+
 
 .. py:class:: ADOPT(params: torch.optim.optimizer.ParamsT, lr: Union[float, torch.Tensor] = 0.001, betas: Tuple[float, float] = (0.9, 0.9999), eps: float = 1e-06, clip_lambda: Optional[Callable[[int], float]] = lambda step: step**0.25, weight_decay: float = 0.0, decouple: bool = False, *, foreach: Optional[bool] = None, maximize: bool = False, capturable: bool = False, differentiable: bool = False, fused: Optional[bool] = None)
 

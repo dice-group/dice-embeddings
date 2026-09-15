@@ -36,6 +36,7 @@ Submodules
    /autoapi/dicee/executer/index
    /autoapi/dicee/knowledge_graph/index
    /autoapi/dicee/knowledge_graph_embeddings/index
+   /autoapi/dicee/losses/index
    /autoapi/dicee/models/index
    /autoapi/dicee/query_generator/index
    /autoapi/dicee/read_preprocess_save_load_kg/index

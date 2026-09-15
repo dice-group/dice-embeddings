@@ -692,6 +692,90 @@ Module Contents
       Number of epochs to average over for SWA, SWAG, EMA, TWA.
 
 
+   .. py:attribute:: loss_fn
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:attribute:: label_relaxation_alpha
+      :type:  float
+      :value: 0.1
+
+
+
+   .. py:attribute:: amwa
+      :type:  bool
+      :value: False
+
+
+      Adaptive Momentum Weight Averaging
+
+
+   .. py:attribute:: amwa_start_epoch
+      :type:  int
+      :value: 0
+
+
+      Epoch at which to start applying AMWA.
+
+
+   .. py:attribute:: amwa_c_epochs
+      :type:  int
+      :value: 1
+
+
+      Number of epochs between AMWA updates.
+
+
+   .. py:attribute:: amwa_monitor
+      :type:  str
+      :value: 'MRR'
+
+
+      Validation metric used by AMWA to compare BaseNet and StableNet.
+
+
+   .. py:attribute:: amwa_maximize
+      :type:  bool
+      :value: True
+
+
+      Whether larger values of amwa_monitor are better.
+
+
+   .. py:attribute:: amwa_beta
+      :type:  Optional[float]
+      :value: None
+
+
+      Fixed beta for AMWA. If None, use adaptive beta_n.
+
+
+   .. py:attribute:: amwa_beta_window
+      :type:  int
+      :value: 10
+
+
+      Number of recent delta values used to estimate beta_n.
+
+
+   .. py:attribute:: amwa_beta_init
+      :type:  float
+      :value: 1.0
+
+
+      Initial beta used before enough delta history exists.
+
+
+   .. py:attribute:: amwa_beta_floor
+      :type:  float
+      :value: 1e-08
+
+
+      Numerical floor for beta_n.
+
+
    .. py:method:: __iter__()
 
 

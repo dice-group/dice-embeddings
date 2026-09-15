@@ -9,6 +9,7 @@ Classes
 
 .. autoapisummary::
 
+   dicee.weight_averaging.AMWA
    dicee.weight_averaging.ASWA
    dicee.weight_averaging.SWA
    dicee.weight_averaging.SWAG
@@ -18,6 +19,173 @@ Classes
 
 Module Contents
 ---------------
+
+.. py:class:: AMWA(amwa_start_epoch: int = 0, amwa_c_epochs: int = 1, path: Optional[str] = None, monitor: str = 'MRR', maximize: bool = True, beta: Optional[float] = None, beta_window: int = 10, beta_init: float = 1.0, beta_floor: float = 1e-08)
+
+   Bases: :py:obj:`dicee.abstracts.AbstractCallback`
+
+
+   Adaptive Momentum Weight Averaging (AMWA).
+
+   Paper: https://www.sciencedirect.com/science/article/pii/S0031320325009586
+   -------------
+   BaseNet is the ordinary model optimized during training, while StableNet is
+   updated once per epoch via weight averaging,
+
+       w_stable <- m * w_stable + (1 - m) * w_base
+
+   where the adaptive momentum is computed from the validation-performance
+   difference between StableNet and BaseNet,
+
+       m(Delta) = 1 / (1 + exp(-max(0, Delta) / beta_n))
+
+   with Delta defined so that Delta > 0 means StableNet performs better than
+   BaseNet. This yields the exact behavior described in the paper: StableNet
+   stays close to its current solution when it already validates better, and it
+   takes a larger step toward BaseNet when BaseNet validates better. The paper
+   sets beta_n to the standard deviation of Delta over the past 10 epochs; this
+   implementation follows that default and also allows a fixed beta for the
+   ablation setting.
+
+   :param amwa_start_epoch: Epoch at which AMWA starts tracking StableNet.
+   :type amwa_start_epoch: int
+   :param amwa_c_epochs: Update interval in epochs.
+   :type amwa_c_epochs: int
+   :param path: Directory used to persist ``amwa.pt`` and ``amwa_history.json``.
+   :type path: str, optional
+   :param monitor: Validation metric to monitor, e.g. ``"MRR"``.
+   :type monitor: str
+   :param maximize: Whether larger values of ``monitor`` are better.
+   :type maximize: bool
+   :param beta: If provided, use a fixed beta instead of the adaptive beta_n from the
+                paper. This matches the paper's fixed-beta ablation.
+   :type beta: float, optional
+   :param beta_window: Number of past Delta values used to estimate beta_n.
+   :type beta_window: int
+   :param beta_init: Beta used before enough Delta history exists.
+   :type beta_init: float
+   :param beta_floor: Numerical floor used when the empirical standard deviation is zero.
+   :type beta_floor: float
+
+
+   .. py:attribute:: amwa_start_epoch
+      :value: 0
+
+
+
+   .. py:attribute:: amwa_c_epochs
+      :value: 1
+
+
+
+   .. py:attribute:: path
+      :value: None
+
+
+
+   .. py:attribute:: monitor
+      :value: 'MRR'
+
+
+
+   .. py:attribute:: maximize
+      :value: True
+
+
+
+   .. py:attribute:: beta
+      :value: None
+
+
+
+   .. py:attribute:: beta_window
+
+
+   .. py:attribute:: beta_init
+
+
+   .. py:attribute:: beta_floor
+
+
+   .. py:attribute:: current_epoch
+      :value: -1
+
+
+
+   .. py:attribute:: initial_eval_setting
+      :type:  Optional[str]
+      :value: None
+
+
+
+   .. py:attribute:: stable_state_dict
+      :type:  Optional[Dict[str, torch.Tensor]]
+      :value: None
+
+
+
+   .. py:attribute:: delta_history
+      :type:  List[float]
+      :value: []
+
+
+
+   .. py:attribute:: momentum_history
+      :type:  List[float]
+      :value: []
+
+
+
+   .. py:attribute:: beta_history
+      :type:  List[float]
+      :value: []
+
+
+
+   .. py:attribute:: base_history
+      :type:  List[float]
+      :value: []
+
+
+
+   .. py:attribute:: stable_history
+      :type:  List[float]
+      :value: []
+
+
+
+   .. py:attribute:: history
+      :type:  List[Dict[str, Any]]
+      :value: []
+
+
+
+   .. py:method:: on_train_epoch_start(trainer, model)
+
+      Called when the train epoch begins.
+
+
+
+   .. py:method:: on_train_epoch_end(trainer, model)
+
+      Called at the end of each training epoch.
+
+      :param trainer: The active trainer instance.
+      :type trainer: AbstractTrainer or pl.Trainer
+      :param model: The model being trained.  ``model.loss_history`` contains the
+                    per-epoch average losses accumulated so far.
+      :type model: BaseKGE
+
+
+
+   .. py:method:: on_fit_end(trainer, model)
+
+      Called once after the final training epoch completes.
+
+      Override to perform post-training actions such as saving the final
+      model state, computing evaluation metrics, or cleaning up resources.
+
+
 
 .. py:class:: ASWA(num_epochs, path)
 

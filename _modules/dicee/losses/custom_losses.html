@@ -1,0 +1,559 @@
+
+
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" data-content_root="../../../">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>dicee.losses.custom_losses &mdash; DICE Embeddings 0.1.3.2 documentation</title>
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/css/theme.css?v=9edc463e" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/graphviz.css?v=4ae1632d" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme.css?v=ea877efc" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/theme_tweak.css?v=f0ad19f3" />
+      <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=677a9ea0" />
+
+  
+    <link rel="shortcut icon" href="../../../_static/favicon.ico"/>
+      <script src="../../../_static/jquery.js?v=5d32c60e"></script>
+      <script src="../../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+      <script src="../../../_static/documentation_options.js?v=c6726a90"></script>
+      <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+      <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            DICE Embeddings
+              <img src="../../../_static/dicee_logo.png" class="logo" alt="Logo"/>
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html">Dicee Manual</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#installation">Installation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#download-knowledge-graphs">Download Knowledge Graphs</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#knowledge-graph-embedding-models">Knowledge Graph Embedding Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-train">How to Train</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#creating-an-embedding-vector-database">Creating an Embedding Vector Database</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#answering-complex-queries">Answering Complex Queries</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#predicting-missing-links">Predicting Missing Links</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#downloading-pretrained-models">Downloading Pretrained Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-deploy">How to Deploy</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#docker">Docker</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#coverage-report">Coverage Report</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../usage/main.html#how-to-cite">How to cite</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../autoapi/dicee/index.html">dicee</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">DICE Embeddings</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">dicee.losses.custom_losses</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for dicee.losses.custom_losses</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
+
+
+<div class="viewcode-block" id="DefaultBCELoss">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.DefaultBCELoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">DefaultBCELoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">DefaultBCELoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="DefaultBCELoss.forward">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.DefaultBCELoss.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+
+        <span class="n">criterion</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BCEWithLogitsLoss</span><span class="p">()</span>
+        <span class="n">final_loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+
+
+        <span class="k">return</span> <span class="n">final_loss</span></div>
+</div>
+
+
+<div class="viewcode-block" id="WeightedBCELoss">
+<a class="viewcode-back" href="../../../autoapi/dicee/losses/custom_losses/index.html#dicee.losses.custom_losses.WeightedBCELoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">WeightedBCELoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">WeightedBCELoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+
+<div class="viewcode-block" id="WeightedBCELoss.forward">
+<a class="viewcode-back" href="../../../autoapi/dicee/losses/custom_losses/index.html#dicee.losses.custom_losses.WeightedBCELoss.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">):</span>
+
+        <span class="n">gamma</span> <span class="o">=</span> <span class="mi">10</span>
+        <span class="n">confidence</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">pred</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">gamma</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">confidence</span><span class="p">))</span>
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">weights</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="n">weights</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+
+        <span class="n">criterion</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BCEWithLogitsLoss</span><span class="p">(</span><span class="n">weight</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+        <span class="n">final_loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">final_loss</span></div>
+</div>
+
+
+<div class="viewcode-block" id="LabelSmoothingLoss">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.LabelSmoothingLoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LabelSmoothingLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smoothness_ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LabelSmoothingLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smoothness_ratio</span> <span class="o">=</span> <span class="n">smoothness_ratio</span>
+
+<div class="viewcode-block" id="LabelSmoothingLoss.forward">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.LabelSmoothingLoss.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+
+        <span class="n">criterion</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BCEWithLogitsLoss</span><span class="p">()</span>
+        <span class="n">final_loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+
+
+        <span class="k">return</span> <span class="n">final_loss</span></div>
+</div>
+
+
+<div class="viewcode-block" id="AdaptiveLabelSmoothingLoss">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AdaptiveLabelSmoothingLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_smoothing_factor</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+                 <span class="n">max_smoothing_factor</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+                 <span class="n">smoothing_factor_step</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
+                 <span class="n">initial_smoothing_factor</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                 <span class="p">):</span>
+
+        <span class="nb">super</span><span class="p">(</span><span class="n">AdaptiveLabelSmoothingLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_smoothing_factor</span> <span class="o">=</span> <span class="n">min_smoothing_factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_smoothing_factor</span> <span class="o">=</span> <span class="n">max_smoothing_factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor_step</span> <span class="o">=</span> <span class="n">smoothing_factor_step</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor</span> <span class="o">=</span> <span class="n">initial_smoothing_factor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prev_loss</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-14</span>
+
+<div class="viewcode-block" id="AdaptiveLabelSmoothingLoss.forward">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">logits</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">):</span>
+
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="c1"># scores converted to be used in KL</span>
+
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">logits</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="c1">#smoothed_target = (1 - self.smoothing_factor) * target + self.smoothing_factor / num_classes</span>
+        <span class="n">smoothed_target</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor</span><span class="p">)</span> <span class="o">*</span> <span class="n">target</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">target</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">num_classes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">kl_loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">kl_div</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">smoothed_target</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">"batchmean"</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">kl_loss</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev_loss</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">loss_diff</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev_loss</span>
+            <span class="k">if</span> <span class="n">loss_diff</span> <span class="o">&gt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor_step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_smoothing_factor</span><span class="p">)</span>
+                <span class="c1">#self.gamma = min(self.gamma + self.gamma_step, self.max_gamma)</span>
+            <span class="k">elif</span> <span class="n">loss_diff</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothing_factor_step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_smoothing_factor</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">prev_loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">loss</span></div>
+</div>
+
+
+<div class="viewcode-block" id="LabelRelaxationLoss">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.LabelRelaxationLoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">LabelRelaxationLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LabelRelaxationLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="c1"># Greater zero threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gz_threshold</span> <span class="o">=</span> <span class="mf">0.1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-14</span>
+
+<div class="viewcode-block" id="LabelRelaxationLoss.forward">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.LabelRelaxationLoss.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">pred</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+        <span class="c1"># Construct credal set</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">sum_y_hat_prime</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="o">-</span> <span class="n">target</span><span class="p">)</span> <span class="o">*</span> <span class="n">pred</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">pred_hat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">pred</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">sum_y_hat_prime</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">target_credal</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">target</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">gz_threshold</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="n">pred_hat</span><span class="p">)</span>
+
+        <span class="c1"># Calculate divergence</span>
+        <span class="n">divergence</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">kl_div</span><span class="p">(</span><span class="n">pred</span><span class="o">.</span><span class="n">log</span><span class="p">(),</span> <span class="n">target_credal</span><span class="p">,</span> <span class="n">log_target</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">"none"</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">pred</span> <span class="o">*</span> <span class="n">target</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">divergence</span><span class="p">),</span> <span class="n">divergence</span><span class="p">)</span>
+        <span class="n">final_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">final_loss</span></div>
+</div>
+
+
+<div class="viewcode-block" id="AdaptiveLabelRelaxationLoss">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.AdaptiveLabelRelaxationLoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AdaptiveLabelRelaxationLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_alpha</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">max_alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">alpha_step</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">initial_alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AdaptiveLabelRelaxationLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">min_alpha</span> <span class="o">=</span> <span class="n">min_alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">max_alpha</span> <span class="o">=</span> <span class="n">max_alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha_step</span> <span class="o">=</span> <span class="n">alpha_step</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">initial_alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">prev_loss</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-14</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gz_threshold</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+<div class="viewcode-block" id="AdaptiveLabelRelaxationLoss.forward">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.AdaptiveLabelRelaxationLoss.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">pred</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">sum_y_hat_prime</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="o">-</span> <span class="n">target</span><span class="p">)</span> <span class="o">*</span> <span class="n">pred</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">pred_hat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">pred</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">sum_y_hat_prime</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">target_credal</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">target</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">gz_threshold</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="n">pred_hat</span><span class="p">)</span>
+
+            <span class="n">divergence</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">kl_div</span><span class="p">(</span><span class="n">pred</span><span class="o">.</span><span class="n">log</span><span class="p">(),</span> <span class="n">target_credal</span><span class="p">,</span> <span class="n">log_target</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">"none"</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">predc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">pred</span> <span class="o">*</span> <span class="n">target</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">filtered_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">predc</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">divergence</span><span class="p">),</span>
+                                        <span class="n">divergence</span><span class="p">)</span>
+            <span class="n">mean_final_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">filtered_loss</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev_loss</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">loss_diff</span> <span class="o">=</span> <span class="n">mean_final_loss</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">prev_loss</span>
+            <span class="k">if</span> <span class="n">loss_diff</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_alpha</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">loss_diff</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha_step</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_alpha</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">prev_loss</span> <span class="o">=</span> <span class="n">mean_final_loss</span>
+
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">pred_hat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">pred</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">sum_y_hat_prime</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">target_credal</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">target</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">gz_threshold</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="n">pred_hat</span><span class="p">)</span>
+
+        <span class="n">divergence</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">kl_div</span><span class="p">(</span><span class="n">pred</span><span class="o">.</span><span class="n">log</span><span class="p">(),</span> <span class="n">target_credal</span><span class="p">,</span> <span class="n">log_target</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">"none"</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">predc</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">pred</span> <span class="o">*</span> <span class="n">target</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">predc</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">divergence</span><span class="p">),</span> <span class="n">divergence</span><span class="p">)</span>
+        <span class="n">final_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">final_loss</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="ConfidenceBasedAdaptiveLabelRelaxationLoss">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.ConfidenceBasedAdaptiveLabelRelaxationLoss">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ConfidenceBasedAdaptiveLabelRelaxationLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ConfidenceBasedAdaptiveLabelRelaxationLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="c1"># Greater zero threshold</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gz_threshold</span> <span class="o">=</span> <span class="mf">0.1</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">eps</span> <span class="o">=</span> <span class="mf">1e-14</span>
+
+<div class="viewcode-block" id="ConfidenceBasedAdaptiveLabelRelaxationLoss.forward">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.ConfidenceBasedAdaptiveLabelRelaxationLoss.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">):</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">pred</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="n">pred_confidence_mean</span> <span class="o">=</span> <span class="n">pred</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="n">new_alpha</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">pred_confidence_mean</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">new_alpha</span>
+
+        <span class="c1"># Construct credal set</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">sum_y_hat_prime</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="o">-</span> <span class="n">target</span><span class="p">)</span> <span class="o">*</span> <span class="n">pred</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">pred_hat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">pred</span> <span class="o">/</span> <span class="n">torch</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">sum_y_hat_prime</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">target_credal</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">target</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">gz_threshold</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">target</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="n">pred_hat</span><span class="p">)</span>
+
+        <span class="c1"># Calculate divergence</span>
+        <span class="n">divergence</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">F</span><span class="o">.</span><span class="n">kl_div</span><span class="p">(</span><span class="n">pred</span><span class="o">.</span><span class="n">log</span><span class="p">(),</span> <span class="n">target_credal</span><span class="p">,</span> <span class="n">log_target</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">"none"</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">pred</span> <span class="o">*</span> <span class="n">target</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">gt</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="mf">1.</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">divergence</span><span class="p">),</span> <span class="n">divergence</span><span class="p">)</span>
+        <span class="n">final_loss</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">final_loss</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CombinedLSandLR">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.CombinedLSandLR">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CombinedLSandLR</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smoothness_ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CombinedLSandLR</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smoothness_ratio</span> <span class="o">=</span> <span class="n">smoothness_ratio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+
+<div class="viewcode-block" id="CombinedLSandLR.forward">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.CombinedLSandLR.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">):</span>
+        <span class="n">criterion</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span>
+        <span class="k">if</span> <span class="n">current_epoch</span> <span class="o">&lt;</span> <span class="mi">20</span><span class="p">:</span>
+            <span class="n">criterion</span> <span class="o">=</span> <span class="n">LabelSmoothingLoss</span><span class="p">(</span><span class="n">smoothness_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">smoothness_ratio</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">criterion</span> <span class="o">=</span> <span class="n">LabelRelaxationLoss</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">criterion</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="CombinedAdaptiveLSandAdaptiveLR">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.CombinedAdaptiveLSandAdaptiveLR">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">CombinedAdaptiveLSandAdaptiveLR</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">CombinedAdaptiveLSandAdaptiveLR</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adaptive_label_smoothing</span> <span class="o">=</span> <span class="n">AdaptiveLabelSmoothingLoss</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">adaptive_label_relaxation</span> <span class="o">=</span> <span class="n">AdaptiveLabelRelaxationLoss</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">criterion</span> <span class="o">=</span> <span class="s1">''</span>
+
+<div class="viewcode-block" id="CombinedAdaptiveLSandAdaptiveLR.forward">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.CombinedAdaptiveLSandAdaptiveLR.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">):</span>
+        <span class="n">final_loss</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">if</span> <span class="n">current_epoch</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
+            <span class="n">final_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adaptive_label_smoothing</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">final_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adaptive_label_relaxation</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">final_loss</span></div>
+</div>
+
+
+
+<div class="viewcode-block" id="AggregatedLSandLR">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.AggregatedLSandLR">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">AggregatedLSandLR</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smoothness_ratio</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">AggregatedLSandLR</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">smoothness_ratio</span> <span class="o">=</span> <span class="n">smoothness_ratio</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+
+<div class="viewcode-block" id="AggregatedLSandLR.forward">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.AggregatedLSandLR.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">):</span>
+        <span class="n">final_loss</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="n">Smoothing_criterion</span> <span class="o">=</span> <span class="n">LabelSmoothingLoss</span><span class="p">(</span><span class="n">smoothness_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">smoothness_ratio</span><span class="p">)</span>
+        <span class="n">Smoothing_loss</span> <span class="o">=</span> <span class="n">Smoothing_criterion</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">)</span>
+
+        <span class="n">Relaxation_criterion</span> <span class="o">=</span> <span class="n">LabelRelaxationLoss</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
+        <span class="n">Relaxation_loss</span> <span class="o">=</span> <span class="n">Relaxation_criterion</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">)</span>
+
+        <span class="n">w</span> <span class="o">=</span> <span class="mf">0.4</span>
+        <span class="n">final_loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="n">Smoothing_loss</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="mi">1</span><span class="o">-</span> <span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">Relaxation_loss</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">final_loss</span></div>
+</div>
+
+
+<span class="sd">"""</span>
+<span class="sd">class GradientBasedLSLR(nn.Module):</span>
+<span class="sd">    def __init__(self, smoothness_ratio=0.0, alpha=0.0, check_interval=10, dynamic_threshold_ratio=0.015):</span>
+<span class="sd">        super(GradientBasedLSLR, self).__init__()</span>
+<span class="sd">        self.smoothness_ratio = smoothness_ratio</span>
+<span class="sd">        self.alpha = alpha</span>
+<span class="sd">        self.check_interval = check_interval</span>
+<span class="sd">        self.dynamic_threshold_ratio = dynamic_threshold_ratio</span>
+<span class="sd">        self.mode = 'smooth'</span>
+<span class="sd">        self.grad_norm_history = []</span>
+
+<span class="sd">        self.LabelSmoothingLoss = LabelSmoothingLoss()</span>
+<span class="sd">        self.LabelRelaxationLoss = LabelRelaxationLoss()</span>
+
+
+<span class="sd">    def forward(self, pred, target, current_epoch, gradient_norm):</span>
+<span class="sd">        if len(self.grad_norm_history) == self.check_interval:</span>
+<span class="sd">            self.grad_norm_history.pop(0)</span>
+<span class="sd">        self.grad_norm_history.append(gradient_norm)</span>
+
+<span class="sd">        avg_norm = sum(self.grad_norm_history) / len(self.grad_norm_history) + 1e-14 # avoid division by zero</span>
+
+<span class="sd">        if current_epoch != 0:</span>
+<span class="sd">            if avg_norm &lt; self.dynamic_threshold_ratio and self.mode == 'smooth':</span>
+<span class="sd">                self.mode = 'relax'</span>
+
+<span class="sd">        #final_loss = 0</span>
+<span class="sd">        if self.mode == 'smooth':</span>
+<span class="sd">            final_loss = self.LabelSmoothingLoss(pred, target, current_epoch, gradient_norm)</span>
+<span class="sd">        else:</span>
+<span class="sd">            final_loss = self.LabelRelaxationLoss(pred, target, current_epoch, gradient_norm)</span>
+
+<span class="sd">        return final_loss</span>
+
+
+<span class="sd">class GradientBasedAdaptiveLSLR(nn.Module):</span>
+<span class="sd">    def __init__(self, smoothness_ratio=0.0, alpha=0.0, check_interval=10,</span>
+<span class="sd">                 variability_threshold=0.09):</span>
+<span class="sd">        super(GradientBasedAdaptiveLSLR, self).__init__()</span>
+<span class="sd">        self.smoothness_ratio = smoothness_ratio</span>
+<span class="sd">        self.alpha = alpha</span>
+<span class="sd">        self.check_interval = check_interval</span>
+<span class="sd">        self.variability_threshold = variability_threshold</span>
+<span class="sd">        self.mode = 'smooth'</span>
+<span class="sd">        self.grad_norm_history = []</span>
+<span class="sd">        self.adaptive_label_smoothing = AdaptiveLabelSmoothingLoss()</span>
+<span class="sd">        self.adaptive_label_relaxation = AdaptiveLabelRelaxationLoss()</span>
+
+<span class="sd">    def update_dynamic_threshold(self, current_epoch):</span>
+<span class="sd">        if len(self.grad_norm_history) &lt; self.check_interval:</span>
+<span class="sd">            return</span>
+
+<span class="sd">        std_dev = np.std(self.grad_norm_history)</span>
+<span class="sd">        print(std_dev, self.variability_threshold)</span>
+<span class="sd">        if std_dev &lt; self.variability_threshold and self.mode == 'smooth':</span>
+<span class="sd">            self.mode = 'relax'</span>
+
+<span class="sd">    def forward(self, pred, target, current_epoch, gradient_norm):</span>
+<span class="sd">        if len(self.grad_norm_history) == self.check_interval:</span>
+<span class="sd">            self.grad_norm_history.pop(0)</span>
+<span class="sd">        self.grad_norm_history.append(gradient_norm)</span>
+
+<span class="sd">        if current_epoch % self.check_interval == 0:</span>
+<span class="sd">            self.update_dynamic_threshold(current_epoch)</span>
+
+<span class="sd">        if self.mode == 'smooth':</span>
+<span class="sd">            return self.adaptive_label_smoothing(pred, target, current_epoch, gradient_norm)</span>
+<span class="sd">        else:</span>
+<span class="sd">            return self.adaptive_label_relaxation(pred, target, current_epoch, gradient_norm)</span>
+
+<span class="sd">"""</span>
+
+<div class="viewcode-block" id="ACLS">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.ACLS">[docs]</a>
+<span class="k">class</span><span class="w"> </span><span class="nc">ACLS</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
+                 <span class="n">pos_lambda</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
+                 <span class="n">neg_lambda</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+                 <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
+                 <span class="n">margin</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.0</span><span class="p">,</span>
+                 <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">200</span><span class="p">,</span>
+                 <span class="n">ignore_index</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">100</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pos_lambda</span> <span class="o">=</span> <span class="n">pos_lambda</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">neg_lambda</span> <span class="o">=</span> <span class="n">neg_lambda</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">margin</span> <span class="o">=</span> <span class="n">margin</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span> <span class="o">=</span> <span class="n">num_classes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignore_index</span> <span class="o">=</span> <span class="n">ignore_index</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cross_entropy</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">CrossEntropyLoss</span><span class="p">()</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="s2">"loss"</span><span class="p">,</span> <span class="s2">"loss_ce"</span><span class="p">,</span> <span class="s2">"reg"</span>
+
+<div class="viewcode-block" id="ACLS.get_reg">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.ACLS.get_reg">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_reg</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">targets</span><span class="p">):</span>
+        <span class="c1">#print(targets)</span>
+
+        <span class="n">max_values</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">max_values</span> <span class="o">=</span> <span class="n">max_values</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">inputs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">indicator</span> <span class="o">=</span> <span class="p">(</span><span class="n">max_values</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="o">==</span> <span class="n">inputs</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+
+        <span class="n">batch_size</span><span class="p">,</span> <span class="n">num_classes</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">size</span><span class="p">()</span>
+        <span class="n">num_pos</span> <span class="o">=</span> <span class="n">batch_size</span> <span class="o">*</span> <span class="mf">1.0</span>
+        <span class="n">num_neg</span> <span class="o">=</span> <span class="n">batch_size</span> <span class="o">*</span> <span class="p">(</span><span class="n">num_classes</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span>
+
+        <span class="n">neg_dist</span> <span class="o">=</span> <span class="n">max_values</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span> <span class="o">-</span> <span class="n">inputs</span>
+
+        <span class="n">pos_dist_margin</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">max_values</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">margin</span><span class="p">)</span>
+        <span class="n">neg_dist_margin</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">neg_dist</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">margin</span><span class="p">)</span>
+
+        <span class="n">pos</span> <span class="o">=</span> <span class="n">indicator</span> <span class="o">*</span> <span class="n">pos_dist_margin</span> <span class="o">**</span> <span class="mi">2</span>
+        <span class="n">neg</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">indicator</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">neg_dist_margin</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+
+        <span class="n">reg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pos_lambda</span> <span class="o">*</span> <span class="p">(</span><span class="n">pos</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">num_pos</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">neg_lambda</span> <span class="o">*</span> <span class="p">(</span><span class="n">neg</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">/</span> <span class="n">num_neg</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">reg</span></div>
+
+
+<div class="viewcode-block" id="ACLS.forward">
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.ACLS.forward">[docs]</a>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">,</span> <span class="n">targets</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">inputs</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">inputs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">inputs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># N,C,H,W =&gt; N,C,H*W</span>
+            <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># N,C,H*W =&gt; N,H*W,C</span>
+            <span class="n">inputs</span> <span class="o">=</span> <span class="n">inputs</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">inputs</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>  <span class="c1"># N,H*W,C =&gt; N*H*W,C</span>
+            <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">loss_ce</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+
+        <span class="n">loss_reg</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_reg</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_ce</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">loss_reg</span>
+
+        <span class="k">return</span> <span class="n">loss</span></div>
+</div>
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2023, Caglar Demir.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

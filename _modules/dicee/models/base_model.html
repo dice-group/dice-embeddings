@@ -97,6 +97,19 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
 
+<span class="kn">from</span><span class="w"> </span><span class="nn">dicee.losses.custom_losses</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">ACLS</span><span class="p">,</span>
+    <span class="n">AdaptiveLabelRelaxationLoss</span><span class="p">,</span>
+    <span class="n">AdaptiveLabelSmoothingLoss</span><span class="p">,</span>
+    <span class="n">AggregatedLSandLR</span><span class="p">,</span>
+    <span class="n">CombinedAdaptiveLSandAdaptiveLR</span><span class="p">,</span>
+    <span class="n">CombinedLSandLR</span><span class="p">,</span>
+    <span class="n">ConfidenceBasedAdaptiveLabelRelaxationLoss</span><span class="p">,</span>
+    <span class="n">DefaultBCELoss</span><span class="p">,</span>
+    <span class="n">LabelRelaxationLoss</span><span class="p">,</span>
+    <span class="n">LabelSmoothingLoss</span><span class="p">,</span>
+<span class="p">)</span>
+
 <span class="kn">from</span><span class="w"> </span><span class="nn">.adopt</span><span class="w"> </span><span class="kn">import</span> <span class="n">ADOPT</span>
 
 <span class="n">logger</span> <span class="o">=</span> <span class="n">logging</span><span class="o">.</span><span class="n">getLogger</span><span class="p">(</span><span class="vm">__name__</span><span class="p">)</span>
@@ -410,6 +423,27 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">init_entity_embeddings</span><span class="p">()</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">init_relation_embeddings</span><span class="p">()</span>
+
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"loss_fn"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"LS"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">LabelSmoothingLoss</span><span class="p">(</span><span class="n">smoothness_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label_smoothing_rate"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"loss_fn"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"LRLoss"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">LabelRelaxationLoss</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label_relaxation_alpha"</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"loss_fn"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"BCELoss"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">DefaultBCELoss</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"loss_fn"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"CombinedLSandLR"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">CombinedLSandLR</span><span class="p">(</span><span class="n">smoothness_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label_smoothing_rate"</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span> <span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"label_relaxation_alpha"</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"loss_fn"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"AdaptiveLabelSmoothingLoss"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">AdaptiveLabelSmoothingLoss</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"loss_fn"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"AdaptiveLabelRelaxationLoss"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">AdaptiveLabelRelaxationLoss</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"loss_fn"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"ConfidenceBasedAdaptiveLabelRelaxationLoss"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">ConfidenceBasedAdaptiveLabelRelaxationLoss</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"loss_fn"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"CombinedAdaptiveLSandAdaptiveLR"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">CombinedAdaptiveLSandAdaptiveLR</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"loss_fn"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"AggregatedLSandLR"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">AggregatedLSandLR</span><span class="p">()</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"loss_fn"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"ACLS"</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">ACLS</span><span class="p">()</span>
 
 <div class="viewcode-block" id="BaseKGE.init_entity_embeddings">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.init_entity_embeddings">[docs]</a>

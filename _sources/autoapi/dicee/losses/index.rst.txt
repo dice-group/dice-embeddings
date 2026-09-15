@@ -1,0 +1,15 @@
+dicee.losses
+============
+
+.. py:module:: dicee.losses
+
+
+Submodules
+----------
+
+.. toctree::
+   :maxdepth: 1
+
+   /autoapi/dicee/losses/custom_losses/index
+
+
