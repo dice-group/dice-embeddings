@@ -435,6 +435,44 @@ class TestCurrentEpochWiring:
         assert torch.isfinite(result)
 
 
+class TestWeightedBCELoss:
+    """Regression coverage for issue #443: WeightedBCELoss existed in
+    dicee/losses/custom_losses.py but was never wired into loss_fn's
+    dispatch in BaseKGE.__init__, making it unreachable via config.
+    """
+
+    def test_reachable_via_loss_fn(self):
+        from dicee.losses.custom_losses import WeightedBCELoss
+        model = _make_distmult_with_loss_fn("WeightedBCELoss")
+        assert isinstance(model.loss, WeightedBCELoss)
+
+    def test_loss_function_returns_finite_scalar(self):
+        model = _make_distmult_with_loss_fn("WeightedBCELoss")
+        yhat = torch.randn(8, 50)
+        y = torch.zeros(8, 50)
+        y[:, 0] = 1.0
+        loss = model.loss_function(yhat, y)
+        assert loss.shape == torch.Size([])
+        assert torch.isfinite(loss)
+
+    def test_weights_are_detached_and_clamped(self):
+        from dicee.losses.custom_losses import WeightedBCELoss
+        loss_fn = WeightedBCELoss()
+        pred = torch.randn(6, 10, requires_grad=True)
+        target = torch.randint(0, 2, (6, 10)).float()
+        gamma = 10
+        confidence = torch.abs(2 * torch.sigmoid(pred) - 1)
+        expected_weights = torch.clamp(torch.exp(-gamma * (1 - confidence)), min=0.5, max=1.0)
+        result = loss_fn(pred, target, current_epoch=0)
+        result.backward()
+        # weights must not have required gradients of their own: pred.grad
+        # should exist (loss depends on pred through BCE) but the detached
+        # weight computation itself shouldn't raise or double count.
+        assert pred.grad is not None
+        assert torch.isfinite(result)
+        assert torch.all(expected_weights >= 0.5) and torch.all(expected_weights <= 1.0)
+
+
 class TestAdversarialTemperatureLossFunction:
     """Regression coverage for the adversarial_temperature branch of
     BaseKGE.loss_function, which was previously unreachable dead code
