@@ -330,6 +330,111 @@ class TestLossFunction:
         assert torch.isfinite(loss)
 
 
+def _make_distmult_with_loss_fn(loss_fn: str, **extra) -> DistMult:
+    args = _minimal_args()
+    args["loss_fn"] = loss_fn
+    args["label_smoothing_rate"] = 0.1
+    args["label_relaxation_alpha"] = 0.1
+    args.update(extra)
+    model = DistMult(args)
+    model.eval()
+    return model
+
+
+class TestCurrentEpochWiring:
+    """Regression coverage for issue #442: loss_function never passed
+    current_epoch to self.loss, so every loss_fn whose forward declares a
+    current_epoch parameter (CombinedLSandLR, AdaptiveLabelSmoothingLoss,
+    ConfidenceBasedAdaptiveLabelRelaxationLoss, CombinedAdaptiveLSandAdaptiveLR,
+    AggregatedLSandLR) raised TypeError on the very first training step.
+    """
+
+    EPOCH_AWARE_LOSS_FNS = [
+        "CombinedLSandLR",
+        "AdaptiveLabelSmoothingLoss",
+        "ConfidenceBasedAdaptiveLabelRelaxationLoss",
+        "CombinedAdaptiveLSandAdaptiveLR",
+        "AggregatedLSandLR",
+    ]
+    EPOCH_FREE_LOSS_FNS = ["LS", "LRLoss", "BCELoss", "AdaptiveLabelRelaxationLoss", "ACLS"]
+
+    @pytest.mark.parametrize("loss_fn", EPOCH_AWARE_LOSS_FNS)
+    def test_loss_needs_epoch_detected(self, loss_fn):
+        model = _make_distmult_with_loss_fn(loss_fn)
+        assert model._loss_needs_epoch is True
+
+    @pytest.mark.parametrize("loss_fn", EPOCH_FREE_LOSS_FNS)
+    def test_loss_does_not_need_epoch(self, loss_fn):
+        model = _make_distmult_with_loss_fn(loss_fn)
+        assert model._loss_needs_epoch is False
+
+    @pytest.mark.parametrize("loss_fn", EPOCH_AWARE_LOSS_FNS)
+    def test_epoch_aware_loss_fn_no_longer_crashes(self, loss_fn):
+        """These all raised TypeError before the fix (see #442)."""
+        model = _make_distmult_with_loss_fn(loss_fn)
+        yhat = torch.randn(8, 50)
+        y = torch.zeros(8, 50)
+        y[:, 0] = 1.0
+        loss = model.loss_function(yhat, y, current_epoch=5)
+        assert loss.shape == torch.Size([])
+        assert torch.isfinite(loss)
+
+    def test_native_current_epoch_used_when_current_epoch_arg_omitted(self):
+        """loss_function should fall back to model._current_training_epoch()
+        (and thus _native_current_epoch, since no real pl.Trainer is
+        attached here) when the caller doesn't pass current_epoch explicitly."""
+        model = _make_distmult_with_loss_fn("CombinedLSandLR")
+        seen_epochs = []
+        original_forward = type(model.loss).forward
+
+        def spy_forward(self, pred, target, current_epoch):
+            seen_epochs.append(current_epoch)
+            return original_forward(self, pred, target, current_epoch)
+
+        type(model.loss).forward = spy_forward
+        try:
+            model._native_current_epoch = 7
+            yhat = torch.randn(8, 50)
+            y = torch.zeros(8, 50)
+            y[:, 0] = 1.0
+            model.loss_function(yhat, y)
+        finally:
+            type(model.loss).forward = original_forward
+        assert seen_epochs == [7]
+
+    def test_training_step_passes_current_epoch_through(self):
+        model = _make_distmult_with_loss_fn("CombinedLSandLR")
+        seen_epochs = []
+        original_forward = type(model.loss).forward
+
+        def spy_forward(self, pred, target, current_epoch):
+            seen_epochs.append(current_epoch)
+            return original_forward(self, pred, target, current_epoch)
+
+        type(model.loss).forward = spy_forward
+        try:
+            model._native_current_epoch = 2
+            x_batch = torch.zeros(4, 2, dtype=torch.long)
+            y_batch = torch.zeros(4, 50)
+            model.training_step((x_batch, y_batch))
+        finally:
+            type(model.loss).forward = original_forward
+        assert seen_epochs == [2]
+
+    def test_aggregated_ls_and_lr_no_longer_double_counts_epoch(self):
+        """AggregatedLSandLR.forward used to call LabelSmoothingLoss/
+        LabelRelaxationLoss with an extra current_epoch argument that neither
+        accepts (TypeError), independent of the loss_function wiring bug."""
+        from dicee.losses.custom_losses import AggregatedLSandLR
+        loss = AggregatedLSandLR(smoothness_ratio=0.1, alpha=0.1)
+        pred = torch.randn(8, 50)
+        target = torch.zeros(8, 50)
+        target[:, 0] = 1.0
+        result = loss(pred, target, current_epoch=3)
+        assert result.shape == torch.Size([])
+        assert torch.isfinite(result)
+
+
 class TestAdversarialTemperatureLossFunction:
     """Regression coverage for the adversarial_temperature branch of
     BaseKGE.loss_function, which was previously unreachable dead code
