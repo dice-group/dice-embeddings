@@ -4,6 +4,7 @@ Provides the Namespace class with default configuration values
 for training knowledge graph embedding models.
 """
 import argparse
+from typing import Optional
 
 
 class Namespace(argparse.Namespace):
@@ -15,7 +16,7 @@ class Namespace(argparse.Namespace):
     """
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.dataset_dir: str = None
+        self.dataset_dir: Optional[str] = None
         "The path of a folder containing train.txt, and/or valid.txt and/or test.txt"
 
         self.save_embeddings_as_csv: bool = False
@@ -24,7 +25,7 @@ class Namespace(argparse.Namespace):
         self.storage_path: str = "Experiments"
         "A directory named with time of execution under --storage_path that contains related data about embeddings."
 
-        self.path_to_store_single_run: str = None
+        self.path_to_store_single_run: Optional[str] = None
         "A single directory created that contains related data about embeddings."
 
         self.path_single_kg = None
@@ -32,6 +33,35 @@ class Namespace(argparse.Namespace):
 
         self.sparql_endpoint = None
         "An endpoint of a triple store."
+
+        self.ultra_checkpoint: Optional[str] = None
+        self.ultra_dim: int = 64
+        self.ultra_num_layers: int = 6
+        self.ultra_query_batch_size: int = 8
+        self.trix_checkpoint: Optional[str] = None
+        self.trix_dim: int = 32
+        self.trix_query_batch_size: int = 8
+        self.flock_checkpoint: Optional[str] = None
+        self.flock_dim: int = 64
+        self.flock_walk_num: int = 128
+        self.flock_walk_len: int = 128
+        self.flock_refinements: int = 6
+        self.flock_num_layers: int = 1
+        self.flock_attention_heads: int = 4
+        self.flock_test_samples: int = 1
+        self.flock_query_batch_size: int = 1
+        self.flock_seed: Optional[int] = None
+        self.flock_prefetch_walks: bool = True
+        self.flock_compact_state: bool = True
+        self.flock_compile_sampler: bool = True
+        self.flock_pack_walks: bool = True
+        self.graph_inference_backend: str = 'auto'
+        self.graph_relation_cache_mb: int = 64
+        self.graph_projection_cache_mb: int = 64
+        self.graph_inference_compile: bool = False
+        self.grouped_negative_sampling: bool = False
+        self.strict_negative_sampling: bool = False
+        self.adversarial_temperature: Optional[float] = None
 
         self.model: str = "Keci"
         "KGE model"
@@ -51,7 +81,7 @@ class Namespace(argparse.Namespace):
         self.lr: float = 0.1
         """Learning rate"""
 
-        self.add_noise_rate: float = None
+        self.add_noise_rate: Optional[float] = None
         "The ratio of added random triples into training dataset"
 
         self.gpus = None
@@ -63,11 +93,11 @@ class Namespace(argparse.Namespace):
         self.backend: str = "pandas"
         """Backend to read, process, and index input knowledge graph. pandas, polars and rdflib available"""
 
-        self.separator: str = "\s+"
+        self.separator: str = r"\s+"
         """separator for extracting head, relation and tail from a triple"""
 
         self.trainer: str = 'torchCPUTrainer'
-        """Trainer for knowledge graph embedding model"""
+        """Trainer for knowledge graph embedding model. Options: 'torchCPUTrainer' (CPU/single GPU), 'PL' (PyTorch Lightning multi-GPU), 'torchDDP' (native DDP), 'TP' (Tensor Parallelism - implements 'Multiple Run Ensemble Learning with Low-Dimensional Knowledge Graph Embeddings')"""
 
         self.scoring_technique: str = 'KvsAll'
         """Scoring technique for knowledge graph embedding models"""
@@ -81,7 +111,7 @@ class Namespace(argparse.Namespace):
         self.normalization: str = "None"
         """ LayerNorm, BatchNorm1d, or None """
 
-        self.init_param: str = None
+        self.init_param: Optional[str] = None
         """ xavier_normal or None"""
 
         self.gradient_accumulation_steps: int = 0
@@ -93,7 +123,13 @@ class Namespace(argparse.Namespace):
         self.eval_model: str = "train_val_test"
         """ Evaluate trained model choices:["None", "train", "train_val", "train_val_test", "test"]"""
 
-        self.save_model_at_every_epoch: int = None
+        self.eval_tie_policy: str = "sort"
+        """Prediction ties: sort (legacy), optimistic, random, or pessimistic."""
+
+        self.eval_tie_seed: Optional[int] = None
+        """Independent random tie seed; None uses random_seed."""
+
+        self.save_model_at_every_epoch: Optional[int] = None
         """ Not tested """
 
         self.label_smoothing_rate: float = 0.0
@@ -104,14 +140,21 @@ class Namespace(argparse.Namespace):
         self.random_seed: int = 0
         "Random Seed"
 
-        self.sample_triples_ratio: float = None
+        self.log_level: str = "INFO"
+        """Logging verbosity: DEBUG, INFO, WARNING, ERROR, or CRITICAL. Dataset info, timing, and
+        checkpoint messages are logged at INFO; set to WARNING or higher to silence them."""
+
+        self.sample_triples_ratio: Optional[float] = None
         """Read some triples that are uniformly at random sampled. Ratio being between 0 and 1"""
 
-        self.read_only_few: int = None
+        self.read_only_few: Optional[int] = None
         """Read only first few triples """
 
         self.pykeen_model_kwargs = dict()
         """Additional keyword arguments for pykeen models"""
+
+        self.pl_trainer_kwargs = dict()
+        """Additional keyword arguments for the PyTorch Lightning Trainer"""
 
         # Below attributes can be given as model_kwargs argument
 
@@ -120,6 +163,10 @@ class Namespace(argparse.Namespace):
 
         self.num_of_output_channels: int = 32
         """Number of slices in the generated feature map by convolution."""
+
+        self.margin: float = 4.0
+        """Margin used by margin-based scoring functions (e.g. TransE, TransH, RotatE), and by
+        torch.nn.MarginRankingLoss when scoring_technique='NegSampleMargin'"""
 
         self.p: int = 0
         "P parameter of Clifford Embeddings"
@@ -154,13 +201,13 @@ class Namespace(argparse.Namespace):
         self.twa: bool = False
         """Trainable weight averaging"""
 
-        self.block_size: int = None
+        self.block_size: Optional[int] = None
         "block size of LLM"
 
-        self.continual_learning=None
+        self.continual_learning: Optional[str] = None
         "Path of a pretrained model size of LLM"
 
-        self.auto_batch_finding=False
+        self.auto_batch_finding: bool = False
         "A flag for using auto batch finding"
 
         self.eval_every_n_epochs: int = 0
@@ -169,16 +216,16 @@ class Namespace(argparse.Namespace):
         self.save_every_n_epochs: bool = False
         """Save model every n epochs. If True, save model at every epoch."""
 
-        self.eval_at_epochs: list = None
+        self.eval_at_epochs: Optional[list] = None
         """List of epoch numbers at which to evaluate the model (e.g., 1 5 10)."""
 
         self.n_epochs_eval_model: str = "val_test"
         """Evaluating link prediction performance on data splits while performing periodic evaluation."""
-        
+
         self.adaptive_lr = dict()
         """Adaptive learning rate parameters, e.g., '{"scheduler_name": "cca"}'"""
 
-        self.swa_start_epoch: int = None
+        self.swa_start_epoch: Optional[int] = None
         """Epoch at which to start applying stochastic weight averaging."""
 
         self.swa_c_epochs: int = 1

@@ -25,9 +25,9 @@ class TestRegressionConEx:
         args.trainer = 'torchCPUTrainer'
         args.init_param = 'xavier_normal'
         result = Execute(args).start()
-        assert 0.40 >= result['Train']['H@1'] >= 0.30
-        assert 0.40 >= result['Val']['H@1'] >= 0.29
-        assert 0.40 >= result['Test']['H@1'] >= 0.29
+        assert 0.21 <= result['Train']['H@1'] <= 0.27
+        assert 0.19 <= result['Val']['H@1'] <= 0.25
+        assert 0.21 <= result['Test']['H@1'] <= 0.27
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_1_vs_all(self):

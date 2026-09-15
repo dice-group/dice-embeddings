@@ -1,10 +1,17 @@
-import torch
-from typing import Tuple
-from dicee.abstracts import AbstractTrainer
-import time
+import logging
 import os
-from tqdm import tqdm
+import time
+from typing import Tuple
+
 import psutil
+import torch
+from tqdm import tqdm
+
+from dicee.abstracts import AbstractTrainer
+from dicee.trainer.auto_batch_finder import find_good_batch_size
+
+logger = logging.getLogger(__name__)
+
 
 class TorchTrainer(AbstractTrainer):
     """
@@ -47,15 +54,15 @@ class TorchTrainer(AbstractTrainer):
            -------
            batch loss (float)
        """
-        if self.attributes.gradient_accumulation_steps > 1:
-            # (1) Update parameters every gradient_accumulation_steps mini-batch.
-            if i % self.attributes.gradient_accumulation_steps == 0:
-                self.optimizer.zero_grad(set_to_none=True)
-        else:
-            # (2) Do not accumulate gradient, zero the gradients per batch.
+        accumulation_steps = max(1, self.attributes.gradient_accumulation_steps)
+        window_start = i - i % accumulation_steps
+        window_size = min(accumulation_steps, len(self.train_dataloaders) - window_start)
+        if i == window_start:
             self.optimizer.zero_grad(set_to_none=True)
-        # (3) Loss Forward and Backward w.r.t the batch.
-        return self.forward_backward_update(x_batch, y_batch)
+        return self.forward_backward_update(
+            x_batch, y_batch, loss_divisor=window_size,
+            update_weights=(i + 1 == window_start + window_size),
+        )
 
     def fit(self, *args, train_dataloaders, **kwargs) -> None:
         """
@@ -82,7 +89,27 @@ class TorchTrainer(AbstractTrainer):
         # (1) Start running callbacks
         self.on_fit_start(self, self.model)
 
-        print(f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} '
+        if getattr(self.attributes, "auto_batch_finding", False):
+            def _training_step_fn(batch):
+                x_batch, y_batch = self.extract_input_outputs_set_device(batch)
+                self.optimizer.zero_grad(set_to_none=True)
+                return self.forward_backward_update(x_batch, y_batch)
+            new_batch_size, _ = find_good_batch_size(
+                self.train_dataloaders, _training_step_fn, device=self.device
+            )
+            if new_batch_size != self.train_dataloaders.batch_size:
+                self.train_dataloaders = torch.utils.data.DataLoader(
+                    self.train_dataloaders.dataset,
+                    batch_size=new_batch_size,
+                    shuffle=True,
+                    num_workers=self.train_dataloaders.num_workers,
+                    collate_fn=self.train_dataloaders.dataset.collate_fn,
+                    pin_memory=False,
+                    drop_last=False,
+                    persistent_workers=False,
+                )
+
+        logger.info(f'NumOfDataPoints:{len(self.train_dataloaders.dataset)} '
               f'| NumOfEpochs:{self.attributes.max_epochs} '
               f'| LearningRate:{self.model.learning_rate} '
               f'| BatchSize:{self.train_dataloaders.batch_size} '
@@ -130,7 +157,10 @@ class TorchTrainer(AbstractTrainer):
             self.on_train_epoch_end(self, self.model)
         self.on_fit_end(self, self.model)
 
-    def forward_backward_update(self, x_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor:
+    def forward_backward_update(
+        self, x_batch: torch.Tensor, y_batch: torch.Tensor,
+        *, loss_divisor: int = 1, update_weights: bool = True,
+    ) -> float:
         """
             Compute forward, loss, backward, and parameter update
 
@@ -144,8 +174,9 @@ class TorchTrainer(AbstractTrainer):
            batch loss (float)
        """
         batch_loss = self.training_step(batch=(x_batch, y_batch))
-        batch_loss.backward()
-        self.optimizer.step()
+        (batch_loss / loss_divisor).backward()
+        if update_weights:
+            self.optimizer.step()
         return batch_loss.item()
 
     def extract_input_outputs_set_device(self, batch: list) -> Tuple:
@@ -176,6 +207,6 @@ class TorchTrainer(AbstractTrainer):
                 self.device)
             return (x_batch, y_idx_batch), y_batch
         else:
-            print(len(batch))
-            print("Unexpected batch shape..")
+            logger.error(len(batch))
+            logger.error("Unexpected batch shape..")
             raise RuntimeError

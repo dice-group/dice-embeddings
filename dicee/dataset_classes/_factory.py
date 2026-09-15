@@ -5,20 +5,22 @@ select the appropriate ``torch.utils.data.Dataset`` sub-class based on the
 requested scoring technique and labelling strategy.
 """
 
+import logging
 from typing import Union
 
 import numpy as np
 import torch
 
-from ..static_funcs import timeit, load_term_mapping
-
+from ..static_funcs import load_term_mapping, timeit
 from ._bpe import (
     BPE_NegativeSamplingDataset,
     MultiClassClassificationDataset,
     MultiLabelDataset,
 )
-from ._label_based import AllvsAll, KvsAll, KvsSampleDataset, OnevsAllDataset
-from ._negative_sampling import FixedNegSampleDataset, OnevsSample, TriplePredictionDataset
+from ._label_based import AllvsAll, FSDP1vsSampleDataset, KvsAll, KvsSampleDataset, OnevsAllDataset
+from ._negative_sampling import FixedNegSampleDataset, GroupedNegativeSamplingDataset, OnevsSample, TriplePredictionDataset
+
+logger = logging.getLogger(__name__)
 
 
 @timeit
@@ -61,6 +63,10 @@ def construct_dataset(
     byte_pair_encoding=None,
     block_size: int = None,
     seed: int = None,
+    sort_train_set: bool = True,
+    grouped_negative_sampling: bool = False,
+    strict_negative_sampling: bool = False,
+    adversarial_temperature: float | None = None,
 ) -> torch.utils.data.Dataset:
     """Build the appropriate dataset for the given training configuration.
 
@@ -73,7 +79,7 @@ def construct_dataset(
     form_of_labelling : str
         ``'EntityPrediction'`` or ``'RelationPrediction'``.
     scoring_technique : str
-        One of ``'NegSample'``, ``'FixedNegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,
+        One of ``'NegSample'``, ``'NegSampleMargin'``, ``'FixedNegSample'``, ``'1vsAll'``, ``'1vsSample'``, ``'KvsAll'``,
         ``'AllvsAll'``, ``'KvsSample'``.
     neg_ratio : int
         Negative sample ratio.
@@ -84,6 +90,14 @@ def construct_dataset(
     -------
     torch.utils.data.Dataset
     """
+    grouped = grouped_negative_sampling or strict_negative_sampling or adversarial_temperature is not None
+    if grouped:
+        if scoring_technique != "NegSample" or byte_pair_encoding or form_of_labelling != "EntityPrediction":
+            raise ValueError("Grouped/strict/adversarial sampling requires indexed NegSample entity prediction")
+        return GroupedNegativeSamplingDataset(
+            train_set=train_set, num_entities=len(entity_to_idx), num_relations=len(relation_to_idx),
+            neg_sample_ratio=neg_ratio, label_smoothing_rate=label_smoothing_rate,
+            seed=seed, sort_train_set=sort_train_set, strict_negative_sampling=strict_negative_sampling)
     if (
         ordered_bpe_entities
         and byte_pair_encoding
@@ -119,7 +133,7 @@ def construct_dataset(
         train_set = MultiClassClassificationDataset(
             train_set, block_size=block_size
         )
-    elif scoring_technique == "NegSample":
+    elif scoring_technique in ("NegSample", "NegSampleMargin"):
         train_set = TriplePredictionDataset(
             train_set=train_set,
             num_entities=len(entity_to_idx),
@@ -127,6 +141,16 @@ def construct_dataset(
             neg_sample_ratio=neg_ratio,
             label_smoothing_rate=label_smoothing_rate,
             seed=seed,
+            sort_train_set=sort_train_set,
+        )
+    elif scoring_technique == "FSDP1vsSample":
+        train_set = FSDP1vsSampleDataset(
+            train_set_idx=train_set,
+            entity_idxs=entity_to_idx,
+            relation_idxs=relation_to_idx,
+            form=form_of_labelling,
+            neg_ratio=neg_ratio,
+            label_smoothing_rate=label_smoothing_rate,
         )
     elif scoring_technique == "FixedNegSample":
         train_set = FixedNegSampleDataset(
@@ -185,5 +209,5 @@ def construct_dataset(
     else:
         raise KeyError("Illegal input.")
 
-    print(f"Number of datapoints: {len(train_set)}")
+    logger.info(f"Number of datapoints: {len(train_set)}")
     return train_set

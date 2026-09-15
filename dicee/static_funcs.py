@@ -8,29 +8,42 @@ import datetime
 import functools
 import glob
 import json
+import logging
 import os
 import pickle
 import time
 from collections import defaultdict
 from typing import Callable, Dict, List, Optional, Tuple, Type, Union
-import psutil
+
 import numpy as np
 import pandas as pd
 import polars as pl
+import psutil
 import requests
 import torch
+import torch.distributed as dist
+from lightning.pytorch.utilities.rank_zero import rank_zero_only
 
-from .models import (
-    AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ,
-    DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, OMult, Pyke, QMult, Shallom, TransE
-)
+from .models import AConEx, AConvO, AConvQ, CKeci, CoKE, ComplEx, ConEx, ConvO, ConvQ, DeCaL, DistMult, DualE, Keci, KeciTransformer, LFMult, MuRE, OMult, Pyke, QMult, RotatE, Shallom, TransE, TransH
 from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
+from .models.flock import Flock, FlockRelation
+from .models.fsdp_models import FSDPShardedEntityModel, create_fsdp_sharded_model_class
+from .models.graph_model import GraphKGE
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
+from .models.trix import TRIX, TRIXRelation
+from .models.ultra import ULTRA
+
+logger = logging.getLogger(__name__)
 
 # Model registry mapping model names to their classes and labelling types
 MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
+    'ULTRA': (ULTRA, 'EntityPrediction'),
+    'Flock': (Flock, 'EntityPrediction'),
+    'FlockRelation': (FlockRelation, 'RelationPrediction'),
+    'TRIX': (TRIX, 'EntityPrediction'),
+    'TRIXRelation': (TRIXRelation, 'RelationPrediction'),
     'Shallom': (Shallom, 'RelationPrediction'),
     'ConEx': (ConEx, 'EntityPrediction'),
     'AConEx': (AConEx, 'EntityPrediction'),
@@ -43,6 +56,9 @@ MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
     'ComplEx': (ComplEx, 'EntityPrediction'),
     'DistMult': (DistMult, 'EntityPrediction'),
     'TransE': (TransE, 'EntityPrediction'),
+    'MuRE': (MuRE, 'EntityPrediction'),
+    'TransH': (TransH, 'EntityPrediction'),
+    'RotatE': (RotatE, 'EntityPrediction'),
     'Pyke': (Pyke, 'EntityPrediction'),
     'Keci': (Keci, 'EntityPrediction'),
     'KeciTransformer': (KeciTransformer, 'EntityPrediction'),
@@ -142,9 +158,57 @@ def timeit(func: Callable) -> Callable:
         result = func(*args, **kwargs)
         total_time = time.perf_counter() - start_time
         memory_mb = psutil.Process(os.getpid()).memory_info().rss / 1_000_000
-        print(f'Took {total_time:.4f} secs | Current Memory Usage {memory_mb:.5f} MB')
+        logger.info(f'Took {total_time:.4f} secs | Current Memory Usage {memory_mb:.5f} MB')
         return result
     return timeit_wrapper
+
+
+def setup_distributed_training(args) -> Dict[str, Union[bool, int]]:
+    """Resolve distributed-training state and initialize custom DDP when needed."""
+    trainer_name = getattr(args, "trainer", None)
+    required_env_vars = ("LOCAL_RANK", "RANK", "WORLD_SIZE")
+    torchrun_launched = all(env_var in os.environ for env_var in required_env_vars)
+    distributed = trainer_name in {"torchDDP", "torchFSDP"} or (
+        trainer_name == "PL" and torchrun_launched
+    )
+
+    if trainer_name in {"torchDDP", "torchFSDP"} and not torchrun_launched:
+        raise RuntimeError(
+            f"{trainer_name} trainer must be launched with torchrun."
+            f"Please use appropriate commands for {trainer_name} trainer."
+        )
+
+    if distributed or trainer_name == "PL":
+        local_rank = int(os.environ.get("LOCAL_RANK", getattr(rank_zero_only, "rank", 0)))
+        rank = int(os.environ.get("RANK", local_rank))
+        world_size = int(os.environ.get("WORLD_SIZE", torch.cuda.device_count()))
+
+        if distributed:
+            torch.cuda.set_device(local_rank)
+            assert torch.cuda.current_device() == local_rank, (
+                f"set_device failed! local_rank={local_rank} "
+                f"but current={torch.cuda.current_device()}"
+            )
+            if not dist.is_initialized():
+                dist.init_process_group(
+                    backend="nccl",
+                    init_method="env://",
+                    device_id=torch.device(f"cuda:{local_rank}"),
+                    timeout=datetime.timedelta(hours=1),
+                )
+            rank = dist.get_rank()
+            world_size = dist.get_world_size()
+            logger.info(f"[Rank {rank}] mapped to GPU {local_rank}")
+    else:
+        distributed = False
+        rank, world_size, local_rank = 0, 1, 0
+
+    return {
+        "distributed": distributed,
+        "rank": rank,
+        "world_size": world_size,
+        "local_rank": local_rank,
+    }
 
 def save_pickle(*, data: Optional[object] = None, file_path: str) -> None:
     """Save data to a pickle file.
@@ -159,7 +223,7 @@ def save_pickle(*, data: Optional[object] = None, file_path: str) -> None:
         with open(file_path, 'wb') as f:
             pickle.dump(data, f)
     else:
-        print("Input data is None. Nothing to save.")
+        logger.warning("Input data is None. Nothing to save.")
 
 
 def load_pickle(file_path: str) -> object:
@@ -191,7 +255,7 @@ def load_term_mapping(file_path: str) -> Union[dict, pl.DataFrame]:
     try:
         return load_pickle(file_path=pickle_path)
     except FileNotFoundError:
-        print(f"Pickle file not found: {pickle_path}, loading from CSV")
+        logger.info(f"Pickle file not found: {pickle_path}, loading from CSV")
         return pl.read_csv(f"{file_path}.csv")
 
 # @TODO: Could these funcs can be merged?
@@ -217,8 +281,28 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
                 models.append(model)
             return EnsembleKGE(pretrained_models=models), labelling_flag
         else:
-            print('Loading pre-trained model...')
             model, labelling_flag = intialize_model(args)
+            if isinstance(model, FSDPShardedEntityModel):
+                # The sharded entity table doesn't exist yet at this point (it's
+                # created later by setup_fsdp_training(), once the trainer knows the
+                # per-rank row range) — there is no entity_embeddings submodule to
+                # load model.pt's full state dict into here.
+                #
+                # TorchFSDPTrainer.fit() resumes from a *sharded* checkpoint itself
+                # (see _resolve_resume_checkpoint_dir / fsdp_shard_checkpoint dir).
+                # Resuming FSDP training from a fully-materialized model.pt (the
+                # classic continual-learning case) is not supported yet — only
+                # from a checkpoint a previous torchFSDP run wrote itself.
+                logger.info(
+                    'torchFSDP continual learning: deferring weight loading to '
+                    'TorchFSDPTrainer\'s sharded checkpoint resume...'
+                )
+                for parameter in model.parameters():
+                    parameter.requires_grad = True
+                model.train()
+                return model, labelling_flag
+
+            logger.info('Loading pre-trained model...')
             try:
                 weights = torch.load(storage_path + '/model.pt', torch.device('cpu'))
                 model.load_state_dict(weights)
@@ -226,15 +310,23 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
                     parameter.requires_grad = True
                 model.train()
             except FileNotFoundError as e:
-                print(f"{storage_path}/model.pt is not found. The model will be trained with random weights")
+                logger.warning(f"{storage_path}/model.pt is not found. The model will be trained with random weights")
                 raise e
             return model, labelling_flag
     else:
         if args["trainer"]=="TP":
             # If it is tensor parallelized KGE, then we need to create ensemble of models.
+            num_gpus = torch.cuda.device_count()
+            if num_gpus < 2:
+                raise RuntimeError(
+                    f"Tensor Parallelism (TP) trainer requires at least 2 GPUs, but found {num_gpus}. "
+                    f"To use TP trainer, ensure your system has multiple GPUs available or switch to a different "
+                    f"trainer (e.g., 'torchCPUTrainer', 'PL', 'torchDDP', 'torchFSDP'). "
+                    f"Available GPUs: {torch.cuda.get_device_name(0) if num_gpus > 0 else 'None'}"
+                )
             models = []
             labelling_flag = None
-            for i in range(torch.cuda.device_count()):
+            for i in range(num_gpus):
                 args["random_seed"] = i
                 model, labelling_flag = intialize_model(args)
                 models.append(model)
@@ -247,7 +339,7 @@ def select_model(args: dict, is_continual_training: bool = None, storage_path: s
 def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) -> Tuple[object, Tuple[dict, dict]]:
     """ Load weights and initialize pytorch module from namespace arguments"""
     if verbose>0:
-        print(f'Loading model {model_name}...', end=' ')
+        logger.info(f'Loading model {model_name}...')
     start_time = time.time()
     # (1) Load weights..
     weights = torch.load(path_of_experiment_folder + f'/{model_name}', torch.device('cpu'))
@@ -271,14 +363,16 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
         configs["num_entities"] = num_ent
         configs["num_relations"] = num_rel
     if verbose>0:
-        print(f'Done! It took {time.time() - start_time:.3f}')
+        logger.info(f'Done! It took {time.time() - start_time:.3f}')
     # (4) Select the model
-    model, _ = intialize_model(configs,verbose)
+    model, _ = intialize_model(configs, verbose, for_inference=True)
     # (5) Put (1) into (4)
     if isinstance(weights,torch.jit._script.RecursiveScriptModule):
         model.load_state_dict(weights.state_dict())
     else:
         model.load_state_dict(weights)
+    if isinstance(model, GraphKGE):
+        model.load_graph(os.path.join(path_of_experiment_folder, model.graph_filename))
     # (6) Set it into eval model.
     for parameter in model.parameters():
         parameter.requires_grad = False
@@ -288,15 +382,17 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
         return model, None
     else:
         if verbose>0:
-            print('Loading entity and relation indexes...', end=' ')
-    
-        entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0,dtype=str).to_dict(orient='index').items()}
+            logger.info('Loading entity and relation indexes...')
 
-        relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0,dtype=str).to_dict(orient='index').items()}
+        # Use per-column dtype to avoid pandas>=3.0.0 applying dtype=str to the index column
+        # (which would make index values strings instead of ints, breaking downstream assertions)
+        entity_to_idx = { v["entity"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/entity_to_idx.csv",index_col=0,dtype={'entity': str}).to_dict(orient='index').items()}
+
+        relation_to_idx = { v["relation"]:k for k,v in pd.read_csv(f"{path_of_experiment_folder}/relation_to_idx.csv",index_col=0,dtype={'relation': str}).to_dict(orient='index').items()}
 
 
         if verbose > 0:
-            print(f'Done! It took {time.time() - start_time:.4f}')
+            logger.info(f'Done! It took {time.time() - start_time:.4f}')
         return model, (entity_to_idx, relation_to_idx)
 
 
@@ -308,18 +404,19 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, Tuple[
     (3) Normalize parameters
     (4) Insert (3) into model.
     """
-    print('Constructing Ensemble of ', end=' ')
+    logger.info('Constructing Ensemble of models...')
     start_time = time.time()
     # (1) Detect models under given path.
     paths_for_loading = glob.glob(path_of_experiment_folder + '/model*')
-    print(f'{len(paths_for_loading)} models...')
-    assert len(paths_for_loading) > 0
+    logger.info(f'{len(paths_for_loading)} models...')
+    if len(paths_for_loading) == 0:
+        raise ValueError(f"No model files found under {path_of_experiment_folder}")
     num_of_models = len(paths_for_loading)
     weights = None
     # (2) Accumulate parameters of detected models.
     while len(paths_for_loading):
         p = paths_for_loading.pop()
-        print(f'Model: {p}...')
+        logger.info(f'Model: {p}...')
         if weights is None:
             weights = torch.load(p, torch.device('cpu'))
         else:
@@ -338,18 +435,20 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, Tuple[
     report = load_json(path_of_experiment_folder + '/report.json')
     configs["num_entities"] = report["num_entities"]
     configs["num_relations"] = report["num_relations"]
-    print(f'Done! It took {time.time() - start_time:.2f} seconds.')
+    logger.info(f'Done! It took {time.time() - start_time:.2f} seconds.')
     # (4.2) Select the model
-    model, _ = intialize_model(configs)
+    model, _ = intialize_model(configs, for_inference=True)
     # (4.3) Put (3) into their places
     model.load_state_dict(weights, strict=True)
+    if isinstance(model, GraphKGE):
+        model.load_graph(os.path.join(path_of_experiment_folder, model.graph_filename))
     # (6) Set it into eval model.
-    print('Setting Eval mode & requires_grad params to False')
+    logger.info('Setting Eval mode & requires_grad params to False')
     for parameter in model.parameters():
         parameter.requires_grad = False
     model.eval()
     start_time = time.time()
-    print('Loading entity and relation indexes...', end=' ')
+    logger.info('Loading entity and relation indexes...')
     # TODO: CD: We do not need to keep the mapping in memory
     # TODO:CD: Deprecate the pickle usage for data serialization.
 
@@ -362,7 +461,7 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, Tuple[
 
     assert isinstance(entity_to_idx, dict)
     assert isinstance(relation_to_idx, dict)
-    print(f'Done! It took {time.time() - start_time:.4f}')
+    logger.info(f'Done! It took {time.time() - start_time:.4f}')
     return model, (entity_to_idx, relation_to_idx)
 
 
@@ -412,16 +511,18 @@ def store(trained_model, model_name: str = 'model', full_storage_path: str = Non
     assert isinstance(model_name, str)
     assert len(model_name) > 1
     save_checkpoint_model(model=trained_model, path=full_storage_path + f'/{model_name}.pt')
+    if isinstance(trained_model, GraphKGE):
+        trained_model.save_graph(os.path.join(full_storage_path, trained_model.graph_filename))
 
     if save_embeddings_as_csv:
         entity_emb, relation_ebm = trained_model.get_embeddings()
-        print("Saving entity embeddings...")
+        logger.info("Saving entity embeddings...")
         entity=pd.read_csv(f"{full_storage_path}/entity_to_idx.csv",index_col=0)["entity"]
         assert entity.index.is_monotonic_increasing
         save_embeddings(entity_emb.numpy(), indexes=entity.to_list(), path=full_storage_path + '/' + trained_model.name + '_entity_embeddings.csv')
         del entity, entity_emb
         if relation_ebm is not None:
-            print("Saving relation embeddings...")
+            logger.info("Saving relation embeddings...")
             relations = pd.read_csv(f"{full_storage_path}/relation_to_idx.csv", index_col=0)["relation"]
             assert relations.index.is_monotonic_increasing
             save_embeddings(relation_ebm.numpy(), indexes=relations, path=full_storage_path + '/' + trained_model.name + '_relation_embeddings.csv')
@@ -437,7 +538,7 @@ def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.Data
     """
     num_triples = len(train_set)
     num_noisy_triples = int(num_triples * add_noise_rate)
-    print(f'[4 / 14] Generating {num_noisy_triples} noisy triples for training data...')
+    logger.info(f'[4 / 14] Generating {num_noisy_triples} noisy triples for training data...')
 
     list_of_entities = pd.unique(train_set[['subject', 'object']].values.ravel())
 
@@ -458,7 +559,7 @@ def add_noisy_triples(train_set: pd.DataFrame, add_noise_rate: float) -> pd.Data
     return train_set
 
 def read_or_load_kg(args, cls):
-    print('*** Read or Load Knowledge Graph  ***')
+    logger.info('*** Read or Load Knowledge Graph  ***')
     start_time = time.time()
     kg = cls(dataset_dir=args.dataset_dir,
              byte_pair_encoding=args.byte_pair_encoding,
@@ -475,18 +576,27 @@ def read_or_load_kg(args, cls):
              backend=args.backend,
              training_technique=args.scoring_technique,
              separator=args.separator)
-    print(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
+    logger.info(f'Preprocessing took: {time.time() - start_time:.3f} seconds')
     # (2) Share some info about data for easy access.
-    print(kg.description_of_input)
+    logger.info(kg.description_of_input)
     return kg
 
 
-def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
+def intialize_model(args: Dict, verbose: int = 0, for_inference: bool = False) -> Tuple[BaseKGE, str]:
     """Initialize a knowledge graph embedding model.
 
     Args:
         args: Dictionary containing model configuration including 'model' key.
         verbose: Verbosity level. If > 0, prints initialization message.
+        for_inference: If True, never build the FSDP row-wise-sharded shell,
+            even if args["trainer"] == "torchFSDP". A completed run's model.pt
+            (written by TorchFSDPTrainer._materialize_model()) already has a
+            plain, full entity_embeddings.weight — loading it into the sharded
+            shell (which defers entity_embeddings until setup_fsdp_training())
+            fails with "Unexpected key(s): entity_embeddings.weight". Callers
+            loading a finished model for inference (load_model,
+            load_model_ensemble) must set this; callers building a fresh model
+            to train/resume with (select_model) must not.
 
     Returns:
         Tuple of (initialized model, form of labelling string).
@@ -495,7 +605,7 @@ def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
         ValueError: If the model name is not recognized.
     """
     if verbose > 0:
-        print(f"Initializing {args['model']}...")
+        logger.info(f"Initializing {args['model']}...")
     model_name = args['model']
 
     # Handle PyKEEN models
@@ -505,16 +615,36 @@ def intialize_model(args: Dict, verbose: int = 0) -> Tuple[BaseKGE, str]:
     # Use model registry for standard models
     if model_name in MODEL_REGISTRY:
         model_class, form_of_labelling = MODEL_REGISTRY[model_name]
+        _is_sample_technique = args.get("scoring_technique") in {
+            "NegSample", "FixedNegSample", "KvsSample", "FSDP1vsSample"
+        }
+        _entity_prediction = form_of_labelling == "EntityPrediction"
+        _no_bpe = model_name not in {"BytE"} and not args.get("byte_pair_encoding", False)
+
+        if (not for_inference and args.get("trainer") == "torchFSDP"
+                and _is_sample_technique and _entity_prediction and _no_bpe):
+            model_class = create_fsdp_sharded_model_class(model_class)
+            args = dict(args)
+            args["fsdp_sharded_entity"] = True
         return model_class(args=args), form_of_labelling
 
-    raise ValueError(f"Unknown model: {model_name}. Available models: {list(MODEL_REGISTRY.keys())}")
+    # Provide helpful error message
+    available_models = ', '.join(sorted(MODEL_REGISTRY.keys())[:10])
+    raise ValueError(
+        f"Unknown model: '{model_name}'\\n"
+        f"\\nAvailable models (showing first 10): {available_models}, ...\\n"
+        f"\\nAll models: {', '.join(sorted(MODEL_REGISTRY.keys()))}\\n"
+        f"\\nFor PyKEEN models, use: --model Pykeen_ModelName\\n"
+        f"  Examples: Pykeen_ComplEx, Pykeen_DistMult, Pykeen_QuatE\\n"
+        f"\\nSee: docs/guides/ or tests/test_regression_*.py for examples\\n"
+    )
 
 
 # Keep backward compatibility - this is now handled by the registry
 def _legacy_intialize_model(args: dict, verbose: int = 0) -> Tuple[object, str]:
     """Legacy model initialization (deprecated, use intialize_model instead)."""
     if verbose > 0:
-        print(f"Initializing {args['model']}...")
+        logger.info(f"Initializing {args['model']}...")
     model_name = args['model']
     if "pykeen" in model_name.lower():
         model = PykeenKGE(args=args)
@@ -554,6 +684,15 @@ def _legacy_intialize_model(args: dict, verbose: int = 0) -> Tuple[object, str]:
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'TransE':
         model = TransE(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'MuRE':
+        model = MuRE(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'TransH':
+        model = TransH(args=args)
+        form_of_labelling = 'EntityPrediction'
+    elif model_name == 'RotatE':
+        model = RotatE(args=args)
         form_of_labelling = 'EntityPrediction'
     elif model_name == 'Pyke':
         model = Pyke(args=args)
@@ -615,16 +754,16 @@ def save_embeddings(embeddings: np.ndarray, indexes: List, path: str) -> None:
     try:
         pd.DataFrame(embeddings, index=indexes).to_csv(path)
     except (KeyError, AttributeError) as e:
-        print(f'Exception occurred while saving embeddings: {e}')
-        print('Computation will continue.')
+        logger.warning(f'Exception occurred while saving embeddings: {e}')
+        logger.warning('Computation will continue.')
 
 
 @timeit
 def vocab_to_parquet(vocab_to_idx, name, path_for_serialization, print_into):
     # @TODO: This function should take any DASK/Pandas DataFrame or Series.
-    print(print_into)
+    logger.info(print_into)
     vocab_to_idx.to_parquet(path_for_serialization + f'/{name}', compression='gzip', engine='pyarrow')
-    print('Done !\n')
+    logger.info('Done !')
 
 
 def create_experiment_folder(folder_name: str = 'Experiments') -> str:
@@ -672,7 +811,7 @@ def exponential_function(x: np.ndarray, lam: float, ascending_order=True) -> tor
 
 @timeit
 def load_numpy(path) -> np.ndarray:
-    print('Loading indexed training data...', end='')
+    logger.info('Loading indexed training data...')
     with open(path, 'rb') as f:
         data = np.load(f)
     return data
@@ -750,9 +889,9 @@ def download_file(url, destination_folder="."):
             for chunk in response.iter_content(chunk_size=1024):
                 if chunk:
                     file.write(chunk)
-        print(f"Downloaded: {filename}")
+        logger.info(f"Downloaded: {filename}")
     else:
-        print(f"Failed to download: {url}")
+        logger.error(f"Failed to download: {url}")
 
 
 def download_files_from_url(base_url:str, destination_folder=".")->None:
@@ -772,7 +911,7 @@ def download_files_from_url(base_url:str, destination_folder=".")->None:
     try:
         from bs4 import BeautifulSoup
     except ModuleNotFoundError:
-        print("Please install the 'beautifulsoup4' package by running: pip install beautifulsoup4")
+        logger.error("Please install the 'beautifulsoup4' package by running: pip install beautifulsoup4")
         raise
     response = requests.get(base_url)
     if response.status_code == 200:
@@ -786,14 +925,14 @@ def download_files_from_url(base_url:str, destination_folder=".")->None:
         for file_url in hrefs:
             download_file(base_url + "/" + file_url, destination_folder)
     else:
-        print("ERROR:", response.status_code)
+        logger.error(f"ERROR: {response.status_code}")
 
 def download_pretrained_model(url: str) -> str:
     assert url[-1] != "/"
     dir_name = url[url.rfind("/") + 1:]
     url_to_download_from = f"https://files.dice-research.org/projects/DiceEmbeddings/{dir_name}"
     if os.path.exists(dir_name):
-        print("Path exists", dir_name)
+        logger.info(f"Path exists: {dir_name}")
     else:
         os.mkdir(dir_name)
         download_files_from_url(url_to_download_from, destination_folder=dir_name)
@@ -862,7 +1001,7 @@ def from_pretrained_model_write_embeddings_into_csv(path: str) -> None:
             writer.writerow([name]+ row.tolist())
 
     """
-    
+
     # Write entity embeddings directly to CSV
     with open(entity_csv_path, "w") as f:
         for row in entity_emb:

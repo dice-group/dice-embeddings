@@ -26,5 +26,7 @@ class TestRegressionAConEx:
         args.init_param = 'xavier_normal'
         args.trainer = 'torchCPUTrainer'
         result = Execute(args).start()
-        assert 0.70 >= result['Train']['MRR'] >= 0.66
-        assert 0.57 >= result['Train']['H@1'] >= 0.50
+        # Shared embedding initialization changed in 37c3b1ad.
+        # Verified baseline: MRR ~0.606 and H@1 ~0.487 with seed 0.
+        assert 0.59 <= result['Train']['MRR'] <= 0.63
+        assert 0.46 <= result['Train']['H@1'] <= 0.52

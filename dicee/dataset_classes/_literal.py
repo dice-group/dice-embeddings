@@ -4,12 +4,15 @@ Provides ``LiteralDataset`` for training models on numeric literal triples
 (entity, data-property, value).
 """
 
+import logging
 import os
 
 import numpy as np
 import pandas as pd
 import torch
 from torch.utils.data import Dataset
+
+logger = logging.getLogger(__name__)
 
 
 class LiteralDataset(Dataset):
@@ -83,7 +86,7 @@ class LiteralDataset(Dataset):
                     )
                     .reset_index(drop=True)
                 )
-                print(
+                logger.info(
                     f"Training Literal Embedding model with "
                     f"{self.sampling_ratio * 100:.1f}% of the train set."
                 )
@@ -125,7 +128,7 @@ class LiteralDataset(Dataset):
             self.normalization_params["type"] = "min-max"
 
         else:
-            print(" No normalization applied.")
+            logger.info("No normalization applied.")
             df["value_norm"] = df["value"]
             if self.normalization_type is None:
                 self.normalization_params = {}

@@ -1,6 +1,7 @@
 import torch
-from .static_funcs import quaternion_mul
+
 from .base_model import BaseKGE, IdentityClass
+from .static_funcs import quaternion_mul
 
 
 def quaternion_mul_with_unit_norm(*, Q_1, Q_2):
@@ -171,7 +172,7 @@ class QMult(BaseKGE):
         return self.k_vs_all_score(head_ent_emb, rel_ent_emb,self.entity_embeddings.weight)
 
     def forward_k_vs_sample(self, x, target_entity_idx):
-        """
+        r"""
         Completed.
         Given a head entity and a relation (h,r), we compute scores for all possible triples,i.e.,
         [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
@@ -284,7 +285,7 @@ class ConvQ(BaseKGE):
         return real_score + i_score + j_score + k_score
 
     def forward_k_vs_all(self, x: torch.Tensor):
-        """
+        r"""
         Given a head entity and a relation (h,r), we compute scores for all entities.
         [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
         Given a batch of head entities and relations => shape (size of batch,| Entities|)
@@ -389,7 +390,7 @@ class AConvQ(BaseKGE):
         return real_score + i_score + j_score + k_score
 
     def forward_k_vs_all(self, x: torch.Tensor):
-        """
+        r"""
         Given a head entity and a relation (h,r), we compute scores for all entities.
         [score(h,r,x)|x \in Entities] => [0.0,0.1,...,0.8], shape=> (1, |Entities|)
         Given a batch of head entities and relations => shape (size of batch,| Entities|)

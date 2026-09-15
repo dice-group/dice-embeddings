@@ -1,11 +1,8 @@
+
 import torch
 from torch import nn
 from torch.nn import functional as F
-import math
-import numpy as np
-import os
-import numpy as np
-from torch import tensor
+
 
 class DefaultBCELoss(nn.Module):
     def __init__(self):
@@ -97,8 +94,6 @@ class LabelRelaxationLoss(nn.Module):
         self.eps = 1e-14
 
     def forward(self, pred, target):
-        probs = torch.softmax(pred, dim=-1)
-
         pred = pred.softmax(dim=-1)
         pred = torch.clamp(pred, min=self.eps, max=1.0)
         # Construct credal set
@@ -127,8 +122,6 @@ class AdaptiveLabelRelaxationLoss(nn.Module):
         self.gz_threshold = 0.1
 
     def forward(self, pred, target):
-        probs = torch.softmax(pred, dim=-1)
-
         pred = pred.softmax(dim=-1)
         pred = torch.clamp(pred, min=self.eps, max=1.0)
 

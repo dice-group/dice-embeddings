@@ -11,6 +11,8 @@ on:
 jobs:
   docs:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     strategy:
       matrix:
         python-version: [ "3.11.14" ]
@@ -29,8 +31,15 @@ jobs:
         pip install -e .[docs] --extra-index-url https://download.pytorch.org/whl/cpu
     - name: Prepare required software
       run: |
+        # Docs do not need Chrome; its repository can have inconsistent indexes.
+        for source in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+          if [ -f "$source" ] && grep -qE 'https?://dl\.google\.com/linux/chrome(-stable)?/deb' "$source"; then
+            sudo rm -- "$source"
+          fi
+        done
         # epstopdf & dot & noto-fonts
-        sudo apt update && sudo apt install texlive-font-utils graphviz fonts-noto\
+        sudo apt-get update
+        sudo apt-get install --yes texlive-font-utils graphviz fonts-noto
 
     - name: Build docs
       run: |
@@ -41,7 +50,7 @@ jobs:
         sphinx-build -M latex docs/ docs/_build/
 
     - name: Compile LaTeX document
-      uses: docker://texlive/texlive:latest
+      uses: docker://texlive/texlive:TL2024-historic
       with:
         args: make -C docs/_build/latex
     - name: Copy Latex pdf to ./html
@@ -49,6 +58,7 @@ jobs:
         cp docs/_build/latex/diceembeddings.pdf docs/_build/html/
 
     - name: Deploy to GitHub Pages
+      if: github.event_name == 'push'
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}

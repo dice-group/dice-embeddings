@@ -6,6 +6,7 @@ epoch end, model saving, weight averaging, and evaluation.
 import copy
 import datetime
 import json
+import logging
 import math
 import os
 import time
@@ -14,14 +15,18 @@ from collections import defaultdict
 import numpy as np
 import pandas as pd
 import torch
-from pytorch_lightning.utilities import rank_zero_only
+from lightning.pytorch.utilities import rank_zero_only
 from torch._dynamo.eval_frame import OptimizedModule
 from torch.optim.lr_scheduler import LambdaLR
 
 import dicee.models.base_model
+
 from .abstracts import AbstractCallback
+from .evaluation._filtering import evaluation_tie_options
 from .evaluation.ensemble import evaluate_ensemble_link_prediction_performance
 from .static_funcs import save_checkpoint_model, save_pickle
+
+logger = logging.getLogger(__name__)
 
 
 class AccumulateEpochLossCallback(AbstractCallback):
@@ -47,6 +52,8 @@ class AccumulateEpochLossCallback(AbstractCallback):
 
 
 class PrintCallback(AbstractCallback):
+    """Callback that prints training start/end times and total runtime."""
+
     def __init__(self):
         super().__init__()
         self.start_time = time.time()
@@ -55,7 +62,7 @@ class PrintCallback(AbstractCallback):
         # print(pl_module)
         # print(pl_module.summarize())
         # print(pl_module.selected_optimizer)
-        print(f"\nTraining is starting {datetime.datetime.now()}...")
+        logger.info(f"Training is starting {datetime.datetime.now()}...")
 
     def on_fit_end(self, trainer, pl_module):
         training_time = time.time() - self.start_time
@@ -67,7 +74,7 @@ class PrintCallback(AbstractCallback):
             message = f'{training_time / (60 * 60):.3f} hours.'
         else:
             message = f'{training_time:.3f} seconds.'
-        print(f"Training Runtime: {message}\n")
+        logger.info(f"Training Runtime: {message}")
 
     def on_train_batch_end(self, *args, **kwargs):
         return
@@ -77,6 +84,20 @@ class PrintCallback(AbstractCallback):
 
 
 class KGESaveCallback(AbstractCallback):
+    """Callback that periodically saves model checkpoints during training.
+
+    Parameters
+    ----------
+    every_x_epoch : int or None
+        Save a checkpoint every *every_x_epoch* epochs.  When ``None``, the
+        interval defaults to ``max(max_epochs // 2, 1)``.
+    max_epochs : int
+        Total number of training epochs (used to compute the default
+        interval when *every_x_epoch* is ``None``).
+    path : str
+        Directory where checkpoint files will be written.
+    """
+
     def __init__(self, every_x_epoch: int, max_epochs: int, path: str):
         super().__init__()
         self.every_x_epoch = every_x_epoch
@@ -100,7 +121,7 @@ class KGESaveCallback(AbstractCallback):
 
     def on_epoch_end(self, model, trainer, **kwargs):
         if self.epoch_counter % self.every_x_epoch == 0 and self.epoch_counter > 1:
-            print(f'\nStoring model {self.epoch_counter}...')
+            logger.info(f'Storing model {self.epoch_counter}...')
             save_checkpoint_model(model,
                                   path=self.path + f'/model_at_{str(self.epoch_counter)}_'
                                                    f'epoch_{str(str(datetime.datetime.now()))}.pt')
@@ -108,6 +129,24 @@ class KGESaveCallback(AbstractCallback):
 
 
 class PseudoLabellingCallback(AbstractCallback):
+    """Callback that augments the training set with pseudo-labelled triples.
+
+    At the end of each epoch the current model scores a batch of unlabelled
+    triples and those with a predicted probability >= 0.90 are appended to
+    the training dataset (semi-supervised self-training).
+
+    Parameters
+    ----------
+    data_module : object
+        Dataset module exposing a ``train_set_idx`` attribute and a
+        ``train_dataloader()`` method.
+    kg : KG
+        The knowledge graph, providing ``num_entities``, ``num_relations``,
+        and ``unlabelled_set``.
+    batch_size : int
+        Number of unlabelled triples to sample and score each epoch.
+    """
+
     def __init__(self, data_module, kg, batch_size):
         super().__init__()
         self.data_module = data_module
@@ -143,7 +182,7 @@ class PseudoLabellingCallback(AbstractCallback):
                 (self.data_module.train_set_idx, selected_triples.detach().numpy()),
                 axis=0)
             trainer.train_dataloader = self.data_module.train_dataloader()
-            print(f'\tEpoch:{trainer.current_epoch}: Pseudo-labelling\t |D|= {len(self.data_module.train_set_idx)}')
+            logger.info(f'Epoch:{trainer.current_epoch}: Pseudo-labelling\t |D|= {len(self.data_module.train_set_idx)}')
         model.train()
 
 
@@ -487,7 +526,7 @@ class PeriodicEvalCallback(AbstractCallback):
             # Load ASWA weights and apply to a deepcopy of the model
             aswa_path = os.path.join(self.experiment_dir, "aswa.pt")
             aswa_ensemble_params = torch.load(aswa_path, map_location="cpu")
-            
+
             # Clone model and apply ASWA weights
             if isinstance(model, OptimizedModule):
                 eval_model = type(model._orig_mod)(model.args)
@@ -500,7 +539,7 @@ class PeriodicEvalCallback(AbstractCallback):
 
         eval_model.to('cpu')
         eval_model.eval()
-        
+
         report = trainer.evaluator.eval(dataset=trainer.dataset,
                 trained_model=eval_model,
                 form_of_labelling=trainer.form_of_labelling,
@@ -555,7 +594,7 @@ class LRScheduler(AbstractCallback):
         """
         # Validate and set defaults for configuration
         self._validate_and_set_config(adaptive_lr_config, eta_max)
-        
+
         self.total_epochs = total_epochs
         self.experiment_dir = experiment_dir
         self.snapshot_dir = os.path.join(experiment_dir, snapshot_dir)
@@ -596,18 +635,18 @@ class LRScheduler(AbstractCallback):
             "weighted_ensemble": True,
             "n_snapshots": 5
         }
-        
+
         # Validate config is a dictionary
         if not isinstance(config, dict):
             raise ValueError("adaptive_lr_config must be a dictionary")
-        
+
         # Validate scheduler_name
         if "scheduler_name" in config:
             valid_schedulers = ["cca", "mmcclr", "deferred_cca", "deferred_mmcclr"]
             if config["scheduler_name"] not in valid_schedulers:
                 raise ValueError(f"Invalid scheduler_name '{config['scheduler_name']}'. "
                                f"Must be one of: {valid_schedulers}")
-        
+
         # Validate lr_min
         if "lr_min" in config:
             lr_min = config["lr_min"]
@@ -615,25 +654,25 @@ class LRScheduler(AbstractCallback):
                 raise ValueError(f"lr_min must be a positive number, got: {lr_min}")
             if lr_min >= eta_max:
                 raise ValueError(f"lr_min ({lr_min}) must be less than eta_max ({eta_max})")
-        
+
         # Validate num_cycles
         if "num_cycles" in config:
             num_cycles = config["num_cycles"]
             if not isinstance(num_cycles, (int, float)) or num_cycles <= 0:
                 raise ValueError(f"num_cycles must be a positive number, got: {num_cycles}")
-        
+
         # Validate n_snapshots
         if "n_snapshots" in config:
             n_snapshots = config["n_snapshots"]
             if not isinstance(n_snapshots, int) or n_snapshots <= 0:
                 raise ValueError(f"n_snapshots must be a positive integer, got: {n_snapshots}")
-        
+
         # Validate weighted_ensemble
         if "weighted_ensemble" in config:
             weighted_ensemble = config["weighted_ensemble"]
             if not isinstance(weighted_ensemble, bool):
                 raise ValueError(f"weighted_ensemble must be a boolean, got: {weighted_ensemble}")
-        
+
         # Set attributes with defaults for missing values
         self.scheduler_name = config.get("scheduler_name", defaults["scheduler_name"]).lower()
         self.eta_min = config.get("lr_min", defaults["lr_min"])
@@ -644,9 +683,9 @@ class LRScheduler(AbstractCallback):
 
         assert self.n_snapshots <= self.n_cycles, \
             f"n_snapshots ({self.n_snapshots}) must be less than or equal to num_cycles ({self.n_cycles})"
-        
-        print(f"LRScheduler initialized with config: {config}")
-        print(f"Using: scheduler_name={self.scheduler_name}, eta_min={self.eta_min}, "
+
+        logger.info(f"LRScheduler initialized with config: {config}")
+        logger.info(f"Using: scheduler_name={self.scheduler_name}, eta_min={self.eta_min}, "
               f"n_cycles={self.n_cycles}, weighted_ensemble={self.weighted_ensemble}, "
               f"n_snapshots={self.n_snapshots}")
 
@@ -662,7 +701,7 @@ class LRScheduler(AbstractCallback):
                              f"Total steps: {self.total_steps}, n_cycles: {self.n_cycles}")
         assert self.total_steps > self.n_cycles, \
             f"Total steps ({self.total_steps}) must be greater than Total Cycles ({self.n_cycles})."
-        
+
         # Calculate warmup steps based on warmup epochs
         if self.warmup_epochs > 0:
             self.warmup_steps = int(self.warmup_epochs * self.batches_per_epoch)
@@ -671,7 +710,7 @@ class LRScheduler(AbstractCallback):
 
 
     def _get_lr_schedule(self):
-        
+
         def cosine_annealing(step):
             cycle_length = math.ceil(self.total_steps / self.n_cycles)
             cycle_step = step % cycle_length
@@ -707,7 +746,7 @@ class LRScheduler(AbstractCallback):
             raise ValueError(f"Unknown scheduler name: {self.scheduler_name}")
 
         return sched_map[self.scheduler_name]
-    
+
     def _calculate_snap_weights(self):
         """
         Calculate weights for model snapshots based on their loss values.
@@ -731,7 +770,7 @@ class LRScheduler(AbstractCallback):
             weights = raw_weights / raw_weights.sum()
         else:
             weights = np.ones_like(raw_weights) / len(raw_weights)
-        
+
         self.snapshot_weights = dict(zip(model_names, weights))
 
     def on_train_start(self, trainer, model):
@@ -741,7 +780,7 @@ class LRScheduler(AbstractCallback):
         self.scheduler = LambdaLR(trainer.optimizers[0], lr_lambda=self.lr_lambda)
         self.step_count = 0
 
-        print(f"Using learning rate scheduler: {self.scheduler_name}")
+        logger.info(f"Using learning rate scheduler: {self.scheduler_name}")
 
     def on_train_batch_end(self, trainer, model, outputs, batch, batch_idx):
         """Step the LR scheduler and save model snapshot if needed after each batch."""
@@ -769,12 +808,12 @@ class LRScheduler(AbstractCallback):
             # Skip snapshots during warmup
             if step < self.warmup_steps:
                 return False
-            
+
             # Take n_snapshots evenly distributed in the remaining steps after warmup
             remaining_steps = self.total_steps - self.warmup_steps
             snapshot_interval = remaining_steps // self.n_snapshots
             steps_after_warmup = step - self.warmup_steps
-            
+
             # Check if we're at a snapshot interval boundary
             return (steps_after_warmup + 1) % snapshot_interval == 0
         else:
@@ -799,15 +838,17 @@ class LRScheduler(AbstractCallback):
             self._calculate_snap_weights()
             # 2. Build the weight list aligned to snapshot_files order:
             self.ensemble_weights = [self.snapshot_weights[fname] for fname in snapshot_files]
-        
-        
+
+
         ensemble_eval_report = evaluate_ensemble_link_prediction_performance(
             models=self.model_snapshots,
             triples=trainer.dataset.test_set,
-            er_vocab=trainer.dataset.er_vocab.result(),
+            er_vocab=(trainer.dataset.er_vocab if isinstance(trainer.dataset.er_vocab, dict)
+                      else trainer.dataset.er_vocab.result()),
             weights=self.ensemble_weights,
             batch_size=trainer.num_training_batches,
-            weighted_averaging=self.weighted_ensemble
+            weighted_averaging=self.weighted_ensemble,
+            **evaluation_tie_options(model.args)
             )
         # Prepare a single dictionary with LR scheduling info and nested ensemble eval report
         self.ensemble_eval_report = {
@@ -831,4 +872,4 @@ class LRScheduler(AbstractCallback):
         # Write the dictionary to the JSON file
         with open(ensemble_eval_report_path, 'w', encoding='utf-8') as f:
             json.dump(self.ensemble_eval_report, f, indent=4, ensure_ascii=False)
-        print(f"Ensemble Evaluations: Evaluate {model.name} on Test Set with an ensemble of {len(self.model_snapshots)} models: \n{ensemble_eval_report}")
+        logger.info(f"Ensemble Evaluations: Evaluate {model.name} on Test Set with an ensemble of {len(self.model_snapshots)} models: \n{ensemble_eval_report}")

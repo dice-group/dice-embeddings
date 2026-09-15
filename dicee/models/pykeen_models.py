@@ -1,9 +1,14 @@
-import torch
-import torch.utils.data
-from .base_model import BaseKGE
+import logging
+import traceback
 from collections import namedtuple
 
-import traceback
+import torch
+import torch.utils.data
+
+from .base_model import BaseKGE
+
+logger = logging.getLogger(__name__)
+
 
 class PykeenKGE(BaseKGE):
     """ A class for using knowledge graph embedding models implemented in Pykeen
@@ -56,12 +61,12 @@ class PykeenKGE(BaseKGE):
         elif self.name == "RotatE":
             pass
         elif self.name == "TransD":
-            #TransD does not support a 'regularizer' 
+            #TransD does not support a 'regularizer'
             pass
         elif self.name == "TransE":
             self.model_kwargs["regularizer"] = None
         elif self.name == "TransF":
-            #TransF does not support a 'regularizer' 
+            #TransF does not support a 'regularizer'
             pass
         elif self.name == "TransH":
             self.model_kwargs["regularizer"] = None
@@ -69,14 +74,14 @@ class PykeenKGE(BaseKGE):
             #TransR does not support a 'regularizer'
             pass
         else:
-            print("Pykeen model have a memory leak caused by their implementation of regularizers")
-            print(f"{self.name} does not seem to have any regularizer")
+            logger.warning("Pykeen model have a memory leak caused by their implementation of regularizers")
+            logger.warning(f"{self.name} does not seem to have any regularizer")
         try:
             # lazy import
             from pykeen.models import model_resolver
         except ImportError:
-            print(traceback.format_exc())
-            print("Pykeen does not work with pytorch>2.0.0. Current pytorch version:",torch.__version__)
+            logger.error(traceback.format_exc())
+            logger.error(f"Pykeen does not work with pytorch>2.0.0. Current pytorch version:{torch.__version__}")
             exit(1)
         self.model = model_resolver. \
             make(self.name, self.model_kwargs, triples_factory=

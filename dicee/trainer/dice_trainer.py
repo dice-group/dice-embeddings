@@ -4,6 +4,7 @@ Provides the DICE_Trainer class which supports multiple training backends
 including PyTorch Lightning, DDP, and custom CPU/GPU trainers.
 """
 import copy
+import logging
 import os
 from typing import List, Optional, Tuple, Union
 
@@ -32,6 +33,10 @@ from ..models.ensemble import EnsembleKGE
 from .model_parallelism import TensorParallel
 from .torch_trainer import TorchTrainer
 from .torch_trainer_ddp import TorchDDPTrainer
+from .torch_trainer_fsdp import TorchFSDPTrainer
+
+logger = logging.getLogger(__name__)
+
 
 def load_term_mapping(file_path: str) -> polars.DataFrame:
     """Load term-to-index mapping from CSV file.
@@ -45,10 +50,46 @@ def load_term_mapping(file_path: str) -> polars.DataFrame:
     return polars.read_csv(f"{file_path}.csv")
 
 
+def _cuda_is_usable() -> bool:
+    """Return True only when CUDA can be fully initialised.
+
+    ``torch.cuda.device_count()`` does not trigger full CUDA runtime init,
+    so it may return >0 even when the runtime is in a broken/corrupted state
+    (e.g. after a kernel crash in a previous test).  Calling
+    ``get_device_name`` forces the actual init and lets us detect the bad
+    state before handing control to PyTorch Lightning.
+    """
+    try:
+        if torch.cuda.device_count() > 0:
+            torch.cuda.get_device_name(0)
+            return True
+    except Exception:
+        pass
+    return False
+
+
+def _disable_cuda_in_process() -> None:
+    """Patch ``torch.cuda.is_available`` to return ``False`` for this process.
+
+    Lightning's ``_collect_rng_states`` (called from ``isolate_rng``) checks
+    ``torch.cuda.is_available()`` and, when it returns ``True``, calls
+    ``torch.cuda.get_rng_state_all()``.  That triggers a full CUDA runtime
+    init which crashes if the runtime is already in a broken state.  Setting
+    ``accelerator="cpu"`` alone is not sufficient because Lightning still
+    collects CUDA RNG state regardless of the chosen accelerator.
+
+    This function is only called after ``_cuda_is_usable()`` has already
+    confirmed that the CUDA runtime cannot be initialised, so permanently
+    returning ``False`` from ``is_available`` is both safe and correct for
+    the lifetime of the current process.
+    """
+    torch.cuda.is_available = lambda: False  # type: ignore[assignment]
+
+
 def initialize_trainer(
     args,
     callbacks: List
-) -> Union[TorchTrainer, TensorParallel, TorchDDPTrainer, pl.Trainer]:
+) -> Union[TorchTrainer, TensorParallel, TorchDDPTrainer, TorchFSDPTrainer, pl.Trainer]:
     """Initialize the appropriate trainer based on configuration.
 
     Args:
@@ -61,23 +102,30 @@ def initialize_trainer(
     Raises:
         AssertionError: If trainer is None after initialization.
     """
-    trainer: Optional[Union[TorchTrainer, TensorParallel, TorchDDPTrainer, pl.Trainer]] = None
+    trainer: Optional[Union[TorchTrainer, TensorParallel, TorchDDPTrainer, TorchFSDPTrainer, pl.Trainer]] = None
     if args.trainer == 'torchCPUTrainer':
-        print('Initializing TorchTrainer CPU Trainer...', end='\t')
+        logger.info('Initializing TorchTrainer CPU Trainer...')
         trainer = TorchTrainer(args, callbacks=callbacks)
     elif args.trainer == 'TP':
-        print('Initializing TensorParallel...', end='\t')
+        logger.info('Initializing TensorParallel...')
         trainer= TensorParallel(args, callbacks=callbacks)
     elif args.trainer == 'torchDDP':
         assert torch.cuda.is_available()
-        print('Initializing TorchDDPTrainer GPU', end='\t')
+        logger.info('Initializing TorchDDPTrainer GPU')
         trainer = TorchDDPTrainer(args, callbacks=callbacks)
+    elif args.trainer == 'torchFSDP':
+        assert torch.cuda.is_available()
+        logger.info('Initializing TorchFSDPTrainer (row-wise sharded) GPU')
+        trainer = TorchFSDPTrainer(args, callbacks=callbacks)
     elif args.trainer == 'PL':
-        print('Initializing Pytorch-lightning Trainer', end='\t')
-        kwargs = vars(args)
+        logger.info('Initializing Pytorch-lightning Trainer')
+        kwargs = {**vars(args), **(getattr(args, "pl_trainer_kwargs", {}) or {})}
         # NOTE: PyTorch Lightning Trainer has many optional parameters
         # See: https://lightning.ai/docs/pytorch/stable/common/trainer.html
-        trainer = pl.Trainer(accelerator=kwargs.get("accelerator", "auto"),
+        # Fall back to CPU when CUDA is unavailable or its context is broken.
+        # _disable_cuda_in_process() was already called above when needed.
+        _default_accelerator = "cpu" if not torch.cuda.is_available() else "auto"
+        trainer = pl.Trainer(devices=kwargs.get("devices", 1 if args.model in ("ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation") else "auto"), accelerator=kwargs.get("accelerator", _default_accelerator),
                           strategy=kwargs.get("strategy", "auto"),
                           num_nodes=kwargs.get("num_nodes", 1),
                           precision=kwargs.get("precision", None),
@@ -91,7 +139,7 @@ def initialize_trainer(
                           detect_anomaly=False,
                           barebones=False)
     else:
-        print('Initializing TorchTrainer CPU Trainer...', end='\t')
+        logger.info('Initializing TorchTrainer CPU Trainer...')
         trainer = TorchTrainer(args, callbacks=callbacks)
     assert trainer is not None
     return trainer
@@ -114,7 +162,7 @@ def get_callbacks(args) -> List:
 
     # Weight averaging callbacks (mutually exclusive)
     if args.swa:
-        print(f"Starting Stochastic Weight Averaging (SWA) at Epoch: {args.swa_start_epoch}")
+        logger.info(f"Starting Stochastic Weight Averaging (SWA) at Epoch: {args.swa_start_epoch}")
         callbacks.append(SWA(
             swa_start_epoch=args.swa_start_epoch,
             lr_init=args.lr,
@@ -122,7 +170,7 @@ def get_callbacks(args) -> List:
             swa_c_epochs=args.swa_c_epochs
         ))
     elif args.swag:
-        print(f"Starting Stochastic Weight Averaging-Gaussian (SWA-G) at Epoch: {args.swa_start_epoch}")
+        logger.info(f"Starting Stochastic Weight Averaging-Gaussian (SWA-G) at Epoch: {args.swa_start_epoch}")
         callbacks.append(SWAG(
             swa_start_epoch=args.swa_start_epoch,
             lr_init=args.lr,
@@ -130,21 +178,21 @@ def get_callbacks(args) -> List:
             swa_c_epochs=args.swa_c_epochs
         ))
     elif args.ema:
-        print(f"Starting Exponential Moving Average (EMA) at Epoch: {args.swa_start_epoch}")
+        logger.info(f"Starting Exponential Moving Average (EMA) at Epoch: {args.swa_start_epoch}")
         callbacks.append(EMA(
             ema_start_epoch=args.swa_start_epoch,
             max_epochs=args.num_epochs,
             ema_c_epochs=args.swa_c_epochs
         ))
     elif args.twa:
-        print(f"Starting Trainable Weight Averaging at Epoch: {args.swa_start_epoch}")
+        logger.info(f"Starting Trainable Weight Averaging at Epoch: {args.swa_start_epoch}")
         callbacks.append(TWA(
             twa_start_epoch=args.swa_start_epoch,
             lr_init=args.lr,
             max_epochs=args.num_epochs,
             twa_c_epochs=args.swa_c_epochs
         ))
-    
+
     elif getattr(args, "amwa", False):
         print(f"Starting Adaptive Momentum Weight Averaging (AMWA) at Epoch: {getattr(args, 'amwa_start_epoch', 0)}")
         callbacks.append(AMWA(
@@ -158,7 +206,7 @@ def get_callbacks(args) -> List:
             beta_init=getattr(args, "amwa_beta_init", 1.0),
             beta_floor=getattr(args, "amwa_beta_floor", 1e-8),
         ))
-        
+
     elif args.adaptive_swa:
         callbacks.append(ASWA(num_epochs=args.num_epochs, path=args.full_storage_path))
     elif args.adaptive_lr:
@@ -225,11 +273,14 @@ class DICE_Trainer:
         # Required for CV.
         self.evaluator = evaluator
         self.form_of_labelling = None
-        print(f'# of CPUs:{os.cpu_count()} |'
-              f' # of GPUs:{torch.cuda.device_count()} |'
-              f' # of CPUs for dataloader:{self.args.num_core}')
+        logger.info(f'# of CPUs:{os.cpu_count()} |'
+                    f' # of GPUs:{torch.cuda.device_count()} |'
+                    f' # of CPUs for dataloader:{self.args.num_core}')
         for i in range(torch.cuda.device_count()):
-            print(torch.cuda.get_device_name(i))
+            try:
+                logger.info(torch.cuda.get_device_name(i))
+            except Exception as exc:
+                logger.warning(f'GPU {i}: <unable to query name — {exc}>')
 
     def continual_start(self,knowledge_graph):
         """
@@ -249,6 +300,7 @@ class DICE_Trainer:
 
         self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
         model, form_of_labelling = self.initialize_or_load_model()
+        self.prepare_graph_model(model, knowledge_graph)
         # TODO: Here we need to load memory pag
         self.trainer.evaluator = self.evaluator
         self.trainer.dataset = knowledge_graph
@@ -257,13 +309,13 @@ class DICE_Trainer:
         return model, form_of_labelling
 
     @timeit
-    def initialize_trainer(self, callbacks: List) -> pl.Trainer | TensorParallel | TorchTrainer | TorchDDPTrainer:
+    def initialize_trainer(self, callbacks: List) -> pl.Trainer | TensorParallel | TorchTrainer | TorchDDPTrainer | TorchFSDPTrainer:
         """ Initialize Trainer from input arguments """
         return initialize_trainer(self.args, callbacks)
 
     @timeit
     def initialize_or_load_model(self):
-        print('Initializing Model...', end='\t')
+        logger.info('Initializing Model...')
         model, form_of_labelling = select_model(vars(self.args), self.is_continual_training, self.storage_path)
         self.report['form_of_labelling'] = form_of_labelling
         assert form_of_labelling in ['EntityPrediction', 'RelationPrediction']
@@ -271,7 +323,7 @@ class DICE_Trainer:
 
     @timeit
     def init_dataloader(self, dataset: torch.utils.data.Dataset) -> torch.utils.data.DataLoader:
-        print('Initializing Dataloader...', end='\t')
+        logger.info('Initializing Dataloader...')
         # https://pytorch.org/docs/stable/data.html#multi-process-data-loading
         # https://github.com/pytorch/pytorch/issues/13246#issuecomment-905703662
         return torch.utils.data.DataLoader(dataset=dataset, batch_size=self.args.batch_size,
@@ -280,8 +332,9 @@ class DICE_Trainer:
 
     @timeit
     def init_dataset(self) -> torch.utils.data.Dataset:
-        print('Initializing Dataset...', end='\t')
+        logger.info('Initializing Dataset...')
         if isinstance(self.trainer.dataset,KG):
+            sort_train_set = self.args.trainer not in {"torchFSDP"}
             # Create a memory map of training dataset to reduce the memory usage
             path_memory_map=self.trainer.dataset.path_for_serialization + '/memory_map_train_set.npy'
             if not os.path.exists(path_memory_map):
@@ -306,10 +359,14 @@ class DICE_Trainer:
                                               relation_to_idx=self.trainer.dataset.relation_to_idx,
                                               form_of_labelling=self.trainer.form_of_labelling,
                                               scoring_technique=self.args.scoring_technique,
+                                              grouped_negative_sampling=getattr(self.args, "grouped_negative_sampling", False),
+                                              strict_negative_sampling=getattr(self.args, "strict_negative_sampling", False),
+                                              adversarial_temperature=getattr(self.args, "adversarial_temperature", None),
                                               neg_ratio=self.args.neg_ratio,
                                               label_smoothing_rate=self.args.label_smoothing_rate,
                                               byte_pair_encoding=self.args.byte_pair_encoding,
-                                              block_size=self.args.block_size)
+                                              block_size=self.args.block_size,
+                                              sort_train_set=sort_train_set)
         else:
             assert isinstance(self.trainer.dataset, np.memmap), ("Train dataset must be an instance of memmap. "
                                                                  f"Currently, {type(np.memmap)}!")
@@ -328,14 +385,51 @@ class DICE_Trainer:
                                               relation_to_idx=pd.read_csv(f"{path}/relation_to_idx.csv",index_col=0),
                                               form_of_labelling=self.trainer.form_of_labelling,
                                               scoring_technique=self.args.scoring_technique,
+                                              grouped_negative_sampling=getattr(self.args, "grouped_negative_sampling", False),
+                                              strict_negative_sampling=getattr(self.args, "strict_negative_sampling", False),
+                                              adversarial_temperature=getattr(self.args, "adversarial_temperature", None),
                                               neg_ratio=self.args.neg_ratio,
                                               label_smoothing_rate=self.args.label_smoothing_rate,
                                               byte_pair_encoding=self.args.byte_pair_encoding,
                                               block_size=self.args.block_size,
-                                              seed=self.args.random_seed)
+                                              seed=self.args.random_seed,
+                                              sort_train_set=self.args.trainer not in {"torchFSDP"})
 
 
         return train_dataset
+
+    def prepare_graph_model(self, model, knowledge_graph):
+        """Attach only training facts, preserving the indexed external vocabulary."""
+        from dicee.models.graph_model import GraphKGE
+        if not isinstance(model, GraphKGE):
+            return
+        raw_mapping: Union[dict, polars.DataFrame, pd.DataFrame, None]
+        if isinstance(knowledge_graph, KG):
+            triples = knowledge_graph.train_set
+            raw_mapping = knowledge_graph.relation_to_idx
+        else:
+            triples = knowledge_graph
+            raw_mapping = pd.read_csv(os.path.join(self.storage_path, "relation_to_idx.csv"), index_col=0)
+        if isinstance(raw_mapping, polars.DataFrame):
+            mapping = {row["relation"]: int(row["index"]) for row in raw_mapping.iter_rows(named=True)}
+        elif isinstance(raw_mapping, pd.DataFrame):
+            mapping = {name: int(idx) for idx, name in raw_mapping["relation"].items()}
+        elif raw_mapping is not None:
+            mapping = raw_mapping
+        else:
+            raise ValueError("Graph models require an indexed relation vocabulary")
+        # Reciprocal preprocessing appends the suffix; pair only names that
+        # actually have their base relation in this vocabulary.
+        inverse = {int(idx): int(mapping[name + "_inverse"]) for name, idx in mapping.items()
+                   if name + "_inverse" in mapping and not name.endswith("_inverse")
+                   and self.args.apply_reciprical_or_noise and self.args.eval_model is not None}
+        model.set_graph(triples, self.args.num_entities, self.args.num_relations, inverse)
+        checkpoint = getattr(self.args, f"{model.config_prefix}_checkpoint", None)
+        if checkpoint and not self.is_continual_training:
+            model.load_pretrained(checkpoint)
+
+    # Retain the original helper for downstream ULTRA callers.
+    prepare_ultra = prepare_graph_model
 
     def start(self, knowledge_graph: Union[KG,np.memmap]) -> Tuple[BaseKGE, str]:
         """
@@ -347,23 +441,29 @@ class DICE_Trainer:
         in DDP setup, we need to load the memory map of already read/index KG.
         """
         """ Train selected model via the selected training strategy """
-        print('------------------- Train -------------------')
+        logger.info('------------------- Train -------------------')
         assert isinstance(knowledge_graph, np.memmap) or isinstance(knowledge_graph, KG), \
             f"knowledge_graph must be an instance of KG or np.memmap. Currently {type(knowledge_graph)}"
         if self.args.num_folds_for_cv == 0:
-            self.trainer: Union[TensorParallel, TorchTrainer, TorchDDPTrainer, pl.Trainer]
+            self.trainer: Union[TensorParallel, TorchTrainer, TorchDDPTrainer, TorchFSDPTrainer, pl.Trainer]
             self.trainer = self.initialize_trainer(callbacks=get_callbacks(self.args))
             model, form_of_labelling = self.initialize_or_load_model()
+            self.prepare_graph_model(model, knowledge_graph)
             self.trainer.evaluator = self.evaluator
             self.trainer.dataset = knowledge_graph
             self.trainer.form_of_labelling = form_of_labelling
             # TODO: Later, maybe we should write a callback to save the models in disk
 
+            if self.args.num_epochs == 0:
+                model.eval()
+                return model, form_of_labelling
+
             if isinstance(self.trainer, TensorParallel):
                 assert isinstance(model, EnsembleKGE), type(model)
-
                 model = self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
                 assert isinstance(model,EnsembleKGE)
+            elif isinstance(self.trainer, TorchFSDPTrainer):
+                model = self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
             else:
                 self.trainer.fit(model, train_dataloaders=self.init_dataloader(self.init_dataset()))
 
@@ -387,7 +487,7 @@ class DICE_Trainer:
         :param dataset:
         :return: model
         """
-        print(f'{self.args.num_folds_for_cv}-fold cross-validation')
+        logger.info(f'{self.args.num_folds_for_cv}-fold cross-validation')
         # (1) Create Kfold data
         from sklearn.model_selection import KFold
         kf = KFold(n_splits=self.args.num_folds_for_cv, shuffle=True, random_state=1)
@@ -400,7 +500,7 @@ class DICE_Trainer:
             args = copy.copy(self.args)
             trainer = initialize_trainer(args, get_callbacks(args))
             model, form_of_labelling = select_model(vars(args), self.is_continual_training, self.storage_path)
-            print(f'{form_of_labelling} training starts: {model.name}')
+            logger.info(f'{form_of_labelling} training starts: {model.name}')
 
             train_set_for_i_th_fold, test_set_for_i_th_fold = dataset.train_set[train_index], dataset.train_set[
                 test_index]
@@ -420,8 +520,8 @@ class DICE_Trainer:
             eval_folds.append([res['MRR'], res['H@1'], res['H@3'], res['H@10']])
         eval_folds = pd.DataFrame(eval_folds, columns=['MRR', 'H@1', 'H@3', 'H@10'])
         self.evaluator.report = eval_folds.to_dict()
-        print(eval_folds)
-        print(eval_folds.describe())
+        logger.info(eval_folds)
+        logger.info(eval_folds.describe())
         # results = {'H@1': eval_folds['H@1'].mean(), 'H@3': eval_folds['H@3'].mean(), 'H@10': eval_folds['H@10'].mean(),
         #           'MRR': eval_folds['MRR'].mean()}
         # print(f'KFold Cross Validation Results: {results}')
