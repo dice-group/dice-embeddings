@@ -248,13 +248,14 @@ sample-based labelling.</p></li>
 
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.models.base_model.BaseKGELightning.loss_function">
-<span class="sig-name descname"><span class="pre">loss_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yhat_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGELightning.loss_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.loss_function" title="Link to this definition"></a></dt>
+<span class="sig-name descname"><span class="pre">loss_function</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yhat_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_batch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">torch.Tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">current_epoch</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">None</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">torch.Tensor</span></span></span><a class="reference internal" href="../../../../_modules/dicee/models/base_model.html#BaseKGELightning.loss_function"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.models.base_model.BaseKGELightning.loss_function" title="Link to this definition"></a></dt>
 <dd><p>Compute the loss between model predictions and targets.</p>
 <p>Delegates to <code class="docutils literal notranslate"><span class="pre">self.loss</span></code> which is configured in
 <code class="xref py py-class docutils literal notranslate"><span class="pre">BaseKGE.__init__</span></code> based on the scoring technique
 (<code class="docutils literal notranslate"><span class="pre">BCEWithLogitsLoss</span></code> for entity/relation prediction,
 <code class="docutils literal notranslate"><span class="pre">CrossEntropyLoss</span></code> for classification, <code class="docutils literal notranslate"><span class="pre">MarginRankingLoss</span></code>
-for <code class="docutils literal notranslate"><span class="pre">scoring_technique='NegSampleMargin'</span></code>).</p>
+for <code class="docutils literal notranslate"><span class="pre">scoring_technique='NegSampleMargin'</span></code>) or on <code class="docutils literal notranslate"><span class="pre">loss_fn</span></code>
+(one of the classes in <a class="reference internal" href="../../losses/custom_losses/index.html#module-dicee.losses.custom_losses" title="dicee.losses.custom_losses"><code class="xref py py-mod docutils literal notranslate"><span class="pre">dicee.losses.custom_losses</span></code></a>).</p>
 <p>For <code class="docutils literal notranslate"><span class="pre">NegSampleMargin</span></code>, <em>yhat_batch</em>/<em>y_batch</em> still arrive in the
 flat <code class="docutils literal notranslate"><span class="pre">NegSample</span></code> layout (positives first, followed by
 <code class="docutils literal notranslate"><span class="pre">neg_ratio</span></code> tiled blocks of negatives, row-aligned by triple).
@@ -266,11 +267,20 @@ sampling), <em>yhat_batch</em>/<em>y_batch</em> instead arrive as <code class="d
 <code class="xref py py-class docutils literal notranslate"><span class="pre">GroupedNegativeSamplingDataset</span></code>.
 This delegates to <a class="reference internal" href="../sampled_loss/index.html#dicee.models.sampled_loss.grouped_adversarial_bce" title="dicee.models.sampled_loss.grouped_adversarial_bce"><code class="xref py py-func docutils literal notranslate"><span class="pre">grouped_adversarial_bce()</span></code></a>
 instead of <code class="docutils literal notranslate"><span class="pre">self.loss</span></code>.</p>
+<p>Some <code class="docutils literal notranslate"><span class="pre">loss_fn</span></code> classes (e.g. <code class="docutils literal notranslate"><span class="pre">CombinedLSandLR</span></code>,
+<code class="docutils literal notranslate"><span class="pre">AdaptiveLabelSmoothingLoss</span></code>) declare a <code class="docutils literal notranslate"><span class="pre">current_epoch</span></code> parameter
+on their own <code class="docutils literal notranslate"><span class="pre">forward</span></code> to schedule their behavior over training.
+<code class="docutils literal notranslate"><span class="pre">self._loss_needs_epoch</span></code> (computed once in <code class="docutils literal notranslate"><span class="pre">BaseKGE.__init__</span></code> by
+inspecting <code class="docutils literal notranslate"><span class="pre">self.loss.forward</span></code>) says whether that argument should
+be forwarded to <code class="docutils literal notranslate"><span class="pre">self.loss</span></code> here.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
 <li><p><strong>yhat_batch</strong> (<em>torch.FloatTensor</em>) – Model output scores, shape <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">*)</span></code>.</p></li>
 <li><p><strong>y_batch</strong> (<em>torch.FloatTensor</em>) – Ground-truth labels of the same shape as <em>yhat_batch</em>.</p></li>
+<li><p><strong>current_epoch</strong> (<em>int</em><em>, </em><em>optional</em>) – Current training epoch, forwarded to <code class="docutils literal notranslate"><span class="pre">self.loss</span></code> only when it
+declares a <code class="docutils literal notranslate"><span class="pre">current_epoch</span></code> parameter. Callers that never use an
+epoch-aware <code class="docutils literal notranslate"><span class="pre">loss_fn</span></code> may omit this.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns<span class="colon">:</span></dt>

@@ -88,7 +88,8 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.models.base_model</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
+<span></span><span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">logging</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">cast</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">lightning</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pl</span>
@@ -132,6 +133,23 @@
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">training_step_outputs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Epoch counter for trainer backends that call training_step/loss_function</span>
+        <span class="c1"># directly instead of going through a real pl.Trainer (whose current_epoch</span>
+        <span class="c1"># property would otherwise stay 0). See _current_training_epoch().</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_native_current_epoch</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">_current_training_epoch</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Current training epoch, regardless of trainer backend.</span>
+
+<span class="sd">        Under the ``PL`` (Lightning) trainer this defers to the built-in</span>
+<span class="sd">        ``current_epoch`` property (backed by ``self.trainer``). Native</span>
+<span class="sd">        trainers that call ``training_step`` directly - currently</span>
+<span class="sd">        ``torchCPUTrainer`` - update ``_native_current_epoch`` themselves at</span>
+<span class="sd">        the start of each epoch instead.</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_trainer"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">current_epoch</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_native_current_epoch</span>
 
 <div class="viewcode-block" id="BaseKGELightning.mem_of_model">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGELightning.mem_of_model">[docs]</a>
@@ -179,7 +197,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">"Invalid batch received."</span><span class="p">)</span>
 
-        <span class="n">loss_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_function</span><span class="p">(</span><span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
+        <span class="n">loss_batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss_function</span><span class="p">(</span><span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">,</span> <span class="n">current_epoch</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_current_training_epoch</span><span class="p">())</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">training_step_outputs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss_batch</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
         <span class="c1"># Only log when using PyTorch Lightning trainer</span>
         <span class="c1"># Check private _trainer attribute to avoid RuntimeError from property getter</span>
@@ -196,14 +214,16 @@
 
 <div class="viewcode-block" id="BaseKGELightning.loss_function">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGELightning.loss_function">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">loss_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yhat_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">loss_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">yhat_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span>
+                      <span class="n">current_epoch</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">"""Compute the loss between model predictions and targets.</span>
 
 <span class="sd">        Delegates to ``self.loss`` which is configured in</span>
 <span class="sd">        :class:`BaseKGE.__init__` based on the scoring technique</span>
 <span class="sd">        (``BCEWithLogitsLoss`` for entity/relation prediction,</span>
 <span class="sd">        ``CrossEntropyLoss`` for classification, ``MarginRankingLoss``</span>
-<span class="sd">        for ``scoring_technique='NegSampleMargin'``).</span>
+<span class="sd">        for ``scoring_technique='NegSampleMargin'``) or on ``loss_fn``</span>
+<span class="sd">        (one of the classes in :mod:`dicee.losses.custom_losses`).</span>
 
 <span class="sd">        For ``NegSampleMargin``, *yhat_batch*/*y_batch* still arrive in the</span>
 <span class="sd">        flat ``NegSample`` layout (positives first, followed by</span>
@@ -218,12 +238,23 @@
 <span class="sd">        This delegates to :func:`~dicee.models.sampled_loss.grouped_adversarial_bce`</span>
 <span class="sd">        instead of ``self.loss``.</span>
 
+<span class="sd">        Some ``loss_fn`` classes (e.g. ``CombinedLSandLR``,</span>
+<span class="sd">        ``AdaptiveLabelSmoothingLoss``) declare a ``current_epoch`` parameter</span>
+<span class="sd">        on their own ``forward`` to schedule their behavior over training.</span>
+<span class="sd">        ``self._loss_needs_epoch`` (computed once in ``BaseKGE.__init__`` by</span>
+<span class="sd">        inspecting ``self.loss.forward``) says whether that argument should</span>
+<span class="sd">        be forwarded to ``self.loss`` here.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        yhat_batch : torch.FloatTensor</span>
 <span class="sd">            Model output scores, shape ``(batch_size, *)``.</span>
 <span class="sd">        y_batch : torch.FloatTensor</span>
 <span class="sd">            Ground-truth labels of the same shape as *yhat_batch*.</span>
+<span class="sd">        current_epoch : int, optional</span>
+<span class="sd">            Current training epoch, forwarded to ``self.loss`` only when it</span>
+<span class="sd">            declares a ``current_epoch`` parameter. Callers that never use an</span>
+<span class="sd">            epoch-aware ``loss_fn`` may omit this.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
@@ -242,6 +273,10 @@
         <span class="k">if</span> <span class="n">temperature</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">.sampled_loss</span><span class="w"> </span><span class="kn">import</span> <span class="n">grouped_adversarial_bce</span>
             <span class="k">return</span> <span class="n">grouped_adversarial_bce</span><span class="p">(</span><span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">,</span> <span class="n">temperature</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"_loss_needs_epoch"</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">current_epoch</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">current_epoch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_current_training_epoch</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">))</span></div>
 
 
@@ -450,6 +485,10 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">AggregatedLSandLR</span><span class="p">()</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"loss_fn"</span><span class="p">)</span> <span class="o">==</span> <span class="s2">"ACLS"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">loss</span> <span class="o">=</span> <span class="n">ACLS</span><span class="p">()</span>
+
+        <span class="c1"># Cache once whether self.loss.forward wants a current_epoch argument,</span>
+        <span class="c1"># so loss_function doesn't need to re-inspect it on every training step.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_loss_needs_epoch</span> <span class="o">=</span> <span class="s2">"current_epoch"</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="o">.</span><span class="n">forward</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span>
 
 <div class="viewcode-block" id="BaseKGE.init_entity_embeddings">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.models.base_model.BaseKGE.init_entity_embeddings">[docs]</a>

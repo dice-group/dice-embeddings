@@ -77,7 +77,7 @@ Module Contents
 
 
 
-   .. py:method:: loss_function(yhat_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor
+   .. py:method:: loss_function(yhat_batch: torch.Tensor, y_batch: torch.Tensor, current_epoch: Optional[int] = None) -> torch.Tensor
 
       Compute the loss between model predictions and targets.
 
@@ -85,7 +85,8 @@ Module Contents
       :class:`BaseKGE.__init__` based on the scoring technique
       (``BCEWithLogitsLoss`` for entity/relation prediction,
       ``CrossEntropyLoss`` for classification, ``MarginRankingLoss``
-      for ``scoring_technique='NegSampleMargin'``).
+      for ``scoring_technique='NegSampleMargin'``) or on ``loss_fn``
+      (one of the classes in :mod:`dicee.losses.custom_losses`).
 
       For ``NegSampleMargin``, *yhat_batch*/*y_batch* still arrive in the
       flat ``NegSample`` layout (positives first, followed by
@@ -100,10 +101,21 @@ Module Contents
       This delegates to :func:`~dicee.models.sampled_loss.grouped_adversarial_bce`
       instead of ``self.loss``.
 
+      Some ``loss_fn`` classes (e.g. ``CombinedLSandLR``,
+      ``AdaptiveLabelSmoothingLoss``) declare a ``current_epoch`` parameter
+      on their own ``forward`` to schedule their behavior over training.
+      ``self._loss_needs_epoch`` (computed once in ``BaseKGE.__init__`` by
+      inspecting ``self.loss.forward``) says whether that argument should
+      be forwarded to ``self.loss`` here.
+
       :param yhat_batch: Model output scores, shape ``(batch_size, *)``.
       :type yhat_batch: torch.FloatTensor
       :param y_batch: Ground-truth labels of the same shape as *yhat_batch*.
       :type y_batch: torch.FloatTensor
+      :param current_epoch: Current training epoch, forwarded to ``self.loss`` only when it
+                            declares a ``current_epoch`` parameter. Callers that never use an
+                            epoch-aware ``loss_fn`` may omit this.
+      :type current_epoch: int, optional
 
       :returns: Scalar loss value.
       :rtype: torch.FloatTensor

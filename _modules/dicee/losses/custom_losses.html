@@ -374,16 +374,14 @@
 <div class="viewcode-block" id="AggregatedLSandLR.forward">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.AggregatedLSandLR.forward">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">):</span>
-        <span class="n">final_loss</span> <span class="o">=</span> <span class="mi">0</span>
-
         <span class="n">Smoothing_criterion</span> <span class="o">=</span> <span class="n">LabelSmoothingLoss</span><span class="p">(</span><span class="n">smoothness_ratio</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">smoothness_ratio</span><span class="p">)</span>
-        <span class="n">Smoothing_loss</span> <span class="o">=</span> <span class="n">Smoothing_criterion</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">)</span>
+        <span class="n">Smoothing_loss</span> <span class="o">=</span> <span class="n">Smoothing_criterion</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
 
         <span class="n">Relaxation_criterion</span> <span class="o">=</span> <span class="n">LabelRelaxationLoss</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">)</span>
-        <span class="n">Relaxation_loss</span> <span class="o">=</span> <span class="n">Relaxation_criterion</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">)</span>
+        <span class="n">Relaxation_loss</span> <span class="o">=</span> <span class="n">Relaxation_criterion</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
 
         <span class="n">w</span> <span class="o">=</span> <span class="mf">0.4</span>
-        <span class="n">final_loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="n">Smoothing_loss</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="mi">1</span><span class="o">-</span> <span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">Relaxation_loss</span><span class="p">)</span>
+        <span class="n">final_loss</span> <span class="o">=</span> <span class="p">(</span><span class="n">w</span> <span class="o">*</span> <span class="n">Smoothing_loss</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="mi">1</span> <span class="o">-</span> <span class="n">w</span><span class="p">)</span> <span class="o">*</span> <span class="n">Relaxation_loss</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">final_loss</span></div>
 </div>
