@@ -2,6 +2,7 @@ import copy
 import json
 import math
 import os
+from typing import Any, Dict, List, Optional
 
 import torch
 import torch.nn as nn
@@ -64,10 +65,10 @@ class AMWA(AbstractCallback):
     def __init__(self,
                  amwa_start_epoch: int = 0,
                  amwa_c_epochs: int = 1,
-                 path: str = None,
+                 path: Optional[str] = None,
                  monitor: str = "MRR",
                  maximize: bool = True,
-                 beta: float = None,
+                 beta: Optional[float] = None,
                  beta_window: int = 10,
                  beta_init: float = 1.0,
                  beta_floor: float = 1e-8):
@@ -83,19 +84,19 @@ class AMWA(AbstractCallback):
         self.beta_floor = float(beta_floor)
 
         self.current_epoch = -1
-        self.initial_eval_setting = None
+        self.initial_eval_setting: Optional[str] = None
 
         # StableNet is stored as a CPU state_dict so AMWA does not reserve an
         # additional full model replica on the training device.
-        self.stable_state_dict = None
+        self.stable_state_dict: Optional[Dict[str, torch.Tensor]] = None
 
         # Diagnostics.
-        self.delta_history = []
-        self.momentum_history = []
-        self.beta_history = []
-        self.base_history = []
-        self.stable_history = []
-        self.history = []
+        self.delta_history: List[float] = []
+        self.momentum_history: List[float] = []
+        self.beta_history: List[float] = []
+        self.base_history: List[float] = []
+        self.stable_history: List[float] = []
+        self.history: List[Dict[str, Any]] = []
 
     @staticmethod
     def _state_dict_to_cpu(state_dict):

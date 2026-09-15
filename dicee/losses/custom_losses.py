@@ -195,14 +195,12 @@ class CombinedLSandLR(nn.Module):
         self.alpha = alpha
 
     def forward(self, pred, target, current_epoch):
-        final_loss = 0
+        criterion: nn.Module
         if current_epoch < 20:
             criterion = LabelSmoothingLoss(smoothness_ratio=self.smoothness_ratio)
-            final_loss = criterion(pred, target, current_epoch)
         else:
             criterion = LabelRelaxationLoss(alpha=self.alpha)
-            final_loss = criterion(pred, target, current_epoch)
-        return final_loss
+        return criterion(pred, target)
 
 
 class CombinedAdaptiveLSandAdaptiveLR(nn.Module):

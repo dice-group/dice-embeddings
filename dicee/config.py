@@ -231,7 +231,7 @@ class Namespace(argparse.Namespace):
         self.swa_c_epochs: int = 1
         """Number of epochs to average over for SWA, SWAG, EMA, TWA."""
 
-        self.loss_fn: str = None
+        self.loss_fn: Optional[str] = None
 
         self.label_relaxation_alpha: float = 0.1
 
@@ -250,7 +250,7 @@ class Namespace(argparse.Namespace):
         self.amwa_maximize: bool = True
         """Whether larger values of amwa_monitor are better."""
 
-        self.amwa_beta: float = None
+        self.amwa_beta: Optional[float] = None
         """Fixed beta for AMWA. If None, use adaptive beta_n."""
 
         self.amwa_beta_window: int = 10
