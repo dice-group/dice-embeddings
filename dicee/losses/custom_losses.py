@@ -226,16 +226,14 @@ class AggregatedLSandLR(nn.Module):
         self.alpha = alpha
 
     def forward(self, pred, target, current_epoch):
-        final_loss = 0
-
         Smoothing_criterion = LabelSmoothingLoss(smoothness_ratio=self.smoothness_ratio)
-        Smoothing_loss = Smoothing_criterion(pred, target, current_epoch)
+        Smoothing_loss = Smoothing_criterion(pred, target)
 
         Relaxation_criterion = LabelRelaxationLoss(alpha=self.alpha)
-        Relaxation_loss = Relaxation_criterion(pred, target, current_epoch)
+        Relaxation_loss = Relaxation_criterion(pred, target)
 
         w = 0.4
-        final_loss = (w * Smoothing_loss) + ((1- w) * Relaxation_loss)
+        final_loss = (w * Smoothing_loss) + ((1 - w) * Relaxation_loss)
 
         return final_loss
 

@@ -1,3 +1,4 @@
+import inspect
 import logging
 from typing import Any, Dict, List, Optional, Tuple, Union, cast
 
@@ -40,6 +41,23 @@ class BaseKGELightning(pl.LightningModule):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.training_step_outputs = []
+        # Epoch counter for trainer backends that call training_step/loss_function
+        # directly instead of going through a real pl.Trainer (whose current_epoch
+        # property would otherwise stay 0). See _current_training_epoch().
+        self._native_current_epoch = 0
+
+    def _current_training_epoch(self) -> int:
+        """Current training epoch, regardless of trainer backend.
+
+        Under the ``PL`` (Lightning) trainer this defers to the built-in
+        ``current_epoch`` property (backed by ``self.trainer``). Native
+        trainers that call ``training_step`` directly - currently
+        ``torchCPUTrainer`` - update ``_native_current_epoch`` themselves at
+        the start of each epoch instead.
+        """
+        if getattr(self, "_trainer", None) is not None:
+            return self.current_epoch
+        return self._native_current_epoch
 
     def mem_of_model(self) -> Dict:
         """ Size of model in MB and number of params"""
@@ -82,7 +100,7 @@ class BaseKGELightning(pl.LightningModule):
         else:
             raise RuntimeError("Invalid batch received.")
 
-        loss_batch = self.loss_function(yhat_batch, y_batch)
+        loss_batch = self.loss_function(yhat_batch, y_batch, current_epoch=self._current_training_epoch())
         self.training_step_outputs.append(loss_batch.item())
         # Only log when using PyTorch Lightning trainer
         # Check private _trainer attribute to avoid RuntimeError from property getter
@@ -96,14 +114,16 @@ class BaseKGELightning(pl.LightningModule):
                      logger=False)
         return loss_batch
 
-    def loss_function(self, yhat_batch: torch.Tensor, y_batch: torch.Tensor) -> torch.Tensor:
+    def loss_function(self, yhat_batch: torch.Tensor, y_batch: torch.Tensor,
+                      current_epoch: Optional[int] = None) -> torch.Tensor:
         """Compute the loss between model predictions and targets.
 
         Delegates to ``self.loss`` which is configured in
         :class:`BaseKGE.__init__` based on the scoring technique
         (``BCEWithLogitsLoss`` for entity/relation prediction,
         ``CrossEntropyLoss`` for classification, ``MarginRankingLoss``
-        for ``scoring_technique='NegSampleMargin'``).
+        for ``scoring_technique='NegSampleMargin'``) or on ``loss_fn``
+        (one of the classes in :mod:`dicee.losses.custom_losses`).
 
         For ``NegSampleMargin``, *yhat_batch*/*y_batch* still arrive in the
         flat ``NegSample`` layout (positives first, followed by
@@ -118,12 +138,23 @@ class BaseKGELightning(pl.LightningModule):
         This delegates to :func:`~dicee.models.sampled_loss.grouped_adversarial_bce`
         instead of ``self.loss``.
 
+        Some ``loss_fn`` classes (e.g. ``CombinedLSandLR``,
+        ``AdaptiveLabelSmoothingLoss``) declare a ``current_epoch`` parameter
+        on their own ``forward`` to schedule their behavior over training.
+        ``self._loss_needs_epoch`` (computed once in ``BaseKGE.__init__`` by
+        inspecting ``self.loss.forward``) says whether that argument should
+        be forwarded to ``self.loss`` here.
+
         Parameters
         ----------
         yhat_batch : torch.FloatTensor
             Model output scores, shape ``(batch_size, *)``.
         y_batch : torch.FloatTensor
             Ground-truth labels of the same shape as *yhat_batch*.
+        current_epoch : int, optional
+            Current training epoch, forwarded to ``self.loss`` only when it
+            declares a ``current_epoch`` parameter. Callers that never use an
+            epoch-aware ``loss_fn`` may omit this.
 
         Returns
         -------
@@ -142,6 +173,10 @@ class BaseKGELightning(pl.LightningModule):
         if temperature is not None:
             from .sampled_loss import grouped_adversarial_bce
             return grouped_adversarial_bce(yhat_batch, y_batch, temperature)
+        if getattr(self, "_loss_needs_epoch", False):
+            if current_epoch is None:
+                current_epoch = self._current_training_epoch()
+            return cast(torch.Tensor, self.loss(yhat_batch, y_batch, current_epoch))
         return cast(torch.Tensor, self.loss(yhat_batch, y_batch))
 
     def on_train_epoch_end(self, *args, **kwargs):
@@ -325,6 +360,10 @@ class BaseKGE(BaseKGELightning):
             self.loss = AggregatedLSandLR()
         if self.args.get("loss_fn") == "ACLS":
             self.loss = ACLS()
+
+        # Cache once whether self.loss.forward wants a current_epoch argument,
+        # so loss_function doesn't need to re-inspect it on every training step.
+        self._loss_needs_epoch = "current_epoch" in inspect.signature(self.loss.forward).parameters
 
     def init_entity_embeddings(self, embedding_dim: Optional[int] = None) -> None:
         """Create (or re-create) the entity embedding table.

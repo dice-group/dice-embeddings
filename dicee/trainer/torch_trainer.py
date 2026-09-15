@@ -116,6 +116,11 @@ class TorchTrainer(AbstractTrainer):
               f'| EpochBatchsize:{len(train_dataloaders)}')
 
         for epoch in (tqdm_bar := tqdm(range(self.attributes.max_epochs))):
+            # Native trainer: model.training_step() is called directly, so
+            # model.current_epoch (a pl.LightningModule property backed by
+            # model.trainer) never updates on its own. Keep the model's own
+            # epoch counter in sync for epoch-aware loss_fn classes.
+            self.model._native_current_epoch = epoch
             self.on_train_epoch_start(self, self.model)
             epoch_loss = 0
             i = 0
