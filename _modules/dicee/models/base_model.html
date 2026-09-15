@@ -211,6 +211,13 @@
 <span class="sd">        This method splits that flat batch into positive/negative score</span>
 <span class="sd">        pairs before delegating to ``MarginRankingLoss``.</span>
 
+<span class="sd">        When ``adversarial_temperature`` is set (grouped/strict negative</span>
+<span class="sd">        sampling), *yhat_batch*/*y_batch* instead arrive as ``(batch,</span>
+<span class="sd">        1 + neg_ratio)`` groups with the positive in column 0, produced by</span>
+<span class="sd">        :class:`~dicee.dataset_classes._negative_sampling.GroupedNegativeSamplingDataset`.</span>
+<span class="sd">        This delegates to :func:`~dicee.models.sampled_loss.grouped_adversarial_bce`</span>
+<span class="sd">        instead of ``self.loss``.</span>
+
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        yhat_batch : torch.FloatTensor</span>
@@ -230,8 +237,7 @@
             <span class="n">neg_ratio</span> <span class="o">=</span> <span class="n">neg_scores</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">//</span> <span class="n">pos_scores</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>
             <span class="n">pos_scores</span> <span class="o">=</span> <span class="n">pos_scores</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">neg_ratio</span><span class="p">)</span>
             <span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">pos_scores</span><span class="p">)</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">pos_scores</span><span class="p">,</span> <span class="n">neg_scores</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">yhat_batch</span><span class="p">,</span> <span class="n">y_batch</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">cast</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">pos_scores</span><span class="p">,</span> <span class="n">neg_scores</span><span class="p">,</span> <span class="n">target</span><span class="p">))</span>
         <span class="n">temperature</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"adversarial_temperature"</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">temperature</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">.sampled_loss</span><span class="w"> </span><span class="kn">import</span> <span class="n">grouped_adversarial_bce</span>

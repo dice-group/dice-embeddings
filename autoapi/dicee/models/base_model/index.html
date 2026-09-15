@@ -260,6 +260,12 @@ flat <code class="docutils literal notranslate"><span class="pre">NegSample</spa
 <code class="docutils literal notranslate"><span class="pre">neg_ratio</span></code> tiled blocks of negatives, row-aligned by triple).
 This method splits that flat batch into positive/negative score
 pairs before delegating to <code class="docutils literal notranslate"><span class="pre">MarginRankingLoss</span></code>.</p>
+<p>When <code class="docutils literal notranslate"><span class="pre">adversarial_temperature</span></code> is set (grouped/strict negative
+sampling), <em>yhat_batch</em>/<em>y_batch</em> instead arrive as <code class="docutils literal notranslate"><span class="pre">(batch,</span>
+<span class="pre">1</span> <span class="pre">+</span> <span class="pre">neg_ratio)</span></code> groups with the positive in column 0, produced by
+<code class="xref py py-class docutils literal notranslate"><span class="pre">GroupedNegativeSamplingDataset</span></code>.
+This delegates to <a class="reference internal" href="../sampled_loss/index.html#dicee.models.sampled_loss.grouped_adversarial_bce" title="dicee.models.sampled_loss.grouped_adversarial_bce"><code class="xref py py-func docutils literal notranslate"><span class="pre">grouped_adversarial_bce()</span></code></a>
+instead of <code class="docutils literal notranslate"><span class="pre">self.loss</span></code>.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
