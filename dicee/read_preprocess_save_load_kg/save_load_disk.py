@@ -26,8 +26,12 @@ class LoadSaveToDisk:
         if self.kg.byte_pair_encoding:
             save_numpy_ndarray(data=self.kg.train_set, file_path=self.kg.path_for_serialization + '/train_set.npy')
             logger.warning("NO SAVING for BPE at save_load_disk.py")
-            save_pickle(data=self.kg.ordered_bpe_entities, file_path=self.kg.path_for_serialization + '/ordered_bpe_entities.p')
-            save_pickle(data=self.kg.ordered_bpe_relations, file_path=self.kg.path_for_serialization + '/ordered_bpe_relations.p')
+            # ordered_bpe_entities/relations are only computed by the padded BPE
+            # preprocessing path (see preprocess.py); models like BytE that use
+            # the non-padded path (padding=False) never set them.
+            if hasattr(self.kg, 'ordered_bpe_entities') and hasattr(self.kg, 'ordered_bpe_relations'):
+                save_pickle(data=self.kg.ordered_bpe_entities, file_path=self.kg.path_for_serialization + '/ordered_bpe_entities.p')
+                save_pickle(data=self.kg.ordered_bpe_relations, file_path=self.kg.path_for_serialization + '/ordered_bpe_relations.p')
         else:
             assert isinstance(self.kg.train_set, np.ndarray)
             # (1) Save dictionary mappings into disk

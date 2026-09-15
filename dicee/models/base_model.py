@@ -89,7 +89,14 @@ class BaseKGELightning(pl.LightningModule):
         Delegates to ``self.loss`` which is configured in
         :class:`BaseKGE.__init__` based on the scoring technique
         (``BCEWithLogitsLoss`` for entity/relation prediction,
-        ``CrossEntropyLoss`` for classification).
+        ``CrossEntropyLoss`` for classification, ``MarginRankingLoss``
+        for ``scoring_technique='NegSampleMargin'``).
+
+        For ``NegSampleMargin``, *yhat_batch*/*y_batch* still arrive in the
+        flat ``NegSample`` layout (positives first, followed by
+        ``neg_ratio`` tiled blocks of negatives, row-aligned by triple).
+        This method splits that flat batch into positive/negative score
+        pairs before delegating to ``MarginRankingLoss``.
 
         Parameters
         ----------
@@ -103,6 +110,15 @@ class BaseKGELightning(pl.LightningModule):
         torch.FloatTensor
             Scalar loss value.
         """
+        if self.args.get("scoring_technique") == "NegSampleMargin":
+            pos_mask = y_batch >= 0.5
+            pos_scores = yhat_batch[pos_mask]
+            neg_scores = yhat_batch[~pos_mask]
+            neg_ratio = neg_scores.numel() // pos_scores.numel()
+            pos_scores = pos_scores.repeat(neg_ratio)
+            target = torch.ones_like(pos_scores)
+            return self.loss(pos_scores, neg_scores, target)
+        return self.loss(yhat_batch, y_batch)
         temperature = self.args.get("adversarial_temperature")
         if temperature is not None:
             from .sampled_loss import grouped_adversarial_bce
@@ -228,7 +244,10 @@ class BaseKGE(BaseKGELightning):
         self.kernel_size = None
         self.num_of_output_channels = None
         self.weight_decay = None
-        self.loss = torch.nn.BCEWithLogitsLoss()
+        if args.get("scoring_technique") == "NegSampleMargin":
+            self.loss = torch.nn.MarginRankingLoss(margin=args.get("margin", 4.0))
+        else:
+            self.loss = torch.nn.BCEWithLogitsLoss()
         self.selected_optimizer = None
         self.normalizer_class = None
         self.normalize_head_entity_embeddings = IdentityClass()
