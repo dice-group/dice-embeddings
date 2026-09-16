@@ -28,7 +28,7 @@ Module Contents
 
 .. py:data:: logger
 
-.. py:function:: is_sparql_endpoint_alive(sparql_endpoint: str = None)
+.. py:function:: is_sparql_endpoint_alive(sparql_endpoint: Optional[str] = None)
 
 .. py:function:: validate_knowledge_graph(args)
 

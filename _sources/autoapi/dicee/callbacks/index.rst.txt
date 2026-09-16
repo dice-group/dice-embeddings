@@ -250,7 +250,7 @@ Module Contents
 
 .. py:function:: compute_convergence(seq, i)
 
-.. py:class:: Eval(path, epoch_ratio: int = None)
+.. py:class:: Eval(path, epoch_ratio: Optional[int] = None)
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
@@ -377,7 +377,7 @@ Module Contents
 
 
 
-.. py:class:: Perturb(level: str = 'input', ratio: float = 0.0, method: str = None, scaler: float = None, frequency=None)
+.. py:class:: Perturb(level: str = 'input', ratio: float = 0.0, method: Optional[str] = None, scaler: Optional[float] = None, frequency=None)
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
@@ -425,7 +425,7 @@ Module Contents
 
 
 
-.. py:class:: PeriodicEvalCallback(experiment_path: str, max_epochs: int, eval_every_n_epoch: int = 0, eval_at_epochs: list = None, save_model_every_n_epoch: bool = True, n_epochs_eval_model: str = 'val_test')
+.. py:class:: PeriodicEvalCallback(experiment_path: str, max_epochs: int, eval_every_n_epoch: int = 0, eval_at_epochs: Optional[list] = None, save_model_every_n_epoch: bool = True, n_epochs_eval_model: str = 'val_test')
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 

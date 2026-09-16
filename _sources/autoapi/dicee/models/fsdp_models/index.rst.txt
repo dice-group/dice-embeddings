@@ -99,7 +99,7 @@ Module Contents
    3. gather_entity_embeddings_on_rank_zero() — called by trainer after last epoch
 
 
-   .. py:method:: setup_fsdp_training(device: torch.device, lr: float, optimizer_cls=None, optimizer_kwargs: dict = None, adam_device: torch.device = None) -> None
+   .. py:method:: setup_fsdp_training(device: torch.device, lr: float, optimizer_cls=None, optimizer_kwargs: Optional[dict] = None, adam_device: Optional[torch.device] = None) -> None
 
       Create the per-rank embedding shard and its local sparse Adam.
 

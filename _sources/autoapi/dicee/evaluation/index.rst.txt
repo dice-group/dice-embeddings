@@ -470,7 +470,7 @@ Package Contents
    :raises ValueError: If batch_size is not provided.
 
 
-.. py:function:: evaluate_literal_prediction(kge_model, eval_file_path: str = None, store_lit_preds: bool = True, eval_literals: bool = True, loader_backend: str = 'pandas', return_attr_error_metrics: bool = False) -> Optional[pandas.DataFrame]
+.. py:function:: evaluate_literal_prediction(kge_model, eval_file_path: Optional[str] = None, store_lit_preds: bool = True, eval_literals: bool = True, loader_backend: str = 'pandas', return_attr_error_metrics: bool = False) -> Optional[pandas.DataFrame]
 
    Evaluate trained literal prediction model on a test file.
 

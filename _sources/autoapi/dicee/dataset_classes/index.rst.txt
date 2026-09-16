@@ -178,7 +178,7 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: int = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: int = None, seed: int = None, sort_train_set: bool = True, grouped_negative_sampling: bool = False, strict_negative_sampling: bool = False, adversarial_temperature: float | None = None) -> torch.utils.data.Dataset
+.. py:function:: construct_dataset(*, train_set: Union[numpy.ndarray, list], valid_set=None, test_set=None, ordered_bpe_entities=None, train_target_indices=None, target_dim: Optional[int] = None, entity_to_idx: dict, relation_to_idx: dict, form_of_labelling: str, scoring_technique: str, neg_ratio: int, label_smoothing_rate: float, byte_pair_encoding=None, block_size: Optional[int] = None, seed: Optional[int] = None, sort_train_set: bool = True, grouped_negative_sampling: bool = False, strict_negative_sampling: bool = False, adversarial_temperature: float | None = None) -> torch.utils.data.Dataset
 
    Build the appropriate dataset for the given training configuration.
 
@@ -439,7 +439,7 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:class:: LiteralDataset(file_path: str, ent_idx: dict = None, normalization_type: str = 'z-norm', sampling_ratio: float = None, loader_backend: str = 'pandas')
+.. py:class:: LiteralDataset(file_path: str, ent_idx: Optional[dict] = None, normalization_type: str = 'z-norm', sampling_ratio: Optional[float] = None, loader_backend: str = 'pandas')
 
    Bases: :py:obj:`torch.utils.data.Dataset`
 
@@ -497,7 +497,7 @@ Package Contents
    .. py:method:: __len__()
 
 
-   .. py:method:: load_and_validate_literal_data(file_path: str = None, loader_backend: str = 'pandas') -> pandas.DataFrame
+   .. py:method:: load_and_validate_literal_data(file_path: Optional[str] = None, loader_backend: str = 'pandas') -> pandas.DataFrame
       :staticmethod:
 
 
@@ -532,7 +532,7 @@ Package Contents
 
 
 
-.. py:class:: FixedNegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0, seed: int = None)
+.. py:class:: FixedNegSampleDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0, seed: Optional[int] = None)
 
    Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 
@@ -597,7 +597,7 @@ Package Contents
    .. py:method:: __getitem__(idx: int) -> Tuple[torch.Tensor, torch.Tensor]
 
 
-.. py:class:: OnevsSample(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = None, label_smoothing_rate: float = 0.0)
+.. py:class:: OnevsSample(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: Optional[int] = None, label_smoothing_rate: float = 0.0)
 
    Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 
@@ -648,7 +648,7 @@ Package Contents
    .. py:method:: __getitem__(idx)
 
 
-.. py:class:: TriplePredictionDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0, seed: int = None, sort_train_set: bool = True)
+.. py:class:: TriplePredictionDataset(train_set: numpy.ndarray, num_entities: int, num_relations: int, neg_sample_ratio: int = 1, label_smoothing_rate: float = 0.0, seed: Optional[int] = None, sort_train_set: bool = True)
 
    Bases: :py:obj:`dicee.dataset_classes._storage.WorkerDataset`
 

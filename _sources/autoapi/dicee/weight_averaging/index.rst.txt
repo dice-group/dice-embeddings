@@ -262,7 +262,7 @@ Module Contents
 
 
 
-.. py:class:: SWA(swa_start_epoch, swa_c_epochs: int = 1, lr_init: float = 0.1, swa_lr: float = 0.05, max_epochs: int = None)
+.. py:class:: SWA(swa_start_epoch, swa_c_epochs: int = 1, lr_init: float = 0.1, swa_lr: float = 0.05, max_epochs: Optional[int] = None)
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
@@ -354,7 +354,7 @@ Module Contents
 
 
 
-.. py:class:: SWAG(swa_start_epoch, swa_c_epochs: int = 1, lr_init: float = 0.1, swa_lr: float = 0.05, max_epochs: int = None, max_num_models: int = 20, var_clamp: float = 1e-30)
+.. py:class:: SWAG(swa_start_epoch, swa_c_epochs: int = 1, lr_init: float = 0.1, swa_lr: float = 0.05, max_epochs: Optional[int] = None, max_num_models: int = 20, var_clamp: float = 1e-30)
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
@@ -480,7 +480,7 @@ Module Contents
 
 
 
-.. py:class:: EMA(ema_start_epoch: int, decay: float = 0.999, max_epochs: int = None, ema_c_epochs: int = 1)
+.. py:class:: EMA(ema_start_epoch: int, decay: float = 0.999, max_epochs: Optional[int] = None, ema_c_epochs: int = 1)
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 
@@ -556,7 +556,7 @@ Module Contents
 
 
 
-.. py:class:: TWA(twa_start_epoch: int, lr_init: float, num_samples: int = 5, reg_lambda: float = 0.0, max_epochs: int = None, twa_c_epochs: int = 1)
+.. py:class:: TWA(twa_start_epoch: int, lr_init: float, num_samples: int = 5, reg_lambda: float = 0.0, max_epochs: Optional[int] = None, twa_c_epochs: int = 1)
 
    Bases: :py:obj:`dicee.abstracts.AbstractCallback`
 

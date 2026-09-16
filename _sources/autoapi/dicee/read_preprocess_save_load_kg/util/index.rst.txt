@@ -124,24 +124,24 @@ Module Contents
        A DataFrame with the 'subject', 'relation', and 'object' columns replaced by their corresponding indices.
 
 
-.. py:function:: apply_reciprocal_or_noise(add_reciprocal: bool, eval_model: str, df: object = None, info: str = None)
+.. py:function:: apply_reciprocal_or_noise(add_reciprocal: bool, eval_model: str, df: Optional[object] = None, info: Optional[str] = None)
 
    Add reciprocal triples if conditions are met
 
 
 .. py:function:: timeit(func)
 
-.. py:function:: read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator: str = None) -> polars.DataFrame
+.. py:function:: read_with_polars(data_path, read_only_few: Optional[int] = None, sample_triples_ratio: Optional[float] = None, separator: Optional[str] = None) -> polars.DataFrame
 
    Load and Preprocess via Polars
 
 
-.. py:function:: read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator: str = None)
+.. py:function:: read_with_pandas(data_path, read_only_few: Optional[int] = None, sample_triples_ratio: Optional[float] = None, separator: Optional[str] = None)
 
    Load and Preprocess via Pandas
 
 
-.. py:function:: read_from_disk(data_path: str, read_only_few: int = None, sample_triples_ratio: float = None, backend: str = None, separator: str = None) -> Tuple[polars.DataFrame, pandas.DataFrame]
+.. py:function:: read_from_disk(data_path: str, read_only_few: Optional[int] = None, sample_triples_ratio: Optional[float] = None, backend: Optional[str] = None, separator: Optional[str] = None) -> Tuple[polars.DataFrame, pandas.DataFrame]
 
 .. py:function:: count_triples(endpoint: str) -> int
 
@@ -158,7 +158,7 @@ Module Contents
    Main function to read all triples in parallel, save as Parquet, and load into Polars dataframe.
 
 
-.. py:function:: read_from_triple_store_with_pandas(endpoint: str = None)
+.. py:function:: read_from_triple_store_with_pandas(endpoint: Optional[str] = None)
 
    Read triples from triple store into pandas dataframe
 
@@ -171,13 +171,13 @@ Module Contents
    checkpoints and evaluation APIs remain compatible.
 
 
-.. py:function:: get_er_vocab(data, file_path: str = None)
+.. py:function:: get_er_vocab(data, file_path: Optional[str] = None)
 
-.. py:function:: get_re_vocab(data, file_path: str = None)
+.. py:function:: get_re_vocab(data, file_path: Optional[str] = None)
 
-.. py:function:: get_ee_vocab(data, file_path: str = None)
+.. py:function:: get_ee_vocab(data, file_path: Optional[str] = None)
 
-.. py:function:: create_constraints(triples, file_path: str = None)
+.. py:function:: create_constraints(triples, file_path: Optional[str] = None)
 
    (1) Extract domains and ranges of relations
    (2) Store a mapping from relations to entities that are outside of the domain and range.

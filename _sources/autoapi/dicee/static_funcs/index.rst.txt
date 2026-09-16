@@ -155,7 +155,7 @@ Module Contents
    :returns: Dictionary or Polars DataFrame containing the mapping.
 
 
-.. py:function:: select_model(args: dict, is_continual_training: bool = None, storage_path: str = None)
+.. py:function:: select_model(args: dict, is_continual_training: bool, storage_path: str)
 
 .. py:function:: load_model(path_of_experiment_folder: str, model_name='model.pt', verbose=0) -> Tuple[object, Tuple[dict, dict]]
 
@@ -187,7 +187,7 @@ Module Contents
    Store Pytorch model into disk
 
 
-.. py:function:: store(trained_model, model_name: str = 'model', full_storage_path: str = None, save_embeddings_as_csv=False) -> None
+.. py:function:: store(trained_model, full_storage_path: str, model_name: str = 'model', save_embeddings_as_csv=False) -> None
 
 .. py:function:: add_noisy_triples(train_set: pandas.DataFrame, add_noise_rate: float) -> pandas.DataFrame
 

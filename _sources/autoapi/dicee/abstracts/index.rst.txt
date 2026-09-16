@@ -127,7 +127,7 @@ Module Contents
 
 
 
-.. py:class:: BaseInteractiveKGE(path: str = None, url: str = None, construct_ensemble: bool = False, model_name: str = None, apply_semantic_constraint: bool = False)
+.. py:class:: BaseInteractiveKGE(path: Optional[str] = None, url: Optional[str] = None, construct_ensemble: bool = False, model_name: Optional[str] = None, apply_semantic_constraint: bool = False)
 
    Base class for interactive, post-training use of KGE models.
 
@@ -232,7 +232,7 @@ Module Contents
 
 
 
-   .. py:method:: is_seen(entity: str = None, relation: str = None) -> bool
+   .. py:method:: is_seen(entity: Optional[str] = None, relation: Optional[str] = None) -> bool
 
       Check whether an entity or relation was present in the training set.
 
@@ -300,7 +300,7 @@ Module Contents
 
 
 
-   .. py:method:: add_new_entity_embeddings(entity_name: str = None, embeddings: torch.FloatTensor = None) -> None
+   .. py:method:: add_new_entity_embeddings(entity_name: Optional[str] = None, embeddings: Optional[torch.FloatTensor] = None) -> None
 
       Extend the entity embedding table with a new entity at inference time.
 
@@ -603,7 +603,7 @@ Module Contents
 
 
 
-   .. py:method:: train_literals(train_file_path: str = None, num_epochs: int = 100, lit_lr: float = 0.001, lit_normalization_type: str = 'z-norm', batch_size: int = 1024, sampling_ratio: float = None, random_seed=1, loader_backend: str = 'pandas', freeze_entity_embeddings: bool = True, gate_residual: bool = True, device: str = None, suffle_data: bool = True)
+   .. py:method:: train_literals(train_file_path: Optional[str] = None, num_epochs: int = 100, lit_lr: float = 0.001, lit_normalization_type: str = 'z-norm', batch_size: int = 1024, sampling_ratio: Optional[float] = None, random_seed=1, loader_backend: str = 'pandas', freeze_entity_embeddings: bool = True, gate_residual: bool = True, device: Optional[str] = None, suffle_data: bool = True)
 
       Trains the Literal Embeddings model using literal data.
 

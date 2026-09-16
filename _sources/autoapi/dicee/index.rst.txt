@@ -351,7 +351,7 @@ Package Contents
 
 
 
-   .. py:method:: predict_missing_tail_entity(head_entity: Union[List[str], str], relation: Union[List[str], str], within: List[str] = None, batch_size=2, topk=1, return_indices=False) -> torch.FloatTensor
+   .. py:method:: predict_missing_tail_entity(head_entity: Union[List[str], str], relation: Union[List[str], str], within: Optional[List[str]] = None, batch_size=2, topk=1, return_indices=False) -> torch.FloatTensor
 
       Given a head entity and a relation, return top k ranked entities
 
@@ -434,7 +434,7 @@ Package Contents
 
 
 
-   .. py:method:: triple_score(h: Union[List[str], str] = None, r: Union[List[str], str] = None, t: Union[List[str], str] = None, logits=False) -> torch.FloatTensor
+   .. py:method:: triple_score(h: Optional[Union[List[str], str]] = None, r: Optional[Union[List[str], str]] = None, t: Optional[Union[List[str], str]] = None, logits=False) -> torch.FloatTensor
 
       Predict triple score
 
@@ -466,7 +466,7 @@ Package Contents
    .. py:method:: return_multi_hop_query_results(aggregated_query_for_all_entities, k: int, only_scores)
 
 
-   .. py:method:: single_hop_query_answering(query: tuple, only_scores: bool = True, k: int = None, use_logits: bool = True)
+   .. py:method:: single_hop_query_answering(query: tuple, only_scores: bool = True, k: Optional[int] = None, use_logits: bool = True)
 
 
    .. py:method:: answer_multi_hop_query(query_type: Optional[str] = None, query: Optional[Tuple[Union[str, Tuple[str, str]], ...]] = None, queries: Optional[List[Tuple[Union[str, Tuple[str, str]], ...]]] = None, tnorm: str = 'prod', neg_norm: str = 'standard', lambda_: float = 0.0, k: int = 10, only_scores: bool = False, use_logits: bool = True) -> Union[List[Tuple[str, torch.Tensor]], List[List[Tuple[str, torch.Tensor]]]]
@@ -535,7 +535,7 @@ Package Contents
 
 
 
-   .. py:method:: find_missing_triples(confidence: float, entities: List[str] = None, relations: List[str] = None, topk: int = 10, at_most: int = sys.maxsize) -> Set
+   .. py:method:: find_missing_triples(confidence: float, entities: Optional[List[str]] = None, relations: Optional[List[str]] = None, topk: int = 10, at_most: int = sys.maxsize) -> Set
 
                Find missing triples
 
@@ -568,7 +568,7 @@ Package Contents
 
 
 
-   .. py:method:: predict_literals(entity: Union[List[str], str] = None, attribute: Union[List[str], str] = None, denormalize_preds: bool = True) -> numpy.ndarray
+   .. py:method:: predict_literals(entity: Optional[Union[List[str], str]] = None, attribute: Optional[Union[List[str], str]] = None, denormalize_preds: bool = True) -> numpy.ndarray
 
       Predicts literal values for given entities and attributes.
 
@@ -584,7 +584,7 @@ Package Contents
 
 
 
-.. py:class:: QueryGenerator(train_path, val_path: str, test_path: str, ent2id: Dict = None, rel2id: Dict = None, seed: int = 1, gen_valid: bool = False, gen_test: bool = True)
+.. py:class:: QueryGenerator(train_path, val_path: str, test_path: str, ent2id: Optional[Dict] = None, rel2id: Optional[Dict] = None, seed: int = 1, gen_valid: bool = False, gen_test: bool = True)
 
    .. py:attribute:: train_path
 

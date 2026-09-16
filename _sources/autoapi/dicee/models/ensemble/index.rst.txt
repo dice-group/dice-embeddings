@@ -15,7 +15,7 @@ Classes
 Module Contents
 ---------------
 
-.. py:class:: EnsembleKGE(models: list = None, seed_model=None, pretrained_models: List = None)
+.. py:class:: EnsembleKGE(models: Optional[list] = None, seed_model=None, pretrained_models: Optional[List] = None)
 
    .. py:attribute:: name
 
