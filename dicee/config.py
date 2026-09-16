@@ -147,8 +147,7 @@ class Namespace(argparse.Namespace):
         """Smooths dataset targets toward a uniform distribution at construction time
         (dicee/dataset_classes/_label_based.py, _negative_sampling.py), independent of
         loss_fn. Also passed as smoothness_ratio to loss_fn="LS"/"CombinedLSandLR"/
-        "AggregatedLSandLR" (see dicee/losses/custom_losses.py; note "LS" currently
-        ignores this - https://github.com/dice-group/dice-embeddings/issues/453)."""
+        "AggregatedLSandLR" (see dicee/losses/custom_losses.py)."""
 
         self.num_core: int = 0
         """Number of CPUs to be used in the mini-batch loading process"""

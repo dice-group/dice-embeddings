@@ -12,6 +12,7 @@ there as part of BaseKGE.loss_function's current_epoch wiring).
 """
 import pytest
 import torch
+from torch.nn import functional as F
 
 from dicee.losses.custom_losses import (
     ACLS,
@@ -74,22 +75,37 @@ class TestWeightedBCELoss:
 
 
 class TestLabelSmoothingLoss:
-    """LabelSmoothingLoss currently does not apply smoothing at all (#453) -
-    these tests document that known-buggy current behavior so a fix is
-    forced to update them rather than silently changing semantics."""
+    """LabelSmoothingLoss applies fixed-rate KL-divergence label smoothing,
+    the same formula as AdaptiveLabelSmoothingLoss.forward without the
+    batch-to-batch adaptation (#453)."""
 
-    @pytest.mark.parametrize("smoothness_ratio", [0.0, 0.5, 1.0])
-    def test_currently_ignores_smoothness_ratio(self, smoothness_ratio):
+    def test_matches_adaptive_formula_at_fixed_ratio(self):
         pred, target = _binary_batch(requires_grad=False)
-        expected = torch.nn.BCEWithLogitsLoss()(pred, target)
-        actual = LabelSmoothingLoss(smoothness_ratio=smoothness_ratio)(pred, target)
+        expected = AdaptiveLabelSmoothingLoss(initial_smoothing_factor=0.3)(pred, target, current_epoch=0)
+        actual = LabelSmoothingLoss(smoothness_ratio=0.3)(pred, target)
         torch.testing.assert_close(actual, expected)
+
+    def test_zero_ratio_is_plain_kl_div(self):
+        pred, target = _binary_batch(requires_grad=False)
+        expected = F.kl_div(F.log_softmax(pred, dim=-1), target, reduction="batchmean")
+        actual = LabelSmoothingLoss(smoothness_ratio=0.0)(pred, target)
+        torch.testing.assert_close(actual, expected)
+
+    def test_loss_changes_as_smoothness_ratio_varies(self):
+        pred, target = _binary_batch(requires_grad=False)
+        losses = [LabelSmoothingLoss(smoothness_ratio=r)(pred, target).item() for r in (0.0, 0.3, 0.6, 0.9)]
+        assert len(set(losses)) == len(losses)
 
     def test_gradient_flows(self):
         pred, target = _binary_batch()
         loss = LabelSmoothingLoss(smoothness_ratio=0.1)(pred, target)
         loss.backward()
         assert pred.grad is not None
+
+    def test_batch_size_one(self):
+        pred, target = _binary_batch(batch_size=1, requires_grad=False)
+        loss = LabelSmoothingLoss(smoothness_ratio=0.1)(pred, target)
+        assert torch.isfinite(loss)
 
 
 class TestAdaptiveLabelSmoothingLoss:
