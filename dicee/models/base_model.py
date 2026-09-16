@@ -19,6 +19,7 @@ from dicee.losses.custom_losses import (
     DefaultBCELoss,
     LabelRelaxationLoss,
     LabelSmoothingLoss,
+    WeightedBCELoss,
 )
 
 from .adopt import ADOPT
@@ -346,6 +347,8 @@ class BaseKGE(BaseKGELightning):
             self.loss = LabelRelaxationLoss(alpha=self.args.get("label_relaxation_alpha", 0.1))
         if self.args.get("loss_fn") == "BCELoss":
             self.loss = DefaultBCELoss()
+        if self.args.get("loss_fn") == "WeightedBCELoss":
+            self.loss = WeightedBCELoss()
         if self.args.get("loss_fn") == "CombinedLSandLR":
             self.loss = CombinedLSandLR(smoothness_ratio=self.args.get("label_smoothing_rate", 0.0), alpha=self.args.get("label_relaxation_alpha", 0.1))
         if self.args.get("loss_fn") == "AdaptiveLabelSmoothingLoss":

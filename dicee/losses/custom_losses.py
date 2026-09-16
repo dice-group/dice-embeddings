@@ -17,6 +17,15 @@ class DefaultBCELoss(nn.Module):
         return final_loss
 
 class WeightedBCELoss(nn.Module):
+    """BCE weighted by each prediction's own confidence.
+
+    Down-weights low-confidence predictions (``sigmoid(pred)`` near 0.5) and
+    up-weights confident ones, clamped to ``[0.5, 1.0]``. Weights are
+    detached, so they don't receive gradients themselves. ``current_epoch``
+    is accepted for interface consistency with the other ``loss_fn`` options
+    but is currently unused.
+    """
+
     def __init__(self):
         super(WeightedBCELoss, self).__init__()
 
@@ -237,77 +246,6 @@ class AggregatedLSandLR(nn.Module):
 
         return final_loss
 
-"""
-class GradientBasedLSLR(nn.Module):
-    def __init__(self, smoothness_ratio=0.0, alpha=0.0, check_interval=10, dynamic_threshold_ratio=0.015):
-        super(GradientBasedLSLR, self).__init__()
-        self.smoothness_ratio = smoothness_ratio
-        self.alpha = alpha
-        self.check_interval = check_interval
-        self.dynamic_threshold_ratio = dynamic_threshold_ratio
-        self.mode = 'smooth'
-        self.grad_norm_history = []
-
-        self.LabelSmoothingLoss = LabelSmoothingLoss()
-        self.LabelRelaxationLoss = LabelRelaxationLoss()
-
-
-    def forward(self, pred, target, current_epoch, gradient_norm):
-        if len(self.grad_norm_history) == self.check_interval:
-            self.grad_norm_history.pop(0)
-        self.grad_norm_history.append(gradient_norm)
-
-        avg_norm = sum(self.grad_norm_history) / len(self.grad_norm_history) + 1e-14 # avoid division by zero
-
-        if current_epoch != 0:
-            if avg_norm < self.dynamic_threshold_ratio and self.mode == 'smooth':
-                self.mode = 'relax'
-
-        #final_loss = 0
-        if self.mode == 'smooth':
-            final_loss = self.LabelSmoothingLoss(pred, target, current_epoch, gradient_norm)
-        else:
-            final_loss = self.LabelRelaxationLoss(pred, target, current_epoch, gradient_norm)
-
-        return final_loss
-
-
-class GradientBasedAdaptiveLSLR(nn.Module):
-    def __init__(self, smoothness_ratio=0.0, alpha=0.0, check_interval=10,
-                 variability_threshold=0.09):
-        super(GradientBasedAdaptiveLSLR, self).__init__()
-        self.smoothness_ratio = smoothness_ratio
-        self.alpha = alpha
-        self.check_interval = check_interval
-        self.variability_threshold = variability_threshold
-        self.mode = 'smooth'
-        self.grad_norm_history = []
-        self.adaptive_label_smoothing = AdaptiveLabelSmoothingLoss()
-        self.adaptive_label_relaxation = AdaptiveLabelRelaxationLoss()
-
-    def update_dynamic_threshold(self, current_epoch):
-        if len(self.grad_norm_history) < self.check_interval:
-            return
-
-        std_dev = np.std(self.grad_norm_history)
-        print(std_dev, self.variability_threshold)
-        if std_dev < self.variability_threshold and self.mode == 'smooth':
-            self.mode = 'relax'
-
-    def forward(self, pred, target, current_epoch, gradient_norm):
-        if len(self.grad_norm_history) == self.check_interval:
-            self.grad_norm_history.pop(0)
-        self.grad_norm_history.append(gradient_norm)
-
-        if current_epoch % self.check_interval == 0:
-            self.update_dynamic_threshold(current_epoch)
-
-        if self.mode == 'smooth':
-            return self.adaptive_label_smoothing(pred, target, current_epoch, gradient_norm)
-        else:
-            return self.adaptive_label_relaxation(pred, target, current_epoch, gradient_norm)
-
-"""
 
 class ACLS(nn.Module):
 
