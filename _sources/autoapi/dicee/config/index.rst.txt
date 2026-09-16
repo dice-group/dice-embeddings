@@ -459,8 +459,7 @@ Module Contents
       Smooths dataset targets toward a uniform distribution at construction time
       (dicee/dataset_classes/_label_based.py, _negative_sampling.py), independent of
       loss_fn. Also passed as smoothness_ratio to loss_fn="LS"/"CombinedLSandLR"/
-      "AggregatedLSandLR" (see dicee/losses/custom_losses.py; note "LS" currently
-      ignores this - https://github.com/dice-group/dice-embeddings/issues/453).
+      "AggregatedLSandLR" (see dicee/losses/custom_losses.py).
 
 
    .. py:attribute:: num_core

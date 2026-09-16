@@ -169,20 +169,28 @@
 <div class="viewcode-block" id="LabelSmoothingLoss">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.LabelSmoothingLoss">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LabelSmoothingLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Intended as a fixed-rate label-smoothing loss, selectable via</span>
-<span class="sd">    ``loss_fn="LS"`` (``smoothness_ratio`` comes from the ``label_smoothing_rate``</span>
-<span class="sd">    config option).</span>
+<span class="w">    </span><span class="sd">"""Fixed-rate label-smoothing loss, selectable via ``loss_fn="LS"``</span>
+<span class="sd">    (``smoothness_ratio`` comes from the ``label_smoothing_rate`` config</span>
+<span class="sd">    option).</span>
 
-<span class="sd">    .. warning::</span>
-<span class="sd">        ``forward`` currently ignores ``smoothness_ratio`` entirely and is</span>
-<span class="sd">        byte-for-byte identical to :class:`DefaultBCELoss` — no smoothing is</span>
-<span class="sd">        actually applied. See `issue #453</span>
-<span class="sd">        &lt;https://github.com/dice-group/dice-embeddings/issues/453&gt;`_. This is</span>
-<span class="sd">        independent of the (correctly implemented) dataset-level smoothing</span>
-<span class="sd">        controlled by the same ``label_smoothing_rate`` option</span>
-<span class="sd">        (``dicee/dataset_classes/_label_based.py``, ``_negative_sampling.py``),</span>
-<span class="sd">        which bakes smoothing into the training targets regardless of</span>
-<span class="sd">        ``loss_fn``.</span>
+<span class="sd">    Converts ``pred`` (logits) to log-probabilities and compares against a</span>
+<span class="sd">    smoothed target distribution (mass ``smoothness_ratio`` redistributed</span>
+<span class="sd">    uniformly over the non-target classes) via ``KL(pred || smoothed_target)``</span>
+<span class="sd">    — the same fixed-rate variant of :class:`AdaptiveLabelSmoothingLoss`'s</span>
+<span class="sd">    per-call smoothing, without the batch-to-batch adaptation.</span>
+
+<span class="sd">    This is independent of the (separately, correctly implemented)</span>
+<span class="sd">    dataset-level smoothing controlled by the same ``label_smoothing_rate``</span>
+<span class="sd">    option (``dicee/dataset_classes/_label_based.py``, ``_negative_sampling.py``),</span>
+<span class="sd">    which bakes smoothing into the training targets regardless of</span>
+<span class="sd">    ``loss_fn``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    smoothness_ratio : float</span>
+<span class="sd">        Fraction of probability mass redistributed from the target</span>
+<span class="sd">        class(es) to the non-target classes; ``0`` recovers a KL-divergence</span>
+<span class="sd">        loss with no smoothing.</span>
 <span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smoothness_ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
@@ -193,9 +201,12 @@
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.LabelSmoothingLoss.forward">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">):</span>
 
-        <span class="n">criterion</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">BCEWithLogitsLoss</span><span class="p">()</span>
-        <span class="n">final_loss</span> <span class="o">=</span> <span class="n">criterion</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
+        <span class="n">pred</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">pred</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">smoothed_target</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothness_ratio</span><span class="p">)</span> <span class="o">*</span> <span class="n">target</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">smoothness_ratio</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">target</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">num_classes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+
+        <span class="n">final_loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">kl_div</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">smoothed_target</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">"batchmean"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">final_loss</span></div>
 </div>
@@ -462,9 +473,7 @@
 <span class="sd">    after epoch 20, selectable via ``loss_fn="CombinedLSandLR"``.</span>
 
 <span class="sd">    Intended to smooth early training then relax the target distribution</span>
-<span class="sd">    later on; note :class:`LabelSmoothingLoss`'s current no-op bug (`#453</span>
-<span class="sd">    &lt;https://github.com/dice-group/dice-embeddings/issues/453&gt;`_) means the</span>
-<span class="sd">    "smoothing" phase is currently plain BCE.</span>
+<span class="sd">    later on.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -530,9 +539,7 @@
 
 <span class="sd">    Unlike :class:`CombinedLSandLR`, both terms are computed every call and</span>
 <span class="sd">    blended (``0.4 * smoothing + 0.6 * relaxation``) rather than switched</span>
-<span class="sd">    between by epoch. Note :class:`LabelSmoothingLoss`'s current no-op bug</span>
-<span class="sd">    (`#453 &lt;https://github.com/dice-group/dice-embeddings/issues/453&gt;`_)</span>
-<span class="sd">    means the smoothing term is currently plain BCE.</span>
+<span class="sd">    between by epoch.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>

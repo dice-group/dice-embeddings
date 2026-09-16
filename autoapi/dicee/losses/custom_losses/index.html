@@ -157,7 +157,7 @@ losses that declare it.</p>
 <td><p>BCE weighted by each prediction's own confidence.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="dicee.losses.custom_losses.LabelSmoothingLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LabelSmoothingLoss</span></code></a></p></td>
-<td><p>Intended as a fixed-rate label-smoothing loss, selectable via</p></td>
+<td><p>Fixed-rate label-smoothing loss, selectable via <code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;LS&quot;</span></code></p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss" title="dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdaptiveLabelSmoothingLoss</span></code></a></p></td>
 <td><p>KL-divergence label smoothing with a smoothing factor that self-adjusts</p></td>
@@ -224,20 +224,26 @@ but is currently unused.</p>
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.LabelSmoothingLoss">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.losses.custom_losses.</span></span><span class="sig-name descname"><span class="pre">LabelSmoothingLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smoothness_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/losses/custom_losses.html#LabelSmoothingLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
-<p>Intended as a fixed-rate label-smoothing loss, selectable via
-<code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;LS&quot;</span></code> (<code class="docutils literal notranslate"><span class="pre">smoothness_ratio</span></code> comes from the <code class="docutils literal notranslate"><span class="pre">label_smoothing_rate</span></code>
-config option).</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p><code class="docutils literal notranslate"><span class="pre">forward</span></code> currently ignores <code class="docutils literal notranslate"><span class="pre">smoothness_ratio</span></code> entirely and is
-byte-for-byte identical to <a class="reference internal" href="#dicee.losses.custom_losses.DefaultBCELoss" title="dicee.losses.custom_losses.DefaultBCELoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">DefaultBCELoss</span></code></a> — no smoothing is
-actually applied. See <a class="reference external" href="https://github.com/dice-group/dice-embeddings/issues/453">issue #453</a>. This is
-independent of the (correctly implemented) dataset-level smoothing
-controlled by the same <code class="docutils literal notranslate"><span class="pre">label_smoothing_rate</span></code> option
-(<code class="docutils literal notranslate"><span class="pre">dicee/dataset_classes/_label_based.py</span></code>, <code class="docutils literal notranslate"><span class="pre">_negative_sampling.py</span></code>),
+<p>Fixed-rate label-smoothing loss, selectable via <code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;LS&quot;</span></code>
+(<code class="docutils literal notranslate"><span class="pre">smoothness_ratio</span></code> comes from the <code class="docutils literal notranslate"><span class="pre">label_smoothing_rate</span></code> config
+option).</p>
+<p>Converts <code class="docutils literal notranslate"><span class="pre">pred</span></code> (logits) to log-probabilities and compares against a
+smoothed target distribution (mass <code class="docutils literal notranslate"><span class="pre">smoothness_ratio</span></code> redistributed
+uniformly over the non-target classes) via <code class="docutils literal notranslate"><span class="pre">KL(pred</span> <span class="pre">||</span> <span class="pre">smoothed_target)</span></code>
+— the same fixed-rate variant of <a class="reference internal" href="#dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss" title="dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">AdaptiveLabelSmoothingLoss</span></code></a>’s
+per-call smoothing, without the batch-to-batch adaptation.</p>
+<p>This is independent of the (separately, correctly implemented)
+dataset-level smoothing controlled by the same <code class="docutils literal notranslate"><span class="pre">label_smoothing_rate</span></code>
+option (<code class="docutils literal notranslate"><span class="pre">dicee/dataset_classes/_label_based.py</span></code>, <code class="docutils literal notranslate"><span class="pre">_negative_sampling.py</span></code>),
 which bakes smoothing into the training targets regardless of
 <code class="docutils literal notranslate"><span class="pre">loss_fn</span></code>.</p>
-</div>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>smoothness_ratio</strong> (<em>float</em>) – Fraction of probability mass redistributed from the target
+class(es) to the non-target classes; <code class="docutils literal notranslate"><span class="pre">0</span></code> recovers a KL-divergence
+loss with no smoothing.</p>
+</dd>
+</dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.LabelSmoothingLoss.smoothness_ratio">
 <span class="sig-name descname"><span class="pre">smoothness_ratio</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#dicee.losses.custom_losses.LabelSmoothingLoss.smoothness_ratio" title="Link to this definition"></a></dt>
@@ -470,8 +476,7 @@ per training run.</p>
 <p>Switches from <a class="reference internal" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="dicee.losses.custom_losses.LabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelSmoothingLoss</span></code></a> to <a class="reference internal" href="#dicee.losses.custom_losses.LabelRelaxationLoss" title="dicee.losses.custom_losses.LabelRelaxationLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelRelaxationLoss</span></code></a>
 after epoch 20, selectable via <code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;CombinedLSandLR&quot;</span></code>.</p>
 <p>Intended to smooth early training then relax the target distribution
-later on; note <a class="reference internal" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="dicee.losses.custom_losses.LabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelSmoothingLoss</span></code></a>’s current no-op bug (<a class="reference external" href="https://github.com/dice-group/dice-embeddings/issues/453">#453</a>) means the
-“smoothing” phase is currently plain BCE.</p>
+later on.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
@@ -536,9 +541,7 @@ no way to configure them through this wrapper.</p>
 <a class="reference internal" href="#dicee.losses.custom_losses.LabelRelaxationLoss" title="dicee.losses.custom_losses.LabelRelaxationLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelRelaxationLoss</span></code></a>, selectable via <code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;AggregatedLSandLR&quot;</span></code>.</p>
 <p>Unlike <a class="reference internal" href="#dicee.losses.custom_losses.CombinedLSandLR" title="dicee.losses.custom_losses.CombinedLSandLR"><code class="xref py py-class docutils literal notranslate"><span class="pre">CombinedLSandLR</span></code></a>, both terms are computed every call and
 blended (<code class="docutils literal notranslate"><span class="pre">0.4</span> <span class="pre">*</span> <span class="pre">smoothing</span> <span class="pre">+</span> <span class="pre">0.6</span> <span class="pre">*</span> <span class="pre">relaxation</span></code>) rather than switched
-between by epoch. Note <a class="reference internal" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="dicee.losses.custom_losses.LabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelSmoothingLoss</span></code></a>’s current no-op bug
-(<a class="reference external" href="https://github.com/dice-group/dice-embeddings/issues/453">#453</a>)
-means the smoothing term is currently plain BCE.</p>
+between by epoch.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters<span class="colon">:</span></dt>
 <dd class="field-odd"><ul class="simple">
