@@ -1,6 +1,7 @@
 import glob
 import logging
 import os
+from typing import Optional
 
 import requests
 import torch
@@ -8,7 +9,7 @@ import torch
 logger = logging.getLogger(__name__)
 
 
-def is_sparql_endpoint_alive(sparql_endpoint: str = None):
+def is_sparql_endpoint_alive(sparql_endpoint: Optional[str] = None):
     if sparql_endpoint:
         query = """SELECT (COUNT(*) as ?num_triples) WHERE {  ?s ?p ?o .} """
         response = requests.post(sparql_endpoint, data={'query': query})

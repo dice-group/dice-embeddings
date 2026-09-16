@@ -13,7 +13,7 @@ Type hints improve:
 ## Current Status
 
 **mypy Results:**
-- **CI error budget**: 1367 type issues, recorded in `.github/mypy-baseline.txt`. Run `mypy dicee/ --config-file=pyproject.toml` to measure the current count.
+- **CI error budget**: 1172 type issues, recorded in `.github/mypy-baseline.txt`. Run `mypy dicee/ --config-file=pyproject.toml` to measure the current count.
 - **CI status**: The mypy step blocks the build when its error count exceeds that budget. Existing errors are printed in the log even when the step passes; lint and runtime tests are separate checks.
 - **Coverage**: partial; growing gradually per the tiers below
 

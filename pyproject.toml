@@ -46,8 +46,8 @@ line-length = 200
 target-version = "py311"
 
 [tool.ruff.lint]
-# Enable pycodestyle (E), Pyflakes (F), and isort (I) rules
-select = ["E", "F", "I", "W"]
+# Enable pycodestyle (E), Pyflakes (F), isort (I), and Ruff-specific (RUF) rules
+select = ["E", "F", "I", "W", "RUF013"]
 ignore = [
     "E501",  # Line too long (handled by line-length)
     "E741",  # Ambiguous variable name

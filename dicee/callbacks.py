@@ -11,6 +11,7 @@ import math
 import os
 import time
 from collections import defaultdict
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -201,7 +202,7 @@ def compute_convergence(seq, i):
 
 
 class Eval(AbstractCallback):
-    def __init__(self, path, epoch_ratio: int = None):
+    def __init__(self, path, epoch_ratio: Optional[int] = None):
         super().__init__()
         self.path = path
         self.reports = []
@@ -305,7 +306,7 @@ class Perturb(AbstractCallback):
     Output Perturbation:
     """
 
-    def __init__(self, level: str = "input", ratio: float = 0.0, method: str = None, scaler: float = None,
+    def __init__(self, level: str = "input", ratio: float = 0.0, method: Optional[str] = None, scaler: Optional[float] = None,
                  frequency=None):
         """
         level in {input, param, output}
@@ -423,7 +424,7 @@ class PeriodicEvalCallback(AbstractCallback):
     """
 
     def __init__(self, experiment_path: str, max_epochs: int,
-                 eval_every_n_epoch: int = 0, eval_at_epochs: list = None,
+                 eval_every_n_epoch: int = 0, eval_at_epochs: Optional[list] = None,
                  save_model_every_n_epoch: bool = True, n_epochs_eval_model: str = "val_test"):
         """
         Initialize the PeriodicEvalCallback.

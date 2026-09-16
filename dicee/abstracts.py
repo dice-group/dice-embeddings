@@ -3,7 +3,7 @@ import logging
 import os
 import random
 from abc import ABC
-from typing import List, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import lightning
 import pandas as pd
@@ -131,7 +131,7 @@ class BaseInteractiveKGE:
         Reserved for future use.  Defaults to ``False``.
     """
 
-    def __init__(self, path: str = None, url: str = None, construct_ensemble: bool = False, model_name: str = None,
+    def __init__(self, path: Optional[str] = None, url: Optional[str] = None, construct_ensemble: bool = False, model_name: Optional[str] = None,
                  apply_semantic_constraint: bool = False):
         if url is not None:
             assert path is None
@@ -299,7 +299,7 @@ class BaseInteractiveKGE:
         assert n >= 0
         return random.sample([i for i in self.relation_to_idx.keys()], n)
 
-    def is_seen(self, entity: str = None, relation: str = None) -> bool:
+    def is_seen(self, entity: Optional[str] = None, relation: Optional[str] = None) -> bool:
         """Check whether an entity or relation was present in the training set.
 
         Exactly one of *entity* or *relation* should be provided.
@@ -391,7 +391,7 @@ class BaseInteractiveKGE:
         idx_tail_entity = torch.LongTensor([self.entity_to_idx[i] for i in tail_entity]).reshape(n, 1)
         return idx_head_entity, idx_relation, idx_tail_entity
 
-    def add_new_entity_embeddings(self, entity_name: str = None, embeddings: torch.FloatTensor = None) -> None:
+    def add_new_entity_embeddings(self, entity_name: Optional[str] = None, embeddings: Optional[torch.FloatTensor] = None) -> None:
         """Extend the entity embedding table with a new entity at inference time.
 
         The new entity is appended to both ``entity_to_idx`` / ``idx_to_entity``
@@ -857,17 +857,17 @@ class BaseInteractiveTrainKGE:
 
     def train_literals(
         self,
-        train_file_path: str = None,
+        train_file_path: Optional[str] = None,
         num_epochs: int = 100,
         lit_lr: float = 0.001,
         lit_normalization_type: str = "z-norm",
         batch_size: int = 1024,
-        sampling_ratio: float = None,
+        sampling_ratio: Optional[float] = None,
         random_seed=1,
         loader_backend: str = "pandas",
         freeze_entity_embeddings: bool = True,
         gate_residual: bool = True,
-        device: str = None,
+        device: Optional[str] = None,
         suffle_data: bool = True
     ):
         """

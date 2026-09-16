@@ -431,7 +431,7 @@ class SWA(AbstractCallback):
         """
 
     def __init__(self, swa_start_epoch, swa_c_epochs:int=1, lr_init:float=0.1,
-                  swa_lr:float=0.05, max_epochs :int=None):
+                  swa_lr:float=0.05, max_epochs: Optional[int] = None):
         super().__init__()
         self.swa_start_epoch = swa_start_epoch
         self.swa_c_epochs = swa_c_epochs
@@ -554,7 +554,7 @@ class SWAG(AbstractCallback):
 
     def __init__(self, swa_start_epoch, swa_c_epochs:int=1,
                  lr_init:float=0.1, swa_lr:float=0.05,
-                 max_epochs:int=None, max_num_models:int=20, var_clamp:float=1e-30):
+                 max_epochs: Optional[int] = None, max_num_models:int=20, var_clamp:float=1e-30):
         super().__init__()
         self.swa_start_epoch = swa_start_epoch
         self.swa_c_epochs = swa_c_epochs
@@ -737,7 +737,7 @@ class EMA(AbstractCallback):
         """
 
     def __init__(self, ema_start_epoch: int, decay: float = 0.999,
-                 max_epochs: int = None, ema_c_epochs: int = 1):
+                 max_epochs: Optional[int] = None, ema_c_epochs: int = 1):
         super().__init__()
         self.ema_start_epoch = ema_start_epoch
         self.decay = decay
@@ -827,7 +827,7 @@ class TWA(AbstractCallback):
 
     def __init__(self, twa_start_epoch: int, lr_init: float,
                  num_samples: int = 5, reg_lambda: float = 0.0,
-                 max_epochs: int = None, twa_c_epochs: int = 1):
+                 max_epochs: Optional[int] = None, twa_c_epochs: int = 1):
         super().__init__()
         self.twa_start_epoch = twa_start_epoch
         self.num_samples = num_samples

@@ -7,7 +7,7 @@ import time
 from collections import defaultdict
 from itertools import chain
 from multiprocessing import Process, cpu_count
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -131,7 +131,7 @@ def pandas_dataframe_indexer(df_pandas: pd.DataFrame, idx_entity: pd.DataFrame, 
     return df_pandas
 
 
-def apply_reciprocal_or_noise(add_reciprocal: bool, eval_model: str, df: object = None, info: str = None):
+def apply_reciprocal_or_noise(add_reciprocal: bool, eval_model: str, df: Optional[object] = None, info: Optional[str] = None):
     """Add reciprocal triples if conditions are met"""
     if add_reciprocal and eval_model and df is not None:
         logger.info(f'Adding reciprocal triples to {info}, e.g. KG:= (s, p, o) union (o, p_inverse, s)')
@@ -167,7 +167,7 @@ def _filter_literal_triples(df, backend: str):
 
 
 @timeit
-def read_with_polars(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator:str=None) -> polars.DataFrame:
+def read_with_polars(data_path, read_only_few: Optional[int] = None, sample_triples_ratio: Optional[float] = None, separator: Optional[str] = None) -> polars.DataFrame:
     """Load and Preprocess via Polars"""
     assert separator is not None, "separator cannot be None"
     logger.info(f'*** Reading {data_path} with Polars ***')
@@ -211,7 +211,7 @@ def _read_parquet_head(data_path: str, read_only_few: int) -> pd.DataFrame:
 
 
 @timeit
-def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio: float = None, separator:str=None):
+def read_with_pandas(data_path, read_only_few: Optional[int] = None, sample_triples_ratio: Optional[float] = None, separator: Optional[str] = None):
     """Load and Preprocess via Pandas"""
     assert separator is not None, "separator cannot be None"
     logger.info(f'*** Reading {data_path} with Pandas ***')
@@ -238,8 +238,8 @@ def read_with_pandas(data_path, read_only_few: int = None, sample_triples_ratio:
     return _filter_literal_triples(df, "pandas")
 
 
-def read_from_disk(data_path: str, read_only_few: int = None,
-                   sample_triples_ratio: float = None, backend:str=None,separator:str=None)\
+def read_from_disk(data_path: str, read_only_few: Optional[int] = None,
+                   sample_triples_ratio: Optional[float] = None, backend: Optional[str] = None, separator: Optional[str] = None)\
         ->Tuple[polars.DataFrame,pd.DataFrame]:
     assert backend is not None, "backend cannot be None"
     assert separator is not None, f"separator cannot be None. Currently {separator}"
@@ -359,7 +359,7 @@ def read_from_triple_store_with_polars(endpoint: str, chunk_size: int = 500000, 
     df_polars = pl.read_parquet(parquet_files)
     return df_polars
 
-def read_from_triple_store_with_pandas(endpoint: str = None):
+def read_from_triple_store_with_pandas(endpoint: Optional[str] = None):
     """ Read triples from triple store into pandas dataframe """
     assert endpoint is not None
     assert isinstance(endpoint, str)
@@ -398,7 +398,7 @@ def get_filter_vocabs(data, directory=None):
     return er_vocab, re_vocab, ee_vocab
 
 
-def get_er_vocab(data, file_path: str = None):
+def get_er_vocab(data, file_path: Optional[str] = None):
     # head entity and relation
     er_vocab = defaultdict(list)
     for triple in data:
@@ -409,7 +409,7 @@ def get_er_vocab(data, file_path: str = None):
     return er_vocab
 
 
-def get_re_vocab(data, file_path: str = None):
+def get_re_vocab(data, file_path: Optional[str] = None):
     # head entity and relation
     re_vocab = defaultdict(list)
     for triple in data:
@@ -419,7 +419,7 @@ def get_re_vocab(data, file_path: str = None):
     return re_vocab
 
 
-def get_ee_vocab(data, file_path: str = None):
+def get_ee_vocab(data, file_path: Optional[str] = None):
     # head entity and relation
     ee_vocab = defaultdict(list)
     for triple in data:
@@ -429,7 +429,7 @@ def get_ee_vocab(data, file_path: str = None):
     return ee_vocab
 
 
-def create_constraints(triples, file_path: str = None):
+def create_constraints(triples, file_path: Optional[str] = None):
     """
     (1) Extract domains and ranges of relations
     (2) Store a mapping from relations to entities that are outside of the domain and range.

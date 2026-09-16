@@ -330,8 +330,8 @@ class FSDPShardedEntityModel(BaseKGE):
         device: torch.device,
         lr: float,
         optimizer_cls=None,       # unused — we always use _LocalSparseAdam
-        optimizer_kwargs: dict = None,
-        adam_device: torch.device = None,
+        optimizer_kwargs: Optional[dict] = None,
+        adam_device: Optional[torch.device] = None,
     ) -> None:
         """Create the per-rank embedding shard and its local sparse Adam.
 
