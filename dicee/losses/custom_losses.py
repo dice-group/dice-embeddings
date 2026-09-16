@@ -65,20 +65,28 @@ class WeightedBCELoss(nn.Module):
         return final_loss
 
 class LabelSmoothingLoss(nn.Module):
-    """Intended as a fixed-rate label-smoothing loss, selectable via
-    ``loss_fn="LS"`` (``smoothness_ratio`` comes from the ``label_smoothing_rate``
-    config option).
+    """Fixed-rate label-smoothing loss, selectable via ``loss_fn="LS"``
+    (``smoothness_ratio`` comes from the ``label_smoothing_rate`` config
+    option).
 
-    .. warning::
-        ``forward`` currently ignores ``smoothness_ratio`` entirely and is
-        byte-for-byte identical to :class:`DefaultBCELoss` — no smoothing is
-        actually applied. See `issue #453
-        <https://github.com/dice-group/dice-embeddings/issues/453>`_. This is
-        independent of the (correctly implemented) dataset-level smoothing
-        controlled by the same ``label_smoothing_rate`` option
-        (``dicee/dataset_classes/_label_based.py``, ``_negative_sampling.py``),
-        which bakes smoothing into the training targets regardless of
-        ``loss_fn``.
+    Converts ``pred`` (logits) to log-probabilities and compares against a
+    smoothed target distribution (mass ``smoothness_ratio`` redistributed
+    uniformly over the non-target classes) via ``KL(pred || smoothed_target)``
+    — the same fixed-rate variant of :class:`AdaptiveLabelSmoothingLoss`'s
+    per-call smoothing, without the batch-to-batch adaptation.
+
+    This is independent of the (separately, correctly implemented)
+    dataset-level smoothing controlled by the same ``label_smoothing_rate``
+    option (``dicee/dataset_classes/_label_based.py``, ``_negative_sampling.py``),
+    which bakes smoothing into the training targets regardless of
+    ``loss_fn``.
+
+    Parameters
+    ----------
+    smoothness_ratio : float
+        Fraction of probability mass redistributed from the target
+        class(es) to the non-target classes; ``0`` recovers a KL-divergence
+        loss with no smoothing.
     """
 
     def __init__(self, smoothness_ratio=0.0):
@@ -87,9 +95,12 @@ class LabelSmoothingLoss(nn.Module):
 
     def forward(self, pred, target):
 
-        criterion = torch.nn.BCEWithLogitsLoss()
-        final_loss = criterion(pred, target)
+        pred = F.log_softmax(pred, dim=-1)
 
+        num_classes = pred.size(-1)
+        smoothed_target = (1 - self.smoothness_ratio) * target + self.smoothness_ratio * (1 - target) / (num_classes - 1)
+
+        final_loss = F.kl_div(pred, smoothed_target, reduction="batchmean")
 
         return final_loss
 
@@ -328,9 +339,7 @@ class CombinedLSandLR(nn.Module):
     after epoch 20, selectable via ``loss_fn="CombinedLSandLR"``.
 
     Intended to smooth early training then relax the target distribution
-    later on; note :class:`LabelSmoothingLoss`'s current no-op bug (`#453
-    <https://github.com/dice-group/dice-embeddings/issues/453>`_) means the
-    "smoothing" phase is currently plain BCE.
+    later on.
 
     Parameters
     ----------
@@ -384,9 +393,7 @@ class AggregatedLSandLR(nn.Module):
 
     Unlike :class:`CombinedLSandLR`, both terms are computed every call and
     blended (``0.4 * smoothing + 0.6 * relaxation``) rather than switched
-    between by epoch. Note :class:`LabelSmoothingLoss`'s current no-op bug
-    (`#453 <https://github.com/dice-group/dice-embeddings/issues/453>`_)
-    means the smoothing term is currently plain BCE.
+    between by epoch.
 
     Parameters
     ----------
