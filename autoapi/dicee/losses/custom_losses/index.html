@@ -135,42 +135,53 @@
              
   <section id="module-dicee.losses.custom_losses">
 <span id="dicee-losses-custom-losses"></span><h1>dicee.losses.custom_losses<a class="headerlink" href="#module-dicee.losses.custom_losses" title="Link to this heading"></a></h1>
+<p>Alternative loss functions selectable via the <code class="docutils literal notranslate"><span class="pre">loss_fn</span></code> config option.</p>
+<p><code class="docutils literal notranslate"><span class="pre">BaseKGE.__init__</span></code> (<code class="docutils literal notranslate"><span class="pre">dicee/models/base_model.py</span></code>) instantiates one of
+these in place of the framework’s default loss based on
+<code class="docutils literal notranslate"><span class="pre">args[&quot;loss_fn&quot;]</span></code>; see that dispatch for the exact string values and
+which additional config options (<code class="docutils literal notranslate"><span class="pre">label_smoothing_rate</span></code>,
+<code class="docutils literal notranslate"><span class="pre">label_relaxation_alpha</span></code>) feed each one’s constructor.</p>
+<p>Several of these declare a <code class="docutils literal notranslate"><span class="pre">current_epoch</span></code> parameter on <code class="docutils literal notranslate"><span class="pre">forward</span></code> so
+they can vary their behavior over training; <code class="docutils literal notranslate"><span class="pre">BaseKGE.loss_function</span></code>
+detects this once per model (<code class="docutils literal notranslate"><span class="pre">self._loss_needs_epoch</span></code>, set by inspecting
+<code class="docutils literal notranslate"><span class="pre">self.loss.forward</span></code>’s parameters) and forwards the current epoch only to
+losses that declare it.</p>
 <section id="classes">
 <h2>Classes<a class="headerlink" href="#classes" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.losses.custom_losses.DefaultBCELoss" title="dicee.losses.custom_losses.DefaultBCELoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DefaultBCELoss</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p>Plain <code class="docutils literal notranslate"><span class="pre">BCEWithLogitsLoss</span></code>, selectable via <code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;BCELoss&quot;</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.losses.custom_losses.WeightedBCELoss" title="dicee.losses.custom_losses.WeightedBCELoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">WeightedBCELoss</span></code></a></p></td>
 <td><p>BCE weighted by each prediction's own confidence.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="dicee.losses.custom_losses.LabelSmoothingLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LabelSmoothingLoss</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p>Intended as a fixed-rate label-smoothing loss, selectable via</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss" title="dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdaptiveLabelSmoothingLoss</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p>KL-divergence label smoothing with a smoothing factor that self-adjusts</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.losses.custom_losses.LabelRelaxationLoss" title="dicee.losses.custom_losses.LabelRelaxationLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">LabelRelaxationLoss</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p>Label relaxation loss, selectable via <code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;LRLoss&quot;</span></code>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.losses.custom_losses.AdaptiveLabelRelaxationLoss" title="dicee.losses.custom_losses.AdaptiveLabelRelaxationLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AdaptiveLabelRelaxationLoss</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p><a class="reference internal" href="#dicee.losses.custom_losses.LabelRelaxationLoss" title="dicee.losses.custom_losses.LabelRelaxationLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelRelaxationLoss</span></code></a> with an <code class="docutils literal notranslate"><span class="pre">alpha</span></code> that self-adjusts from</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.losses.custom_losses.ConfidenceBasedAdaptiveLabelRelaxationLoss" title="dicee.losses.custom_losses.ConfidenceBasedAdaptiveLabelRelaxationLoss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ConfidenceBasedAdaptiveLabelRelaxationLoss</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p><a class="reference internal" href="#dicee.losses.custom_losses.LabelRelaxationLoss" title="dicee.losses.custom_losses.LabelRelaxationLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelRelaxationLoss</span></code></a> where <code class="docutils literal notranslate"><span class="pre">alpha</span></code> shrinks as the model's</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.losses.custom_losses.CombinedLSandLR" title="dicee.losses.custom_losses.CombinedLSandLR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CombinedLSandLR</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p>Switches from <a class="reference internal" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="dicee.losses.custom_losses.LabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelSmoothingLoss</span></code></a> to <a class="reference internal" href="#dicee.losses.custom_losses.LabelRelaxationLoss" title="dicee.losses.custom_losses.LabelRelaxationLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelRelaxationLoss</span></code></a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.losses.custom_losses.CombinedAdaptiveLSandAdaptiveLR" title="dicee.losses.custom_losses.CombinedAdaptiveLSandAdaptiveLR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">CombinedAdaptiveLSandAdaptiveLR</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p>Switches from <a class="reference internal" href="#dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss" title="dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">AdaptiveLabelSmoothingLoss</span></code></a> to</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.losses.custom_losses.AggregatedLSandLR" title="dicee.losses.custom_losses.AggregatedLSandLR"><code class="xref py py-obj docutils literal notranslate"><span class="pre">AggregatedLSandLR</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p>Fixed 0.4/0.6 weighted average of <a class="reference internal" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="dicee.losses.custom_losses.LabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelSmoothingLoss</span></code></a> and</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.losses.custom_losses.ACLS" title="dicee.losses.custom_losses.ACLS"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ACLS</span></code></a></p></td>
-<td><p>Base class for all neural network modules.</p></td>
+<td><p>Adaptive and Conditional Label Smoothing-style calibration loss,</p></td>
 </tr>
 </tbody>
 </table>
@@ -181,38 +192,10 @@
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.DefaultBCELoss">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.losses.custom_losses.</span></span><span class="sig-name descname"><span class="pre">DefaultBCELoss</span></span><a class="reference internal" href="../../../../_modules/dicee/losses/custom_losses.html#DefaultBCELoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.losses.custom_losses.DefaultBCELoss" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
-</dd>
-</dl>
+<p>Plain <code class="docutils literal notranslate"><span class="pre">BCEWithLogitsLoss</span></code>, selectable via <code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;BCELoss&quot;</span></code>.</p>
+<p>Equivalent to the framework’s own default entity/relation-prediction
+loss (see <code class="docutils literal notranslate"><span class="pre">BaseKGE.__init__</span></code>); provided as an explicit <code class="docutils literal notranslate"><span class="pre">loss_fn</span></code>
+option for parity with the other choices in this module.</p>
 <dl class="py method">
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.DefaultBCELoss.forward">
 <span class="sig-name descname"><span class="pre">forward</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pred</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/losses/custom_losses.html#DefaultBCELoss.forward"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.losses.custom_losses.DefaultBCELoss.forward" title="Link to this definition"></a></dt>
@@ -241,38 +224,20 @@ but is currently unused.</p>
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.LabelSmoothingLoss">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.losses.custom_losses.</span></span><span class="sig-name descname"><span class="pre">LabelSmoothingLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smoothness_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/losses/custom_losses.html#LabelSmoothingLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
+<p>Intended as a fixed-rate label-smoothing loss, selectable via
+<code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;LS&quot;</span></code> (<code class="docutils literal notranslate"><span class="pre">smoothness_ratio</span></code> comes from the <code class="docutils literal notranslate"><span class="pre">label_smoothing_rate</span></code>
+config option).</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code class="docutils literal notranslate"><span class="pre">forward</span></code> currently ignores <code class="docutils literal notranslate"><span class="pre">smoothness_ratio</span></code> entirely and is
+byte-for-byte identical to <a class="reference internal" href="#dicee.losses.custom_losses.DefaultBCELoss" title="dicee.losses.custom_losses.DefaultBCELoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">DefaultBCELoss</span></code></a> — no smoothing is
+actually applied. See <a class="reference external" href="https://github.com/dice-group/dice-embeddings/issues/453">issue #453</a>. This is
+independent of the (correctly implemented) dataset-level smoothing
+controlled by the same <code class="docutils literal notranslate"><span class="pre">label_smoothing_rate</span></code> option
+(<code class="docutils literal notranslate"><span class="pre">dicee/dataset_classes/_label_based.py</span></code>, <code class="docutils literal notranslate"><span class="pre">_negative_sampling.py</span></code>),
+which bakes smoothing into the training targets regardless of
+<code class="docutils literal notranslate"><span class="pre">loss_fn</span></code>.</p>
 </div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
-</dd>
-</dl>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.LabelSmoothingLoss.smoothness_ratio">
 <span class="sig-name descname"><span class="pre">smoothness_ratio</span></span><span class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">0.0</span></span><a class="headerlink" href="#dicee.losses.custom_losses.LabelSmoothingLoss.smoothness_ratio" title="Link to this definition"></a></dt>
@@ -289,36 +254,27 @@ evaluation mode.</p>
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.losses.custom_losses.</span></span><span class="sig-name descname"><span class="pre">AdaptiveLabelSmoothingLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_smoothing_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_smoothing_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">smoothing_factor_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_smoothing_factor</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/losses/custom_losses.html#AdaptiveLabelSmoothingLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
+<p>KL-divergence label smoothing with a smoothing factor that self-adjusts
+from batch to batch, selectable via <code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;AdaptiveLabelSmoothingLoss&quot;</span></code>.</p>
+<p>Converts <code class="docutils literal notranslate"><span class="pre">logits</span></code> to log-probabilities and compares against a smoothed
+target distribution (mass <code class="docutils literal notranslate"><span class="pre">smoothing_factor</span></code> redistributed uniformly
+over the non-target classes) via <code class="docutils literal notranslate"><span class="pre">KL(pred</span> <span class="pre">||</span> <span class="pre">smoothed_target)</span></code>. After
+each call, <code class="docutils literal notranslate"><span class="pre">smoothing_factor</span></code> moves one <code class="docutils literal notranslate"><span class="pre">smoothing_factor_step</span></code>
+toward <code class="docutils literal notranslate"><span class="pre">max_smoothing_factor</span></code> if the loss increased since the previous
+call, or toward <code class="docutils literal notranslate"><span class="pre">min_smoothing_factor</span></code> if it decreased — i.e. it backs
+off smoothing while the model is improving and leans into it when
+training stalls. <code class="docutils literal notranslate"><span class="pre">current_epoch</span></code> is accepted for interface consistency
+with the other <code class="docutils literal notranslate"><span class="pre">loss_fn</span></code> options but is currently unused.</p>
+<p>This module is stateful (<code class="docutils literal notranslate"><span class="pre">prev_loss</span></code>, <code class="docutils literal notranslate"><span class="pre">smoothing_factor</span></code> persist
+across calls), so a fresh instance should be used per training run.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min_smoothing_factor</strong> (<em>float</em>) – Lower bound the adaptive smoothing factor can decay to.</p></li>
+<li><p><strong>max_smoothing_factor</strong> (<em>float</em>) – Upper bound the adaptive smoothing factor can grow to.</p></li>
+<li><p><strong>smoothing_factor_step</strong> (<em>float</em>) – Adjustment applied to the smoothing factor after each call.</p></li>
+<li><p><strong>initial_smoothing_factor</strong> (<em>float</em>) – Starting value before any adjustment has occurred.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py attribute">
@@ -362,36 +318,19 @@ evaluation mode.</p>
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.LabelRelaxationLoss">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.losses.custom_losses.</span></span><span class="sig-name descname"><span class="pre">LabelRelaxationLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/losses/custom_losses.html#LabelRelaxationLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.losses.custom_losses.LabelRelaxationLoss" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
+<p>Label relaxation loss, selectable via <code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;LRLoss&quot;</span></code>.</p>
+<p>Based on “From Label Smoothing to Label Relaxation” (Lienen &amp;
+Hullermeier, AAAI 2021): instead of smoothing toward one fixed soft
+target, it constructs a <em>credal set</em> of distributions that assign at
+least <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-</span> <span class="pre">alpha</span></code> probability to the target class(es) and measures the
+KL divergence to the closest point in that set, rather than to a single
+fixed distribution. Predictions that are already confident enough
+(probability mass on the target above <code class="docutils literal notranslate"><span class="pre">1</span> <span class="pre">-</span> <span class="pre">alpha</span></code>) incur zero loss.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>alpha</strong> (<em>float</em>) – Relaxation strength in <code class="docutils literal notranslate"><span class="pre">[0,</span> <span class="pre">1)</span></code>; <code class="docutils literal notranslate"><span class="pre">0</span></code> recovers ordinary
+cross-entropy-style behavior (no slack), larger values tolerate
+more probability mass elsewhere before penalizing.</p>
 </dd>
 </dl>
 <dl class="py attribute">
@@ -420,36 +359,24 @@ evaluation mode.</p>
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.AdaptiveLabelRelaxationLoss">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.losses.custom_losses.</span></span><span class="sig-name descname"><span class="pre">AdaptiveLabelRelaxationLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.2</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha_step</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.01</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">initial_alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/losses/custom_losses.html#AdaptiveLabelRelaxationLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.losses.custom_losses.AdaptiveLabelRelaxationLoss" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
+<p><a class="reference internal" href="#dicee.losses.custom_losses.LabelRelaxationLoss" title="dicee.losses.custom_losses.LabelRelaxationLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelRelaxationLoss</span></code></a> with an <code class="docutils literal notranslate"><span class="pre">alpha</span></code> that self-adjusts from
+batch to batch, selectable via <code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;AdaptiveLabelRelaxationLoss&quot;</span></code>.</p>
+<p>Computes the label-relaxation loss once under <code class="docutils literal notranslate"><span class="pre">torch.no_grad()</span></code> with
+the current <code class="docutils literal notranslate"><span class="pre">alpha</span></code> to decide the adjustment (grow toward
+<code class="docutils literal notranslate"><span class="pre">max_alpha</span></code> if the loss increased since the previous call, shrink
+toward <code class="docutils literal notranslate"><span class="pre">min_alpha</span></code> if it decreased), then recomputes the loss with the
+updated <code class="docutils literal notranslate"><span class="pre">alpha</span></code> for the actual gradient-carrying return value. Like
+<a class="reference internal" href="#dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss" title="dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">AdaptiveLabelSmoothingLoss</span></code></a>, this module is stateful
+(<code class="docutils literal notranslate"><span class="pre">prev_loss</span></code>, <code class="docutils literal notranslate"><span class="pre">alpha</span></code> persist across calls) - use a fresh instance
+per training run.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min_alpha</strong> (<em>float</em>) – Lower bound the adaptive <code class="docutils literal notranslate"><span class="pre">alpha</span></code> can decay to.</p></li>
+<li><p><strong>max_alpha</strong> (<em>float</em>) – Upper bound the adaptive <code class="docutils literal notranslate"><span class="pre">alpha</span></code> can grow to.</p></li>
+<li><p><strong>alpha_step</strong> (<em>float</em>) – Adjustment applied to <code class="docutils literal notranslate"><span class="pre">alpha</span></code> after each call.</p></li>
+<li><p><strong>initial_alpha</strong> (<em>float</em>) – Starting value before any adjustment has occurred.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py attribute">
@@ -498,36 +425,20 @@ evaluation mode.</p>
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.ConfidenceBasedAdaptiveLabelRelaxationLoss">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.losses.custom_losses.</span></span><span class="sig-name descname"><span class="pre">ConfidenceBasedAdaptiveLabelRelaxationLoss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/losses/custom_losses.html#ConfidenceBasedAdaptiveLabelRelaxationLoss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.losses.custom_losses.ConfidenceBasedAdaptiveLabelRelaxationLoss" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
+<p><a class="reference internal" href="#dicee.losses.custom_losses.LabelRelaxationLoss" title="dicee.losses.custom_losses.LabelRelaxationLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelRelaxationLoss</span></code></a> where <code class="docutils literal notranslate"><span class="pre">alpha</span></code> shrinks as the model’s
+own average prediction confidence grows, selectable via
+<code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;ConfidenceBasedAdaptiveLabelRelaxationLoss&quot;</span></code>.</p>
+<p>Each call rescales <code class="docutils literal notranslate"><span class="pre">alpha</span></code> by <code class="docutils literal notranslate"><span class="pre">(1</span> <span class="pre">-</span> <span class="pre">mean(pred))</span></code> before computing the
+loss. Unlike <a class="reference internal" href="#dicee.losses.custom_losses.AdaptiveLabelRelaxationLoss" title="dicee.losses.custom_losses.AdaptiveLabelRelaxationLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">AdaptiveLabelRelaxationLoss</span></code></a>, this adjustment is
+one-directional and unbounded below: <code class="docutils literal notranslate"><span class="pre">alpha</span></code> only ever decays toward 0
+as confidence rises, with no mechanism to grow back if confidence later
+drops. <code class="docutils literal notranslate"><span class="pre">current_epoch</span></code> is accepted for interface consistency with the
+other <code class="docutils literal notranslate"><span class="pre">loss_fn</span></code> options but is currently unused. Stateful
+(<code class="docutils literal notranslate"><span class="pre">alpha</span></code> persists and mutates across calls) - use a fresh instance
+per training run.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>alpha</strong> (<em>float</em>) – Initial relaxation strength before any confidence-based decay.</p>
 </dd>
 </dl>
 <dl class="py attribute">
@@ -556,36 +467,17 @@ evaluation mode.</p>
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.CombinedLSandLR">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.losses.custom_losses.</span></span><span class="sig-name descname"><span class="pre">CombinedLSandLR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smoothness_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/losses/custom_losses.html#CombinedLSandLR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.losses.custom_losses.CombinedLSandLR" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
+<p>Switches from <a class="reference internal" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="dicee.losses.custom_losses.LabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelSmoothingLoss</span></code></a> to <a class="reference internal" href="#dicee.losses.custom_losses.LabelRelaxationLoss" title="dicee.losses.custom_losses.LabelRelaxationLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelRelaxationLoss</span></code></a>
+after epoch 20, selectable via <code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;CombinedLSandLR&quot;</span></code>.</p>
+<p>Intended to smooth early training then relax the target distribution
+later on; note <a class="reference internal" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="dicee.losses.custom_losses.LabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelSmoothingLoss</span></code></a>’s current no-op bug (<a class="reference external" href="https://github.com/dice-group/dice-embeddings/issues/453">#453</a>) means the
+“smoothing” phase is currently plain BCE.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>smoothness_ratio</strong> (<em>float</em>) – Forwarded to <a class="reference internal" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="dicee.losses.custom_losses.LabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelSmoothingLoss</span></code></a> for the first 20 epochs.</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – Forwarded to <a class="reference internal" href="#dicee.losses.custom_losses.LabelRelaxationLoss" title="dicee.losses.custom_losses.LabelRelaxationLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelRelaxationLoss</span></code></a> from epoch 20 onward.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py attribute">
@@ -609,38 +501,11 @@ evaluation mode.</p>
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.CombinedAdaptiveLSandAdaptiveLR">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.losses.custom_losses.</span></span><span class="sig-name descname"><span class="pre">CombinedAdaptiveLSandAdaptiveLR</span></span><a class="reference internal" href="../../../../_modules/dicee/losses/custom_losses.html#CombinedAdaptiveLSandAdaptiveLR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.losses.custom_losses.CombinedAdaptiveLSandAdaptiveLR" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
-<dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
-</dd>
-</dl>
+<p>Switches from <a class="reference internal" href="#dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss" title="dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">AdaptiveLabelSmoothingLoss</span></code></a> to
+<a class="reference internal" href="#dicee.losses.custom_losses.AdaptiveLabelRelaxationLoss" title="dicee.losses.custom_losses.AdaptiveLabelRelaxationLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">AdaptiveLabelRelaxationLoss</span></code></a> after epoch 100, selectable via
+<code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;CombinedAdaptiveLSandAdaptiveLR&quot;</span></code>.</p>
+<p>Both inner losses use their default hyperparameters; there is currently
+no way to configure them through this wrapper.</p>
 <dl class="py attribute">
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.CombinedAdaptiveLSandAdaptiveLR.adaptive_label_smoothing">
 <span class="sig-name descname"><span class="pre">adaptive_label_smoothing</span></span><a class="headerlink" href="#dicee.losses.custom_losses.CombinedAdaptiveLSandAdaptiveLR.adaptive_label_smoothing" title="Link to this definition"></a></dt>
@@ -667,36 +532,19 @@ evaluation mode.</p>
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.AggregatedLSandLR">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.losses.custom_losses.</span></span><span class="sig-name descname"><span class="pre">AggregatedLSandLR</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">smoothness_ratio</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.1</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/losses/custom_losses.html#AggregatedLSandLR"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.losses.custom_losses.AggregatedLSandLR" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
-</div>
+<p>Fixed 0.4/0.6 weighted average of <a class="reference internal" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="dicee.losses.custom_losses.LabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelSmoothingLoss</span></code></a> and
+<a class="reference internal" href="#dicee.losses.custom_losses.LabelRelaxationLoss" title="dicee.losses.custom_losses.LabelRelaxationLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelRelaxationLoss</span></code></a>, selectable via <code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;AggregatedLSandLR&quot;</span></code>.</p>
+<p>Unlike <a class="reference internal" href="#dicee.losses.custom_losses.CombinedLSandLR" title="dicee.losses.custom_losses.CombinedLSandLR"><code class="xref py py-class docutils literal notranslate"><span class="pre">CombinedLSandLR</span></code></a>, both terms are computed every call and
+blended (<code class="docutils literal notranslate"><span class="pre">0.4</span> <span class="pre">*</span> <span class="pre">smoothing</span> <span class="pre">+</span> <span class="pre">0.6</span> <span class="pre">*</span> <span class="pre">relaxation</span></code>) rather than switched
+between by epoch. Note <a class="reference internal" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="dicee.losses.custom_losses.LabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelSmoothingLoss</span></code></a>’s current no-op bug
+(<a class="reference external" href="https://github.com/dice-group/dice-embeddings/issues/453">#453</a>)
+means the smoothing term is currently plain BCE.</p>
 <dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>smoothness_ratio</strong> (<em>float</em>) – Forwarded to the inner <a class="reference internal" href="#dicee.losses.custom_losses.LabelSmoothingLoss" title="dicee.losses.custom_losses.LabelSmoothingLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelSmoothingLoss</span></code></a>.</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – Forwarded to the inner <a class="reference internal" href="#dicee.losses.custom_losses.LabelRelaxationLoss" title="dicee.losses.custom_losses.LabelRelaxationLoss"><code class="xref py py-class docutils literal notranslate"><span class="pre">LabelRelaxationLoss</span></code></a>.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py attribute">
@@ -720,36 +568,33 @@ evaluation mode.</p>
 <dt class="sig sig-object py" id="dicee.losses.custom_losses.ACLS">
 <span class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></span><span class="sig-prename descclassname"><span class="pre">dicee.losses.custom_losses.</span></span><span class="sig-name descname"><span class="pre">ACLS</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pos_lambda</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">neg_lambda</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">0.1</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">margin</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">float</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">10.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">200</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ignore_index</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><span class="pre">int</span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">-100</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../../../_modules/dicee/losses/custom_losses.html#ACLS"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#dicee.losses.custom_losses.ACLS" title="Link to this definition"></a></dt>
 <dd><p>Bases: <code class="xref py py-obj docutils literal notranslate"><span class="pre">torch.nn.Module</span></code></p>
-<p>Base class for all neural network modules.</p>
-<p>Your models should also subclass this class.</p>
-<p>Modules can also contain other Modules, allowing them to be nested in
-a tree structure. You can assign the submodules as regular attributes:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
-<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
-
-
-<span class="k">class</span><span class="w"> </span><span class="nc">Model</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv1</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
-
-    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv1</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv2</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
-</pre></div>
-</div>
-<p>Submodules assigned in this way will be registered, and will also have their
-parameters converted when you call <code class="xref py py-meth docutils literal notranslate"><span class="pre">to()</span></code>, etc.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>As per the example above, an <code class="docutils literal notranslate"><span class="pre">__init__()</span></code> call to the parent class
-must be made before assignment on the child.</p>
+<p>Adaptive and Conditional Label Smoothing-style calibration loss,
+selectable via <code class="docutils literal notranslate"><span class="pre">loss_fn=&quot;ACLS&quot;</span></code>.</p>
+<p>Adds a margin-based confidence regularizer to cross-entropy: for the
+predicted (argmax) class, logits above <code class="docutils literal notranslate"><span class="pre">margin</span></code> are penalized
+quadratically (discourages over-confidence on the top class), and for
+every other class, logits within <code class="docutils literal notranslate"><span class="pre">margin</span></code> of the top logit are also
+penalized quadratically (discourages under-separation from the runner-up
+classes). The two penalties are weighted by <code class="docutils literal notranslate"><span class="pre">pos_lambda</span></code>/<code class="docutils literal notranslate"><span class="pre">neg_lambda</span></code>
+and added to <code class="docutils literal notranslate"><span class="pre">CrossEntropyLoss</span></code> scaled by <code class="docutils literal notranslate"><span class="pre">alpha</span></code>.</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p><code class="docutils literal notranslate"><span class="pre">nn.CrossEntropyLoss</span></code> expects <code class="docutils literal notranslate"><span class="pre">targets</span></code> as class indices (or a
+proper probability distribution per row); KGE’s <code class="docutils literal notranslate"><span class="pre">KvsAll</span></code> labels
+are multi-hot (possibly several true tails per row), which is not
+an equivalent input. <code class="docutils literal notranslate"><span class="pre">num_classes</span></code> and <code class="docutils literal notranslate"><span class="pre">ignore_index</span></code> are
+currently unused in <code class="docutils literal notranslate"><span class="pre">forward</span></code>/<code class="docutils literal notranslate"><span class="pre">get_reg</span></code>.</p>
 </div>
 <dl class="field-list simple">
-<dt class="field-odd">Variables<span class="colon">:</span></dt>
-<dd class="field-odd"><p><strong>training</strong> (<em>bool</em>) – Boolean represents whether this module is in training or
-evaluation mode.</p>
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>pos_lambda</strong> (<em>float</em>) – Weight of the over-confidence penalty on the predicted class.</p></li>
+<li><p><strong>neg_lambda</strong> (<em>float</em>) – Weight of the under-separation penalty on the other classes.</p></li>
+<li><p><strong>alpha</strong> (<em>float</em>) – Weight of the regularization term relative to cross-entropy.</p></li>
+<li><p><strong>margin</strong> (<em>float</em>) – Logit margin used by both penalty terms.</p></li>
+<li><p><strong>num_classes</strong> (<em>int</em>) – Currently unused.</p></li>
+<li><p><strong>ignore_index</strong> (<em>int</em>) – Currently unused.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py attribute">

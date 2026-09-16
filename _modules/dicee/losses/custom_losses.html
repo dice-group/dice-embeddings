@@ -88,7 +88,21 @@
            <div itemprop="articleBody">
              
   <h1>Source code for dicee.losses.custom_losses</h1><div class="highlight"><pre>
-<span></span>
+<span></span><span class="sd">"""Alternative loss functions selectable via the ``loss_fn`` config option.</span>
+
+<span class="sd">``BaseKGE.__init__`` (``dicee/models/base_model.py``) instantiates one of</span>
+<span class="sd">these in place of the framework's default loss based on</span>
+<span class="sd">``args["loss_fn"]``; see that dispatch for the exact string values and</span>
+<span class="sd">which additional config options (``label_smoothing_rate``,</span>
+<span class="sd">``label_relaxation_alpha``) feed each one's constructor.</span>
+
+<span class="sd">Several of these declare a ``current_epoch`` parameter on ``forward`` so</span>
+<span class="sd">they can vary their behavior over training; ``BaseKGE.loss_function``</span>
+<span class="sd">detects this once per model (``self._loss_needs_epoch``, set by inspecting</span>
+<span class="sd">``self.loss.forward``'s parameters) and forwards the current epoch only to</span>
+<span class="sd">losses that declare it.</span>
+<span class="sd">"""</span>
+
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="kn">import</span> <span class="n">functional</span> <span class="k">as</span> <span class="n">F</span>
@@ -97,6 +111,13 @@
 <div class="viewcode-block" id="DefaultBCELoss">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.DefaultBCELoss">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">DefaultBCELoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Plain ``BCEWithLogitsLoss``, selectable via ``loss_fn="BCELoss"``.</span>
+
+<span class="sd">    Equivalent to the framework's own default entity/relation-prediction</span>
+<span class="sd">    loss (see ``BaseKGE.__init__``); provided as an explicit ``loss_fn``</span>
+<span class="sd">    option for parity with the other choices in this module.</span>
+<span class="sd">    """</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">DefaultBCELoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
@@ -148,6 +169,22 @@
 <div class="viewcode-block" id="LabelSmoothingLoss">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.LabelSmoothingLoss">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LabelSmoothingLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Intended as a fixed-rate label-smoothing loss, selectable via</span>
+<span class="sd">    ``loss_fn="LS"`` (``smoothness_ratio`` comes from the ``label_smoothing_rate``</span>
+<span class="sd">    config option).</span>
+
+<span class="sd">    .. warning::</span>
+<span class="sd">        ``forward`` currently ignores ``smoothness_ratio`` entirely and is</span>
+<span class="sd">        byte-for-byte identical to :class:`DefaultBCELoss` — no smoothing is</span>
+<span class="sd">        actually applied. See `issue #453</span>
+<span class="sd">        &lt;https://github.com/dice-group/dice-embeddings/issues/453&gt;`_. This is</span>
+<span class="sd">        independent of the (correctly implemented) dataset-level smoothing</span>
+<span class="sd">        controlled by the same ``label_smoothing_rate`` option</span>
+<span class="sd">        (``dicee/dataset_classes/_label_based.py``, ``_negative_sampling.py``),</span>
+<span class="sd">        which bakes smoothing into the training targets regardless of</span>
+<span class="sd">        ``loss_fn``.</span>
+<span class="sd">    """</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smoothness_ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">LabelSmoothingLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">smoothness_ratio</span> <span class="o">=</span> <span class="n">smoothness_ratio</span>
@@ -167,6 +204,34 @@
 <div class="viewcode-block" id="AdaptiveLabelSmoothingLoss">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.AdaptiveLabelSmoothingLoss">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AdaptiveLabelSmoothingLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""KL-divergence label smoothing with a smoothing factor that self-adjusts</span>
+<span class="sd">    from batch to batch, selectable via ``loss_fn="AdaptiveLabelSmoothingLoss"``.</span>
+
+<span class="sd">    Converts ``logits`` to log-probabilities and compares against a smoothed</span>
+<span class="sd">    target distribution (mass ``smoothing_factor`` redistributed uniformly</span>
+<span class="sd">    over the non-target classes) via ``KL(pred || smoothed_target)``. After</span>
+<span class="sd">    each call, ``smoothing_factor`` moves one ``smoothing_factor_step``</span>
+<span class="sd">    toward ``max_smoothing_factor`` if the loss increased since the previous</span>
+<span class="sd">    call, or toward ``min_smoothing_factor`` if it decreased — i.e. it backs</span>
+<span class="sd">    off smoothing while the model is improving and leans into it when</span>
+<span class="sd">    training stalls. ``current_epoch`` is accepted for interface consistency</span>
+<span class="sd">    with the other ``loss_fn`` options but is currently unused.</span>
+
+<span class="sd">    This module is stateful (``prev_loss``, ``smoothing_factor`` persist</span>
+<span class="sd">    across calls), so a fresh instance should be used per training run.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    min_smoothing_factor : float</span>
+<span class="sd">        Lower bound the adaptive smoothing factor can decay to.</span>
+<span class="sd">    max_smoothing_factor : float</span>
+<span class="sd">        Upper bound the adaptive smoothing factor can grow to.</span>
+<span class="sd">    smoothing_factor_step : float</span>
+<span class="sd">        Adjustment applied to the smoothing factor after each call.</span>
+<span class="sd">    initial_smoothing_factor : float</span>
+<span class="sd">        Starting value before any adjustment has occurred.</span>
+<span class="sd">    """</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_smoothing_factor</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
                  <span class="n">max_smoothing_factor</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
                  <span class="n">smoothing_factor_step</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span>
@@ -211,6 +276,24 @@
 <div class="viewcode-block" id="LabelRelaxationLoss">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.LabelRelaxationLoss">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">LabelRelaxationLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Label relaxation loss, selectable via ``loss_fn="LRLoss"``.</span>
+
+<span class="sd">    Based on "From Label Smoothing to Label Relaxation" (Lienen &amp;</span>
+<span class="sd">    Hullermeier, AAAI 2021): instead of smoothing toward one fixed soft</span>
+<span class="sd">    target, it constructs a *credal set* of distributions that assign at</span>
+<span class="sd">    least ``1 - alpha`` probability to the target class(es) and measures the</span>
+<span class="sd">    KL divergence to the closest point in that set, rather than to a single</span>
+<span class="sd">    fixed distribution. Predictions that are already confident enough</span>
+<span class="sd">    (probability mass on the target above ``1 - alpha``) incur zero loss.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Relaxation strength in ``[0, 1)``; ``0`` recovers ordinary</span>
+<span class="sd">        cross-entropy-style behavior (no slack), larger values tolerate</span>
+<span class="sd">        more probability mass elsewhere before penalizing.</span>
+<span class="sd">    """</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">LabelRelaxationLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
@@ -242,6 +325,30 @@
 <div class="viewcode-block" id="AdaptiveLabelRelaxationLoss">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.AdaptiveLabelRelaxationLoss">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AdaptiveLabelRelaxationLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">""":class:`LabelRelaxationLoss` with an ``alpha`` that self-adjusts from</span>
+<span class="sd">    batch to batch, selectable via ``loss_fn="AdaptiveLabelRelaxationLoss"``.</span>
+
+<span class="sd">    Computes the label-relaxation loss once under ``torch.no_grad()`` with</span>
+<span class="sd">    the current ``alpha`` to decide the adjustment (grow toward</span>
+<span class="sd">    ``max_alpha`` if the loss increased since the previous call, shrink</span>
+<span class="sd">    toward ``min_alpha`` if it decreased), then recomputes the loss with the</span>
+<span class="sd">    updated ``alpha`` for the actual gradient-carrying return value. Like</span>
+<span class="sd">    :class:`AdaptiveLabelSmoothingLoss`, this module is stateful</span>
+<span class="sd">    (``prev_loss``, ``alpha`` persist across calls) - use a fresh instance</span>
+<span class="sd">    per training run.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    min_alpha : float</span>
+<span class="sd">        Lower bound the adaptive ``alpha`` can decay to.</span>
+<span class="sd">    max_alpha : float</span>
+<span class="sd">        Upper bound the adaptive ``alpha`` can grow to.</span>
+<span class="sd">    alpha_step : float</span>
+<span class="sd">        Adjustment applied to ``alpha`` after each call.</span>
+<span class="sd">    initial_alpha : float</span>
+<span class="sd">        Starting value before any adjustment has occurred.</span>
+<span class="sd">    """</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">min_alpha</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">max_alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">alpha_step</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">initial_alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">AdaptiveLabelRelaxationLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">min_alpha</span> <span class="o">=</span> <span class="n">min_alpha</span>
@@ -295,6 +402,25 @@
 <div class="viewcode-block" id="ConfidenceBasedAdaptiveLabelRelaxationLoss">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.ConfidenceBasedAdaptiveLabelRelaxationLoss">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ConfidenceBasedAdaptiveLabelRelaxationLoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">""":class:`LabelRelaxationLoss` where ``alpha`` shrinks as the model's</span>
+<span class="sd">    own average prediction confidence grows, selectable via</span>
+<span class="sd">    ``loss_fn="ConfidenceBasedAdaptiveLabelRelaxationLoss"``.</span>
+
+<span class="sd">    Each call rescales ``alpha`` by ``(1 - mean(pred))`` before computing the</span>
+<span class="sd">    loss. Unlike :class:`AdaptiveLabelRelaxationLoss`, this adjustment is</span>
+<span class="sd">    one-directional and unbounded below: ``alpha`` only ever decays toward 0</span>
+<span class="sd">    as confidence rises, with no mechanism to grow back if confidence later</span>
+<span class="sd">    drops. ``current_epoch`` is accepted for interface consistency with the</span>
+<span class="sd">    other ``loss_fn`` options but is currently unused. Stateful</span>
+<span class="sd">    (``alpha`` persists and mutates across calls) - use a fresh instance</span>
+<span class="sd">    per training run.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Initial relaxation strength before any confidence-based decay.</span>
+<span class="sd">    """</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">ConfidenceBasedAdaptiveLabelRelaxationLoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
@@ -332,6 +458,22 @@
 <div class="viewcode-block" id="CombinedLSandLR">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.CombinedLSandLR">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CombinedLSandLR</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Switches from :class:`LabelSmoothingLoss` to :class:`LabelRelaxationLoss`</span>
+<span class="sd">    after epoch 20, selectable via ``loss_fn="CombinedLSandLR"``.</span>
+
+<span class="sd">    Intended to smooth early training then relax the target distribution</span>
+<span class="sd">    later on; note :class:`LabelSmoothingLoss`'s current no-op bug (`#453</span>
+<span class="sd">    &lt;https://github.com/dice-group/dice-embeddings/issues/453&gt;`_) means the</span>
+<span class="sd">    "smoothing" phase is currently plain BCE.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    smoothness_ratio : float</span>
+<span class="sd">        Forwarded to :class:`LabelSmoothingLoss` for the first 20 epochs.</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Forwarded to :class:`LabelRelaxationLoss` from epoch 20 onward.</span>
+<span class="sd">    """</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smoothness_ratio</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.0</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">CombinedLSandLR</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">smoothness_ratio</span> <span class="o">=</span> <span class="n">smoothness_ratio</span>
@@ -353,6 +495,14 @@
 <div class="viewcode-block" id="CombinedAdaptiveLSandAdaptiveLR">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.CombinedAdaptiveLSandAdaptiveLR">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">CombinedAdaptiveLSandAdaptiveLR</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Switches from :class:`AdaptiveLabelSmoothingLoss` to</span>
+<span class="sd">    :class:`AdaptiveLabelRelaxationLoss` after epoch 100, selectable via</span>
+<span class="sd">    ``loss_fn="CombinedAdaptiveLSandAdaptiveLR"``.</span>
+
+<span class="sd">    Both inner losses use their default hyperparameters; there is currently</span>
+<span class="sd">    no way to configure them through this wrapper.</span>
+<span class="sd">    """</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">CombinedAdaptiveLSandAdaptiveLR</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">adaptive_label_smoothing</span> <span class="o">=</span> <span class="n">AdaptiveLabelSmoothingLoss</span><span class="p">()</span>
@@ -366,7 +516,7 @@
         <span class="k">if</span> <span class="n">current_epoch</span> <span class="o">&lt;</span> <span class="mi">100</span><span class="p">:</span>
             <span class="n">final_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adaptive_label_smoothing</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">final_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adaptive_label_relaxation</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">)</span>
+            <span class="n">final_loss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adaptive_label_relaxation</span><span class="p">(</span><span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">final_loss</span></div>
 </div>
 
@@ -375,6 +525,23 @@
 <div class="viewcode-block" id="AggregatedLSandLR">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.AggregatedLSandLR">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">AggregatedLSandLR</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Fixed 0.4/0.6 weighted average of :class:`LabelSmoothingLoss` and</span>
+<span class="sd">    :class:`LabelRelaxationLoss`, selectable via ``loss_fn="AggregatedLSandLR"``.</span>
+
+<span class="sd">    Unlike :class:`CombinedLSandLR`, both terms are computed every call and</span>
+<span class="sd">    blended (``0.4 * smoothing + 0.6 * relaxation``) rather than switched</span>
+<span class="sd">    between by epoch. Note :class:`LabelSmoothingLoss`'s current no-op bug</span>
+<span class="sd">    (`#453 &lt;https://github.com/dice-group/dice-embeddings/issues/453&gt;`_)</span>
+<span class="sd">    means the smoothing term is currently plain BCE.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    smoothness_ratio : float</span>
+<span class="sd">        Forwarded to the inner :class:`LabelSmoothingLoss`.</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Forwarded to the inner :class:`LabelRelaxationLoss`.</span>
+<span class="sd">    """</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">smoothness_ratio</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">AggregatedLSandLR</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">smoothness_ratio</span> <span class="o">=</span> <span class="n">smoothness_ratio</span>
@@ -400,6 +567,39 @@
 <div class="viewcode-block" id="ACLS">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.ACLS">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ACLS</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Adaptive and Conditional Label Smoothing-style calibration loss,</span>
+<span class="sd">    selectable via ``loss_fn="ACLS"``.</span>
+
+<span class="sd">    Adds a margin-based confidence regularizer to cross-entropy: for the</span>
+<span class="sd">    predicted (argmax) class, logits above ``margin`` are penalized</span>
+<span class="sd">    quadratically (discourages over-confidence on the top class), and for</span>
+<span class="sd">    every other class, logits within ``margin`` of the top logit are also</span>
+<span class="sd">    penalized quadratically (discourages under-separation from the runner-up</span>
+<span class="sd">    classes). The two penalties are weighted by ``pos_lambda``/``neg_lambda``</span>
+<span class="sd">    and added to ``CrossEntropyLoss`` scaled by ``alpha``.</span>
+
+<span class="sd">    .. warning::</span>
+<span class="sd">        ``nn.CrossEntropyLoss`` expects ``targets`` as class indices (or a</span>
+<span class="sd">        proper probability distribution per row); KGE's ``KvsAll`` labels</span>
+<span class="sd">        are multi-hot (possibly several true tails per row), which is not</span>
+<span class="sd">        an equivalent input. ``num_classes`` and ``ignore_index`` are</span>
+<span class="sd">        currently unused in ``forward``/``get_reg``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pos_lambda : float</span>
+<span class="sd">        Weight of the over-confidence penalty on the predicted class.</span>
+<span class="sd">    neg_lambda : float</span>
+<span class="sd">        Weight of the under-separation penalty on the other classes.</span>
+<span class="sd">    alpha : float</span>
+<span class="sd">        Weight of the regularization term relative to cross-entropy.</span>
+<span class="sd">    margin : float</span>
+<span class="sd">        Logit margin used by both penalty terms.</span>
+<span class="sd">    num_classes : int</span>
+<span class="sd">        Currently unused.</span>
+<span class="sd">    ignore_index : int</span>
+<span class="sd">        Currently unused.</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
                  <span class="n">pos_lambda</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
