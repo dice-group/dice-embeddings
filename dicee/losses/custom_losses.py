@@ -1,3 +1,17 @@
+"""Alternative loss functions selectable via the ``loss_fn`` config option.
+
+``BaseKGE.__init__`` (``dicee/models/base_model.py``) instantiates one of
+these in place of the framework's default loss based on
+``args["loss_fn"]``; see that dispatch for the exact string values and
+which additional config options (``label_smoothing_rate``,
+``label_relaxation_alpha``) feed each one's constructor.
+
+Several of these declare a ``current_epoch`` parameter on ``forward`` so
+they can vary their behavior over training; ``BaseKGE.loss_function``
+detects this once per model (``self._loss_needs_epoch``, set by inspecting
+``self.loss.forward``'s parameters) and forwards the current epoch only to
+losses that declare it.
+"""
 
 import torch
 from torch import nn
@@ -5,6 +19,13 @@ from torch.nn import functional as F
 
 
 class DefaultBCELoss(nn.Module):
+    """Plain ``BCEWithLogitsLoss``, selectable via ``loss_fn="BCELoss"``.
+
+    Equivalent to the framework's own default entity/relation-prediction
+    loss (see ``BaseKGE.__init__``); provided as an explicit ``loss_fn``
+    option for parity with the other choices in this module.
+    """
+
     def __init__(self):
         super(DefaultBCELoss, self).__init__()
 
@@ -44,6 +65,22 @@ class WeightedBCELoss(nn.Module):
         return final_loss
 
 class LabelSmoothingLoss(nn.Module):
+    """Intended as a fixed-rate label-smoothing loss, selectable via
+    ``loss_fn="LS"`` (``smoothness_ratio`` comes from the ``label_smoothing_rate``
+    config option).
+
+    .. warning::
+        ``forward`` currently ignores ``smoothness_ratio`` entirely and is
+        byte-for-byte identical to :class:`DefaultBCELoss` — no smoothing is
+        actually applied. See `issue #453
+        <https://github.com/dice-group/dice-embeddings/issues/453>`_. This is
+        independent of the (correctly implemented) dataset-level smoothing
+        controlled by the same ``label_smoothing_rate`` option
+        (``dicee/dataset_classes/_label_based.py``, ``_negative_sampling.py``),
+        which bakes smoothing into the training targets regardless of
+        ``loss_fn``.
+    """
+
     def __init__(self, smoothness_ratio=0.0):
         super(LabelSmoothingLoss, self).__init__()
         self.smoothness_ratio = smoothness_ratio
@@ -57,6 +94,34 @@ class LabelSmoothingLoss(nn.Module):
         return final_loss
 
 class AdaptiveLabelSmoothingLoss(nn.Module):
+    """KL-divergence label smoothing with a smoothing factor that self-adjusts
+    from batch to batch, selectable via ``loss_fn="AdaptiveLabelSmoothingLoss"``.
+
+    Converts ``logits`` to log-probabilities and compares against a smoothed
+    target distribution (mass ``smoothing_factor`` redistributed uniformly
+    over the non-target classes) via ``KL(pred || smoothed_target)``. After
+    each call, ``smoothing_factor`` moves one ``smoothing_factor_step``
+    toward ``max_smoothing_factor`` if the loss increased since the previous
+    call, or toward ``min_smoothing_factor`` if it decreased — i.e. it backs
+    off smoothing while the model is improving and leans into it when
+    training stalls. ``current_epoch`` is accepted for interface consistency
+    with the other ``loss_fn`` options but is currently unused.
+
+    This module is stateful (``prev_loss``, ``smoothing_factor`` persist
+    across calls), so a fresh instance should be used per training run.
+
+    Parameters
+    ----------
+    min_smoothing_factor : float
+        Lower bound the adaptive smoothing factor can decay to.
+    max_smoothing_factor : float
+        Upper bound the adaptive smoothing factor can grow to.
+    smoothing_factor_step : float
+        Adjustment applied to the smoothing factor after each call.
+    initial_smoothing_factor : float
+        Starting value before any adjustment has occurred.
+    """
+
     def __init__(self, min_smoothing_factor=0.01,
                  max_smoothing_factor=0.2,
                  smoothing_factor_step=0.01,
@@ -95,6 +160,24 @@ class AdaptiveLabelSmoothingLoss(nn.Module):
         return loss
 
 class LabelRelaxationLoss(nn.Module):
+    """Label relaxation loss, selectable via ``loss_fn="LRLoss"``.
+
+    Based on "From Label Smoothing to Label Relaxation" (Lienen &
+    Hullermeier, AAAI 2021): instead of smoothing toward one fixed soft
+    target, it constructs a *credal set* of distributions that assign at
+    least ``1 - alpha`` probability to the target class(es) and measures the
+    KL divergence to the closest point in that set, rather than to a single
+    fixed distribution. Predictions that are already confident enough
+    (probability mass on the target above ``1 - alpha``) incur zero loss.
+
+    Parameters
+    ----------
+    alpha : float
+        Relaxation strength in ``[0, 1)``; ``0`` recovers ordinary
+        cross-entropy-style behavior (no slack), larger values tolerate
+        more probability mass elsewhere before penalizing.
+    """
+
     def __init__(self, alpha=0.0):
         super(LabelRelaxationLoss, self).__init__()
         self.alpha = alpha
@@ -120,6 +203,30 @@ class LabelRelaxationLoss(nn.Module):
         return final_loss
 
 class AdaptiveLabelRelaxationLoss(nn.Module):
+    """:class:`LabelRelaxationLoss` with an ``alpha`` that self-adjusts from
+    batch to batch, selectable via ``loss_fn="AdaptiveLabelRelaxationLoss"``.
+
+    Computes the label-relaxation loss once under ``torch.no_grad()`` with
+    the current ``alpha`` to decide the adjustment (grow toward
+    ``max_alpha`` if the loss increased since the previous call, shrink
+    toward ``min_alpha`` if it decreased), then recomputes the loss with the
+    updated ``alpha`` for the actual gradient-carrying return value. Like
+    :class:`AdaptiveLabelSmoothingLoss`, this module is stateful
+    (``prev_loss``, ``alpha`` persist across calls) - use a fresh instance
+    per training run.
+
+    Parameters
+    ----------
+    min_alpha : float
+        Lower bound the adaptive ``alpha`` can decay to.
+    max_alpha : float
+        Upper bound the adaptive ``alpha`` can grow to.
+    alpha_step : float
+        Adjustment applied to ``alpha`` after each call.
+    initial_alpha : float
+        Starting value before any adjustment has occurred.
+    """
+
     def __init__(self, min_alpha=0.01, max_alpha=0.2, alpha_step=0.01, initial_alpha=0.1):
         super(AdaptiveLabelRelaxationLoss, self).__init__()
         self.min_alpha = min_alpha
@@ -167,6 +274,25 @@ class AdaptiveLabelRelaxationLoss(nn.Module):
 
 
 class ConfidenceBasedAdaptiveLabelRelaxationLoss(nn.Module):
+    """:class:`LabelRelaxationLoss` where ``alpha`` shrinks as the model's
+    own average prediction confidence grows, selectable via
+    ``loss_fn="ConfidenceBasedAdaptiveLabelRelaxationLoss"``.
+
+    Each call rescales ``alpha`` by ``(1 - mean(pred))`` before computing the
+    loss. Unlike :class:`AdaptiveLabelRelaxationLoss`, this adjustment is
+    one-directional and unbounded below: ``alpha`` only ever decays toward 0
+    as confidence rises, with no mechanism to grow back if confidence later
+    drops. ``current_epoch`` is accepted for interface consistency with the
+    other ``loss_fn`` options but is currently unused. Stateful
+    (``alpha`` persists and mutates across calls) - use a fresh instance
+    per training run.
+
+    Parameters
+    ----------
+    alpha : float
+        Initial relaxation strength before any confidence-based decay.
+    """
+
     def __init__(self, alpha=0.1):
         super(ConfidenceBasedAdaptiveLabelRelaxationLoss, self).__init__()
         self.alpha = alpha
@@ -198,6 +324,22 @@ class ConfidenceBasedAdaptiveLabelRelaxationLoss(nn.Module):
 
 
 class CombinedLSandLR(nn.Module):
+    """Switches from :class:`LabelSmoothingLoss` to :class:`LabelRelaxationLoss`
+    after epoch 20, selectable via ``loss_fn="CombinedLSandLR"``.
+
+    Intended to smooth early training then relax the target distribution
+    later on; note :class:`LabelSmoothingLoss`'s current no-op bug (`#453
+    <https://github.com/dice-group/dice-embeddings/issues/453>`_) means the
+    "smoothing" phase is currently plain BCE.
+
+    Parameters
+    ----------
+    smoothness_ratio : float
+        Forwarded to :class:`LabelSmoothingLoss` for the first 20 epochs.
+    alpha : float
+        Forwarded to :class:`LabelRelaxationLoss` from epoch 20 onward.
+    """
+
     def __init__(self, smoothness_ratio=0.0, alpha=0.0):
         super(CombinedLSandLR, self).__init__()
         self.smoothness_ratio = smoothness_ratio
@@ -213,6 +355,14 @@ class CombinedLSandLR(nn.Module):
 
 
 class CombinedAdaptiveLSandAdaptiveLR(nn.Module):
+    """Switches from :class:`AdaptiveLabelSmoothingLoss` to
+    :class:`AdaptiveLabelRelaxationLoss` after epoch 100, selectable via
+    ``loss_fn="CombinedAdaptiveLSandAdaptiveLR"``.
+
+    Both inner losses use their default hyperparameters; there is currently
+    no way to configure them through this wrapper.
+    """
+
     def __init__(self):
         super(CombinedAdaptiveLSandAdaptiveLR, self).__init__()
         self.adaptive_label_smoothing = AdaptiveLabelSmoothingLoss()
@@ -224,11 +374,28 @@ class CombinedAdaptiveLSandAdaptiveLR(nn.Module):
         if current_epoch < 100:
             final_loss = self.adaptive_label_smoothing(pred, target, current_epoch)
         else:
-            final_loss = self.adaptive_label_relaxation(pred, target, current_epoch)
+            final_loss = self.adaptive_label_relaxation(pred, target)
         return final_loss
 
 
 class AggregatedLSandLR(nn.Module):
+    """Fixed 0.4/0.6 weighted average of :class:`LabelSmoothingLoss` and
+    :class:`LabelRelaxationLoss`, selectable via ``loss_fn="AggregatedLSandLR"``.
+
+    Unlike :class:`CombinedLSandLR`, both terms are computed every call and
+    blended (``0.4 * smoothing + 0.6 * relaxation``) rather than switched
+    between by epoch. Note :class:`LabelSmoothingLoss`'s current no-op bug
+    (`#453 <https://github.com/dice-group/dice-embeddings/issues/453>`_)
+    means the smoothing term is currently plain BCE.
+
+    Parameters
+    ----------
+    smoothness_ratio : float
+        Forwarded to the inner :class:`LabelSmoothingLoss`.
+    alpha : float
+        Forwarded to the inner :class:`LabelRelaxationLoss`.
+    """
+
     def __init__(self, smoothness_ratio=0.1, alpha=0.1):
         super(AggregatedLSandLR, self).__init__()
         self.smoothness_ratio = smoothness_ratio
@@ -248,6 +415,39 @@ class AggregatedLSandLR(nn.Module):
 
 
 class ACLS(nn.Module):
+    """Adaptive and Conditional Label Smoothing-style calibration loss,
+    selectable via ``loss_fn="ACLS"``.
+
+    Adds a margin-based confidence regularizer to cross-entropy: for the
+    predicted (argmax) class, logits above ``margin`` are penalized
+    quadratically (discourages over-confidence on the top class), and for
+    every other class, logits within ``margin`` of the top logit are also
+    penalized quadratically (discourages under-separation from the runner-up
+    classes). The two penalties are weighted by ``pos_lambda``/``neg_lambda``
+    and added to ``CrossEntropyLoss`` scaled by ``alpha``.
+
+    .. warning::
+        ``nn.CrossEntropyLoss`` expects ``targets`` as class indices (or a
+        proper probability distribution per row); KGE's ``KvsAll`` labels
+        are multi-hot (possibly several true tails per row), which is not
+        an equivalent input. ``num_classes`` and ``ignore_index`` are
+        currently unused in ``forward``/``get_reg``.
+
+    Parameters
+    ----------
+    pos_lambda : float
+        Weight of the over-confidence penalty on the predicted class.
+    neg_lambda : float
+        Weight of the under-separation penalty on the other classes.
+    alpha : float
+        Weight of the regularization term relative to cross-entropy.
+    margin : float
+        Logit margin used by both penalty terms.
+    num_classes : int
+        Currently unused.
+    ignore_index : int
+        Currently unused.
+    """
 
     def __init__(self,
                  pos_lambda: float = 1.0,
