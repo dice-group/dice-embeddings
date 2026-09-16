@@ -15,6 +15,8 @@ Covers:
 - TransE.score / forward_k_vs_all: output shapes
 """
 
+from typing import Optional
+
 import pytest
 import torch
 
@@ -31,7 +33,7 @@ def _minimal_args(
     num_entities: int = 50,
     num_relations: int = 10,
     scoring_technique: str = "KvsAll",
-    normalization: str = None,
+    normalization: Optional[str] = None,
     optim: str = "Adam",
 ) -> dict:
     """Return a minimal args dict suitable for DistMult/TransE construction."""

@@ -1,6 +1,7 @@
 import os
 import pytest
 import shutil
+from typing import Optional
 import numpy as np
 import pandas as pd
 
@@ -16,7 +17,7 @@ from dicee.eval_static_funcs import evaluate_literal_prediction
 class TestPredictLitRegression:
     """Regression tests for literal prediction using interactive KGE model Family dataset."""
     
-    def create_train_triples(self, path : str = None):
+    def create_train_triples(self, path : Optional[str] = None):
         """
         Create training triples for the Family dataset.
 

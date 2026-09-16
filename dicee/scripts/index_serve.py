@@ -90,7 +90,7 @@ class NeuralSearcher:
         # semantic search
         self.topk=5
 
-    def retrieve_embedding(self,entity:str=None,entities:List[str]=None)->List:
+    def retrieve_embedding(self,entity:Optional[str]=None,entities:Optional[List[str]]=None)->List:
         ids=[]
         inputs= [entity]
         if entities is not None:

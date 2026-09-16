@@ -340,7 +340,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             return scores
 
     def predict_missing_tail_entity(self, head_entity: Union[List[str], str],
-                                    relation: Union[List[str], str], within: List[str] = None, batch_size = 2, topk = 1, return_indices = False) -> torch.FloatTensor:
+                                    relation: Union[List[str], str], within: Optional[List[str]] = None, batch_size = 2, topk = 1, return_indices = False) -> torch.FloatTensor:
         r"""
         Given a head entity and a relation, return top k ranked entities
 
@@ -651,8 +651,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         else:
             raise AttributeError('Use triple_score method')
 
-    def triple_score(self, h: Union[List[str], str] = None, r: Union[List[str], str] = None,
-                     t: Union[List[str], str] = None, logits=False) -> torch.FloatTensor:
+    def triple_score(self, h: Optional[Union[List[str], str]] = None, r: Optional[Union[List[str], str]] = None,
+                     t: Optional[Union[List[str], str]] = None, logits=False) -> torch.FloatTensor:
         """
         Predict triple score
 
@@ -730,7 +730,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         return sorted([(ei, s) for ei, s in zip(self.entity_to_idx.keys(), aggregated_query_for_all_entities)],
                       key=lambda x: x[1], reverse=True)[:k]
 
-    def single_hop_query_answering(self, query: tuple, only_scores: bool = True, k: int = None,
+    def single_hop_query_answering(self, query: tuple, only_scores: bool = True, k: Optional[int] = None,
                                    use_logits: bool = True):
         h, r = query
         result = self.predict(h=h, r=r[0], logits=use_logits).squeeze()
@@ -1299,7 +1299,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         else:
             raise RuntimeError(f"Incorrect query_structure {query_structure}")
 
-    def find_missing_triples(self, confidence: float, entities: List[str] = None, relations: List[str] = None,
+    def find_missing_triples(self, confidence: float, entities: Optional[List[str]] = None, relations: Optional[List[str]] = None,
                              topk: int = 10,
                              at_most: int = sys.maxsize) -> Set:
         """
@@ -1395,8 +1395,8 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
     def predict_literals(
         self,
-        entity: Union[List[str], str] = None,
-        attribute: Union[List[str], str] = None,
+        entity: Optional[Union[List[str], str]] = None,
+        attribute: Optional[Union[List[str], str]] = None,
         denormalize_preds: bool = True,
     ) -> np.ndarray:
         """Predicts literal values for given entities and attributes.

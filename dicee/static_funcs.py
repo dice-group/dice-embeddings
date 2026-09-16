@@ -259,7 +259,7 @@ def load_term_mapping(file_path: str) -> Union[dict, pl.DataFrame]:
         return pl.read_csv(f"{file_path}.csv")
 
 # @TODO: Could these funcs can be merged?
-def select_model(args: dict, is_continual_training: bool = None, storage_path: str = None):
+def select_model(args: dict, is_continual_training: bool, storage_path: str):
     isinstance(args, dict)
     assert len(args) > 0
     assert isinstance(is_continual_training, bool)
@@ -505,7 +505,7 @@ def save_checkpoint_model(model, path: str) -> None:
         torch.save(model.model.state_dict(), path)
 
 
-def store(trained_model, model_name: str = 'model', full_storage_path: str = None,
+def store(trained_model, full_storage_path: str, model_name: str = 'model',
           save_embeddings_as_csv=False) -> None:
     assert full_storage_path is not None
     assert isinstance(model_name, str)

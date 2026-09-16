@@ -4,7 +4,7 @@ import pickle
 import random
 from collections import defaultdict
 from copy import deepcopy
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class QueryGenerator:
-    def __init__(self, train_path, val_path: str, test_path: str, ent2id: Dict = None, rel2id: Dict = None,
+    def __init__(self, train_path, val_path: str, test_path: str, ent2id: Optional[Dict] = None, rel2id: Optional[Dict] = None,
                  seed: int = 1,
                  gen_valid: bool = False,
                  gen_test: bool = True):

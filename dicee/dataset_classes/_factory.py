@@ -6,7 +6,7 @@ requested scoring technique and labelling strategy.
 """
 
 import logging
-from typing import Union
+from typing import Optional, Union
 
 import numpy as np
 import torch
@@ -53,7 +53,7 @@ def construct_dataset(
     test_set=None,
     ordered_bpe_entities=None,
     train_target_indices=None,
-    target_dim: int = None,
+    target_dim: Optional[int] = None,
     entity_to_idx: dict,
     relation_to_idx: dict,
     form_of_labelling: str,
@@ -61,8 +61,8 @@ def construct_dataset(
     neg_ratio: int,
     label_smoothing_rate: float,
     byte_pair_encoding=None,
-    block_size: int = None,
-    seed: int = None,
+    block_size: Optional[int] = None,
+    seed: Optional[int] = None,
     sort_train_set: bool = True,
     grouped_negative_sampling: bool = False,
     strict_negative_sampling: bool = False,

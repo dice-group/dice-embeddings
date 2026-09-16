@@ -1,11 +1,11 @@
-from typing import List
+from typing import List, Optional
 
 import torch
 import torch.nn as nn
 
 
 class EnsembleKGE:
-    def __init__(self, models : list=None, seed_model=None, pretrained_models:List=None):
+    def __init__(self, models: Optional[list] = None, seed_model=None, pretrained_models: Optional[List] = None):
 
         if models is not None:
             if len(models) == 0:

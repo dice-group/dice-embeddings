@@ -5,7 +5,7 @@ Provides ``TriplePredictionDataset``, ``FixedNegSampleDataset``, and
 head or tail entities at training time.
 """
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -39,7 +39,7 @@ class OnevsSample(WorkerDataset):
         train_set: np.ndarray,
         num_entities: int,
         num_relations: int,
-        neg_sample_ratio: int = None,
+        neg_sample_ratio: Optional[int] = None,
         label_smoothing_rate: float = 0.0,
     ):
         super().__init__()
@@ -130,7 +130,7 @@ class FixedNegSampleDataset(WorkerDataset):
         num_relations: int,
         neg_sample_ratio: int = 1,
         label_smoothing_rate: float = 0.0,
-        seed: int = None,
+        seed: Optional[int] = None,
     ):
         assert isinstance(train_set, np.ndarray)
         self.neg_sample_ratio = neg_sample_ratio
@@ -237,7 +237,7 @@ class TriplePredictionDataset(WorkerDataset):
         num_relations: int,
         neg_sample_ratio: int = 1,
         label_smoothing_rate: float = 0.0,
-        seed: int = None,
+        seed: Optional[int] = None,
         sort_train_set: bool = True,
     ):
         assert isinstance(train_set, np.ndarray)

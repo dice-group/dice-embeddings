@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 def evaluate_literal_prediction(
     kge_model,
-    eval_file_path: str = None,
+    eval_file_path: Optional[str] = None,
     store_lit_preds: bool = True,
     eval_literals: bool = True,
     loader_backend: str = "pandas",

@@ -6,6 +6,7 @@ Provides ``LiteralDataset`` for training models on numeric literal triples
 
 import logging
 import os
+from typing import Optional
 
 import numpy as np
 import pandas as pd
@@ -39,9 +40,9 @@ class LiteralDataset(Dataset):
     def __init__(
         self,
         file_path: str,
-        ent_idx: dict = None,
+        ent_idx: Optional[dict] = None,
         normalization_type: str = "z-norm",
-        sampling_ratio: float = None,
+        sampling_ratio: Optional[float] = None,
         loader_backend: str = "pandas",
     ):
         self.train_file_path = file_path
@@ -152,7 +153,7 @@ class LiteralDataset(Dataset):
 
     @staticmethod
     def load_and_validate_literal_data(
-        file_path: str = None, loader_backend: str = "pandas"
+        file_path: Optional[str] = None, loader_backend: str = "pandas"
     ) -> pd.DataFrame:
         """Load and validate a literal data file.
 
