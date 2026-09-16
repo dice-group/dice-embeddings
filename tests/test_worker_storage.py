@@ -265,6 +265,70 @@ def test_real_kg_builds_filters_without_a_process_pool(tmp_path, backend, missin
     assert kg.ee_vocab == get_ee_vocab(data)
 
 
+RECIPROCAL_TRAIN = [('a', 'knows', 'b'), ('b', 'likes', 'c'), ('a', 'knows', 'c')]
+RECIPROCAL_VALID = [('c', 'knows', 'a')]
+RECIPROCAL_TEST = [('a', 'likes', 'c')]
+
+
+def _reciprocal_raw_kg(add_reciprocal, with_bpe_encoder=False):
+    kg = SimpleNamespace(
+        raw_train_set=pd.DataFrame(RECIPROCAL_TRAIN, columns=['subject', 'relation', 'object']),
+        raw_valid_set=pd.DataFrame(RECIPROCAL_VALID, columns=['subject', 'relation', 'object']),
+        raw_test_set=pd.DataFrame(RECIPROCAL_TEST, columns=['subject', 'relation', 'object']),
+        add_reciprocal=add_reciprocal,
+        eval_model='train_val_test',
+    )
+    if with_bpe_encoder:
+        import tiktoken
+        kg.enc = tiktoken.get_encoding('gpt2')
+    return kg
+
+
+@pytest.mark.parametrize('add_reciprocal', [True, False])
+def test_preprocess_with_pandas_applies_reciprocal_triples(add_reciprocal):
+    """Guards dicee/read_preprocess_save_load_kg/preprocess.py::PreprocessKG.preprocess_with_pandas
+    calling apply_reciprocal_or_noise on all three splits (regressed silently once, #448)."""
+    kg = _reciprocal_raw_kg(add_reciprocal)
+    PreprocessKG(kg).preprocess_with_pandas()
+
+    multiplier = 2 if add_reciprocal else 1
+    assert kg.train_set.shape[0] == multiplier * len(RECIPROCAL_TRAIN)
+    assert kg.valid_set.shape[0] == multiplier * len(RECIPROCAL_VALID)
+    assert kg.test_set.shape[0] == multiplier * len(RECIPROCAL_TEST)
+
+    entity_to_idx = dict(zip(kg.entity_to_idx['entity'], kg.entity_to_idx.index))
+    relation_to_idx = dict(zip(kg.relation_to_idx['relation'], kg.relation_to_idx.index))
+    s, p, o = RECIPROCAL_TRAIN[0]
+    forward = (entity_to_idx[s], relation_to_idx[p], entity_to_idx[o])
+    train_rows = {tuple(row) for row in kg.train_set.tolist()}
+    assert forward in train_rows
+    if add_reciprocal:
+        inverse = (entity_to_idx[o], relation_to_idx[p + '_inverse'], entity_to_idx[s])
+        assert inverse in train_rows
+    else:
+        assert (p + '_inverse') not in relation_to_idx
+
+
+@pytest.mark.parametrize('add_reciprocal', [True, False])
+def test_preprocess_with_byte_pair_encoding_applies_reciprocal_triples(add_reciprocal):
+    """Guards dicee/read_preprocess_save_load_kg/preprocess.py::PreprocessKG.preprocess_with_byte_pair_encoding
+    calling apply_reciprocal_or_noise on all three splits (regressed silently once, #448)."""
+    kg = _reciprocal_raw_kg(add_reciprocal, with_bpe_encoder=True)
+    PreprocessKG(kg).preprocess_with_byte_pair_encoding()
+
+    multiplier = 2 if add_reciprocal else 1
+    assert len(kg.train_set) == multiplier * len(RECIPROCAL_TRAIN)
+    assert len(kg.valid_set) == multiplier * len(RECIPROCAL_VALID)
+    assert len(kg.test_set) == multiplier * len(RECIPROCAL_TEST)
+
+    s, p, o = RECIPROCAL_TRAIN[0]
+    encode = kg.enc.encode
+    forward = (tuple(encode(s)), tuple(encode(p)), tuple(encode(o)))
+    assert forward in kg.train_set
+    inverse = (tuple(encode(o)), tuple(encode(p + '_inverse')), tuple(encode(s)))
+    assert (inverse in kg.train_set) == add_reciprocal
+
+
 @pytest.mark.parametrize('name', ['snapshot', 'swag'])
 @pytest.mark.parametrize('future', [False, True])
 def test_ensemble_callbacks_accept_ready_and_legacy_filters(tmp_path, monkeypatch, name, future):
