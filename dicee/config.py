@@ -60,8 +60,19 @@ class Namespace(argparse.Namespace):
         self.graph_projection_cache_mb: int = 64
         self.graph_inference_compile: bool = False
         self.grouped_negative_sampling: bool = False
+        """Sample a fixed-size group of negatives per positive (positive in column 0)
+        via GroupedNegativeSamplingDataset instead of the flat NegSample layout.
+        Requires scoring_technique='NegSample', entity prediction, no byte_pair_encoding."""
+
         self.strict_negative_sampling: bool = False
+        """With grouped/adversarial sampling, exclude every known-true triple from the
+        negative candidate pool instead of sampling entities uniformly at random."""
+
         self.adversarial_temperature: Optional[float] = None
+        """Softmax temperature for self-adversarial weighting of negatives by their own
+        score (dicee.models.sampled_loss.grouped_adversarial_bce); implies grouped
+        sampling. 0 weights negatives uniformly; higher values weight high-scoring
+        (harder) negatives more. None disables adversarial weighting."""
 
         self.model: str = "Keci"
         "KGE model"
@@ -133,6 +144,11 @@ class Namespace(argparse.Namespace):
         """ Not tested """
 
         self.label_smoothing_rate: float = 0.0
+        """Smooths dataset targets toward a uniform distribution at construction time
+        (dicee/dataset_classes/_label_based.py, _negative_sampling.py), independent of
+        loss_fn. Also passed as smoothness_ratio to loss_fn="LS"/"CombinedLSandLR"/
+        "AggregatedLSandLR" (see dicee/losses/custom_losses.py; note "LS" currently
+        ignores this - https://github.com/dice-group/dice-embeddings/issues/453)."""
 
         self.num_core: int = 0
         """Number of CPUs to be used in the mini-batch loading process"""
@@ -232,8 +248,17 @@ class Namespace(argparse.Namespace):
         """Number of epochs to average over for SWA, SWAG, EMA, TWA."""
 
         self.loss_fn: Optional[str] = None
+        """Overrides the default entity/relation-prediction loss with one of the classes
+        in dicee/losses/custom_losses.py: "LS", "LRLoss", "BCELoss", "WeightedBCELoss",
+        "CombinedLSandLR", "AdaptiveLabelSmoothingLoss", "AdaptiveLabelRelaxationLoss",
+        "ConfidenceBasedAdaptiveLabelRelaxationLoss", "CombinedAdaptiveLSandAdaptiveLR",
+        "AggregatedLSandLR", "ACLS". None (default) keeps the framework's own
+        BCEWithLogitsLoss/CrossEntropyLoss/MarginRankingLoss selection. See the
+        docstring of each class for what it actually does and known caveats."""
 
         self.label_relaxation_alpha: float = 0.1
+        """alpha for loss_fn="LRLoss"/"CombinedLSandLR"/"AggregatedLSandLR"
+        (dicee.losses.custom_losses.LabelRelaxationLoss)."""
 
         self.amwa: bool = False
         """Adaptive Momentum Weight Averaging"""
