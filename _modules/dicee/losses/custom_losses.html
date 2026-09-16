@@ -113,13 +113,22 @@
 
 
 <div class="viewcode-block" id="WeightedBCELoss">
-<a class="viewcode-back" href="../../../autoapi/dicee/losses/custom_losses/index.html#dicee.losses.custom_losses.WeightedBCELoss">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.WeightedBCELoss">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">WeightedBCELoss</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""BCE weighted by each prediction's own confidence.</span>
+
+<span class="sd">    Down-weights low-confidence predictions (``sigmoid(pred)`` near 0.5) and</span>
+<span class="sd">    up-weights confident ones, clamped to ``[0.5, 1.0]``. Weights are</span>
+<span class="sd">    detached, so they don't receive gradients themselves. ``current_epoch``</span>
+<span class="sd">    is accepted for interface consistency with the other ``loss_fn`` options</span>
+<span class="sd">    but is currently unused.</span>
+<span class="sd">    """</span>
+
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">WeightedBCELoss</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
 <div class="viewcode-block" id="WeightedBCELoss.forward">
-<a class="viewcode-back" href="../../../autoapi/dicee/losses/custom_losses/index.html#dicee.losses.custom_losses.WeightedBCELoss.forward">[docs]</a>
+<a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.WeightedBCELoss.forward">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pred</span><span class="p">,</span> <span class="n">target</span><span class="p">,</span> <span class="n">current_epoch</span><span class="p">):</span>
 
         <span class="n">gamma</span> <span class="o">=</span> <span class="mi">10</span>
@@ -387,77 +396,6 @@
 </div>
 
 
-<span class="sd">"""</span>
-<span class="sd">class GradientBasedLSLR(nn.Module):</span>
-<span class="sd">    def __init__(self, smoothness_ratio=0.0, alpha=0.0, check_interval=10, dynamic_threshold_ratio=0.015):</span>
-<span class="sd">        super(GradientBasedLSLR, self).__init__()</span>
-<span class="sd">        self.smoothness_ratio = smoothness_ratio</span>
-<span class="sd">        self.alpha = alpha</span>
-<span class="sd">        self.check_interval = check_interval</span>
-<span class="sd">        self.dynamic_threshold_ratio = dynamic_threshold_ratio</span>
-<span class="sd">        self.mode = 'smooth'</span>
-<span class="sd">        self.grad_norm_history = []</span>
-
-<span class="sd">        self.LabelSmoothingLoss = LabelSmoothingLoss()</span>
-<span class="sd">        self.LabelRelaxationLoss = LabelRelaxationLoss()</span>
-
-
-<span class="sd">    def forward(self, pred, target, current_epoch, gradient_norm):</span>
-<span class="sd">        if len(self.grad_norm_history) == self.check_interval:</span>
-<span class="sd">            self.grad_norm_history.pop(0)</span>
-<span class="sd">        self.grad_norm_history.append(gradient_norm)</span>
-
-<span class="sd">        avg_norm = sum(self.grad_norm_history) / len(self.grad_norm_history) + 1e-14 # avoid division by zero</span>
-
-<span class="sd">        if current_epoch != 0:</span>
-<span class="sd">            if avg_norm &lt; self.dynamic_threshold_ratio and self.mode == 'smooth':</span>
-<span class="sd">                self.mode = 'relax'</span>
-
-<span class="sd">        #final_loss = 0</span>
-<span class="sd">        if self.mode == 'smooth':</span>
-<span class="sd">            final_loss = self.LabelSmoothingLoss(pred, target, current_epoch, gradient_norm)</span>
-<span class="sd">        else:</span>
-<span class="sd">            final_loss = self.LabelRelaxationLoss(pred, target, current_epoch, gradient_norm)</span>
-
-<span class="sd">        return final_loss</span>
-
-
-<span class="sd">class GradientBasedAdaptiveLSLR(nn.Module):</span>
-<span class="sd">    def __init__(self, smoothness_ratio=0.0, alpha=0.0, check_interval=10,</span>
-<span class="sd">                 variability_threshold=0.09):</span>
-<span class="sd">        super(GradientBasedAdaptiveLSLR, self).__init__()</span>
-<span class="sd">        self.smoothness_ratio = smoothness_ratio</span>
-<span class="sd">        self.alpha = alpha</span>
-<span class="sd">        self.check_interval = check_interval</span>
-<span class="sd">        self.variability_threshold = variability_threshold</span>
-<span class="sd">        self.mode = 'smooth'</span>
-<span class="sd">        self.grad_norm_history = []</span>
-<span class="sd">        self.adaptive_label_smoothing = AdaptiveLabelSmoothingLoss()</span>
-<span class="sd">        self.adaptive_label_relaxation = AdaptiveLabelRelaxationLoss()</span>
-
-<span class="sd">    def update_dynamic_threshold(self, current_epoch):</span>
-<span class="sd">        if len(self.grad_norm_history) &lt; self.check_interval:</span>
-<span class="sd">            return</span>
-
-<span class="sd">        std_dev = np.std(self.grad_norm_history)</span>
-<span class="sd">        print(std_dev, self.variability_threshold)</span>
-<span class="sd">        if std_dev &lt; self.variability_threshold and self.mode == 'smooth':</span>
-<span class="sd">            self.mode = 'relax'</span>
-
-<span class="sd">    def forward(self, pred, target, current_epoch, gradient_norm):</span>
-<span class="sd">        if len(self.grad_norm_history) == self.check_interval:</span>
-<span class="sd">            self.grad_norm_history.pop(0)</span>
-<span class="sd">        self.grad_norm_history.append(gradient_norm)</span>
-
-<span class="sd">        if current_epoch % self.check_interval == 0:</span>
-<span class="sd">            self.update_dynamic_threshold(current_epoch)</span>
-
-<span class="sd">        if self.mode == 'smooth':</span>
-<span class="sd">            return self.adaptive_label_smoothing(pred, target, current_epoch, gradient_norm)</span>
-<span class="sd">        else:</span>
-<span class="sd">            return self.adaptive_label_relaxation(pred, target, current_epoch, gradient_norm)</span>
-
-<span class="sd">"""</span>
 
 <div class="viewcode-block" id="ACLS">
 <a class="viewcode-back" href="../../../autoapi/dicee/models/index.html#dicee.losses.custom_losses.ACLS">[docs]</a>
