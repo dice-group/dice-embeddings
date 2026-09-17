@@ -3,6 +3,7 @@ import torch
 
 from dicee.config import Namespace
 from dicee.executer import Execute
+from dicee.static_preprocess_funcs import preprocesses_input_args
 from dicee.trainer.auto_batch_finder import find_good_batch_size
 
 
@@ -75,6 +76,11 @@ class TestAutoBatchFinderEndToEnd:
         args = make_training_args(trainer="torchDDP", auto_batch_finding=False)
         with pytest.raises(RuntimeError, match="torchDDP trainer must be launched with torchrun"):
             Execute(args)
+
+    def test_auto_batch_finding_torch_fsdp_raises(self):
+        args = make_training_args(trainer="torchFSDP", auto_batch_finding=True)
+        with pytest.raises(ValueError, match="auto_batch_finding is not supported with --trainer torchFSDP"):
+            preprocesses_input_args(args)
 
 
 class TestFindGoodBatchSizeCPU:
