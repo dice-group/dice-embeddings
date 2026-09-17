@@ -39,6 +39,8 @@ def timeit(func):
 
 def preprocesses_input_args(args):
     """ Sanity Checking in input arguments """
+    if args.trainer == "torchFSDP" and args.auto_batch_finding:
+        raise ValueError("--auto_batch_finding is not supported with --trainer torchFSDP; set --batch_size explicitly")
     FilteredRanker(**evaluation_tie_options(args))
     # To update the default value of Trainer in pytorch-lightnings
     args.max_epochs = args.num_epochs
