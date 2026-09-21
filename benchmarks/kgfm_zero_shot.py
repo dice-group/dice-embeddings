@@ -65,10 +65,25 @@ def check_split_overlap(train, valid, test, *, allow=False):
     return counts
 
 
+def pretraining_status(model, variant, dataset):
+    # 50g has no complete pinned training manifest; do not infer absence.
+    if model == "ULTRA" and variant == "50g":
+        return "unknown"
+    if dataset in ("FB15k-237", "WN18RR", "CoDExMedium", "CoDEx-Medium"):
+        return "yes"
+    if model == "ULTRA" and variant == "4g":
+        if dataset == "NELL995":
+            return "yes"
+        if dataset.startswith("NELL-995-"):
+            return "related"  # NELL995 is in pretraining; exact variant overlap is unverified.
+    return "no"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", choices=MODELS, required=True)
     parser.add_argument("--dataset", required=True)
+    parser.add_argument("--ultra-checkpoint", choices=("3g", "4g", "50g"), default="3g")
     parser.add_argument("--allow-test-overlap", action="store_true",
                         help="Keep original splits despite training/test leakage; record overlap in the report")
     parser.add_argument("--device", default="cpu")
@@ -92,6 +107,8 @@ def main():
                         help="Independent random tie seed; defaults to --seed")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if args.model != "ULTRA" and args.ultra_checkpoint != "3g":
+        parser.error("--ultra-checkpoint applies only to ULTRA")
     if args.tie_seed is None:
         args.tie_seed = args.seed
     if min(args.batch_size, args.query_batch_size, args.threads, args.walk_num, args.test_samples) < 1:
@@ -117,12 +134,16 @@ def main():
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     dataset_dir = ROOT / "KGs" / args.dataset
-    checkpoint = ROOT / CHECKPOINTS[args.model]
+    checkpoint = ROOT / (f"checkpoints/ultra_{args.ultra_checkpoint}.pth"
+                         if args.model == "ULTRA" else CHECKPOINTS[args.model])
+    model_label = f"ULTRA-{args.ultra_checkpoint}" if args.model == "ULTRA" else args.model
+    pretraining = pretraining_status(args.model, args.ultra_checkpoint, args.dataset)
     sources = sorted((ROOT / "dicee").rglob("*.py")) + [Path(__file__).resolve()]
     cpu_name = next((line.split(":", 1)[1].strip() for line in
                      Path("/proc/cpuinfo").read_text().splitlines() if line.startswith("model name")), "unknown")
     config = {
         **{k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
+        "model_label": model_label, "pretraining_status": pretraining,
         "checkpoint": str(checkpoint.relative_to(ROOT)),
         "checkpoint_sha256": digest(checkpoint),
         "split_sha256": {name: digest(dataset_dir / f"{name}.txt") for name in ("train", "valid", "test")},
@@ -219,7 +240,8 @@ def main():
     result = {
         "status": "complete", "dataset": args.dataset, "model": args.model,
         "split_overlap": overlap, "test_facts_in_inference_graph": bool(overlap["train_test"]),
-        "target_graph_in_pretraining": args.dataset in ("FB15k-237", "WN18RR"),
+        "model_label": model_label, "pretraining_status": pretraining,
+        "target_graph_in_pretraining": {"yes": True, "no": False}.get(pretraining),
         "test_triples": len(kg.test_set), "ranked_queries": 2 * len(kg.test_set),
         "num_entities": kg.num_entities, "num_relations": kg.num_relations,
         "inference_edges": model.edge_type.numel(), "metrics": metrics,

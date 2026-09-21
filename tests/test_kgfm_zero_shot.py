@@ -34,3 +34,13 @@ def test_disjoint_splits_need_no_override(benchmark):
     assert benchmark.check_split_overlap(*splits) == {
         'train_valid': 0, 'train_test': 0, 'valid_test': 0,
     }
+
+
+@pytest.mark.parametrize('variant,dataset,expected', [
+    ('3g', 'NELL-995-h25', 'no'), ('4g', 'NELL-995-h25', 'related'),
+    ('4g', 'NELL995', 'yes'), ('4g', 'KINSHIP', 'no'),
+    ('4g', 'FB15k-237', 'yes'), ('50g', 'KINSHIP', 'unknown'),
+    ('50g', 'NELL-995-h100', 'unknown'),
+])
+def test_pretraining_metadata_is_checkpoint_specific(benchmark, variant, dataset, expected):
+    assert benchmark.pretraining_status('ULTRA', variant, dataset) == expected
