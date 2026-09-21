@@ -1,6 +1,12 @@
 # Multi-Hop Query Answering
 
-This guide explains how to use DICE Embeddings for complex multi-hop query answering using EPFO (Existential Positive First-Order) queries.
+This guide explains how to use DICE Embeddings for complex multi-hop query answering using EPFO (Existential Positive First-Order) queries and their supported negated forms.
+
+Ordinary KGEs and ULTRA/TRIX/Flock share the same evaluator. Scores default to
+sigmoid memberships (`use_logits=False`), and every query respects the answer
+limit `k`. Use `beam_size` to control intermediate search independently. See
+[query adapters](query_adapters.md) for observed facts, learned transforms,
+adapter training, indexed queries, and migration details.
 
 ## Table of Contents
 
@@ -14,7 +20,7 @@ This guide explains how to use DICE Embeddings for complex multi-hop query answe
 
 ## Overview
 
-Multi-hop query answering allows you to ask complex questions that require reasoning over multiple relationships in a knowledge graph. DICE Embeddings supports **9 query types** covering projections, intersections, and unions.
+Multi-hop query answering allows you to ask complex questions that require reasoning over multiple relationships in a knowledge graph. DICE Embeddings supports **14 query types**: nine positive types covering projections, intersections, and unions, plus `2in`, `3in`, `inp`, `pin`, and `pni` for negation.
 
 ### Supported Query Types
 
@@ -396,15 +402,15 @@ for query_id, preds in results.items():
 The `tnorm` parameter controls how conjunctions are computed:
 
 ```python
-# Minimum t-norm (default, most commonly used)
+# Minimum t-norm
 model.answer_multi_hop_query(..., tnorm="min")
 
-# Product t-norm (multiplicative semantics)
+# Product t-norm (default, multiplicative semantics)
 model.answer_multi_hop_query(..., tnorm="prod")
 ```
 
 **When to use:**
-- **`min`**: Standard choice, preserves highest score in conjunction
+- **`min`**: Takes the lower membership in a conjunction
 - **`prod`**: More strict, all conditions must have high scores
 
 ### Filtering Results
