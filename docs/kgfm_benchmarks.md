@@ -18,10 +18,11 @@ and [Flock](https://github.com/jw9730/flock/blob/f35103d25a78bdf4075de5c673a51de
 configurations. ULTRA-4g additionally uses NELL995
 ([configuration](https://github.com/DeepGraphLearning/ULTRA/blob/427966ad8ed60420eef034063d44f3153addff90/config/transductive/pretrain_4g.yaml));
 NELL variants are marked **Related**, since exact split overlap is unverified.
-ULTRA-50g's [model card](https://huggingface.co/mgalkin/ultra_50g) reports 50 training
-graphs without a complete manifest. Its target membership is **Unknown** here;
-these runs must not be assumed zero-shot. **No** indicates transfer outside a
-checkpoint's documented training mixture.
+The authors' [50g training configuration](https://github.com/DeepGraphLearning/ULTRA/issues/15#issuecomment-2024326922)
+lists all 50 graphs. It includes FB15k-237, WN18RR, YAGO3-10, and NELL995;
+KINSHIP, UMLS, and Countries are absent. **No** indicates transfer outside a
+checkpoint's documented training mixture. The original 4g/50g run records retain
+the earlier metadata; these corrected labels do not change the measured scores.
 
 ## Checkpoints and evaluation settings
 

@@ -65,17 +65,36 @@ def check_split_overlap(train, valid, test, *, allow=False):
     return counts
 
 
+# Author-provided 50g training configuration:
+# https://github.com/DeepGraphLearning/ULTRA/issues/15#issuecomment-2024326922
+ULTRA_50G_GRAPHS = frozenset((
+    'FB15k237', 'WN18RR', 'CoDExMedium', 'NELL995',
+    'YAGO310', 'DBpedia100k', 'AristoV4', 'Hetionet',
+    'WDsinger', 'CoDExSmall', 'NELL23k', 'ConceptNet100k',
+    'FB15k237_10', 'FB15k237Inductive:v1', 'FB15k237Inductive:v2', 'FB15k237Inductive:v3',
+    'FB15k237Inductive:v4', 'WN18RRInductive:v1', 'WN18RRInductive:v2', 'WN18RRInductive:v3',
+    'WN18RRInductive:v4', 'NELLInductive:v1', 'NELLInductive:v2', 'NELLInductive:v3',
+    'NELLInductive:v4', 'ILPC2022:small', 'ILPC2022:large', 'FBIngram:25',
+    'FBIngram:50', 'FBIngram:75', 'FBIngram:100', 'WKIngram:25',
+    'WKIngram:50', 'WKIngram:75', 'WKIngram:100', 'NLIngram:0',
+    'NLIngram:25', 'NLIngram:50', 'NLIngram:75', 'NLIngram:100',
+    'WikiTopicsMT1:tax', 'WikiTopicsMT1:health', 'WikiTopicsMT2:org', 'WikiTopicsMT2:sci',
+    'WikiTopicsMT3:art', 'WikiTopicsMT3:infra', 'WikiTopicsMT4:sci', 'WikiTopicsMT4:health',
+    'Metafam:None', 'FBNELL:None',
+))
+
+
 def pretraining_status(model, variant, dataset):
-    # 50g has no complete pinned training manifest; do not infer absence.
+    dataset = {"FB15k-237": "FB15k237", "CoDEx-Medium": "CoDExMedium",
+               "YAGO3-10": "YAGO310", "NELL-995": "NELL995"}.get(dataset, dataset)
+    if model == "ULTRA" and variant in ("4g", "50g") and dataset.startswith("NELL-995-"):
+        return "related"  # NELL995 is in pretraining; exact variant overlap is unverified.
     if model == "ULTRA" and variant == "50g":
-        return "unknown"
-    if dataset in ("FB15k-237", "WN18RR", "CoDExMedium", "CoDEx-Medium"):
+        return "yes" if dataset in ULTRA_50G_GRAPHS else "no"
+    if dataset in ("FB15k237", "WN18RR", "CoDExMedium"):
         return "yes"
-    if model == "ULTRA" and variant == "4g":
-        if dataset == "NELL995":
-            return "yes"
-        if dataset.startswith("NELL-995-"):
-            return "related"  # NELL995 is in pretraining; exact variant overlap is unverified.
+    if model == "ULTRA" and variant == "4g" and dataset == "NELL995":
+        return "yes"
     return "no"
 
 
