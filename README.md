@@ -692,12 +692,27 @@ Tie strategy: **pessimistic** (worst rank among exactly equal scores after filte
 | YAGO3-10 | ULTRA-3g | No | **0.4799** | **0.3832** | **0.5346** | **0.6583** |
 | YAGO3-10 | TRIX | No | 0.4094 | 0.3024 | 0.4574 | 0.6265 |
 | YAGO3-10 | Flock | No | 0.3998 | 0.3092 | 0.4526 | 0.5636 |
+| NELL-995-h25† | ULTRA-3g | No | 0.3557 | 0.2771 | 0.4001 | 0.5023 |
+| NELL-995-h25† | TRIX | No | **0.3729** | **0.2939** | **0.4136** | **0.5232** |
+| NELL-995-h25† | Flock | No | 0.3672 | 0.2868 | 0.4100 | 0.5199 |
+| NELL-995-h50† | ULTRA-3g | No | 0.3480 | 0.2618 | 0.3960 | 0.5108 |
+| NELL-995-h50† | TRIX | No | 0.3637 | **0.2769** | 0.4057 | 0.5309 |
+| NELL-995-h50† | Flock | No | **0.3646** | 0.2730 | **0.4126** | **0.5423** |
+| NELL-995-h75† | ULTRA-3g | No | 0.3298 | 0.2477 | 0.3741 | 0.4861 |
+| NELL-995-h75† | TRIX | No | 0.3428 | **0.2593** | 0.3798 | 0.5075 |
+| NELL-995-h75† | Flock | No | **0.3469** | 0.2585 | **0.3882** | **0.5227** |
+| NELL-995-h100 | ULTRA-3g | No | 0.3159 | 0.2368 | 0.3546 | 0.4713 |
+| NELL-995-h100 | TRIX | No | 0.3354 | **0.2504** | 0.3720 | 0.5053 |
+| NELL-995-h100 | Flock | No | **0.3397** | 0.2481 | **0.3840** | **0.5202** |
 | FB15k-237 | ULTRA-3g | Yes | **0.3693** | **0.2718** | **0.4101** | **0.5620** |
 | FB15k-237 | TRIX | Yes | 0.3618 | 0.2649 | 0.3989 | 0.5546 |
 | FB15k-237 | Flock | Yes | 0.3116 | 0.2215 | 0.3442 | 0.4912 |
 | WN18RR | ULTRA-3g | Yes | 0.3691 | 0.2924 | 0.3923 | 0.5329 |
 | WN18RR | TRIX | Yes | 0.5065 | 0.4592 | 0.5217 | 0.6040 |
 | WN18RR | Flock | Yes | **0.5303** | **0.4783** | **0.5482** | **0.6367** |
+| KINSHIP | ULTRA-3g | No | 0.2054 | 0.1439 | 0.2067 | 0.3156 |
+| KINSHIP | TRIX | No | 0.1487 | 0.1020 | 0.1373 | 0.2007 |
+| KINSHIP | Flock | No | **0.3803** | **0.2751** | **0.4013** | **0.6001** |
 | UMLS | ULTRA-3g | No | 0.6960 | 0.5983 | 0.7474 | 0.8956 |
 | UMLS | TRIX | No | 0.7256 | 0.6430 | 0.7632 | 0.8986 |
 | UMLS | Flock | No | **0.7768** | **0.7005** | **0.8169** | **0.9244** |
@@ -710,6 +725,8 @@ Tie strategy: **pessimistic** (worst rank among exactly equal scores after filte
 | Countries-S3 | ULTRA-3g | No | 0.2354 | **0.0625** | 0.2917 | 0.6458 |
 | Countries-S3 | TRIX | No | **0.3625** | **0.0625** | **0.5833** | **0.8958** |
 | Countries-S3 | Flock | No | 0.2533 | 0.0208 | 0.4583 | 0.5000 |
+
+† Original splits contain training/test leakage: h25/h50/h75 include 52/33/9 distinct test facts in training. Splits are preserved; these scores are not strictly held-out estimates.
 
 </details>
 

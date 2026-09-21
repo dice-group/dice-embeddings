@@ -51,10 +51,26 @@ def write_json(path, value):
     temporary.replace(path)
 
 
+def check_split_overlap(train, valid, test, *, allow=False):
+    """Count distinct shared facts; require an explicit override for test leakage."""
+    facts = [set(map(tuple, split.tolist())) for split in (train, valid, test)]
+    counts = {
+        "train_valid": len(facts[0] & facts[1]),
+        "train_test": len(facts[0] & facts[2]),
+        "valid_test": len(facts[1] & facts[2]),
+    }
+    if counts["train_test"] and not allow:
+        raise ValueError("Training and test facts overlap; use --allow-test-overlap "
+                         "only to report original-split results with explicit leakage")
+    return counts
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", choices=MODELS, required=True)
     parser.add_argument("--dataset", required=True)
+    parser.add_argument("--allow-test-overlap", action="store_true",
+                        help="Keep original splits despite training/test leakage; record overlap in the report")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--query-batch-size", type=int, default=1)
@@ -137,11 +153,12 @@ def main():
             path_for_serialization=str(output))
     if kg.valid_set is None or kg.test_set is None or not len(kg.test_set):
         raise ValueError("The benchmark requires nonempty test and available validation splits")
-    # Refuse to publish a held-out score if a test fact is already in context.
-    train_facts = set(map(tuple, kg.train_set.tolist()))
-    if any(tuple(triple) in train_facts for triple in kg.test_set.tolist()):
-        raise ValueError("Training and test facts overlap")
-    del train_facts
+    overlap = check_split_overlap(kg.train_set, kg.valid_set, kg.test_set,
+                                  allow=args.allow_test_overlap)
+    write_json(output / "split_overlap.json", overlap)
+    if overlap["train_test"]:
+        logging.warning("Original-split evaluation includes %d distinct test facts in the "
+                        "inference graph; these results contain leakage", overlap["train_test"])
     settings = dict(num_entities=kg.num_entities, num_relations=kg.num_relations,
                     **{f"{args.model.lower()}_query_batch_size": args.query_batch_size},
                     flock_walk_num=args.walk_num, flock_test_samples=args.test_samples,
@@ -201,6 +218,7 @@ def main():
                for key in METRICS}
     result = {
         "status": "complete", "dataset": args.dataset, "model": args.model,
+        "split_overlap": overlap, "test_facts_in_inference_graph": bool(overlap["train_test"]),
         "target_graph_in_pretraining": args.dataset in ("FB15k-237", "WN18RR"),
         "test_triples": len(kg.test_set), "ranked_queries": 2 * len(kg.test_set),
         "num_entities": kg.num_entities, "num_relations": kg.num_relations,
