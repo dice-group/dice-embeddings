@@ -686,7 +686,6 @@ Tie strategy: **pessimistic** (worst rank among exactly equal scores after filte
 <summary>Show results</summary>
 
 **Bold** marks the best result per dataset and metric; **Yes** marks target graphs used in pretraining.
-NELL rows for ULTRA-4g/50g have confirmed pretraining overlap ([counts](docs/kgfm_benchmarks.md#kinship-and-nell-variants)); [the authors list all 50g training graphs](https://github.com/DeepGraphLearning/ULTRA/issues/15#issuecomment-2024326922).
 
 | Dataset | Model | Target graph used in pretraining? | MRR | Hits@1 | Hits@3 | Hits@10 |
 |---|---|:---:|---:|---:|---:|---:|
