@@ -17,7 +17,7 @@ pretrained on FB15k-237, WN18RR, and CoDEx Medium, as specified by the official
 and [Flock](https://github.com/jw9730/flock/blob/f35103d25a78bdf4075de5c673a51de4979aa4d7/src_entity/config/pretrain_3g.yaml)
 configurations. ULTRA-4g additionally uses NELL995
 ([configuration](https://github.com/DeepGraphLearning/ULTRA/blob/427966ad8ed60420eef034063d44f3153addff90/config/transductive/pretrain_4g.yaml));
-NELL variants are marked **Related**, since exact split overlap is unverified.
+All four evaluated NELL variants have **confirmed pretraining overlap** (counts below).
 The authors' [50g training configuration](https://github.com/DeepGraphLearning/ULTRA/issues/15#issuecomment-2024326922)
 lists all 50 graphs. It includes FB15k-237, WN18RR, YAGO3-10, and NELL995;
 KINSHIP, UMLS, and Countries are absent. **No** indicates transfer outside a
@@ -74,6 +74,25 @@ The runner rejects train/test overlap by default and records overlap counts
 when allowed. NELL-995-h100 has no split overlap. The suffix denotes the
 percentage of hierarchical relations ([dataset comparison](https://cdn.aaai.org/ojs/17095/17095-13-20589-1-2-20210518.pdf));
 these results should not be labeled generic NELL-995.
+
+**Pretraining overlap (ULTRA-4g/50g):** exact triple matches against the
+[NELL995 loader's](https://github.com/DeepGraphLearning/ULTRA/blob/427966ad8ed60420eef034063d44f3153addff90/ultra/datasets.py#L412-L442)
+training graph, the union of RED-GNN's `facts.txt` and `train.txt`
+([pinned data](https://github.com/LARS-research/RED-GNN/tree/e064161e8d2b8b3e0ed17d7a746cbcb43b3c327e/transductive/data/nell)):
+
+| Variant | Distinct test facts present in pretraining | Percentage |
+|---|---:|---:|
+| h25 | 8,991 / 9,185 | 97.89% |
+| h50 | 5,278 / 5,392 | 97.89% |
+| h75 | 4,356 / 4,389 | 99.25% |
+| h100 | 3,746 / 3,746 | 100.00% |
+
+Counts deduplicate exact `(head, relation, tail)` strings without normalization.
+This is separate from the within-split leakage above and also affects h100.
+The 4g/50g NELL scores are frozen inference on previously exposed facts, not
+zero-shot held-out estimates. The upstream data commit predates both checkpoints;
+file hashes and all split comparisons are saved in
+`Experiments/nell-pretraining-overlap/audit.json`.
 
 ## Reproduction
 

@@ -37,16 +37,18 @@ def test_disjoint_splits_need_no_override(benchmark):
 
 
 @pytest.mark.parametrize('variant,dataset,expected', [
-    ('3g', 'NELL-995-h25', 'no'), ('4g', 'NELL-995-h25', 'related'),
-    ('4g', 'NELL995', 'yes'), ('4g', 'KINSHIP', 'no'),
+    ('3g', 'NELL-995-h25', 'no'), ('4g', 'NELL-995-h25', 'yes'),
+    ('4g', 'NELL995', 'yes'), ('4g', 'NELL-995-h50', 'yes'),
+    ('4g', 'NELL-995-h75', 'yes'), ('4g', 'NELL-995-h100', 'yes'),
+    ('50g', 'NELL-995-unaudited', 'related'), ('4g', 'KINSHIP', 'no'),
     ('4g', 'FB15k-237', 'yes'), ('50g', 'KINSHIP', 'no'),
-    ('50g', 'NELL-995-h100', 'related'),
+    ('50g', 'NELL-995-h100', 'yes'),
     ('50g', 'FB15k-237', 'yes'), ('50g', 'WN18RR', 'yes'),
     ('50g', 'YAGO3-10', 'yes'), ('50g', 'NELL995', 'yes'),
     ('50g', 'UMLS', 'no'), ('50g', 'Countries-S1', 'no'),
     ('50g', 'Countries-S2', 'no'), ('50g', 'Countries-S3', 'no'),
-    ('50g', 'NELL-995-h25', 'related'), ('50g', 'NELL-995-h50', 'related'),
-    ('50g', 'NELL-995-h75', 'related'), ('50g', 'Metafam:None', 'yes'),
+    ('50g', 'NELL-995-h25', 'yes'), ('50g', 'NELL-995-h50', 'yes'),
+    ('50g', 'NELL-995-h75', 'yes'), ('50g', 'Metafam:None', 'yes'),
 ])
 def test_pretraining_metadata_is_checkpoint_specific(benchmark, variant, dataset, expected):
     assert benchmark.pretraining_status('ULTRA', variant, dataset) == expected

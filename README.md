@@ -686,7 +686,7 @@ Tie strategy: **pessimistic** (worst rank among exactly equal scores after filte
 <summary>Show results</summary>
 
 **Bold** marks the best result per dataset and metric; **Yes** marks target graphs used in pretraining.
-**Related** indicates NELL995 pretraining with unverified variant overlap; [the authors list all 50g training graphs](https://github.com/DeepGraphLearning/ULTRA/issues/15#issuecomment-2024326922).
+NELL rows for ULTRA-4g/50g have confirmed pretraining overlap ([counts](docs/kgfm_benchmarks.md#kinship-and-nell-variants)); [the authors list all 50g training graphs](https://github.com/DeepGraphLearning/ULTRA/issues/15#issuecomment-2024326922).
 
 | Dataset | Model | Target graph used in pretraining? | MRR | Hits@1 | Hits@3 | Hits@10 |
 |---|---|:---:|---:|---:|---:|---:|
@@ -696,23 +696,23 @@ Tie strategy: **pessimistic** (worst rank among exactly equal scores after filte
 | YAGO3-10 | TRIX | No | 0.4094 | 0.3024 | 0.4574 | 0.6265 |
 | YAGO3-10 | Flock | No | 0.3998 | 0.3092 | 0.4526 | 0.5636 |
 | NELL-995-h25† | ULTRA-3g | No | 0.3557 | 0.2771 | 0.4001 | 0.5023 |
-| NELL-995-h25† | ULTRA-4g | Related | **0.4032** | **0.3218** | **0.4476** | **0.5591** |
-| NELL-995-h25† | ULTRA-50g | Related | 0.3991 | 0.3169 | 0.4448 | 0.5577 |
+| NELL-995-h25† | ULTRA-4g | Yes | **0.4032** | **0.3218** | **0.4476** | **0.5591** |
+| NELL-995-h25† | ULTRA-50g | Yes | 0.3991 | 0.3169 | 0.4448 | 0.5577 |
 | NELL-995-h25† | TRIX | No | 0.3729 | 0.2939 | 0.4136 | 0.5232 |
 | NELL-995-h25† | Flock | No | 0.3672 | 0.2868 | 0.4100 | 0.5199 |
 | NELL-995-h50† | ULTRA-3g | No | 0.3480 | 0.2618 | 0.3960 | 0.5108 |
-| NELL-995-h50† | ULTRA-4g | Related | **0.3975** | **0.3059** | **0.4468** | **0.5753** |
-| NELL-995-h50† | ULTRA-50g | Related | 0.3828 | 0.2938 | 0.4375 | 0.5516 |
+| NELL-995-h50† | ULTRA-4g | Yes | **0.3975** | **0.3059** | **0.4468** | **0.5753** |
+| NELL-995-h50† | ULTRA-50g | Yes | 0.3828 | 0.2938 | 0.4375 | 0.5516 |
 | NELL-995-h50† | TRIX | No | 0.3637 | 0.2769 | 0.4057 | 0.5309 |
 | NELL-995-h50† | Flock | No | 0.3646 | 0.2730 | 0.4126 | 0.5423 |
 | NELL-995-h75† | ULTRA-3g | No | 0.3298 | 0.2477 | 0.3741 | 0.4861 |
-| NELL-995-h75† | ULTRA-4g | Related | **0.3732** | **0.2848** | 0.4164 | **0.5470** |
-| NELL-995-h75† | ULTRA-50g | Related | 0.3640 | 0.2800 | **0.4180** | 0.5239 |
+| NELL-995-h75† | ULTRA-4g | Yes | **0.3732** | **0.2848** | 0.4164 | **0.5470** |
+| NELL-995-h75† | ULTRA-50g | Yes | 0.3640 | 0.2800 | **0.4180** | 0.5239 |
 | NELL-995-h75† | TRIX | No | 0.3428 | 0.2593 | 0.3798 | 0.5075 |
 | NELL-995-h75† | Flock | No | 0.3469 | 0.2585 | 0.3882 | 0.5227 |
 | NELL-995-h100 | ULTRA-3g | No | 0.3159 | 0.2368 | 0.3546 | 0.4713 |
-| NELL-995-h100 | ULTRA-4g | Related | 0.3560 | 0.2719 | 0.3940 | 0.5239 |
-| NELL-995-h100 | ULTRA-50g | Related | **0.3619** | **0.2803** | **0.4076** | **0.5271** |
+| NELL-995-h100 | ULTRA-4g | Yes | 0.3560 | 0.2719 | 0.3940 | 0.5239 |
+| NELL-995-h100 | ULTRA-50g | Yes | **0.3619** | **0.2803** | **0.4076** | **0.5271** |
 | NELL-995-h100 | TRIX | No | 0.3354 | 0.2504 | 0.3720 | 0.5053 |
 | NELL-995-h100 | Flock | No | 0.3397 | 0.2481 | 0.3840 | 0.5202 |
 | FB15k-237 | ULTRA-3g | Yes | **0.3693** | 0.2718 | **0.4101** | **0.5620** |

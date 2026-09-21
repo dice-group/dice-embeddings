@@ -88,7 +88,10 @@ def pretraining_status(model, variant, dataset):
     dataset = {"FB15k-237": "FB15k237", "CoDEx-Medium": "CoDExMedium",
                "YAGO3-10": "YAGO310", "NELL-995": "NELL995"}.get(dataset, dataset)
     if model == "ULTRA" and variant in ("4g", "50g") and dataset.startswith("NELL-995-"):
-        return "related"  # NELL995 is in pretraining; exact variant overlap is unverified.
+        # Exact triples audited against RED-GNN's facts.txt + train.txt; see the protocol.
+        if dataset in ("NELL-995-h25", "NELL-995-h50", "NELL-995-h75", "NELL-995-h100"):
+            return "yes"
+        return "related"
     if model == "ULTRA" and variant == "50g":
         return "yes" if dataset in ULTRA_50G_GRAPHS else "no"
     if dataset in ("FB15k237", "WN18RR", "CoDExMedium"):
