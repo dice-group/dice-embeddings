@@ -1,10 +1,11 @@
-"""Prepare and fit query adapters: python -m dicee.query_answering --help."""
+"""Fit query adapters and run benchmarks: python -m dicee.query_answering --help."""
 
 import argparse
 import json
 from pathlib import Path
 
 from .adapter import QueryScoreAdapter
+from .benchmark import add_benchmark_parser, run_benchmark_cli
 from .context import QueryContext
 from .training import AdapterTrainingData, fit_query_adapter, prepare_adapter_data
 
@@ -12,6 +13,7 @@ from .training import AdapterTrainingData, fit_query_adapter, prepare_adapter_da
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
+    add_benchmark_parser(commands)
     prepare = commands.add_parser('prepare', help='Mask a source-training graph and generate disjoint 2i/3i queries')
     prepare.add_argument('--source', type=Path, required=True, help='QueryContext JSON: triples, num_entities, num_relations, inverse_relations')
     prepare.add_argument('--name', default='source')
@@ -35,6 +37,9 @@ def main():
     fit.add_argument('--device', default='cpu')
     fit.add_argument('--compare-global', action='store_true', help='Also fit a two-parameter baseline, reusing frozen score banks')
     args = parser.parse_args()
+    if args.command == 'benchmark':
+        run_benchmark_cli(args)
+        return
     if args.command == 'prepare':
         data = prepare_adapter_data(QueryContext(**json.loads(args.source.read_text())), name=args.name,
                                     mask_fraction=args.mask_fraction, train_per_shape=args.train_per_shape,

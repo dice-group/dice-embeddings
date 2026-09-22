@@ -325,3 +325,190 @@ def test_cuda_scores_stay_on_device(raw):
     assert result.is_cuda
     expected = QueryAnswerer(TableModel(raw)).predict((0, (0, 1)))
     torch.testing.assert_close(result.cpu(), expected)
+
+
+@pytest.mark.parametrize('shape', QUERY_SHAPES)
+@pytest.mark.parametrize('tnorm', ['prod', 'min'])
+def test_persistent_cache_matches_formulas_and_owns_returned_scores(raw, shape, tnorm):
+    query, expected = programs(1/(1+np.exp(-raw)), 2, tnorm)[shape]
+    model = TableModel(raw).eval()
+    engine = QueryAnswerer(model, row_batch_size=2)
+    first = engine.predict(query, beam_size=2, tnorm=tnorm, return_log_scores=True)
+    np.testing.assert_allclose(first.exp().numpy(), expected, atol=2e-15, rtol=2e-14)
+    calls = len(model.calls)
+    first.fill_(123.)
+    second = engine.predict(query, beam_size=2, tnorm=tnorm)
+    np.testing.assert_allclose(second.numpy(), expected, atol=2e-15, rtol=2e-14)
+    assert len(model.calls) == calls and engine.last_info['raw_rows'] == 0
+    assert engine.last_info['cache_hits'] > 0
+
+
+def test_persistent_lru_eviction_resize_and_disable(raw):
+    model = TableModel(raw).eval()
+    engine = QueryAnswerer(model, cache_bytes=64)
+    for head in (0, 1, 0, 2, 0):
+        engine.predict((head, (0,)))
+    assert len(model.calls) == 3
+    engine.predict((1, (0,)))
+    assert engine.last_info['raw_rows'] == 1
+    engine.cache_bytes = 32
+    engine.predict((1, (0,)))
+    assert engine.last_info['raw_rows'] == 0 and engine.last_info['cache_bytes'] == 32
+    engine.cache_bytes = 0
+    engine.predict((1, (0,)))
+    assert engine.last_info['raw_rows'] == 1 and engine.last_info['cache_bytes'] == 0
+    # Eviction during a beam batch must not invalidate its in-flight rows.
+    engine.cache_bytes = 32
+    actual = engine.predict((0, (0, 1)), beam_size=4)
+    torch.testing.assert_close(actual, QueryAnswerer(TableModel(raw), cache_bytes=0).predict((0, (0, 1)), beam_size=4))
+    engine.clear_cache()
+    assert not engine._cache and engine._cache_used == 0
+
+
+@pytest.mark.parametrize('change', ['inplace', 'parameter', 'buffer', 'load', 'dtype', 'adapter', 'observed', 'context', 'precision'])
+def test_persistent_cache_invalidates_changed_inputs(raw, change, monkeypatch):
+    model = TableModel(raw).eval()
+    model.register_buffer('extra', torch.tensor(0.))
+    context = QueryContext([(0, 0, 1)], 4, 2)
+    adapter = QueryScoreAdapter('context', observed_mix=.5)
+    engine = QueryAnswerer(model, adapter=adapter, context=context)
+    query = (0, (0,))
+    engine.predict(query)
+    engine.predict(query)
+    assert engine.last_info['raw_rows'] == 0
+    with torch.no_grad():
+        if change == 'inplace':
+            model.table.add_(1)
+        elif change == 'parameter':
+            model.table = nn.Parameter(model.table.clone() + 1)
+        elif change == 'buffer':
+            model.extra.add_(1)
+        elif change == 'load':
+            model.load_state_dict(dict(table=model.table + 1, extra=model.extra))
+        elif change == 'dtype':
+            model.float()
+        elif change == 'adapter':
+            adapter.weights.add_(.1)
+        elif change == 'observed':
+            adapter.observed_mix = 1.
+        elif change == 'context':
+            engine.scorer.explicit_context = QueryContext([(0, 0, 2)], 4, 2)
+        elif change == 'precision':
+            monkeypatch.setattr('dicee.models._inference.float32_precision_token', lambda: ('changed',))
+    actual = engine.predict(query)
+    assert engine.last_info['raw_rows'] == 1
+    expected = QueryAnswerer(model, adapter=adapter, context=engine.scorer.context, cache_bytes=0).predict(query)
+    torch.testing.assert_close(actual, expected)
+
+
+def test_cached_adapter_verification_still_rejects_mutations(raw, monkeypatch):
+    import dicee.query_answering.adapter as module
+    model = TableModel(raw).eval()
+    digest = state_fingerprint(model)
+    adapter = QueryScoreAdapter('global', metadata={'backbone_state_sha256': digest})
+    real_hash, calls = module.state_fingerprint, []
+    def counted(value):
+        calls.append(value)
+        return real_hash(value)
+    monkeypatch.setattr(module, 'state_fingerprint', counted)
+    engine = QueryAnswerer(model, adapter=adapter)
+    engine.predict((0, (0,)))
+    engine.predict((0, (0,)))
+    assert len(calls) == 1
+    with torch.no_grad():
+        model.table.add_(1)
+    with pytest.raises(ValueError, match='modified backbone'):
+        engine.predict((0, (0,)))
+    assert len(calls) == 2
+
+
+def test_inference_tensors_and_training_callers_do_not_persist_rows(raw):
+    for inference in (False, True):
+        with torch.inference_mode(inference):
+            model = TableModel(raw)
+        if inference:
+            model.eval()
+        engine = QueryAnswerer(model)
+        engine.predict((0, (0,)))
+        engine.predict((0, (0,)))
+        assert engine.last_info['raw_rows'] == 1
+
+
+def test_graph_context_validation_uses_identity_and_detects_changes(monkeypatch):
+    from dicee.models import ULTRA
+    model = ULTRA(dict(num_entities=3, num_relations=2, ultra_dim=8, ultra_num_layers=2))
+    model.set_graph([(0, 0, 1)], inverse_relations={0: 1}).eval()
+    context = QueryContext.from_model(model)
+    def no_deep_comparison(*args):
+        raise AssertionError('must not walk the triples for equality')
+    monkeypatch.setattr(QueryContext, '__eq__', no_deep_comparison)
+    engine = QueryAnswerer(model, context=context)
+    engine.predict((0, (0,)))
+    engine.predict((0, (0,)))
+    assert engine.last_info['raw_rows'] == 0
+    model.set_graph([(0, 0, 2)], inverse_relations={0: 1})
+    with pytest.raises(ValueError, match='must match'):
+        engine.predict((0, (0,)))
+
+
+def test_flock_persistent_cache_tracks_sampling():
+    from dicee.models import Flock
+    model = Flock(dict(num_entities=4, num_relations=2, flock_dim=8, flock_walk_num=2,
+                       flock_walk_len=8, flock_refinements=2)).set_graph([(0, 0, 1), (1, 1, 2)]).eval()
+    engine = QueryAnswerer(model, seed=13)
+    query = (0, (0,))
+    engine.predict(query)
+    engine.predict(query)
+    assert engine.last_info['raw_rows'] == 0
+    for attr, value in [('seed', 14), ('samples', 2)]:
+        setattr(engine.scorer, attr, value)
+        actual = engine.predict(query)
+        assert engine.last_info['raw_rows'] == 1
+        expected = QueryAnswerer(model, seed=engine.scorer.seed, samples=engine.scorer.samples, cache_bytes=0).predict(query)
+        torch.testing.assert_close(actual, expected, rtol=0, atol=0)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason='CUDA unavailable')
+def test_adapter_device_copy_refresh_and_training_gradients(raw):
+    adapter = QueryScoreAdapter('global')
+    logits = torch.tensor(raw[0, 0][None], device='cuda', dtype=torch.float64)
+    with torch.no_grad():
+        before = adapter(logits)
+        adapter.weights[1, 0].add_(.2)
+        after = adapter(logits)
+        assert (after > before).all()
+        torch.testing.assert_close(after, QueryScoreAdapter('global', weights=adapter.weights).cuda()(logits))
+    adapter(logits).sum().backward()
+    assert adapter.weights.grad is not None and torch.isfinite(adapter.weights.grad).all()
+
+
+def test_eval_failure_restores_modes_and_does_not_poison_cache(raw, monkeypatch):
+    model = TableModel(raw).eval()
+    engine = QueryAnswerer(model)
+    original = model.forward_k_vs_all
+    def fail(_):
+        raise RuntimeError('scoring failed')
+    monkeypatch.setattr(model, 'forward_k_vs_all', fail)
+    with pytest.raises(RuntimeError, match='scoring failed'):
+        engine.predict((0, (0,)))
+    assert not model.training and not engine.scorer._evaluating
+    monkeypatch.setattr(model, 'forward_k_vs_all', original)
+    actual = engine.predict((0, (0,)))
+    torch.testing.assert_close(actual, model.table[0, 0].sigmoid())
+
+
+def test_cache_separates_legacy_logits_and_bypasses_autocast(raw):
+    model = TableModel(raw).eval()
+    engine = QueryAnswerer(model)
+    query = (0, (0,))
+    engine.predict(query)
+    logits = engine.predict(query, use_logits=True)
+    torch.testing.assert_close(logits, model.table[0, 0])
+    assert engine.last_info['raw_rows'] == 1
+    scores = engine.predict(query)
+    torch.testing.assert_close(scores, model.table[0, 0].sigmoid())
+    assert engine.last_info['raw_rows'] == 1
+    with torch.autocast('cpu', dtype=torch.bfloat16):
+        for _ in range(2):
+            engine.predict(query)
+            assert engine.last_info['raw_rows'] == 1

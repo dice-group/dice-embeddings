@@ -90,6 +90,37 @@ def positive(node):
     return all(positive(child) for child in node[1:] if isinstance(child, tuple))
 
 
+def atomic_conditions(node):
+    if node[0] == 'project':
+        if node[2][0] == 'anchor':
+            yield node[2][1], node[1]
+        else:
+            yield from atomic_conditions(node[2])
+    elif node[0] != 'anchor':
+        for child in node[1:]:
+            yield from atomic_conditions(child)
+
+
+def relation_signature(node):
+    if node[0] == 'anchor':
+        return ('anchor',)
+    if node[0] == 'project':
+        return ('project', node[1], relation_signature(node[2]))
+    return (node[0], *(relation_signature(child) for child in node[1:]))
+
+
+def stable_topk(values, k):
+    """Select descending scores with entity-ID ties and a CPU partial sort."""
+    k = min(k, len(values))
+    if values.is_cuda or k == len(values):
+        return values.argsort(descending=True, stable=True)[:k]
+    threshold = values.topk(k, sorted=False).values.min()
+    better = (values > threshold).nonzero().flatten()
+    tied = (values == threshold).nonzero().flatten()[:k - len(better)]
+    selected = torch.cat((better, tied)).sort().values
+    return selected[values[selected].argsort(descending=True, stable=True)]
+
+
 def exact_answers(node, outgoing, num_entities):
     """Finite-domain set semantics shared by observed proofs and query generation."""
     op = node[0]

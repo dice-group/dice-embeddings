@@ -219,4 +219,37 @@ score banks. Checkpoints and datasets are not downloaded by these commands.
 - `beam_size` separates search accuracy from the number of displayed answers.
 
 The implementation does not add native UltraQuery, per-branch CQD search,
-adapter fitting on paths/negation, or benchmark-suite orchestration.
+or adapter fitting on paths/negation. For evaluation on published datasets,
+see the [logical-query benchmark runner](query_benchmarks.md).
+
+## Inference caching
+
+Keep one `QueryAnswerer` alive and put the backbone in `eval()` mode to reuse
+complete atomic score rows across queries. `cache_bytes` bounds the retained
+rows on the scoring device (64 MiB by default); for example,
+`cache_bytes=512 * 2**20` allows a 512 MiB cache. `last_info` reports per-query
+`raw_rows` and `cache_hits`, and the total retained `cache_bytes`.
+
+`KGE.answer_multi_hop_query()` also retains its engine across compatible calls.
+Use `kge.clear_query_cache()` to release it. Moving the KGE to another device
+releases cached rows. `answerer.prefetch(queries)` batches unique anchor rows
+before scoring a group of queries; it receives no answer labels.
+
+The engine checks graph identity and tensor mutation versions, adapter weights
+and settings, scoring precision, and Flock's sampling configuration. Changes
+invalidate the cache. Backbone hashes are rechecked when tensor state changes,
+not for every query. Training-mode callers, autocast, and tensors created under
+`torch.inference_mode()` do not retain rows across predictions. Returned scores
+can be modified without modifying cached rows.
+
+Treat `QueryContext` and its derived lookup tables as immutable. Replace the
+context when facts change. Use normal PyTorch updates (`copy_`, optimizers,
+`load_state_dict`) rather than `.data` writes, which bypass mutation tracking.
+Call `answerer.clear_cache()` after changing custom non-tensor scoring behavior
+or to release retained device memory. Bound adapters still reject modified
+backbone weights. Changes through `.data` are unsupported for cached inference.
+
+Beam projection combines each row batch together while retaining stable prefix
+selection, the selected beam width, and float64 composition. GPU backbones may
+already have nondeterministic reductions; caching reuses a previously computed
+row rather than drawing another floating-point realization of that row.

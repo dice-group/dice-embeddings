@@ -7,7 +7,6 @@ import hashlib
 import json
 import math
 import random
-from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 
@@ -15,7 +14,7 @@ import torch
 
 from ._query import QUERY_SHAPES, combine, compile_query, nested, validate_tree
 from .adapter import QueryScoreAdapter
-from .context import QueryContext, fingerprint, state_fingerprint
+from .context import QueryContext, attached_context, fingerprint, state_fingerprint
 from .engine import AtomicScorer
 
 
@@ -144,36 +143,6 @@ def prepare_adapter_data(source, *, name='source', mask_fraction=.3, train_per_s
                                     masked_fact_pairs=count, train_per_shape=train_per_shape, validation_per_shape=validation_per_shape))
 
 
-@contextmanager
-def _source_context(model, context):
-    """Attach each inductive source temporarily and restore the caller's graph."""
-    from ..models.graph_model import GraphKGE
-    if not isinstance(model, GraphKGE):
-        if (model.num_entities, model.num_relations) != (context.num_entities, context.num_relations):
-            raise ValueError('Transductive source must use the fixed backbone vocabulary')
-        yield
-        return
-    old = QueryContext.from_model(model) if model.graph_triples is not None else None
-    buffers = dict(model._buffers)
-    walk_graph = getattr(model, '_walk_graph', None)
-    sizes = model.num_entities, model.num_relations, model.num_direct_relations
-    try:
-        model.set_graph(context.triples, num_entities=context.num_entities, num_relations=context.num_relations,
-                        inverse_relations=dict(context.inverse_relations))
-        yield
-    finally:
-        if old is not None:
-            model.set_graph(old.triples, num_entities=old.num_entities, num_relations=old.num_relations,
-                            inverse_relations=dict(old.inverse_relations))
-        else:
-            for name, value in buffers.items():
-                setattr(model, name, value)
-            if hasattr(model, '_walk_graph'):
-                model._walk_graph = walk_graph
-            model.num_entities, model.num_relations, model.num_direct_relations = sizes
-            model.clear_inference_cache()
-
-
 def _bank(model, data, *, cache_dir, row_batch_size, seed, samples):
     from ..models._inference import float32_precision_token
     conditions = sorted({pair for q in (*data.train, *data.validation) for pair in q.conditions})
@@ -201,7 +170,7 @@ def _bank(model, data, *, cache_dir, row_batch_size, seed, samples):
             raise ValueError('Corrupt or mismatched adapter score bank')
         raw = bank['rows']
     else:
-        with _source_context(model, data.context):
+        with attached_context(model, data.context):
             scorer = AtomicScorer(model, data.context, row_batch_size=row_batch_size, seed=seed, samples=samples)
             # Copy each scored batch off the device immediately.
             raw = torch.cat([scorer.rows(conditions[i:i + row_batch_size]).cpu() for i in range(0, len(conditions), row_batch_size)])

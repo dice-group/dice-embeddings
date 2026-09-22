@@ -1,12 +1,14 @@
 """Model-independent global-prefix query answering over complete atomic rows."""
 
+import math
 from collections import OrderedDict
+from contextlib import contextmanager
 
 import torch
 
-from ._query import combine, compile_query, negate, positive, validate_tree
+from ._query import atomic_conditions, combine, compile_query, negate, positive, stable_topk, validate_tree
 from .adapter import QueryScoreAdapter
-from .context import QueryContext, fingerprint
+from .context import QueryContext, evaluation_mode, fingerprint, state_token
 
 
 class AtomicScorer:
@@ -39,7 +41,7 @@ class AtomicScorer:
                 self._attached_context = QueryContext.from_model(self.model)
                 self._context_token = token
             attached = self._attached_context
-        if attached is not None and self.explicit_context is not None and attached != self.explicit_context:
+        if attached is not None and self.explicit_context is not None and attached.identity != self.explicit_context.identity:
             raise ValueError('Observed context must match the graph attached to the model')
         self.context = attached if self.explicit_context is None else self.explicit_context
         if self.context is not None and (self.context.num_entities, self.context.num_relations) != (self.n, self.nr):
@@ -49,6 +51,38 @@ class AtomicScorer:
     def device(self):
         return next(self.model.parameters(), torch.empty(0)).device
 
+    @contextmanager
+    def evaluation(self):
+        """Enter evaluation mode once for a query, including all scoring batches."""
+        if getattr(self, '_evaluating', False):
+            yield
+            return
+        with evaluation_mode(self.model):
+            self._evaluating = True
+            try:
+                yield
+            finally:
+                self._evaluating = False
+
+    def cache_token(self):
+        from ..models._inference import float32_precision_token
+        from ..models.flock import Flock
+        # Training callers can still reuse rows within a query, but never carry
+        # them across predictions. Autocast and unversioned tensors also opt out.
+        if any(m.training for m in self.model.modules()) or torch.is_autocast_enabled(self.device.type):
+            return None
+        token = self.model.inference_token() if self.graph_model else state_token(self.model)
+        if token is None:
+            return None
+        sampling = None
+        if isinstance(self.model, Flock):
+            sampling = (self.seed, self.model.test_samples if self.samples is None else self.samples,
+                        self.model.walk_num, self.model.walk_len, self.model.refinements,
+                        self.model.compact_state, self.model.pack_walks, self.model.compile_sampler)
+        return (id(self.model), token, self.n, self.nr, self.context.identity if self.context else None,
+                self.row_batch_size, getattr(self.model, 'query_batch_size', None), sampling,
+                float32_precision_token(), torch.are_deterministic_algorithms_enabled())
+
     @torch.no_grad()
     def rows(self, conditions):
         from ..models.flock import Flock
@@ -57,28 +91,14 @@ class AtomicScorer:
             return torch.empty((0, self.n), device=self.device)
         if any(not (0 <= h < self.n and 0 <= r < self.nr) for h, r in conditions):
             raise ValueError('Atomic query outside the public vocabulary')
-        modes = [(module, module.training) for module in self.model.modules()]
-        self.model.eval()
-        try:
+        with self.evaluation():
             if isinstance(self.model, Flock):
-                old_seed, old_samples = self.model.seed, self.model.test_samples
-                try:
-                    self.model.test_samples = old_samples if self.samples is None else self.samples
-                    values = []
-                    for h, r in conditions:
-                        # Flock's local CPU generator leaves caller CPU/CUDA RNGs alone.
-                        self.model.seed = int(fingerprint([self.context.identity, self.seed, self.model.test_samples, h, r])[:15], 16)
-                        values.append(self.model.forward_k_vs_all(torch.tensor([[h, r]], device=self.device)))
-                    result = torch.cat(values)
-                finally:
-                    self.model.seed, self.model.test_samples = old_seed, old_samples
+                samples = self.model.test_samples if self.samples is None else self.samples
+                seeds = [int(fingerprint([self.context.identity, self.seed, samples, h, r])[:15], 16) for h, r in conditions]
+                result = self.model.forward_k_vs_all_seeded(torch.tensor(conditions, device=self.device), seeds, samples=samples)
             else:
                 result = torch.cat([self.model.forward_k_vs_all(torch.tensor(conditions[start:start + self.row_batch_size], device=self.device))
                                     for start in range(0, len(conditions), self.row_batch_size)])
-        finally:
-            self.model.train(modes[0][1])
-            for module, training in modes:
-                module.training = training
         if result.shape != (len(conditions), self.n) or not torch.isfinite(result).all():
             raise ValueError('Atomic scorer must return finite complete [rows, entities] logits')
         return result.detach()
@@ -90,8 +110,9 @@ class QueryAnswerer:
     Graph models supply their attached context automatically. For a transductive
     model, pass QueryContext to use context features or observed memberships.
     ``predict`` returns memberships (or log-memberships with ``return_log_scores``).
-    The cache is bounded and scoped to one prediction, so graph/weight changes
-    cannot silently reuse old rows. ``last_info`` reports whether a beam pruned.
+    Evaluation-mode predictions share a bounded row cache, invalidated by graph,
+    weight, adapter or inference-setting changes. Training callers cache only
+    within a prediction. ``last_info`` reports reuse and whether a beam pruned.
     """
 
     def __init__(self, model, *, context=None, adapter=None, observed_mix=None,
@@ -105,6 +126,83 @@ class QueryAnswerer:
         self.custom_adapter = adapter is not None
         self.cache_bytes = cache_bytes
         self.last_info = {}
+        self.clear_cache()
+
+    def clear_cache(self):
+        """Release rows, also required after custom non-tensor scoring changes."""
+        self._cache, self._cache_used, self._cache_token = OrderedDict(), 0, None
+
+    def _prepare_cache(self, use_logits):
+        token, adapter_token = self.scorer.cache_token(), state_token(self.adapter)
+        token = ((token, adapter_token, self.adapter.feature_mode, self.adapter.observed_mix, use_logits)
+                 if token is not None and adapter_token is not None else None)
+        if token is None or token != self._cache_token:
+            self.clear_cache()
+        self._cache_token = token
+        while self._cache and self._cache_used > self.cache_bytes:
+            _, old = self._cache.popitem(last=False)
+            self._cache_used -= old.numel() * old.element_size()
+
+    def _condition_batches(self, conditions, use_logits, stats):
+        cache = self._cache
+        for start in range(0, len(conditions), self.scorer.row_batch_size):
+            batch = conditions[start:start + self.scorer.row_batch_size]
+            ready, missing = {}, []
+            for key in dict.fromkeys(batch):
+                if key in cache:
+                    ready[key] = cache[key]
+                    cache.move_to_end(key)
+                    stats['cache_hits'] += 1
+                else:
+                    missing.append(key)
+            if missing:
+                raw = self.scorer.rows(missing).to(torch.float64)
+                stats['raw_rows'] += len(missing)
+                if use_logits:
+                    transformed = raw
+                else:
+                    context = self.scorer.context
+                    needs_context = self.adapter.feature_mode != 'global' or self.adapter.observed_mix
+                    obs, base = context.features(missing, device=raw.device) if context and needs_context else (None, None)
+                    transformed = self.adapter(raw, obs, base)
+                for key, value in zip(missing, transformed):
+                    # Copies keep evicted batches from being retained by one row.
+                    value = value.clone()
+                    ready[key] = value
+                    size = value.numel() * value.element_size()
+                    if size <= self.cache_bytes:
+                        while self._cache_used + size > self.cache_bytes:
+                            _, old = cache.popitem(last=False)
+                            self._cache_used -= old.numel() * old.element_size()
+                        cache[key] = value
+                        self._cache_used += size
+            # Stacking also isolates returned scores from mutable cache storage.
+            yield batch, torch.stack([ready[key] for key in batch])
+
+    def _row_batches(self, heads, relation, use_logits, stats):
+        for batch, values in self._condition_batches([(head, relation) for head in heads], use_logits, stats):
+            yield [head for head, _ in batch], values
+
+    @torch.no_grad()
+    def prefetch(self, queries, *, use_logits=False):
+        """Warm reusable anchor rows without inspecting answer labels."""
+        self.scorer.refresh()
+        self.adapter.verify_model(self.scorer.model)
+        self._prepare_cache(use_logits)
+        stats = dict(raw_rows=0, cache_hits=0)
+        if self._cache_token is None or self.cache_bytes < self.scorer.n * 8:
+            return stats
+        conditions = []
+        for query in queries:
+            tree = compile_query(query)
+            validate_tree(tree, self.scorer.n, self.scorer.nr)
+            conditions.extend(atomic_conditions(tree))
+        missing = [key for key in dict.fromkeys(conditions) if key not in self._cache]
+        missing = missing[:self.cache_bytes // (self.scorer.n * 8)]
+        with self.scorer.evaluation():
+            for _ in self._condition_batches(missing, use_logits, stats):
+                pass
+        return stats
 
     @torch.no_grad()
     def predict(self, query, *, beam_size=64, tnorm='prod', neg_norm='standard', lambda_=0.,
@@ -113,7 +211,7 @@ class QueryAnswerer:
             raise ValueError('beam_size must be a positive integer')
         if tnorm not in ('prod', 'min') or neg_norm not in ('standard', 'sugeno', 'yager'):
             raise ValueError('Unknown conjunction or negation norm')
-        if not torch.isfinite(torch.tensor(lambda_)) or (neg_norm == 'sugeno' and lambda_ <= -1) or (neg_norm == 'yager' and lambda_ <= 0):
+        if not math.isfinite(lambda_) or (neg_norm == 'sugeno' and lambda_ <= -1) or (neg_norm == 'yager' and lambda_ <= 0):
             raise ValueError('Sugeno requires lambda_ > -1; Yager requires lambda_ > 0')
         if use_logits and (self.custom_adapter or self.adapter.observed_mix or return_log_scores):
             raise ValueError('Legacy logits cannot be combined with adapters, observed overrides, or log-membership output')
@@ -125,42 +223,8 @@ class QueryAnswerer:
             raise ValueError('Adapter features and observed overrides require a context graph')
         tree = compile_query(query)
         validate_tree(tree, n, nr)
-        cache, used = OrderedDict(), 0
+        self._prepare_cache(use_logits)
         stats = dict(raw_rows=0, cache_hits=0, pruned=False, negated_pruning=False)
-
-        def rows(heads, relation):
-            nonlocal used
-            batch_size = self.scorer.row_batch_size
-            for start in range(0, len(heads), batch_size):
-                batch = heads[start:start + batch_size]
-                ready, missing = {}, []
-                for head in batch:
-                    key = (head, relation)
-                    if key in cache:
-                        ready[head] = cache[key]
-                        cache.move_to_end(key)
-                        stats['cache_hits'] += 1
-                    else:
-                        missing.append(head)
-                if missing:
-                    conditions = [(head, relation) for head in missing]
-                    raw = self.scorer.rows(conditions).to(torch.float64)
-                    stats['raw_rows'] += len(missing)
-                    obs, base = context.features(conditions, device=raw.device) if context else (None, None)
-                    transformed = raw if use_logits else self.adapter(raw, obs, base)
-                    for head, value in zip(missing, transformed):
-                        # Copy each row: cached views must not retain a whole batch.
-                        value = value.clone()
-                        ready[head] = value
-                        size = value.numel() * value.element_size()
-                        if size <= self.cache_bytes:
-                            while used + size > self.cache_bytes:
-                                _, old = cache.popitem(last=False)
-                                used -= old.numel() * old.element_size()
-                            cache[head, relation] = value
-                            used += size
-                for head in batch:
-                    yield ready[head]
 
         def execute(node):
             op = node[0]
@@ -169,7 +233,7 @@ class QueryAnswerer:
                 result[node[1]] = 1. if use_logits else 0.
                 return result, False
             if op == 'project' and node[2][0] == 'anchor':
-                return next(rows([node[2][1]], node[1])), False
+                return next(self._row_batches([node[2][1]], node[1], use_logits, stats))[1][0], False
             if op in ('and', 'or'):
                 branches = [execute(child) for child in node[1:]]
                 return combine([v for v, _ in branches], op, tnorm, logits=use_logits), any(p for _, p in branches)
@@ -178,18 +242,23 @@ class QueryAnswerer:
                 stats['negated_pruning'] |= pruned
                 return negate(values, neg_norm, lambda_, logits=use_logits), pruned
             prefix, pruned = execute(node[2])
-            heads = torch.argsort(prefix, descending=True, stable=True)[:min(beam_size, n)].tolist()
+            heads = stable_topk(prefix, beam_size).tolist()
             result = torch.full_like(prefix, -torch.inf)
-            for head, edge in zip(heads, rows(heads, node[1])):
-                joined = combine([prefix[head].expand_as(edge), edge], 'and', tnorm, logits=use_logits)
-                result = torch.maximum(result, joined)
+            for batch, edges in self._row_batches(heads, node[1], use_logits, stats):
+                values = prefix[batch, None]
+                if tnorm == 'min':
+                    joined = torch.minimum(values, edges)
+                else:
+                    joined = values * edges if use_logits else values + edges
+                result = torch.maximum(result, joined.amax(dim=0))
             return result, pruned or beam_size < n
 
-        result, stats['pruned'] = execute(tree)
+        with self.scorer.evaluation():
+            result, stats['pruned'] = execute(tree)
         if not use_logits and self.adapter.observed_mix == 1 and positive(tree):
             result = result.clone()
             result[sorted(context.answers(tree))] = 0.
-        if torch.isnan(result).any() or torch.isposinf(result).any():
+        if (torch.isnan(result) | torch.isposinf(result)).any():
             raise FloatingPointError('Query composition produced invalid scores')
-        self.last_info = dict(stats, search='global-prefix', cache_bytes=used)
+        self.last_info = dict(stats, search='global-prefix', cache_bytes=self._cache_used)
         return result if use_logits or return_log_scores else result.exp()

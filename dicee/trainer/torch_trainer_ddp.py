@@ -12,8 +12,6 @@ from dicee.trainer.auto_batch_finder import find_good_batch_size
 
 logger = logging.getLogger(__name__)
 
-torch.set_float32_matmul_precision('high')
-
 
 def make_iterable_verbose(iterable_object, verbose, desc="Default", position=None, leave=True) -> Iterable:
     if verbose:
@@ -27,6 +25,7 @@ class TorchDDPTrainer(AbstractTrainer):
         super().__init__(args, callbacks)
 
     def fit(self, *args, **kwargs):
+        torch.set_float32_matmul_precision('high')
         assert len(args) == 1
         model, = args
 

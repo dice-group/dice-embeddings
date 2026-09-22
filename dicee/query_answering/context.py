@@ -4,6 +4,7 @@ import hashlib
 import json
 import math
 from collections import Counter, defaultdict
+from contextlib import contextmanager
 from dataclasses import dataclass
 
 import torch
@@ -23,6 +24,19 @@ def state_fingerprint(model_or_state):
         digest.update(json.dumps([name, str(tensor.dtype), list(tensor.shape)]).encode())
         digest.update(tensor.reshape(-1).view(torch.uint8).numpy().tobytes())
     return digest.hexdigest()
+
+
+def state_token(model):
+    """Cheap mutation token; inference tensors cannot safely be retained in caches.
+
+    Use normal PyTorch parameter/buffer updates (copy_, load_state_dict, optimizers),
+    not writes through .data, which bypass PyTorch's mutation counters.
+    """
+    tensors = (*model.named_parameters(), *model.named_buffers())
+    if any(t.is_inference() for _, t in tensors):
+        return None
+    return (id(model), tuple((name, id(t), t._version, t.device, t.dtype, tuple(t.shape))
+                            for name, t in tensors))
 
 
 @dataclass(frozen=True)
@@ -101,3 +115,49 @@ class QueryContext:
                          math.log1p(self.heads[h]) / math.log1p(n * nr),
                          math.log1p(self.relations[r]) / math.log1p(n * n)])
         return observed, torch.tensor(base, dtype=torch.float64, device=device)
+
+
+@contextmanager
+def attached_context(model, context):
+    """Attach an inference context temporarily and restore the caller's graph."""
+    from ..models.graph_model import GraphKGE
+    if not isinstance(model, GraphKGE):
+        if (model.num_entities, model.num_relations) != (context.num_entities, context.num_relations):
+            raise ValueError('Transductive source must use the fixed backbone vocabulary')
+        yield
+        return
+    old = QueryContext.from_model(model) if model.graph_triples is not None else None
+    buffers = dict(model._buffers)
+    walk_graph = getattr(model, '_walk_graph', None)
+    sizes = model.num_entities, model.num_relations, model.num_direct_relations
+    try:
+        model.set_graph(context.triples, num_entities=context.num_entities, num_relations=context.num_relations,
+                        inverse_relations=dict(context.inverse_relations))
+        yield
+    finally:
+        if old is not None:
+            model.set_graph(old.triples, num_entities=old.num_entities, num_relations=old.num_relations,
+                            inverse_relations=dict(old.inverse_relations))
+        else:
+            for name, value in buffers.items():
+                setattr(model, name, value)
+            if hasattr(model, '_walk_graph'):
+                model._walk_graph = walk_graph
+            model.num_entities, model.num_relations, model.num_direct_relations = sizes
+            model.clear_inference_cache()
+
+
+@contextmanager
+def evaluation_mode(model):
+    """Restore all module modes, including mixed train/eval configurations."""
+    modes = [(module, module.training) for module in model.modules()]
+    if not any(training for _, training in modes):
+        yield
+        return
+    model.eval()
+    try:
+        yield
+    finally:
+        model.train(modes[0][1])
+        for module, training in modes:
+            module.training = training

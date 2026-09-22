@@ -7,6 +7,7 @@ import torch
 from dicee.evaluation._filtering import FilteredRanker
 from dicee.models import TRIX, ULTRA, Flock, FlockRelation
 from dicee.models._fused_message import fused_distmult_sum
+from dicee.models._inference import float32_precision_backends
 from dicee.models.flock_walks import WalkGraph
 
 CUDA = pytest.mark.skipif(not torch.cuda.is_available(), reason='CUDA unavailable')
@@ -16,9 +17,9 @@ FACTS = torch.tensor([[0, 0, 1], [0, 0, 2], [1, 1, 2], [2, 0, 3], [3, 1, 0]])
 @pytest.fixture(autouse=True)
 def small_thread_pool(monkeypatch):
     previous = torch.get_num_threads()
-    if hasattr(torch.backends.cuda.matmul, 'fp32_precision'):
-        for backend in (torch.backends.cuda.matmul, torch.backends.mkldnn.matmul,
-                        torch.backends.cudnn.conv, torch.backends.cudnn.rnn):
+    backends = float32_precision_backends()
+    if backends:
+        for backend in backends:
             monkeypatch.setattr(backend, 'fp32_precision', 'ieee')
     else:
         monkeypatch.setattr(torch.backends.cuda.matmul, 'allow_tf32', False)

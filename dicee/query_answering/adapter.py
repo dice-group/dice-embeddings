@@ -6,13 +6,14 @@ Memberships are fuzzy scores, not a claim of probability calibration.
 import hashlib
 import json
 import math
+import weakref
 from pathlib import Path
 
 import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .context import state_fingerprint
+from .context import state_fingerprint, state_token
 
 FEATURE_COUNTS = {'global': 1, 'context': 4, 'context_scores_v1': 8}
 
@@ -80,7 +81,14 @@ class QueryScoreAdapter(nn.Module):
             base = raw.new_zeros((len(raw), 4))
             base[:, 0] = 1
         features = score_features(raw, observed, base, self.feature_mode)
-        weights = self.weights.to(device=raw.device)
+        if torch.is_grad_enabled() or self.weights.is_inference():
+            weights = self.weights.to(device=raw.device)
+        else:
+            token = (id(self.weights), self.weights._version, self.weights.device, self.weights.dtype, raw.device)
+            if token != getattr(self, '_device_weights_token', None):
+                self._device_weights = self.weights.detach().to(device=raw.device)
+                self._device_weights_token = token
+            weights = self._device_weights
         u, v = (features @ weights.T).unbind(1)
         logits = (math.log(2) * u.tanh()).exp()[:, None] * raw + 4 * v.tanh()[:, None]
         logs = F.logsigmoid(logits)
@@ -93,8 +101,17 @@ class QueryScoreAdapter(nn.Module):
 
     def verify_model(self, model):
         expected = self.metadata.get('backbone_state_sha256')
-        if expected and state_fingerprint(model) != expected:
+        if not expected:
+            return
+        token = state_token(model)
+        previous = getattr(self, '_verified_model', None)
+        if (token is not None and previous is not None and previous() is model
+                and getattr(self, '_verified_state', None) == (expected, token)):
+            return
+        if state_fingerprint(model) != expected:
             raise ValueError('Adapter belongs to different or modified backbone weights')
+        self._verified_model = weakref.ref(model)
+        self._verified_state = (expected, token) if token is not None else None
 
     def save(self, path):
         payload = dict(self.metadata, version=1, feature_mode=self.feature_mode,

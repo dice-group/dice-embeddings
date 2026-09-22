@@ -33,7 +33,13 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
     def to(self, device: str) -> None:
         if "cpu" not in device and "cuda" not in device:
             raise ValueError(f"Device must be either cpu or cuda, got {device!r}")
+        self.clear_query_cache()
         self.model.to(device)
+
+    def clear_query_cache(self):
+        """Release retained CQD rows and their model references."""
+        self._query_engine = None
+        self._query_engine_key = None
 
     def get_transductive_entity_embeddings(self,
                                            indices: Union[torch.LongTensor, List[str]],
@@ -762,10 +768,17 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             raise ValueError("Provide exactly one of 'query' or 'queries'")
         if type(k) is not int or k < 0:
             raise ValueError('k must be a nonnegative integer')
-        engine = QueryAnswerer(self.model, context=context, adapter=adapter, observed_mix=observed_mix,
-                               row_batch_size=row_batch_size, cache_bytes=cache_bytes, seed=seed, samples=samples)
+        key = (id(self.model), id(context), id(adapter), observed_mix, row_batch_size, seed, samples)
+        if key != getattr(self, '_query_engine_key', None):
+            self._query_engine = QueryAnswerer(self.model, context=context, adapter=adapter, observed_mix=observed_mix,
+                                               row_batch_size=row_batch_size, cache_bytes=cache_bytes, seed=seed, samples=samples)
+            self._query_engine_key = key
+        engine = self._query_engine
+        if cache_bytes < 0:
+            raise ValueError('Cache size must be nonnegative')
+        engine.cache_bytes = cache_bytes
         beam = max(1, k) if beam_size is None else beam_size
-        names = {index: name for name, index in self.entity_to_idx.items()}
+        names = {index: name for name, index in self.entity_to_idx.items()} if not only_scores else None
 
         def answer(item):
             indexed = index_query(query_type, item, self.entity_to_idx, self.relation_to_idx)
