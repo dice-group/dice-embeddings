@@ -51,10 +51,63 @@ def write_json(path, value):
     temporary.replace(path)
 
 
+def check_split_overlap(train, valid, test, *, allow=False):
+    """Count distinct shared facts; require an explicit override for test leakage."""
+    facts = [set(map(tuple, split.tolist())) for split in (train, valid, test)]
+    counts = {
+        "train_valid": len(facts[0] & facts[1]),
+        "train_test": len(facts[0] & facts[2]),
+        "valid_test": len(facts[1] & facts[2]),
+    }
+    if counts["train_test"] and not allow:
+        raise ValueError("Training and test facts overlap; use --allow-test-overlap "
+                         "only to report original-split results with explicit leakage")
+    return counts
+
+
+# Author-provided 50g training configuration:
+# https://github.com/DeepGraphLearning/ULTRA/issues/15#issuecomment-2024326922
+ULTRA_50G_GRAPHS = frozenset((
+    'FB15k237', 'WN18RR', 'CoDExMedium', 'NELL995',
+    'YAGO310', 'DBpedia100k', 'AristoV4', 'Hetionet',
+    'WDsinger', 'CoDExSmall', 'NELL23k', 'ConceptNet100k',
+    'FB15k237_10', 'FB15k237Inductive:v1', 'FB15k237Inductive:v2', 'FB15k237Inductive:v3',
+    'FB15k237Inductive:v4', 'WN18RRInductive:v1', 'WN18RRInductive:v2', 'WN18RRInductive:v3',
+    'WN18RRInductive:v4', 'NELLInductive:v1', 'NELLInductive:v2', 'NELLInductive:v3',
+    'NELLInductive:v4', 'ILPC2022:small', 'ILPC2022:large', 'FBIngram:25',
+    'FBIngram:50', 'FBIngram:75', 'FBIngram:100', 'WKIngram:25',
+    'WKIngram:50', 'WKIngram:75', 'WKIngram:100', 'NLIngram:0',
+    'NLIngram:25', 'NLIngram:50', 'NLIngram:75', 'NLIngram:100',
+    'WikiTopicsMT1:tax', 'WikiTopicsMT1:health', 'WikiTopicsMT2:org', 'WikiTopicsMT2:sci',
+    'WikiTopicsMT3:art', 'WikiTopicsMT3:infra', 'WikiTopicsMT4:sci', 'WikiTopicsMT4:health',
+    'Metafam:None', 'FBNELL:None',
+))
+
+
+def pretraining_status(model, variant, dataset):
+    dataset = {"FB15k-237": "FB15k237", "CoDEx-Medium": "CoDExMedium",
+               "YAGO3-10": "YAGO310", "NELL-995": "NELL995"}.get(dataset, dataset)
+    if model == "ULTRA" and variant in ("4g", "50g") and dataset.startswith("NELL-995-"):
+        # Exact triples audited against RED-GNN's facts.txt + train.txt; see the protocol.
+        if dataset in ("NELL-995-h25", "NELL-995-h50", "NELL-995-h75", "NELL-995-h100"):
+            return "yes"
+        return "related"
+    if model == "ULTRA" and variant == "50g":
+        return "yes" if dataset in ULTRA_50G_GRAPHS else "no"
+    if dataset in ("FB15k237", "WN18RR", "CoDExMedium"):
+        return "yes"
+    if model == "ULTRA" and variant == "4g" and dataset == "NELL995":
+        return "yes"
+    return "no"
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--model", choices=MODELS, required=True)
     parser.add_argument("--dataset", required=True)
+    parser.add_argument("--ultra-checkpoint", choices=("3g", "4g", "50g"), default="3g")
+    parser.add_argument("--allow-test-overlap", action="store_true",
+                        help="Keep original splits despite training/test leakage; record overlap in the report")
     parser.add_argument("--device", default="cpu")
     parser.add_argument("--batch-size", type=int, default=128)
     parser.add_argument("--query-batch-size", type=int, default=1)
@@ -76,6 +129,8 @@ def main():
                         help="Independent random tie seed; defaults to --seed")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if args.model != "ULTRA" and args.ultra_checkpoint != "3g":
+        parser.error("--ultra-checkpoint applies only to ULTRA")
     if args.tie_seed is None:
         args.tie_seed = args.seed
     if min(args.batch_size, args.query_batch_size, args.threads, args.walk_num, args.test_samples) < 1:
@@ -101,12 +156,16 @@ def main():
     output = args.output.resolve()
     output.mkdir(parents=True, exist_ok=True)
     dataset_dir = ROOT / "KGs" / args.dataset
-    checkpoint = ROOT / CHECKPOINTS[args.model]
+    checkpoint = ROOT / (f"checkpoints/ultra_{args.ultra_checkpoint}.pth"
+                         if args.model == "ULTRA" else CHECKPOINTS[args.model])
+    model_label = f"ULTRA-{args.ultra_checkpoint}" if args.model == "ULTRA" else args.model
+    pretraining = pretraining_status(args.model, args.ultra_checkpoint, args.dataset)
     sources = sorted((ROOT / "dicee").rglob("*.py")) + [Path(__file__).resolve()]
     cpu_name = next((line.split(":", 1)[1].strip() for line in
                      Path("/proc/cpuinfo").read_text().splitlines() if line.startswith("model name")), "unknown")
     config = {
         **{k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()},
+        "model_label": model_label, "pretraining_status": pretraining,
         "checkpoint": str(checkpoint.relative_to(ROOT)),
         "checkpoint_sha256": digest(checkpoint),
         "split_sha256": {name: digest(dataset_dir / f"{name}.txt") for name in ("train", "valid", "test")},
@@ -137,11 +196,12 @@ def main():
             path_for_serialization=str(output))
     if kg.valid_set is None or kg.test_set is None or not len(kg.test_set):
         raise ValueError("The benchmark requires nonempty test and available validation splits")
-    # Refuse to publish a held-out score if a test fact is already in context.
-    train_facts = set(map(tuple, kg.train_set.tolist()))
-    if any(tuple(triple) in train_facts for triple in kg.test_set.tolist()):
-        raise ValueError("Training and test facts overlap")
-    del train_facts
+    overlap = check_split_overlap(kg.train_set, kg.valid_set, kg.test_set,
+                                  allow=args.allow_test_overlap)
+    write_json(output / "split_overlap.json", overlap)
+    if overlap["train_test"]:
+        logging.warning("Original-split evaluation includes %d distinct test facts in the "
+                        "inference graph; these results contain leakage", overlap["train_test"])
     settings = dict(num_entities=kg.num_entities, num_relations=kg.num_relations,
                     **{f"{args.model.lower()}_query_batch_size": args.query_batch_size},
                     flock_walk_num=args.walk_num, flock_test_samples=args.test_samples,
@@ -201,7 +261,9 @@ def main():
                for key in METRICS}
     result = {
         "status": "complete", "dataset": args.dataset, "model": args.model,
-        "target_graph_in_pretraining": args.dataset in ("FB15k-237", "WN18RR"),
+        "split_overlap": overlap, "test_facts_in_inference_graph": bool(overlap["train_test"]),
+        "model_label": model_label, "pretraining_status": pretraining,
+        "target_graph_in_pretraining": {"yes": True, "no": False}.get(pretraining),
         "test_triples": len(kg.test_set), "ranked_queries": 2 * len(kg.test_set),
         "num_entities": kg.num_entities, "num_relations": kg.num_relations,
         "inference_edges": model.edge_type.numel(), "metrics": metrics,
