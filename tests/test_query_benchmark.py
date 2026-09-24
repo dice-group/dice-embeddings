@@ -200,7 +200,8 @@ def test_real_models_restore_graph_modes_and_failure(tmp_path, name, attached):
     assert second['per_shape'] == report['per_shape']
 
 
-def test_cli_checkpoint_reports_and_preserves_commit_work(tmp_path, monkeypatch):
+@pytest.mark.parametrize('executor', ['cqd', 'qto'])
+def test_cli_checkpoint_reports_and_preserves_commit_work(tmp_path, monkeypatch, executor):
     from dicee.models import ULTRA
     from dicee.query_answering.__main__ import main
     fixture_dataset(tmp_path, 'FB15k237LogicalQuery')
@@ -214,10 +215,11 @@ def test_cli_checkpoint_reports_and_preserves_commit_work(tmp_path, monkeypatch)
                                     '--datasets', 'FB15k237LogicalQuery', 'WikiTopicsQuery:art',
                                     '--checkpoint', str(checkpoint), '--model-config', str(config_path),
                                     '--output', str(output), '--beam-size', '2', '--max-queries-per-shape', '1',
-                                    '--query-sampling', 'uniform', '--sampling-seed', '83'])
+                                    '--query-sampling', 'uniform', '--sampling-seed', '83', '--executor', executor])
     main()
     report = json.loads(output.read_text())
     assert len(report['results']) == 2
+    assert all(r['inference']['executor'] == executor for r in report['results'])
     assert all(r['protocol']['query_sampling'] == 'uniform' and r['protocol']['sampling_seed'] == 83 for r in report['results'])
     assert report['summary']['groups']['all']['datasets'] == 2
     assert not report['summary']['complete_23_dataset_test_suite']

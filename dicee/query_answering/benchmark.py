@@ -225,10 +225,12 @@ def benchmark_model(model, data, *, adapter=None, observed_mix=None, beam_size=6
                     row_batch_size=8, backend_batch_size=None, cache_bytes=512 * 1024 * 1024, seed=0, samples=None,
                     tie_policy='sort', max_queries_per_shape=None, progress=None, query_batch_size=32,
                     query_order='relation', checkpoint_dir=None, checkpoint_every=500, on_checkpoint=None,
-                    query_sampling='prefix', sampling_seed=0, on_query=None):
+                    query_sampling='prefix', sampling_seed=0, on_query=None, executor='cqd'):
     """Run CQD with shared caching, batching and durable progress across backends."""
     from ..models._inference import float32_precision_token
     from ..models.flock import Flock
+    if executor not in ('cqd', 'qto'):
+        raise ValueError('Choose cqd or qto executor')
     previous_batch = getattr(model, 'query_batch_size', None)
     effective_batch = backend_batch_size
     if effective_batch is None:
@@ -243,7 +245,8 @@ def benchmark_model(model, data, *, adapter=None, observed_mix=None, beam_size=6
             engine = QueryAnswerer(model, context=data.context, adapter=adapter, observed_mix=observed_mix,
                                    row_batch_size=row_batch_size, cache_bytes=cache_bytes, seed=seed, samples=samples)
             transform = engine.adapter
-            inference = dict(method='cqd-global-prefix', model=model.name, beam_size=beam_size, tnorm=tnorm,
+            inference = dict(method='cqd-global-prefix' if executor == 'cqd' else 'qto-exact', executor=executor,
+                             model=model.name, beam_size=beam_size if executor == 'cqd' else None, tnorm=tnorm,
                              negation='standard', score_space='float64-log-memberships',
                              row_batch_size=row_batch_size, backend_batch_size=effective_batch if previous_batch is not None else None,
                              query_batch_size=query_batch_size, cache_bytes=cache_bytes, cache_scope='evaluation-session',
@@ -266,8 +269,8 @@ def benchmark_model(model, data, *, adapter=None, observed_mix=None, beam_size=6
                              implementation_sha256=_implementation_fingerprint())
 
             def predict(query):
-                result = engine.predict(query, beam_size=beam_size, tnorm=tnorm, return_log_scores=True)
-                stats.update({key: engine.last_info[key] for key in ('raw_rows', 'cache_hits', 'pruned', 'negated_pruning')})
+                result = engine.predict(query, beam_size=beam_size, tnorm=tnorm, return_log_scores=True, executor=executor)
+                stats.update({key: engine.last_info[key] for key in ('raw_rows', 'cache_hits', 'pruned', 'negated_pruning', 'bound_skipped')})
                 return result
 
             def prepare(queries):
@@ -313,7 +316,7 @@ def summarize_benchmarks(reports):
 
 
 def add_benchmark_parser(commands):
-    parser = commands.add_parser('benchmark', help='Evaluate CQD on the published UltraQuery datasets')
+    parser = commands.add_parser('benchmark', help='Evaluate CQD/QTO on the published UltraQuery datasets')
     parser.add_argument('--data-root', type=Path, required=True)
     parser.add_argument('--datasets', nargs='+', default=['FB15k237LogicalQuery'], help='Official dataset names, or all for the 23-dataset suite')
     parser.add_argument('--split', choices=['valid', 'test'], default='test')
@@ -327,6 +330,7 @@ def add_benchmark_parser(commands):
     parser.add_argument('--adapter', type=Path, help='Fitted DICE adapter JSON')
     parser.add_argument('--observed-mix', type=float)
     parser.add_argument('--beam-size', type=int, default=64)
+    parser.add_argument('--executor', choices=['cqd', 'qto'], default='cqd', help='Beam search or exact QTO-style projection')
     parser.add_argument('--tnorm', choices=['prod', 'min'], default='prod')
     parser.add_argument('--row-batch-size', type=int, default=8)
     parser.add_argument('--backend-batch-size', type=int, help='Neural microbatch; defaults to row batch size for ULTRA/TRIX')
@@ -407,7 +411,7 @@ def _run_datasets(args, names, model, adapter, kge, directory, graph_type):
                                         summary=summarize_benchmarks(reports)))
 
         report = benchmark_model(model, data, adapter=adapter, observed_mix=args.observed_mix,
-                                 beam_size=args.beam_size, tnorm=args.tnorm, row_batch_size=args.row_batch_size,
+                                 beam_size=args.beam_size, executor=args.executor, tnorm=args.tnorm, row_batch_size=args.row_batch_size,
                                  backend_batch_size=args.backend_batch_size, query_batch_size=args.query_batch_size,
                                  query_order=args.query_order, checkpoint_dir=directory / name.replace(':', '-'),
                                  query_sampling=args.query_sampling, sampling_seed=args.sampling_seed,

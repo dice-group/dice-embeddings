@@ -1,4 +1,4 @@
-"""Model-independent global-prefix query answering over complete atomic rows."""
+"""Shared beam and exact query execution over complete atomic rows."""
 
 import math
 from collections import OrderedDict
@@ -206,7 +206,12 @@ class QueryAnswerer:
 
     @torch.no_grad()
     def predict(self, query, *, beam_size=64, tnorm='prod', neg_norm='standard', lambda_=0.,
-                use_logits=False, return_log_scores=False):
+                use_logits=False, return_log_scores=False, executor='cqd'):
+        """QTO evaluates every potentially improving head without a beam limit."""
+        if executor not in ('cqd', 'qto'):
+            raise ValueError('Choose cqd or qto executor')
+        if executor == 'qto' and use_logits:
+            raise ValueError('QTO requires bounded memberships, not legacy logits')
         if type(beam_size) is not int or beam_size < 1:
             raise ValueError('beam_size must be a positive integer')
         if tnorm not in ('prod', 'min') or neg_norm not in ('standard', 'sugeno', 'yager'):
@@ -224,7 +229,7 @@ class QueryAnswerer:
         tree = compile_query(query)
         validate_tree(tree, n, nr)
         self._prepare_cache(use_logits)
-        stats = dict(raw_rows=0, cache_hits=0, pruned=False, negated_pruning=False)
+        stats = dict(raw_rows=0, cache_hits=0, pruned=False, negated_pruning=False, bound_skipped=0)
 
         def execute(node):
             op = node[0]
@@ -242,16 +247,21 @@ class QueryAnswerer:
                 stats['negated_pruning'] |= pruned
                 return negate(values, neg_norm, lambda_, logits=use_logits), pruned
             prefix, pruned = execute(node[2])
-            heads = stable_topk(prefix, beam_size).tolist()
+            heads = stable_topk(prefix, n if executor == 'qto' else beam_size).tolist()
             result = torch.full_like(prefix, -torch.inf)
-            for batch, edges in self._row_batches(heads, node[1], use_logits, stats):
+            for start in range(0, len(heads), self.scorer.row_batch_size):
+                # Edge memberships are at most one: remaining prefixes bound every tail.
+                if executor == 'qto' and (result >= prefix[heads[start]]).all().item():
+                    stats['bound_skipped'] += len(heads) - start
+                    break
+                batch, edges = next(self._row_batches(heads[start:start + self.scorer.row_batch_size], node[1], use_logits, stats))
                 values = prefix[batch, None]
                 if tnorm == 'min':
                     joined = torch.minimum(values, edges)
                 else:
                     joined = values * edges if use_logits else values + edges
                 result = torch.maximum(result, joined.amax(dim=0))
-            return result, pruned or beam_size < n
+            return result, pruned or (executor == 'cqd' and beam_size < n)
 
         with self.scorer.evaluation():
             result, stats['pruned'] = execute(tree)
@@ -260,5 +270,5 @@ class QueryAnswerer:
             result[sorted(context.answers(tree))] = 0.
         if (torch.isnan(result) | torch.isposinf(result)).any():
             raise FloatingPointError('Query composition produced invalid scores')
-        self.last_info = dict(stats, search='global-prefix', cache_bytes=self._cache_used)
+        self.last_info = dict(stats, search='global-prefix' if executor == 'cqd' else 'exact', cache_bytes=self._cache_used)
         return result if use_logits or return_log_scores else result.exp()

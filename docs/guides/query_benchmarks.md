@@ -6,6 +6,18 @@ embedding models on the 23 datasets used by
 those backbones**. Native UltraQuery's multi-source GNN projection is not
 implemented.
 
+Use `--executor qto` for QTO-style exact projections with the same scorer,
+adapter and query semantics. The default `--executor cqd` uses a bounded beam.
+QTO ignores the beam limit and streams intermediate entities in row batches.
+It stops only when the remaining prefix scores cannot improve any tail, using
+the fact that memberships are at most one. No score threshold or sparse
+adjacency approximation is applied. Projections can therefore be much slower
+than CQD. Projection workspace uses row batches rather than full relation
+matrices; the backbone, graph and caches still need their own memory.
+Negation complements the completed subquery, including the two-hop branch of
+`pni`. QTO's original calibration and negated-edge projection are not imported.
+The Python prediction and benchmark APIs accept `executor='qto'` as well.
+
 ## Run a benchmark
 
 Start with a small sample using an existing ULTRA link-prediction checkpoint:

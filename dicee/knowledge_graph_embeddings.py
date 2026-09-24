@@ -745,7 +745,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         neg_norm="standard", lambda_=0.0, k=10, only_scores=False,
         use_logits=False, *, beam_size=None, context=None, adapter=None,
         observed_mix=None, row_batch_size=8, cache_bytes=64 * 1024 * 1024,
-        seed=0, samples=None,
+        seed=0, samples=None, executor='cqd',
     ):
         """Answer any of the 14 standard positive/negated query shapes.
 
@@ -755,6 +755,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         ``k`` limits returned answers; ``beam_size`` controls existential search
         independently and defaults to max(1, k). ``only_scores`` returns all
         entity scores in numeric ID order. Ties use entity ID order.
+        ``executor='qto'`` uses exact projections without a beam limit.
 
         Pass QueryContext for transductive observed-edge/feature support; graph
         models use their attached context. Pass QueryScoreAdapter for a learned
@@ -783,7 +784,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         def answer(item):
             indexed = index_query(query_type, item, self.entity_to_idx, self.relation_to_idx)
             scores = engine.predict(indexed, beam_size=beam, tnorm=tnorm, neg_norm=neg_norm,
-                                    lambda_=lambda_, use_logits=use_logits, return_log_scores=not use_logits)
+                                    lambda_=lambda_, use_logits=use_logits, return_log_scores=not use_logits, executor=executor)
             if only_scores:
                 return scores if use_logits else scores.exp()
             # Rank in log space before converting to memberships, avoiding underflow ties.
