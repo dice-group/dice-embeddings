@@ -1,8 +1,8 @@
 # Query answering with frozen KGEs and KGFMs
 
 Ordinary entity-prediction KGEs, ULTRA, TRIX, and Flock use the same query
-evaluator. It supports the nine positive shapes and `2in`, `3in`, `inp`, `pin`,
-and `pni`. Relation-prediction models such as TRIXRelation and FlockRelation are
+evaluator. It supports the nine standard positive shapes, the +H `4p` and `4i`
+shapes, and `2in`, `3in`, `inp`, `pin`, and `pni`. Relation-prediction models such as TRIXRelation and FlockRelation are
 not entity query scorers.
 
 ## Named and indexed queries

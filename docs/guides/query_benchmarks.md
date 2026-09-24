@@ -18,6 +18,86 @@ Negation complements the completed subquery, including the two-hop branch of
 `pni`. QTO's original calibration and negated-edge projection are not imported.
 The Python prediction and benchmark APIs accept `executor='qto'` as well.
 
+## Harder +H benchmarks
+
+The same CQD/QTO runner supports **FB15k237+H, NELL995+H, and ICEWS18+H** from
+[Is Complex Query Answering Really Complex?](https://arxiv.org/abs/2410.12537).
+Use the authors' [benchs-1.0 release](https://github.com/april-tools/is-cqa-complex/releases/tag/benchs-1.0),
+which balances inference hardness and adds `4p` (four projections) and `4i`
+(four-way intersection). These datasets contain both partial- and full-inference
+answers; they are not a full-inference-only subset of BetaE.
+The runner retains its short shape names: `pi`, `ip`, and `up` correspond to
+the paper's `1p2i`, `2i1p`, and `2u1p`, respectively.
+
+```bash
+python -m dicee.query_answering benchmark \
+  --model ULTRA --checkpoint /path/to/ultra_3g.pth \
+  --data-root /path/to/query-data --datasets +h --download \
+  --device cpu --threads 1 --beam-size 32 \
+  --max-queries-per-shape 5 --query-sampling uniform --sampling-seed 20260924 \
+  --output results/ultra-cqd-plus-h-smoke.json
+```
+
+Use `--datasets FB15k237+H` (or `NELL995+H`, `ICEWS18+H`) for one dataset;
+`--datasets +h` selects all three. `--datasets all` still selects the original
+23 UltraQuery datasets. Use separate output paths for the two suites; their
+aggregates cannot be combined. Remove the query limit for complete evaluation.
+The model, adapter, execution, sampling, and resume options work for both suites.
+
+Extract the release under `--data-root`, retaining its original paths:
+
+| Dataset | Directory below data root | Graph files |
+|---|---|---|
+| `FB15k237+H` | `iscqa-compl-benchmarks/new_benchmarks/FB15k-237+H` | `train.txt`, `valid.txt` |
+| `NELL995+H` | `iscqa-compl-benchmarks/new_benchmarks/NELL995+H` | `train.txt`, `valid.txt` |
+| `ICEWS18+H` | `iscqa-compl-benchmarks/new_benchmarks/ICEWS18+H` | `KG_splits/train.txt`, `KG_splits/valid.txt` |
+
+Automatic download fetches the 1.68 GB archive once and extracts evaluation
+inputs for all three +H datasets. It excludes the archive's old benchmarks,
+training queries and auxiliary stratified analyses. Pickles must come from the
+trusted official release.
+
+Validation uses the training graph. Test inference uses **train + validation**,
+following the authors' [query construction](https://github.com/april-tools/is-cqa-complex/blob/d1ce74164936a7c09d9147e83190da047cb39429/create_queries.py)
+and CQD-Hybrid evaluation context; test triples never enter the scorer.
+This differs from the existing UltraQuery transductive loader's train-only
+context. ICEWS18 uses the released temporal splits and published IDs, without
+resampling. All three datasets rank the complete published entity vocabulary
+and use adjacent reciprocal relation IDs.
+
+The published `easy` answer files also include inference answers that were
+excluded during hardness balancing. They are preserved as ranking filters,
+not recomputed from the inference graph. All other published easy and hard
+answers are filtered when ranking each hard answer, following the authors'
+[evaluator](https://github.com/april-tools/is-cqa-complex/blob/d1ce74164936a7c09d9147e83190da047cb39429/models.py).
+Reports average answers within queries, queries within shapes, then shapes
+equally: 11 EPFO and 5 negation shapes. Reports identify the suite, release,
+source commit, graph split, input hashes, `all_benchmark_shapes`, and
+`complete_plus_h_test_suite`. The legacy `all_14_shapes` flag remains specific
+to exactly the original 14 shapes. Per-shape scores are the comparison with
+the paper; suite macro averages are runner summaries. The release's separate
+hardness-stratified and cardinality analyses are not included in this runner.
+
+Correctness tests cover both published protocols and the new four-step query
+semantics without downloading data:
+
+```bash
+CUDA_VISIBLE_DEVICES='' OMP_NUM_THREADS=1 MKL_NUM_THREADS=1 \
+  python -m pytest tests/test_query_benchmark.py tests/test_query_benchmark_plus_h.py \
+  tests/test_query_engine.py tests/test_query_qto.py -q
+```
+
+To also validate all six splits of an extracted official +H release, set
+`DICEE_PLUS_H_DATA_ROOT=/path/to/query-data` when running
+`tests/test_query_benchmark_plus_h.py`. These optional tests check the published
+vocabulary/query counts, graph isolation, and sampled ranking against an
+independent reference calculation. They do not train a model or start a full
+performance benchmark.
+
+Set `DICEE_ULTRAQUERY_DATA_ROOT=/path/to/ultraquery-data` when running
+`tests/test_query_benchmark.py` to check real validation/test data for all three
+UltraQuery dataset families against the published graph and ranking protocols.
+
 ## Run a benchmark
 
 Start with a small sample using an existing ULTRA link-prediction checkpoint:

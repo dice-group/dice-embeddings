@@ -17,10 +17,10 @@ import torch
 
 from ..evaluation._filtering import FilteredRanker
 from ._checkpoint import BenchmarkCheckpoint, write_json
-from ._query import QUERY_SHAPES, compile_query, relation_signature
+from ._query import QUERY_SHAPES, ULTRAQUERY_SHAPES, compile_query, relation_signature
 from .adapter import QueryScoreAdapter
 from .context import attached_context, evaluation_mode, fingerprint, state_fingerprint
-from .datasets import BENCHMARK_DATASETS, load_benchmark
+from .datasets import BENCHMARK_DATASETS, PLUS_H_DATASETS, load_benchmark
 from .engine import QueryAnswerer
 
 METRICS = ('mrr', 'hits1', 'hits3', 'hits10')
@@ -187,7 +187,9 @@ def evaluate_benchmark(data, predict, *, tie_policy='sort', max_queries_per_shap
                                       averaging='answers per query, queries per shape, equal shapes per group',
                                       max_queries_per_shape=max_queries_per_shape, query_order=query_order,
                                       query_sampling=query_sampling, sampling_seed=sampling_seed,
-                                      full_split=completed == len(data.queries), all_14_shapes=set(counts) == set(QUERY_SHAPES)),
+                                      full_split=completed == len(data.queries),
+                                      all_14_shapes=set(counts) == set(ULTRAQUERY_SHAPES),
+                                      all_benchmark_shapes=set(counts) == set(data.metadata.get('expected_query_types', ULTRAQUERY_SHAPES))),
                         dataset_metadata=data.metadata, context_sha256=data.context.identity,
                         candidate_sha256=fingerprint(data.candidates), num_candidates=len(data.candidates))
 
@@ -298,6 +300,8 @@ def summarize_benchmarks(reports):
         raise ValueError('Duplicate dataset/split results cannot be averaged')
     if len({r['split'] for r in reports}) > 1:
         raise ValueError('Do not aggregate validation and test splits together')
+    if len({r['dataset_metadata'].get('suite', 'ultraquery') for r in reports}) > 1:
+        raise ValueError('Do not aggregate UltraQuery and +H benchmark suites together')
     if len({r['dataset_metadata'].get('evaluation', 'hard-answers') for r in reports}) > 1:
         raise ValueError('Do not aggregate faithfulness and hard-answer evaluations together')
     result = {}
@@ -312,13 +316,16 @@ def summarize_benchmarks(reports):
                                        | {'datasets': len(values)}) if values else None
     return dict(groups=result, complete_23_dataset_test_suite=(len(reports) == 23 and
                 {r['dataset'] for r in reports} == set(BENCHMARK_DATASETS) and
-                all(r['split'] == 'test' and r['protocol']['full_split'] and r['protocol']['all_14_shapes'] for r in reports)))
+                all(r['split'] == 'test' and r['protocol']['full_split'] and r['protocol']['all_14_shapes'] for r in reports)),
+                complete_plus_h_test_suite=({r['dataset'] for r in reports} == set(PLUS_H_DATASETS) and
+                all(r['split'] == 'test' and r['protocol']['full_split'] and r['protocol'].get('all_benchmark_shapes', False)
+                    for r in reports)))
 
 
 def add_benchmark_parser(commands):
-    parser = commands.add_parser('benchmark', help='Evaluate CQD/QTO on the published UltraQuery datasets')
+    parser = commands.add_parser('benchmark', help='Evaluate CQD/QTO on published UltraQuery or +H datasets')
     parser.add_argument('--data-root', type=Path, required=True)
-    parser.add_argument('--datasets', nargs='+', default=['FB15k237LogicalQuery'], help='Official dataset names, or all for the 23-dataset suite')
+    parser.add_argument('--datasets', nargs='+', default=['FB15k237LogicalQuery'], help='Dataset names, all for UltraQuery, or +h for the three harder datasets')
     parser.add_argument('--split', choices=['valid', 'test'], default='test')
     parser.add_argument('--query-types', nargs='+', choices=list(QUERY_SHAPES))
     parser.add_argument('--download', action='store_true', help='Download official archives if missing')
@@ -364,9 +371,12 @@ def run_benchmark_cli(args):
     else:
         torch.set_float32_matmul_precision('highest' if args.precision == 'ieee' else 'high')
         torch.backends.cudnn.allow_tf32 = args.precision == 'tf32'
-    names = list(BENCHMARK_DATASETS) if args.datasets == ['all'] else args.datasets
+    names = (list(BENCHMARK_DATASETS) if args.datasets == ['all'] else
+             list(PLUS_H_DATASETS) if args.datasets in (['+h'], ['+H']) else args.datasets)
     if len(set(names)) != len(names):
         raise ValueError('Choose each dataset once')
+    if any(name in PLUS_H_DATASETS for name in names) and not all(name in PLUS_H_DATASETS for name in names):
+        raise ValueError('Run UltraQuery and +H benchmark suites with separate output paths')
     kge = None
     if args.experiment:
         from ..knowledge_graph_embeddings import KGE

@@ -13,6 +13,10 @@ QUERY_SHAPES = {
     'pin': (('e', ('r', 'r')), ('e', ('r', 'n'))),
     'pni': (('e', ('r', 'r', 'n')), ONE),
 }
+# Keep the original benchmark's contract independent of the executor grammar.
+ULTRAQUERY_SHAPES = tuple(QUERY_SHAPES)
+QUERY_SHAPES.update({'4p': ('e', ('r', 'r', 'r', 'r')), '4i': (ONE, ONE, ONE, ONE)})
+PLUS_H_SHAPES = tuple(QUERY_SHAPES)
 
 
 def nested(value):

@@ -2,9 +2,11 @@
 
 import io
 import json
+import os
 import pickle
 import zipfile
 from dataclasses import replace
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -20,7 +22,7 @@ from dicee.query_answering import (
     load_benchmark,
     summarize_benchmarks,
 )
-from dicee.query_answering._query import QUERY_SHAPES
+from dicee.query_answering._query import QUERY_SHAPES, ULTRAQUERY_SHAPES
 from dicee.query_answering.benchmark import filtered_query_metrics
 from dicee.query_answering.datasets import dataset_spec, download_benchmark
 from tests.test_query_engine import TableModel, programs
@@ -56,7 +58,8 @@ def fixture_dataset(root, name, binary=False):
         graph(path, 'val_inference', [(2, 1, 5)], pairs, binary)
         direct = [(2, 1, 3)] if group == 'inductive-e' else [(0, 1, 3), (1, 0, 2)]
         test = graph(path, 'test_inference', direct, pairs, binary)
-    structured = {QUERY_SHAPES[shape]: [value[0]] for shape, value in programs(np.ones((4, 2, 4)) * .5, 2).items()}
+    structured = {QUERY_SHAPES[shape]: [value[0]] for shape, value in programs(np.ones((4, 2, 4)) * .5, 2).items()
+                  if shape in ULTRAQUERY_SHAPES}
     for split in ('valid', 'test'):
         hard_id = (5 if split == 'valid' else 3) if group == 'inductive-e' else (2 if split == 'valid' and group == 'inductive-er' else 3)
         if group == 'transductive':
@@ -77,7 +80,7 @@ def test_official_layouts_no_target_leakage(tmp_path, name, split, binary):
     path, train, test = fixture_dataset(tmp_path, name, binary)
     data = load_benchmark(tmp_path, name, split=split)
     assert len(data.queries) == 14
-    assert {q.shape for q in data.queries} == set(QUERY_SHAPES)
+    assert {q.shape for q in data.queries} == set(ULTRAQUERY_SHAPES)
     assert len(data.metadata['files']) >= 4
     edges = set(data.context.triples)
     if data.group == 'transductive':
@@ -324,3 +327,48 @@ def test_reused_ranking_masks_match_independent_sort_oracle(device, restricted):
                             hits3=np.mean([r <= 3 for r in ranks]), hits10=np.mean([r <= 10 for r in ranks]))
             assert evaluator(scores, easy, hard) == pytest.approx(expected)
             assert torch.equal(scores, unchanged)
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(not os.environ.get('DICEE_ULTRAQUERY_DATA_ROOT'), reason='Set DICEE_ULTRAQUERY_DATA_ROOT to the official extracted data')
+@pytest.mark.parametrize('name', ['FB15k237LogicalQuery', 'InductiveFB15k237Query:106', 'WikiTopicsQuery:art'])
+@pytest.mark.parametrize('split', ['valid', 'test'])
+def test_official_ultraquery_data_graphs_and_reference_ranks(name, split):
+    """Real-data conformance for each of the three pinned UltraQuery loaders."""
+    root = Path(os.environ['DICEE_ULTRAQUERY_DATA_ROOT'])
+    data = load_benchmark(root, name, split=split)
+    path = root / dataset_spec(name)[1]
+
+    def triples(stem):
+        file = path / f'{stem}.txt'
+        if file.is_file():
+            return {tuple(map(int, row.split())) for row in file.read_text().splitlines() if row.strip()}
+        return {tuple(row) for row in torch.load(path / f'{stem}.pt', weights_only=True).tolist()}
+
+    if data.group == 'transductive':
+        observed = triples('train')
+        assert data.candidates == tuple(range(data.context.num_entities))
+    elif data.group == 'inductive-e':
+        observed = triples('train_graph') | triples('val_inference' if split == 'valid' else 'test_inference')
+    else:
+        observed = triples('train_graph' if split == 'valid' else 'test_inference')
+    assert set(data.context.triples) == observed
+    if data.group != 'transductive':
+        assert set(data.candidates) == {entity for h, _, t in observed for entity in (h, t)}
+    scores = torch.sin(torch.arange(data.context.num_entities, dtype=torch.float64))
+    report = evaluate_benchmark(data, lambda q: scores, max_queries_per_shape=1)
+    first = {}
+    for query in data.queries:
+        first.setdefault(query.shape, query)
+    masked = scores.clone()
+    masked[list(set(range(len(scores))) - set(data.candidates))] = -torch.inf
+    order = masked.argsort(descending=True).tolist()
+    positions = {entity: i for i, entity in enumerate(order)}
+    for shape, query in first.items():
+        true_answers = sorted(query.easy | query.hard, key=positions.__getitem__)
+        ranks = [positions[entity] - offset + 1 for offset, entity in enumerate(true_answers) if entity in query.hard]
+        expected = dict(mrr=np.mean([1 / r for r in ranks]),
+                        **{f'hits{k}': np.mean([r <= k for r in ranks]) for k in (1, 3, 10)})
+        assert {key: report['per_shape'][shape][key] for key in expected} == pytest.approx(expected)
+    assert report['queries'] == 14 and report['protocol']['all_14_shapes']
+    assert not report['protocol']['full_split']

@@ -54,6 +54,8 @@ def programs(m, beam, tnorm='prod'):
         'inp': (((a, (1, (1, -2))), (1,)), project(conjunction(pa, 1-pb), 1)),
         'pin': (((0, (0, 1)), (1, (1, -2))), conjunction(two, 1-pb)),
         'pni': (((0, (0, 1, -2)), b), conjunction(1-two, pb)),
+        '4p': ((0, (0, 1, 0, 1)), project(project(two, 0), 1)),
+        '4i': ((a, b, c, (3, (1,))), conjunction(conjunction(conjunction(pa, pb), pc), m[3, 1])),
     }
 
 

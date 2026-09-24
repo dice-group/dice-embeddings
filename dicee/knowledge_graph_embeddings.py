@@ -747,7 +747,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         observed_mix=None, row_batch_size=8, cache_bytes=64 * 1024 * 1024,
         seed=0, samples=None, executor='cqd',
     ):
-        """Answer any of the 14 standard positive/negated query shapes.
+        """Answer the 14 standard query shapes and the +H four-step 4p/4i shapes.
 
         All entity-prediction models use one evaluator, including ULTRA, TRIX,
         and Flock. Scores default to sigmoid memberships; ``use_logits=True``
