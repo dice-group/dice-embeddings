@@ -213,10 +213,12 @@ def test_cli_checkpoint_reports_and_preserves_commit_work(tmp_path, monkeypatch)
     monkeypatch.setattr('sys.argv', ['query_answering', 'benchmark', '--data-root', str(tmp_path),
                                     '--datasets', 'FB15k237LogicalQuery', 'WikiTopicsQuery:art',
                                     '--checkpoint', str(checkpoint), '--model-config', str(config_path),
-                                    '--output', str(output), '--beam-size', '2', '--max-queries-per-shape', '1'])
+                                    '--output', str(output), '--beam-size', '2', '--max-queries-per-shape', '1',
+                                    '--query-sampling', 'uniform', '--sampling-seed', '83'])
     main()
     report = json.loads(output.read_text())
     assert len(report['results']) == 2
+    assert all(r['protocol']['query_sampling'] == 'uniform' and r['protocol']['sampling_seed'] == 83 for r in report['results'])
     assert report['summary']['groups']['all']['datasets'] == 2
     assert not report['summary']['complete_23_dataset_test_suite']
     assert report['results'][0]['inference']['backbone_state_sha256'] == report['results'][1]['inference']['backbone_state_sha256']

@@ -23,6 +23,20 @@ reproducible sorted prefix of each query shape, **not a representative sample**.
 Reports explicitly record the limit and whether all queries and all 14 shapes
 were evaluated. Use `--query-types 1p 2p 2i` to select particular shapes.
 
+For representative subsets, add `--query-sampling uniform --sampling-seed 20260923`.
+Selection uses a fixed SHA256 ordering within each dataset/query type, without
+looking at answer labels. Limits of 50, 200 and 500 produce nested subsets with
+16,100, 64,400 and 161,000 queries across the test suite. The same seed selects
+the same queries for every backbone, adapter and execution order. Sampling uses
+a separate seed from stochastic backbone inference. Graphs, candidates and
+filtering remain complete. Use validation subsets for tuning and reserve test
+subsets for confirmation. Small per-type samples can have substantial variance.
+
+The Python APIs accept `query_sampling='uniform'` and `sampling_seed=20260923`.
+An optional `on_query(query, shape, metrics)` observer receives newly evaluated
+queries for paired statistical comparisons; completed queries skipped on resume
+are not replayed to the observer. Persist those records alongside checkpoints.
+
 Use `--datasets all` for all 23 datasets, or pass several names separated by
 spaces. `--split test` is the default; `--split valid` selects validation.
 Progress is saved atomically every 500 queries. Repeat the same command to

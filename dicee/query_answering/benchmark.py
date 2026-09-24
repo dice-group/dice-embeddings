@@ -6,6 +6,7 @@ provided independently of labels so any query executor can use this evaluator.
 """
 
 import hashlib
+import heapq
 import json
 import time
 from collections import Counter, defaultdict
@@ -98,16 +99,28 @@ def _averages(per_shape):
     return result
 
 
-def _query_plan(data, limit, order):
+def _query_plan(data, limit, order, *, sampling='prefix', seed=0):
     if limit is not None and (type(limit) is not int or limit < 1):
         raise ValueError('Query limit must be a positive integer')
     if order not in ('published', 'relation'):
         raise ValueError('Unknown query order')
+    if sampling not in ('prefix', 'uniform') or type(seed) is not int:
+        raise ValueError('Choose prefix/uniform sampling and an integer sampling seed')
     counts, selected = Counter(), []
-    for query in data.queries:
-        if limit is None or counts[query.shape] < limit:
-            selected.append(query)
-            counts[query.shape] += 1
+    if sampling == 'uniform' and limit is not None:
+        groups = defaultdict(list)
+        for query in data.queries:
+            groups[query.shape].append(query)
+        for shape, queries in groups.items():
+            def priority(query):
+                return fingerprint(('query-sample-v1', seed, data.name, data.split, shape, query.query)), query.query
+            selected.extend(heapq.nsmallest(limit, queries, key=priority))
+        selected.sort(key=lambda q: (q.shape, q.query))
+    else:
+        for query in data.queries:
+            if limit is None or counts[query.shape] < limit:
+                selected.append(query)
+                counts[query.shape] += 1
     if order == 'relation':
         selected.sort(key=lambda q: (q.shape, relation_signature(compile_query(q.query)), q.query))
     return selected
@@ -130,11 +143,12 @@ def _implementation_fingerprint():
 @torch.no_grad()
 def evaluate_benchmark(data, predict, *, tie_policy='sort', max_queries_per_shape=None, progress=None,
                        prepare=None, query_batch_size=1, query_order='published', checkpoint_dir=None,
-                       checkpoint_identity=None, checkpoint_every=500, on_checkpoint=None, statistics=None):
+                       checkpoint_identity=None, checkpoint_every=500, on_checkpoint=None, statistics=None,
+                       query_sampling='prefix', sampling_seed=0, on_query=None):
     """Stream filtered metrics, optionally resuming a verified query prefix."""
     if type(query_batch_size) is not int or query_batch_size < 1 or type(checkpoint_every) is not int or checkpoint_every < 1:
         raise ValueError('Batch and checkpoint intervals must be positive integers')
-    selected = _query_plan(data, max_queries_per_shape, query_order)
+    selected = _query_plan(data, max_queries_per_shape, query_order, sampling=query_sampling, seed=sampling_seed)
     metrics_for_query = QueryMetrics(data.context.num_entities, candidates=data.candidates, tie_policy=tie_policy)
     if checkpoint_dir is not None and checkpoint_identity is None:
         raise ValueError('Checkpointing requires an explicit predictor identity')
@@ -142,6 +156,7 @@ def evaluate_benchmark(data, predict, *, tie_policy='sort', max_queries_per_shap
                     dataset=data.name, split=data.split, context=data.context.identity, metadata=data.metadata,
                     candidates=fingerprint(data.candidates), plan=_plan_fingerprint(selected),
                     tie_policy=tie_policy, limit=max_queries_per_shape, order=query_order,
+                    sampling=query_sampling, sampling_seed=sampling_seed,
                     batch=query_batch_size, checkpoint_every=checkpoint_every) if checkpoint_dir is not None else None
     store = BenchmarkCheckpoint(checkpoint_dir, identity) if checkpoint_dir is not None else nullcontext(None)
     available = Counter(q.shape for q in data.queries)
@@ -171,6 +186,7 @@ def evaluate_benchmark(data, predict, *, tie_policy='sort', max_queries_per_shap
                         protocol=dict(tie_policy=tie_policy, filtering='all other easy and hard answers',
                                       averaging='answers per query, queries per shape, equal shapes per group',
                                       max_queries_per_shape=max_queries_per_shape, query_order=query_order,
+                                      query_sampling=query_sampling, sampling_seed=sampling_seed,
                                       full_split=completed == len(data.queries), all_14_shapes=set(counts) == set(QUERY_SHAPES)),
                         dataset_metadata=data.metadata, context_sha256=data.context.identity,
                         candidate_sha256=fingerprint(data.candidates), num_candidates=len(data.candidates))
@@ -187,6 +203,8 @@ def evaluate_benchmark(data, predict, *, tie_policy='sort', max_queries_per_shap
                 if scores.shape != (data.context.num_entities,):
                     raise ValueError('Predictor must score the complete public entity vocabulary')
                 metrics = metrics_for_query(scores, q.easy, q.hard)
+                if on_query:
+                    on_query(q.query, q.shape, dict(metrics))
                 counts[q.shape] += 1
                 hard_counts[q.shape] += len(q.hard)
                 sums[q.shape].update(metrics)
@@ -206,7 +224,8 @@ def evaluate_benchmark(data, predict, *, tie_policy='sort', max_queries_per_shap
 def benchmark_model(model, data, *, adapter=None, observed_mix=None, beam_size=64, tnorm='prod',
                     row_batch_size=8, backend_batch_size=None, cache_bytes=512 * 1024 * 1024, seed=0, samples=None,
                     tie_policy='sort', max_queries_per_shape=None, progress=None, query_batch_size=32,
-                    query_order='relation', checkpoint_dir=None, checkpoint_every=500, on_checkpoint=None):
+                    query_order='relation', checkpoint_dir=None, checkpoint_every=500, on_checkpoint=None,
+                    query_sampling='prefix', sampling_seed=0, on_query=None):
     """Run CQD with shared caching, batching and durable progress across backends."""
     from ..models._inference import float32_precision_token
     from ..models.flock import Flock
@@ -260,6 +279,7 @@ def benchmark_model(model, data, *, adapter=None, observed_mix=None, beam_size=6
             report = evaluate_benchmark(data, predict, tie_policy=tie_policy,
                                         max_queries_per_shape=max_queries_per_shape, progress=progress,
                                         prepare=prepare, query_batch_size=query_batch_size, query_order=query_order,
+                                        query_sampling=query_sampling, sampling_seed=sampling_seed, on_query=on_query,
                                         checkpoint_dir=checkpoint_dir, checkpoint_identity=inference, checkpoint_every=checkpoint_every,
                                         on_checkpoint=(lambda report: on_checkpoint(annotate(report))) if on_checkpoint else None,
                                         statistics=stats)
@@ -316,6 +336,8 @@ def add_benchmark_parser(commands):
     parser.add_argument('--checkpoint-every', type=int, default=500)
     parser.add_argument('--tie-policy', choices=['sort', 'average', 'optimistic', 'pessimistic'], default='sort')
     parser.add_argument('--max-queries-per-shape', type=int, help='Deterministic smoke-test subset; omitted means full evaluation')
+    parser.add_argument('--query-sampling', choices=['prefix', 'uniform'], default='prefix', help='Uniform sampling is nested across query limits')
+    parser.add_argument('--sampling-seed', type=int, default=0, help='Query selection seed, independent of backbone sampling')
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--samples', type=int)
     parser.add_argument('--device', default='cpu')
@@ -388,6 +410,7 @@ def _run_datasets(args, names, model, adapter, kge, directory, graph_type):
                                  beam_size=args.beam_size, tnorm=args.tnorm, row_batch_size=args.row_batch_size,
                                  backend_batch_size=args.backend_batch_size, query_batch_size=args.query_batch_size,
                                  query_order=args.query_order, checkpoint_dir=directory / name.replace(':', '-'),
+                                 query_sampling=args.query_sampling, sampling_seed=args.sampling_seed,
                                  checkpoint_every=args.checkpoint_every, on_checkpoint=checkpoint,
                                  cache_bytes=args.cache_mb * 2**20, seed=args.seed, samples=args.samples,
                                  tie_policy=args.tie_policy, max_queries_per_shape=args.max_queries_per_shape, progress=progress)
