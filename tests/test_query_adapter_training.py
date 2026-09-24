@@ -119,6 +119,44 @@ def test_fit_frozen_reproducible_cache_and_roundtrip(data, tmp_path):
         fit_query_adapter(model, [data], **kwargs)
 
 
+@pytest.mark.parametrize('scores,patience,epochs,completed,selected,stopped', [
+    ([.4, .5, .5, .49, .5], 6, 20, 10, 4, True),
+    ([.4, .5, .49, .6, .59, .6, .6], 6, 20, 14, 8, True),
+    ([.4, .5, .6], 6, 5, 5, 5, False),
+])
+def test_early_stopping_counts_epochs_and_restores_best(
+        data, monkeypatch, scores, patience, epochs, completed, selected, stopped):
+    from dicee.query_answering import training
+    states, callbacks = [], []
+
+    def validation(adapter, _sources, _banks):
+        states.append({key: value.detach().clone() for key, value in adapter.state_dict().items()})
+        return {'fixture/2i': {'mrr': scores[min(len(states) - 1, len(scores) - 1)]}}
+
+    monkeypatch.setattr(training, '_validation', validation)
+    model = TableModel(np.random.default_rng(20).normal(size=(8, 6, 8)))
+    result = fit_query_adapter(model, [data], epochs=epochs, validation_every=2,
+                               early_stopping_patience=patience, on_epoch=callbacks.append)
+    metadata = result.adapter.metadata['training']
+    assert len(result.history) == metadata['epochs_completed'] == completed
+    assert metadata['selected_epoch'] == selected
+    assert metadata['stopped_early'] is stopped
+    assert metadata['stop_reason'] == ('validation_patience' if stopped else 'epoch_ceiling')
+    assert callbacks[-1]['epoch'] == completed and callbacks[-1]['early_stopped'] is stopped
+    best_index = next(i for i, row in enumerate(r for r in result.history if 'validation_mrr' in r)
+                      if row['epoch'] == selected)
+    for key, value in result.adapter.state_dict().items():
+        torch.testing.assert_close(value, states[best_index][key], rtol=0, atol=0)
+    assert metadata['optimizer_steps'] == completed
+
+
+@pytest.mark.parametrize('patience,validation_every', [(0, 1), (-1, 1), (1.5, 1), (True, 1), (5, None)])
+def test_early_stopping_requires_valid_patience_and_validation(data, patience, validation_every):
+    model = TableModel(np.zeros((8, 6, 8)))
+    with pytest.raises(ValueError, match='early_stopping_patience|requires source validation'):
+        fit_query_adapter(model, [data], early_stopping_patience=patience, validation_every=validation_every)
+
+
 def test_validation_answers_do_not_change_fitted_parameters(data):
     raw = np.random.default_rng(21).normal(size=(8, 6, 8))
     model = TableModel(raw)

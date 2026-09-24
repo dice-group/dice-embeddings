@@ -130,6 +130,13 @@ def exact_answers(node, outgoing, num_entities):
         return set().union(*(outgoing.get(h, {}).get(node[1], set()) for h in exact_answers(node[2], outgoing, num_entities)))
     if op == 'not':
         return set(range(num_entities)) - exact_answers(node[1], outgoing, num_entities)
+    if op == 'and' and any(c[0] != 'not' for c in node[1:]):
+        included = [exact_answers(c, outgoing, num_entities) for c in node[1:] if c[0] != 'not']
+        result = set.intersection(*included)
+        for child in node[1:]:
+            if child[0] == 'not':
+                result.difference_update(exact_answers(child[1], outgoing, num_entities))
+        return result
     branches = [exact_answers(c, outgoing, num_entities) for c in node[1:]]
     return set.intersection(*branches) if op == 'and' else set.union(*branches)
 

@@ -7,14 +7,14 @@ from pathlib import Path
 from .adapter import QueryScoreAdapter
 from .benchmark import add_benchmark_parser, run_benchmark_cli
 from .context import QueryContext
-from .training import AdapterTrainingData, fit_query_adapter, prepare_adapter_data
+from .training import TRAINING_SHAPES, AdapterTrainingData, fit_query_adapter, prepare_adapter_data
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
     add_benchmark_parser(commands)
-    prepare = commands.add_parser('prepare', help='Mask a source-training graph and generate disjoint 2i/3i queries')
+    prepare = commands.add_parser('prepare', help='Mask source facts and generate disjoint intersection queries')
     prepare.add_argument('--source', type=Path, required=True, help='QueryContext JSON: triples, num_entities, num_relations, inverse_relations')
     prepare.add_argument('--name', default='source')
     prepare.add_argument('--output', type=Path, required=True)
@@ -22,6 +22,7 @@ def main():
     prepare.add_argument('--train-per-shape', type=int, default=96)
     prepare.add_argument('--validation-per-shape', type=int, default=32)
     prepare.add_argument('--seed', type=int, default=2026090851)
+    prepare.add_argument('--shapes', nargs='+', choices=TRAINING_SHAPES, default=['2i', '3i'])
     fit = commands.add_parser('fit', help='Fit adapters for a frozen DICE experiment')
     fit.add_argument('--experiment', required=True)
     fit.add_argument('--data', type=Path, nargs='+', required=True)
@@ -32,6 +33,11 @@ def main():
     fit.add_argument('--row-batch-size', type=int, default=8)
     fit.add_argument('--learning-rate', type=float, default=.02)
     fit.add_argument('--observed-mix', type=float, default=1.)
+    fit.add_argument('--bias-bound', type=float, default=4.)
+    fit.add_argument('--normalization', choices=['none', 'standard'], default='none')
+    fit.add_argument('--hidden-dim', type=int, default=0)
+    fit.add_argument('--validation-every', type=int)
+    fit.add_argument('--early-stopping-patience', type=int, help='Epochs without source-validation MRR improvement')
     fit.add_argument('--seed', type=int, default=2026090851)
     fit.add_argument('--samples', type=int)
     fit.add_argument('--device', default='cpu')
@@ -43,7 +49,7 @@ def main():
     if args.command == 'prepare':
         data = prepare_adapter_data(QueryContext(**json.loads(args.source.read_text())), name=args.name,
                                     mask_fraction=args.mask_fraction, train_per_shape=args.train_per_shape,
-                                    validation_per_shape=args.validation_per_shape, seed=args.seed)
+                                    validation_per_shape=args.validation_per_shape, seed=args.seed, shapes=args.shapes)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         data.save(args.output)
         print(f'Saved {len(data.train)} training and {len(data.validation)} validation queries to {args.output}')
@@ -61,7 +67,10 @@ def main():
         result = fit_query_adapter(kge.model, sources, feature_mode=mode, observed_mix=args.observed_mix,
                                    epochs=args.epochs, batch_size=args.batch_size, learning_rate=args.learning_rate,
                                    row_batch_size=args.row_batch_size, seed=args.seed, samples=args.samples,
-                                   cache_dir=args.output / 'score-banks')
+                                   cache_dir=args.output / 'score-banks', bias_bound=args.bias_bound,
+                                   normalization=args.normalization, hidden_dim=args.hidden_dim,
+                                   validation_every=args.validation_every,
+                                   early_stopping_patience=args.early_stopping_patience)
         name = result.adapter.feature_mode
         path = args.output / f'{name}.json'
         result.adapter.save(path)

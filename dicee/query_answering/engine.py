@@ -134,7 +134,7 @@ class QueryAnswerer:
 
     def _prepare_cache(self, use_logits):
         token, adapter_token = self.scorer.cache_token(), state_token(self.adapter)
-        token = ((token, adapter_token, self.adapter.feature_mode, self.adapter.observed_mix, use_logits)
+        token = ((token, adapter_token, tuple(self.adapter.configuration.items()), use_logits)
                  if token is not None and adapter_token is not None else None)
         if token is None or token != self._cache_token:
             self.clear_cache()

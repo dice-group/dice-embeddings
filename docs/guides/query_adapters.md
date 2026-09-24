@@ -102,7 +102,8 @@ fine-tuned weights fail verification. Vocabulary sizes may change for graph
 models without changing their transferable parameters.
 
 The learned formula is `sigmoid(a*z+b)`, with
-`a=2**tanh(x@u)` and `b=4*tanh(x@v)`. Zero weights give the identity transform.
+`a=2**tanh(x@u)` and `b=bias_bound*tanh(x@v)`, with `bias_bound=4` by default.
+Zero weights give the sigmoid baseline unless row normalization is enabled.
 Available feature modes are:
 
 | Mode | Parameters | Features |
@@ -110,6 +111,13 @@ Available feature modes are:
 | `global` | 2 | Constant; learned global temperature and bias |
 | `context` | 8 | Constant and normalized query/head/relation degrees |
 | `context_scores_v1` | 16 | Context plus complete-row mean, entropy, top-score gap, observed-score contrast |
+
+`normalization="standard"` centers each complete score row and divides by its
+standard deviation (floored at `1e-6`). Features still describe the original row.
+`hidden_dim=16` adds a small tanh network over the same features; it predicts
+the positive scale and bias without entity/relation ID embeddings. Its output
+layer starts at zero, with locally seeded hidden weights. Version 2 artifacts
+record these options; version 1 adapters retain their original behavior.
 
 Transforms preserve mathematical ordering among unobserved tails within a row but may
 change composed rankings. They are fuzzy memberships, not calibrated
@@ -128,14 +136,23 @@ data.save("source-queries.json")
 ```
 
 Preparation masks 30% of fact pairs, removing both reciprocal directions before
-backbone scoring. It grounds `2i` and `3i` using the existing QueryGenerator,
+backbone scoring. By default it grounds `2i` and `3i` using the existing QueryGenerator,
 computes complete answers on the source graph and easy answers on the masked
 context, and requires at least one hard answer and one negative candidate.
 Defaults are 96 training and 32 reserved-validation queries per shape per graph.
-Query identity ignores intersection branch order, preventing split overlap.
+Pass `shapes=("2i", "3i", "2in", "3in")` to include negation. Negated queries
+also require a context false positive: masking a negated fact can introduce an
+incorrect answer. These false positives remain training negatives; only complete
+source answers are filtered out. Query identity ignores branch order, preventing
+split overlap.
 Small graphs may not provide enough distinct queries: reduce the counts or load
 prepared data. The bounded generator raises an error rather than silently
 returning fewer examples.
+
+To enlarge a training set while preserving its context, validation split, and
+existing training order, pass `extend=data` with the same source, seed, mask,
+name, and shapes. Generate the largest pool once and use `train_per_shape` in
+the fitter for nested subsets.
 
 For prepared examples, construct `AdapterTrainingData(name, context, train,
 validation)` with `AdapterQuery(query, answers)` entries. `answers` is the complete
@@ -182,15 +199,26 @@ Negatives exclude every complete source answer. Query losses are weighted
 equally across source/shape cells. Defaults are Adam at 0.02, 20 epochs, batch
 size 8, `0.001*mean(weights**2)` regularization, and gradient clipping at 1.
 The default feature mode is `context_scores_v1` for ULTRA and `context` otherwise;
-observed memberships default to 1 during fitting. The final epoch is saved;
-reserved validation does not select checkpoints.
+observed memberships default to 1 during fitting. The final epoch is saved by default. `validation_every=5` instead selects the
+epoch with the best reserved source-validation macro MRR. `training_sources`
+and `validation_sources` support holding out whole source graphs; target
+benchmark answers are never inputs to fitting. `train_shapes` and
+`train_per_shape` allow matched training budgets over a shared score bank.
+
+Set `epochs=500`, `validation_every=5`, and `early_stopping_patience=100` for
+a 500-epoch ceiling with conservative early stopping. Patience counts epochs
+since the best source-validation MRR; any strict improvement resets it. Checks
+happen at validation intervals, and ties do not reset patience. The best
+checkpoint is restored whether patience or the ceiling ends training. Reports
+record completed epochs, optimizer steps, the selected epoch, and the stop
+reason. Early stopping requires reserved source validation.
 
 Validation reports full-domain filtered MRR/Hits with average ties, separately
 by source and shape, for sigmoid, sigmoid plus observed facts, and the fitted
 adapter. Fit `global` separately to compare its two parameters against the
 larger adapter. These are source-validation diagnostics, not evidence of
-unseen-graph or all-shape superiority. Training covers 2i/3i only; fitted
-adapters can be used for all supported inference shapes.
+unseen-graph or all-shape superiority. Training supports flat positive and negated intersections; fitted adapters
+can be used for all supported inference shapes.
 
 ### Command line
 
@@ -199,7 +227,8 @@ python -m dicee.query_answering prepare --source source-context.json \
   --name source_graph --output source-queries.json
 
 python -m dicee.query_answering fit --experiment Experiments/ultra-zero-shot \
-  --data source-queries.json --output adapter-run --compare-global
+  --data source-queries.json --output adapter-run --compare-global \
+  --epochs 500 --validation-every 5 --early-stopping-patience 100
 ```
 
 `source-context.json` contains the fields of `QueryContext.to_dict()`:
@@ -219,7 +248,7 @@ score banks. Checkpoints and datasets are not downloaded by these commands.
 - `beam_size` separates search accuracy from the number of displayed answers.
 
 The implementation does not add native UltraQuery, per-branch CQD search,
-or adapter fitting on paths/negation. For evaluation on published datasets,
+or adapter fitting on paths. For evaluation on published datasets,
 see the [logical-query benchmark runner](query_benchmarks.md).
 
 ## Inference caching
