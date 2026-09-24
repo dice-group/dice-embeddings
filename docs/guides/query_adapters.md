@@ -282,3 +282,43 @@ Beam projection combines each row batch together while retaining stable prefix
 selection, the selected beam width, and float64 composition. GPU backbones may
 already have nondeterministic reductions; caching reuses a previously computed
 row rather than drawing another floating-point realization of that row.
+
+## Adapter screening
+
+For a training-size ablation, reuse a completed sweep's wider-bias baseline:
+
+```bash
+python -m dicee.scripts.benchmark_query_adapters \
+  --output Experiments/adapter-data-scaling \
+  --data-scaling-from Experiments/adapter-screen \
+  --training-multipliers 4 16 --prepare-only
+```
+
+This snapshots a queued configuration. Run the same output without
+`--prepare-only` after the preceding sweep completes. The runner checks the
+predecessor's lock, completion, and baseline checksums before proceeding.
+Training subsets are nested; source validation and target evaluation queries
+stay fixed. Each size uses the same epoch ceiling and early-stopping settings;
+larger sets have more optimizer updates per epoch. The current preset uses `context_scores_v1`, observed
+facts, and bias bound 8, with the same three source holdouts.
+
+```bash
+python -m dicee.scripts.benchmark_query_adapters \
+  --root . --output Experiments/query-benchmarks/adapter-screen \
+  --size 50 --epochs 500 --validation-every 5 --early-stopping-patience 100 \
+  --backbones ultra trix
+```
+
+The sweep uses local ULTRA/TRIX checkpoints and the three source training graphs.
+It compares positive versus negation supervision, bias bounds of 4/8, the three
+feature modes, row normalization, and a 16-unit MLP, plus unfitted baselines.
+Each fit uses 192 queries per source, with three additional source-holdout fits.
+All target evaluations use the same uniform validation subset and beam size 64.
+Target metrics are descriptive and do not select adapter checkpoints.
+
+The output contains a code snapshot, hashes, source queries, per-epoch reports,
+adapters, per-query benchmark traces, and a growing `comparison.md`. Workers
+release GPU memory between jobs and resume from checkpoints. Repeat the command
+with the same output directory to resume its recorded configuration and code.
+This first screen uses one training seed; confirm close results with more seeds
+and larger samples before drawing conclusions.
