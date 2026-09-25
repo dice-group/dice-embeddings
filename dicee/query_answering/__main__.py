@@ -14,7 +14,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest='command', required=True)
     add_benchmark_parser(commands)
-    prepare = commands.add_parser('prepare', help='Mask source facts and generate disjoint intersection queries')
+    prepare = commands.add_parser('prepare', help='Mask source facts and generate disjoint logical queries')
     prepare.add_argument('--source', type=Path, required=True, help='QueryContext JSON: triples, num_entities, num_relations, inverse_relations')
     prepare.add_argument('--name', default='source')
     prepare.add_argument('--output', type=Path, required=True)
@@ -34,6 +34,8 @@ def main():
     fit.add_argument('--learning-rate', type=float, default=.02)
     fit.add_argument('--observed-mix', type=float, default=1.)
     fit.add_argument('--bias-bound', type=float, default=4.)
+    fit.add_argument('--scale-bound', type=lambda v: None if v == 'none' else float(v), default=2.)
+    fit.add_argument('--beam-size', type=int, default=64)
     fit.add_argument('--normalization', choices=['none', 'standard'], default='none')
     fit.add_argument('--hidden-dim', type=int, default=0)
     fit.add_argument('--validation-every', type=int)
@@ -68,6 +70,7 @@ def main():
                                    epochs=args.epochs, batch_size=args.batch_size, learning_rate=args.learning_rate,
                                    row_batch_size=args.row_batch_size, seed=args.seed, samples=args.samples,
                                    cache_dir=args.output / 'score-banks', bias_bound=args.bias_bound,
+                                   scale_bound=args.scale_bound, beam_size=args.beam_size,
                                    normalization=args.normalization, hidden_dim=args.hidden_dim,
                                    validation_every=args.validation_every,
                                    early_stopping_patience=args.early_stopping_patience)

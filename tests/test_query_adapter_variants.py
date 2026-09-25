@@ -155,7 +155,7 @@ def test_checkpoint_selection_and_heldout_source_isolation():
         torch.testing.assert_close(value, second.adapter.state_dict()[key], rtol=0, atol=0)
 
 
-@pytest.mark.parametrize('option,value', [('bias_bound', 8.), ('normalization', 'standard')])
+@pytest.mark.parametrize('option,value', [('bias_bound', 8.), ('normalization', 'standard'), ('scale_bound', 4.)])
 def test_changed_adapter_configuration_invalidates_inference_cache(option, value):
     model = TableModel(np.random.default_rng(14).normal(size=(5, 2, 5))).eval()
     adapter = QueryScoreAdapter('global', weights=[[.2], [.3]])

@@ -104,6 +104,11 @@ models without changing their transferable parameters.
 The learned formula is `sigmoid(a*z+b)`, with
 `a=2**tanh(x@u)` and `b=bias_bound*tanh(x@v)`, with `bias_bound=4` by default.
 Zero weights give the sigmoid baseline unless row normalization is enabled.
+`scale_bound=C` permits scales between `1/C` and `C`, with `C=2` by default.
+Other bounds use `a=exp(log(C)*tanh(log(2)/log(C)*(x@u)))`, preserving the
+initial derivative across bounds. `scale_bound=None` uses `a=exp(log(2)*(x@u))`
+without clipping; nonfinite scales fail explicitly. The CLI accepts
+`--scale-bound none`. These are score adaptations, not probability guarantees.
 Available feature modes are:
 
 | Mode | Parameters | Features |
@@ -116,8 +121,8 @@ Available feature modes are:
 standard deviation (floored at `1e-6`). Features still describe the original row.
 `hidden_dim=16` adds a small tanh network over the same features; it predicts
 the positive scale and bias without entity/relation ID embeddings. Its output
-layer starts at zero, with locally seeded hidden weights. Version 2 artifacts
-record these options; version 1 adapters retain their original behavior.
+layer starts at zero, with locally seeded hidden weights. Version 3 artifacts
+also record the scale bound; versions 1 and 2 retain the original bound of two.
 
 Transforms preserve mathematical ordering among unobserved tails within a row but may
 change composed rankings. They are fuzzy memberships, not calibrated
@@ -145,6 +150,9 @@ also require a context false positive: masking a negated fact can introduce an
 incorrect answer. These false positives remain training negatives; only complete
 source answers are filtered out. Query identity ignores branch order, preventing
 split overlap.
+All 14 original benchmark shapes are supported, including paths and unions.
+`train_counts` can specify separate pool sizes by shape; fitting selects balanced
+prefixes from these pools without using validation examples.
 Small graphs may not provide enough distinct queries: reduce the counts or load
 prepared data. The bounded generator raises an error rather than silently
 returning fewer examples.
@@ -185,6 +193,13 @@ fixed backbone vocabulary. The caller's graph, weights, gradients, and training
 mode are preserved. Only adapter parameters receive optimization updates.
 
 Unique complete atomic rows are collected once, detached, and kept on CPU.
+For multi-hop queries, the trainer shares the inference executor and selects
+the beam again after adapter updates (`beam_size=64` by default). Gradients flow
+through retained scores, not the discrete top-k indices. Rows are fetched as
+needed from a persistent SQLite cache, with 128 MiB of prepared CPU rows and
+8 GiB of stored raw-row payload per source/backbone. Eviction recomputes missing
+rows without changing scoring. Each query backpropagates separately within its
+optimizer batch to bound activation memory. Backbone microbatches remain small.
 Optional disk banks verify row checksums and bind to backbone weights, graph,
 query conditions, sampling, runtime, and precision settings. Changing these
 settings creates a different bank. Banks include validation *rows* for reporting
@@ -217,8 +232,25 @@ Validation reports full-domain filtered MRR/Hits with average ties, separately
 by source and shape, for sigmoid, sigmoid plus observed facts, and the fitted
 adapter. Fit `global` separately to compare its two parameters against the
 larger adapter. These are source-validation diagnostics, not evidence of
-unseen-graph or all-shape superiority. Training supports flat positive and negated intersections; fitted adapters
-can be used for all supported inference shapes.
+unseen-graph or all-shape superiority. `validation_shapes` controls which source
+query types enter checkpoint selection.
+
+### Query-type and scale studies
+
+`dicee/scripts/benchmark_query_adapters.py --study query-types` compares 2, 4,
+10, and 14 training shapes. Each variant uses 840 training queries across three
+sources, bias bound 8, and scale bound 2. All variants use the same 10-type
+source-validation set (16 queries/type/source); `ip`, `pi`, `2u`, and `up`
+are excluded from checkpoint selection. The 14-type arm additionally trains
+on these structures. Source-holdout fits use 560 training queries on two sources.
+
+`--study scale --reuse-from QUERY_TYPE_RUN` compares scale bounds 2, 4, 8,
+and unrestricted scaling on the two-type setup. It reuses the completed bound-2
+baseline, identical source pools, and raw-row caches. Both presets keep a
+500-epoch ceiling, validation every 5 epochs, patience 100, and restore the best
+source checkpoint. Target evaluation uses the same 50 validation queries/type
+on all 23 datasets. `--after-run RUN --prepare-only` prepares a frozen run;
+it requires a separate queue launcher and does not start a background process.
 
 ### Command line
 

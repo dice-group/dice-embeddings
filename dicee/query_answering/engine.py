@@ -6,7 +6,7 @@ from contextlib import contextmanager
 
 import torch
 
-from ._query import atomic_conditions, combine, compile_query, negate, positive, stable_topk, validate_tree
+from ._query import atomic_conditions, compile_query, execute_query, positive, validate_tree
 from .adapter import QueryScoreAdapter
 from .context import QueryContext, evaluation_mode, fingerprint, state_token
 
@@ -231,40 +231,12 @@ class QueryAnswerer:
         self._prepare_cache(use_logits)
         stats = dict(raw_rows=0, cache_hits=0, pruned=False, negated_pruning=False, bound_skipped=0)
 
-        def execute(node):
-            op = node[0]
-            if op == 'anchor':
-                result = torch.full((n,), 0. if use_logits else -torch.inf, dtype=torch.float64, device=self.scorer.device)
-                result[node[1]] = 1. if use_logits else 0.
-                return result, False
-            if op == 'project' and node[2][0] == 'anchor':
-                return next(self._row_batches([node[2][1]], node[1], use_logits, stats))[1][0], False
-            if op in ('and', 'or'):
-                branches = [execute(child) for child in node[1:]]
-                return combine([v for v, _ in branches], op, tnorm, logits=use_logits), any(p for _, p in branches)
-            if op == 'not':
-                values, pruned = execute(node[1])
-                stats['negated_pruning'] |= pruned
-                return negate(values, neg_norm, lambda_, logits=use_logits), pruned
-            prefix, pruned = execute(node[2])
-            heads = stable_topk(prefix, n if executor == 'qto' else beam_size).tolist()
-            result = torch.full_like(prefix, -torch.inf)
-            for start in range(0, len(heads), self.scorer.row_batch_size):
-                # Edge memberships are at most one: remaining prefixes bound every tail.
-                if executor == 'qto' and (result >= prefix[heads[start]]).all().item():
-                    stats['bound_skipped'] += len(heads) - start
-                    break
-                batch, edges = next(self._row_batches(heads[start:start + self.scorer.row_batch_size], node[1], use_logits, stats))
-                values = prefix[batch, None]
-                if tnorm == 'min':
-                    joined = torch.minimum(values, edges)
-                else:
-                    joined = values * edges if use_logits else values + edges
-                result = torch.maximum(result, joined.amax(dim=0))
-            return result, pruned or (executor == 'cqd' and beam_size < n)
-
         with self.scorer.evaluation():
-            result, stats['pruned'] = execute(tree)
+            result, stats['pruned'] = execute_query(
+                tree, lambda heads, relation: self._row_batches(heads, relation, use_logits, stats),
+                n=n, device=self.scorer.device, row_batch_size=self.scorer.row_batch_size,
+                beam_size=beam_size, tnorm=tnorm, neg_norm=neg_norm, lambda_=lambda_,
+                use_logits=use_logits, executor=executor, stats=stats)
         if not use_logits and self.adapter.observed_mix == 1 and positive(tree):
             result = result.clone()
             result[sorted(context.answers(tree))] = 0.

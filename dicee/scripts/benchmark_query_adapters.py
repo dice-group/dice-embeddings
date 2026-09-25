@@ -21,6 +21,7 @@ from dicee.query_answering._checkpoint import BenchmarkCheckpoint, write_json
 from dicee.query_answering.benchmark import _implementation_fingerprint, _query_plan
 from dicee.query_answering.context import fingerprint, state_fingerprint
 from dicee.query_answering.datasets import BENCHMARK_DATASETS
+from dicee.query_answering.training import STANDARD_TRAINING_SHAPES, TRAINING_SHAPES
 
 SOURCE_NAMES = {'FB15k237': 'FB15k-237', 'WN18RR': 'WN18RR', 'CoDExMedium': 'CoDEx-Medium'}
 SHAPES = ['2i', '3i', '2in', '3in']
@@ -34,6 +35,18 @@ VARIANTS = {
     'normalized_global_negation': dict(feature_mode='global', shapes=SHAPES, normalization='standard'),
     'mlp_negation': dict(feature_mode='context_scores_v1', shapes=SHAPES, hidden_dim=16),
 }
+
+
+def study_variants(study):
+    settings = dict(feature_mode='context_scores_v1', bias_bound=8., scale_bound=2.)
+    if study == 'query-types':
+        groups = [SHAPES[:2], SHAPES, STANDARD_TRAINING_SHAPES, TRAINING_SHAPES]
+        return {f'types_{len(shapes)}': dict(settings, shapes=list(shapes), train_per_shape=280 // len(shapes))
+                for shapes in groups}
+    if study == 'scale':
+        return {name: dict(settings, shapes=SHAPES[:2], train_per_shape=140, scale_bound=bound)
+                for name, bound in [('types_2', 2.), ('scale_4', 4.), ('scale_8', 8.), ('scale_unbounded', None)]}
+    return VARIANTS
 
 
 def sha(path):
@@ -73,7 +86,14 @@ def prepare_sources(out, config):
         if hashlib.sha256(source_bytes).hexdigest() != source['sha256']:
             raise ValueError('Source file changed')
         path = directory/f'{name}.json'
+        if config.get('source_data_from') and not path.exists():
+            original = Path(config['source_data_from'])/'sources'/f'{name}.json'
+            if sha(original) != config['prepared_sources'][name]:
+                raise ValueError('Prepared source data changed')
+            shutil.copy2(original, path)
         if path.exists():
+            if name in config.get('prepared_sources', {}) and sha(path) != config['prepared_sources'][name]:
+                raise ValueError('Prepared source data changed')
             data = AdapterTrainingData.load(path)
             if data.metadata['train_sha256'] != source['sha256']:
                 raise ValueError('Source file changed')
@@ -88,8 +108,9 @@ def prepare_sources(out, config):
         previous = config.get('data_scaling_from')
         existing = AdapterTrainingData.load(Path(previous)/'sources'/f'{name}.json') if previous else None
         count = max(v.get('train_per_shape', 96) for v in config['variants'].values())
-        data = prepare_adapter_data(context, name=name, seed=config['training_seed'], shapes=SHAPES,
-                                    train_per_shape=count, validation_per_shape=32, extend=existing,
+        data = prepare_adapter_data(context, name=name, seed=config['training_seed'], shapes=config.get('source_shapes', SHAPES),
+                                    train_per_shape=count, validation_per_shape=config.get('source_validation_per_shape', 32),
+                                    train_counts=config.get('source_training_counts'), extend=existing,
                                     max_attempts=config.get('preparation_attempts', 100_000))
         data.metadata.update(train_sha256=source['sha256'], source_path=source['path'])
         data.save(path)
@@ -129,9 +150,10 @@ def fit_worker(out, config, backbone, batch_size):
                                        train_shapes=shapes, train_per_shape=train_per_shape,
                                        training_sources=training, validation_sources=validation,
                                        validation_every=config.get('validation_every', 5),
+                                       validation_shapes=config.get('validation_shapes'),
                                        early_stopping_patience=config.get('early_stopping_patience'),
                                        seed=config['training_seed'], on_epoch=progress,
-                                       row_batch_size=batch_size, cache_dir=out/'score-banks'/backbone)
+                                       row_batch_size=batch_size, cache_dir=Path(config.get('score_bank_dir', out/'score-banks'))/backbone)
             result.adapter.save(path/'adapter.json')
             loaded = QueryScoreAdapter.load(path/'adapter.json', model=model)
             assert loaded.to_dict() == result.adapter.to_dict()
@@ -143,7 +165,7 @@ def fit_worker(out, config, backbone, batch_size):
             log(f'{backbone} {variant} {label}: finished {training_report["epochs_completed"]} epochs, '
                 f'selected {training_report["selected_epoch"]} ({training_report["stop_reason"]})')
         log(f'Fitted {backbone} {variant}, including all three source holdouts')
-    for name, mix in ([] if config.get('data_scaling_from') else [('sigmoid', 0.), ('observed', 1.)]):
+    for name, mix in ([] if config.get('data_scaling_from') or config.get('study') else [('sigmoid', 0.), ('observed', 1.)]):
         path = directory/name/'all_sources'
         path.mkdir(parents=True, exist_ok=True)
         QueryScoreAdapter('global', mix, metadata={'backbone_state_sha256': state_fingerprint(model)}).save(path/'adapter.json')
@@ -156,7 +178,7 @@ def fit_worker(out, config, backbone, batch_size):
 
 def variant_names(config, backbone):
     names = list(config['variants'])
-    if not config.get('data_scaling_from'):
+    if not config.get('data_scaling_from') and not config.get('study'):
         names = ['observed', *names, 'sigmoid']
     if backbone == 'ultra' and config.get('reference_adapter'):
         names.insert(0, 'reference_500ep')
@@ -179,7 +201,7 @@ def evaluate_worker(out, config, backbone, variant, dataset, batch_size, cache_m
     write_json(directory/'selection.json', selection)
     reference = None
     if config.get('data_scaling_from'):
-        reference = json.loads((out/'benchmark'/backbone/'scores_negation_wide'/
+        reference = json.loads((out/'benchmark'/backbone/config.get('comparison_baseline', 'scores_negation_wide')/
                                 dataset.replace(':', '-')/'result.json').read_text())
         if sha(directory/'selection.json') != reference['selection_sha256']:
             raise ValueError('Data-scaling evaluation queries differ from the baseline')
@@ -361,6 +383,9 @@ def main():
     parser.add_argument('--validation-every', type=int, default=5)
     parser.add_argument('--early-stopping-patience', type=int, default=100, help='Epochs without validation improvement')
     parser.add_argument('--after-run', type=Path)
+    parser.add_argument('--study', choices=['query-types', 'scale'])
+    parser.add_argument('--reuse-from', type=Path)
+    parser.add_argument('--prepared-from', type=Path)
     parser.add_argument('--reference-adapter', type=Path)
     parser.add_argument('--data-scaling-from', type=Path)
     parser.add_argument('--training-multipliers', type=int, nargs='+', default=[4, 16])
@@ -379,7 +404,7 @@ def main():
                 raise ValueError('Worker code differs from the recorded snapshot')
             if args.worker == ['prepare']:
                 prepare_sources(out, config)
-                status(out, state='queued', predecessor=config.get('data_scaling_from'))
+                status(out, state='queued', predecessor=config.get('data_scaling_from') or config.get('after_run'))
             elif args.worker[0] == 'fit':
                 fit_worker(out, config, args.worker[1], args.batch_size)
             elif args.worker[0] == 'evaluate':
@@ -434,6 +459,40 @@ def main():
                 config.update(data_scaling_from=str(previous), predecessor_sha256=sha(previous/'configuration.json'),
                               reuse_variants=['scores_negation_wide'], variants=variants, reference_adapter=None,
                               preparation_attempts=500_000)
+            if args.study:
+                if args.data_scaling_from or args.reference_adapter:
+                    raise ValueError('Study presets require their own controlled baseline')
+                config.update(study=args.study, variants=study_variants(args.study),
+                              validation_shapes=list(STANDARD_TRAINING_SHAPES), source_shapes=list(TRAINING_SHAPES),
+                              source_validation_per_shape=16, preparation_attempts=500_000)
+                coverage = study_variants('query-types')
+                config['source_training_counts'] = {
+                    shape: max(v['train_per_shape'] for v in coverage.values() if shape in v['shapes'])
+                    for shape in TRAINING_SHAPES}
+                if args.study == 'scale':
+                    if args.reuse_from is None:
+                        raise ValueError('The scale study requires --reuse-from query-types-run')
+                    previous = args.reuse_from.resolve()
+                    parent = json.loads((previous/'configuration.json').read_text())
+                    for key in ('root', 'size', 'epochs', 'backbones', 'split', 'sampling_seed', 'training_seed',
+                                'checkpoints', 'sources', 'validation_every', 'early_stopping_patience',
+                                'validation_shapes', 'source_shapes', 'source_validation_per_shape', 'source_training_counts'):
+                        if config[key] != parent[key]:
+                            raise ValueError(f'Scale comparison must preserve {key}')
+                    if parent.get('study') != 'query-types' or config['variants']['types_2'] != parent['variants']['types_2']:
+                        raise ValueError('Scale study requires a matching two-type baseline')
+                    config.update(data_scaling_from=str(previous), predecessor_sha256=sha(previous/'configuration.json'),
+                                  reuse_variants=['types_2'], comparison_baseline='types_2', source_data_from=str(previous),
+                                  score_bank_dir=str(previous/'score-banks'),
+                                  prepared_sources={name: sha(previous/'sources'/f'{name}.json') for name in SOURCE_NAMES})
+                elif args.reuse_from:
+                    raise ValueError('--reuse-from applies only to the scale study')
+            if args.prepared_from:
+                if args.study != 'query-types':
+                    raise ValueError('--prepared-from applies only to the query-type study')
+                previous = args.prepared_from.resolve()
+                config.update(source_data_from=str(previous),
+                              prepared_sources={name: sha(previous/'sources'/f'{name}.json') for name in SOURCE_NAMES})
             shutil.copytree(root/'dicee', out/'source'/'dicee', ignore=shutil.ignore_patterns('__pycache__'))
             write_json(config_path, config)
         if args.prepare_only:

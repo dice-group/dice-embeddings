@@ -151,9 +151,14 @@ def log_complement(value):
     Masked evaluation avoids undefined derivatives in inactive torch.where branches.
     """
     result = torch.empty_like(value)
-    low = value < -0.6931471805599453
+    result[value == 0] = -torch.inf
+    result[torch.isneginf(value)] = 0.
+    interior = (value < 0) & torch.isfinite(value)
+    low = interior & (value < -0.6931471805599453)
     result[low] = torch.log1p(-value[low].exp())
-    result[~low] = torch.log(-torch.expm1(value[~low]))
+    high = interior & ~low
+    result[high] = torch.log(-torch.expm1(value[high]))
+    result[~(interior | (value == 0) | torch.isneginf(value))] = torch.nan
     return result
 
 
@@ -179,3 +184,42 @@ def negate(value, norm='standard', parameter=0., *, logits=False):
     else:
         result = (1 - p.pow(parameter)).clamp_min(0).pow(1 / parameter)
     return result if logits else result.log()
+
+
+def execute_query(tree, row_batches, *, n, device, row_batch_size, beam_size=64,
+                  tnorm="prod", neg_norm="standard", lambda_=0., use_logits=False, executor="cqd", stats=None):
+    """Compose rows with live beam selection; gradients flow through retained scores."""
+    if stats is None:
+        stats = dict(negated_pruning=False, bound_skipped=0)
+    def execute(node):
+        op = node[0]
+        if op == 'anchor':
+            result = torch.full((n,), 0. if use_logits else -torch.inf, dtype=torch.float64, device=device)
+            result[node[1]] = 1. if use_logits else 0.
+            return result, False
+        if op == 'project' and node[2][0] == 'anchor':
+            return next(row_batches([node[2][1]], node[1]))[1][0], False
+        if op in ('and', 'or'):
+            branches = [execute(child) for child in node[1:]]
+            return combine([v for v, _ in branches], op, tnorm, logits=use_logits), any(p for _, p in branches)
+        if op == 'not':
+            values, pruned = execute(node[1])
+            stats['negated_pruning'] |= pruned
+            return negate(values, neg_norm, lambda_, logits=use_logits), pruned
+        prefix, pruned = execute(node[2])
+        heads = stable_topk(prefix, n if executor == 'qto' else beam_size).tolist()
+        result = torch.full_like(prefix, -torch.inf)
+        for start in range(0, len(heads), row_batch_size):
+            # Edge memberships are at most one: remaining prefixes bound every tail.
+            if executor == 'qto' and (result >= prefix[heads[start]]).all().item():
+                stats['bound_skipped'] += len(heads) - start
+                break
+            batch, edges = next(row_batches(heads[start:start + row_batch_size], node[1]))
+            values = prefix[batch, None]
+            if tnorm == 'min':
+                joined = torch.minimum(values, edges)
+            else:
+                joined = values * edges if use_logits else values + edges
+            result = torch.maximum(result, joined.amax(dim=0))
+        return result, pruned or (executor == 'cqd' and beam_size < n)
+    return execute(tree)

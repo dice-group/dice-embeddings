@@ -57,7 +57,7 @@ class QueryScoreAdapter(nn.Module):
     """
 
     def __init__(self, feature_mode='context', observed_mix=0., *, weights=None, metadata=None,
-                 bias_bound=4., normalization='none', hidden_dim=0, hidden_weights=None, seed=0):
+                 bias_bound=4., scale_bound=2., normalization='none', hidden_dim=0, hidden_weights=None, seed=0):
         super().__init__()
         if feature_mode not in FEATURE_COUNTS:
             raise ValueError(f'Unknown feature mode: {feature_mode}')
@@ -65,12 +65,15 @@ class QueryScoreAdapter(nn.Module):
             raise ValueError('observed_mix must be in [0, 1]')
         if not math.isfinite(bias_bound) or bias_bound <= 0:
             raise ValueError('bias_bound must be finite and positive')
+        if scale_bound is not None and (not math.isfinite(scale_bound) or scale_bound <= 1):
+            raise ValueError('scale_bound must exceed one, or be None for unrestricted scaling')
         if normalization not in ('none', 'standard'):
             raise ValueError('Choose none or standard row normalization')
         if type(hidden_dim) is not int or hidden_dim < 0:
             raise ValueError('hidden_dim must be a nonnegative integer')
         self.feature_mode, self.observed_mix = feature_mode, float(observed_mix)
         self.bias_bound, self.normalization, self.hidden_dim = float(bias_bound), normalization, hidden_dim
+        self.scale_bound = None if scale_bound is None else float(scale_bound)
         features = FEATURE_COUNTS[feature_mode]
         size = (2, hidden_dim or features)
         value = torch.zeros(size, dtype=torch.float64) if weights is None else torch.as_tensor(weights, dtype=torch.float64)
@@ -93,7 +96,7 @@ class QueryScoreAdapter(nn.Module):
     @property
     def configuration(self):
         return dict(feature_mode=self.feature_mode, observed_mix=self.observed_mix, bias_bound=self.bias_bound,
-                    normalization=self.normalization, hidden_dim=self.hidden_dim)
+                    scale_bound=self.scale_bound, normalization=self.normalization, hidden_dim=self.hidden_dim)
 
     def prepare(self, raw, observed=None, base=None):
         """Prepare parameter-independent inputs once for frozen training banks."""
@@ -116,7 +119,15 @@ class QueryScoreAdapter(nn.Module):
         if self.hidden_weights is not None:
             features = (features @ self.hidden_weights.to(device=raw.device).T).tanh()
         u, v = (features @ weights.T).unbind(1)
-        logits = (math.log(2) * u.tanh()).exp()[:, None] * raw + self.bias_bound * v.tanh()[:, None]
+        # Match the derivative at initialization across scale bounds.
+        log_scale = math.log(2) * u
+        if self.scale_bound is not None:
+            limit = math.log(self.scale_bound)
+            log_scale = limit * (u * (math.log(2) / limit)).tanh()
+        scale = log_scale.exp()
+        if not torch.isfinite(scale).all() or (scale <= 0).any():
+            raise FloatingPointError('Nonfinite or zero adapter scale')
+        logits = scale[:, None] * raw + self.bias_bound * v.tanh()[:, None]
         logs = F.logsigmoid(logits)
         if self.observed_mix == 1:
             logs = logs.masked_fill(observed, 0.)
@@ -143,7 +154,7 @@ class QueryScoreAdapter(nn.Module):
         self._verified_state = (expected, token) if token is not None else None
 
     def to_dict(self):
-        return dict(self.metadata, version=2, **self.configuration, weights=self.weights.detach().cpu().tolist(),
+        return dict(self.metadata, version=3, **self.configuration, weights=self.weights.detach().cpu().tolist(),
                     hidden_weights=None if self.hidden_weights is None else self.hidden_weights.detach().cpu().tolist())
 
     def save(self, path):
@@ -163,9 +174,9 @@ class QueryScoreAdapter(nn.Module):
             payload = payload[key]
         if 'weights' not in payload:
             raise ValueError('Select a catalog entry with key=...')
-        if payload.get('version', 1) not in (1, 2):
+        if payload.get('version', 1) not in (1, 2, 3):
             raise ValueError('Unsupported adapter artifact version')
-        fields = ('weights', 'feature_mode', 'observed_mix', 'version', 'bias_bound', 'normalization', 'hidden_dim', 'hidden_weights')
+        fields = ('weights', 'feature_mode', 'observed_mix', 'version', 'bias_bound', 'scale_bound', 'normalization', 'hidden_dim', 'hidden_weights')
         metadata = {k: v for k, v in payload.items() if k not in fields}
         if 'backbone_state_sha256' not in metadata:
             if checkpoint is None or 'backbone_checkpoint_sha256' not in metadata:
@@ -180,6 +191,7 @@ class QueryScoreAdapter(nn.Module):
             metadata['backbone_state_sha256'] = state_fingerprint(state)
         adapter = cls(payload.get('feature_mode', 'context'), payload.get('observed_mix', 0.),
                       weights=payload['weights'], metadata=metadata, bias_bound=payload.get('bias_bound', 4.),
+                      scale_bound=payload.get('scale_bound', 2.),
                       normalization=payload.get('normalization', 'none'), hidden_dim=payload.get('hidden_dim', 0),
                       hidden_weights=payload.get('hidden_weights'))
         adapter.verify_model(model)
