@@ -1,0 +1,225 @@
+"""One query grammar and composition algebra for inference and supervision."""
+
+import torch
+
+ONE = ('e', ('r',))
+QUERY_SHAPES = {
+    '1p': ONE, '2p': ('e', ('r', 'r')), '3p': ('e', ('r', 'r', 'r')),
+    '2i': (ONE, ONE), '3i': (ONE, ONE, ONE),
+    'ip': ((ONE, ONE), ('r',)), 'pi': (('e', ('r', 'r')), ONE),
+    '2u': (ONE, ONE, ('u',)), 'up': ((ONE, ONE, ('u',)), ('r',)),
+    '2in': (ONE, ('e', ('r', 'n'))), '3in': (ONE, ONE, ('e', ('r', 'n'))),
+    'inp': ((ONE, ('e', ('r', 'n'))), ('r',)),
+    'pin': (('e', ('r', 'r')), ('e', ('r', 'n'))),
+    'pni': (('e', ('r', 'r', 'n')), ONE),
+}
+# Keep the original benchmark's contract independent of the executor grammar.
+ULTRAQUERY_SHAPES = tuple(QUERY_SHAPES)
+QUERY_SHAPES.update({'4p': ('e', ('r', 'r', 'r', 'r')), '4i': (ONE, ONE, ONE, ONE)})
+PLUS_H_SHAPES = tuple(QUERY_SHAPES)
+
+
+def nested(value):
+    return tuple(nested(v) for v in value) if isinstance(value, (tuple, list)) else value
+
+
+def index_query(query_type, query, entities, relations):
+    """Translate named queries by structure, so operator-like names remain valid IDs."""
+    if query_type not in QUERY_SHAPES:
+        raise ValueError(f'Unknown query type {query_type!r}; choose from {sorted(QUERY_SHAPES)}')
+
+    def visit(pattern, value):
+        if pattern in ('e', 'r'):
+            mapping = entities if pattern == 'e' else relations
+            if value not in mapping:
+                raise ValueError(f'Unknown {"entity" if pattern == "e" else "relation"}: {value!r}')
+            return mapping[value]
+        if pattern == 'n':
+            if value not in ('n', 'not', -2):
+                raise ValueError('Expected a negation marker (not, n, or -2)')
+            return -2
+        if pattern == 'u':
+            if value not in ('u', 'union', 'or', -1):
+                raise ValueError('Expected a union marker (union, u, or -1)')
+            return -1
+        # The named API historically inferred union from query_type alone.
+        if isinstance(value, (tuple, list)) and pattern[-1] == ('u',) and len(value) == len(pattern) - 1:
+            value = (*value, ('union',))
+        if not isinstance(value, (tuple, list)) or len(pattern) != len(value):
+            raise ValueError(f'Query does not match {query_type}: expected {pattern!r}')
+        return tuple(visit(p, v) for p, v in zip(pattern, value))
+
+    return visit(QUERY_SHAPES[query_type], query)
+
+
+def compile_query(query):
+    query = nested(query)
+    if type(query) is int and query >= 0:
+        return ('anchor', query)
+    if not isinstance(query, tuple) or not query:
+        raise ValueError('Expected an indexed structured query')
+    if len(query) == 2 and isinstance(query[1], tuple) and query[1] and all(type(r) is int for r in query[1]) and query[1] != (-1,):
+        node = compile_query(query[0])
+        for relation in query[1]:
+            if relation == -2:
+                node = ('not', node)
+            elif relation >= 0:
+                node = ('project', relation, node)
+            else:
+                raise ValueError('Unknown relation/negation marker')
+        return node
+    union = query[-1] == (-1,)
+    branches = query[:-1] if union else query
+    if len(branches) < 2:
+        raise ValueError('Composition requires at least two branches')
+    return ('or' if union else 'and', *(compile_query(q) for q in branches))
+
+
+def validate_tree(node, n, nr):
+    if node[0] == 'anchor':
+        if not 0 <= node[1] < n:
+            raise ValueError('Anchor outside the entity vocabulary')
+    elif node[0] == 'project':
+        if not 0 <= node[1] < nr:
+            raise ValueError('Relation outside the relation vocabulary')
+        validate_tree(node[2], n, nr)
+    else:
+        for child in node[1:]:
+            validate_tree(child, n, nr)
+
+
+def positive(node):
+    if node[0] == 'not':
+        return False
+    return all(positive(child) for child in node[1:] if isinstance(child, tuple))
+
+
+def atomic_conditions(node):
+    if node[0] == 'project':
+        if node[2][0] == 'anchor':
+            yield node[2][1], node[1]
+        else:
+            yield from atomic_conditions(node[2])
+    elif node[0] != 'anchor':
+        for child in node[1:]:
+            yield from atomic_conditions(child)
+
+
+def relation_signature(node):
+    if node[0] == 'anchor':
+        return ('anchor',)
+    if node[0] == 'project':
+        return ('project', node[1], relation_signature(node[2]))
+    return (node[0], *(relation_signature(child) for child in node[1:]))
+
+
+def stable_topk(values, k):
+    """Select descending scores with entity-ID ties and a CPU partial sort."""
+    k = min(k, len(values))
+    if values.is_cuda or k == len(values):
+        return values.argsort(descending=True, stable=True)[:k]
+    threshold = values.topk(k, sorted=False).values.min()
+    better = (values > threshold).nonzero().flatten()
+    tied = (values == threshold).nonzero().flatten()[:k - len(better)]
+    selected = torch.cat((better, tied)).sort().values
+    return selected[values[selected].argsort(descending=True, stable=True)]
+
+
+def exact_answers(node, outgoing, num_entities):
+    """Finite-domain set semantics shared by observed proofs and query generation."""
+    op = node[0]
+    if op == 'anchor':
+        return {node[1]}
+    if op == 'project':
+        return set().union(*(outgoing.get(h, {}).get(node[1], set()) for h in exact_answers(node[2], outgoing, num_entities)))
+    if op == 'not':
+        return set(range(num_entities)) - exact_answers(node[1], outgoing, num_entities)
+    if op == 'and' and any(c[0] != 'not' for c in node[1:]):
+        included = [exact_answers(c, outgoing, num_entities) for c in node[1:] if c[0] != 'not']
+        result = set.intersection(*included)
+        for child in node[1:]:
+            if child[0] == 'not':
+                result.difference_update(exact_answers(child[1], outgoing, num_entities))
+        return result
+    branches = [exact_answers(c, outgoing, num_entities) for c in node[1:]]
+    return set.intersection(*branches) if op == 'and' else set.union(*branches)
+
+
+def log_complement(value):
+    """Stable log(1-exp(value)), including exact zero/one memberships.
+
+    Masked evaluation avoids undefined derivatives in inactive torch.where branches.
+    """
+    result = torch.empty_like(value)
+    result[value == 0] = -torch.inf
+    result[torch.isneginf(value)] = 0.
+    interior = (value < 0) & torch.isfinite(value)
+    low = interior & (value < -0.6931471805599453)
+    result[low] = torch.log1p(-value[low].exp())
+    high = interior & ~low
+    result[high] = torch.log(-torch.expm1(value[high]))
+    result[~(interior | (value == 0) | torch.isneginf(value))] = torch.nan
+    return result
+
+
+def combine(values, operator, tnorm='prod', *, logits=False):
+    values = torch.stack(values)
+    if logits:
+        if operator == 'and':
+            return values.prod(0) if tnorm == 'prod' else values.min(0).values
+        return 1 - (1 - values).prod(0) if tnorm == 'prod' else values.max(0).values
+    if operator == 'and':
+        return values.sum(0) if tnorm == 'prod' else values.min(0).values
+    return log_complement(log_complement(values).sum(0)) if tnorm == 'prod' else values.max(0).values
+
+
+def negate(value, norm='standard', parameter=0., *, logits=False):
+    if not logits and norm == 'standard':
+        return log_complement(value)
+    p = value if logits else value.exp()
+    if norm == 'standard':
+        result = 1 - p
+    elif norm == 'sugeno':
+        result = (1 - p) / (1 + parameter * p)
+    else:
+        result = (1 - p.pow(parameter)).clamp_min(0).pow(1 / parameter)
+    return result if logits else result.log()
+
+
+def execute_query(tree, row_batches, *, n, device, row_batch_size, beam_size=64,
+                  tnorm="prod", neg_norm="standard", lambda_=0., use_logits=False, executor="cqd", stats=None):
+    """Compose rows with live beam selection; gradients flow through retained scores."""
+    if stats is None:
+        stats = dict(negated_pruning=False, bound_skipped=0)
+    def execute(node):
+        op = node[0]
+        if op == 'anchor':
+            result = torch.full((n,), 0. if use_logits else -torch.inf, dtype=torch.float64, device=device)
+            result[node[1]] = 1. if use_logits else 0.
+            return result, False
+        if op == 'project' and node[2][0] == 'anchor':
+            return next(row_batches([node[2][1]], node[1]))[1][0], False
+        if op in ('and', 'or'):
+            branches = [execute(child) for child in node[1:]]
+            return combine([v for v, _ in branches], op, tnorm, logits=use_logits), any(p for _, p in branches)
+        if op == 'not':
+            values, pruned = execute(node[1])
+            stats['negated_pruning'] |= pruned
+            return negate(values, neg_norm, lambda_, logits=use_logits), pruned
+        prefix, pruned = execute(node[2])
+        heads = stable_topk(prefix, n if executor == 'qto' else beam_size).tolist()
+        result = torch.full_like(prefix, -torch.inf)
+        for start in range(0, len(heads), row_batch_size):
+            # Edge memberships are at most one: remaining prefixes bound every tail.
+            if executor == 'qto' and (result >= prefix[heads[start]]).all().item():
+                stats['bound_skipped'] += len(heads) - start
+                break
+            batch, edges = next(row_batches(heads[start:start + row_batch_size], node[1]))
+            values = prefix[batch, None]
+            if tnorm == 'min':
+                joined = torch.minimum(values, edges)
+            else:
+                joined = values * edges if use_logits else values + edges
+            result = torch.maximum(result, joined.amax(dim=0))
+        return result, pruned or (executor == 'cqd' and beam_size < n)
+    return execute(tree)

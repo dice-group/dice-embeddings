@@ -183,6 +183,8 @@ def test_relation_cache_tracks_backend_precision(cls, backend_name, monkeypatch)
         backend = torch.backends
         for name in backend_name.split('.') if backend_name else []:
             backend = getattr(backend, name, None)
+        if backend_name == 'cudnn.rnn' and hasattr(type(torch.backends.cudnn), 'rnn'):
+            backend = type(torch.backends.cudnn).rnn
         if not hasattr(backend, 'fp32_precision'):
             pytest.skip('Backend-specific precision settings require newer PyTorch')
 

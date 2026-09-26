@@ -5,15 +5,21 @@ import torch
 from torch.nn import functional as F
 
 
+def float32_precision_backends():
+    """Resolve precision controls even after cuDNN's RNN module is imported."""
+    if hasattr(torch.backends.cuda.matmul, 'fp32_precision'):
+        cudnn, mkldnn = torch.backends.cudnn, torch.backends.mkldnn
+        # Importing cudnn.rnn shadows the precision object on the module instance.
+        return (torch.backends, torch.backends.cuda.matmul, cudnn, mkldnn,
+                type(cudnn).conv, type(cudnn).rnn, mkldnn.matmul)
+    return ()
+
+
 def float32_precision_token():
     """Read precision without mixing PyTorch's legacy and per-backend APIs."""
-    if hasattr(torch.backends.cuda.matmul, 'fp32_precision'):
-        # Include parent settings as well as operator overrides. The legacy
-        # getters can raise when backends (or cuDNN conv/RNN) use different modes.
-        cudnn, mkldnn = torch.backends.cudnn, torch.backends.mkldnn
-        backends = (torch.backends, torch.backends.cuda.matmul, cudnn, mkldnn,
-                    getattr(cudnn, 'conv'), getattr(cudnn, 'rnn'), getattr(mkldnn, 'matmul'))
-        return tuple(getattr(backend, 'fp32_precision') for backend in backends)
+    backends = float32_precision_backends()
+    if backends:
+        return tuple(backend.fp32_precision for backend in backends)
     return torch.get_float32_matmul_precision(), torch.backends.cudnn.allow_tf32
 
 

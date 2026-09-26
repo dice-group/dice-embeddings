@@ -33,7 +33,13 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
     def to(self, device: str) -> None:
         if "cpu" not in device and "cuda" not in device:
             raise ValueError(f"Device must be either cpu or cuda, got {device!r}")
+        self.clear_query_cache()
         self.model.to(device)
+
+    def clear_query_cache(self):
+        """Release retained CQD rows and their model references."""
+        self._query_engine = None
+        self._query_engine_key = None
 
     def get_transductive_entity_embeddings(self,
                                            indices: Union[torch.LongTensor, List[str]],
@@ -722,582 +728,71 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
                 else:
                     return torch.sigmoid(self.model(x))
 
-    def return_multi_hop_query_results(self, aggregated_query_for_all_entities, k: int, only_scores):
-        # @TODO: refactor by torchargmax(aggregated_query_for_all_entities)
+    def return_multi_hop_query_results(self, scores, k: int, only_scores):
         if only_scores:
-            return aggregated_query_for_all_entities
-        # from idx obtain entity str
-        return sorted([(ei, s) for ei, s in zip(self.entity_to_idx.keys(), aggregated_query_for_all_entities)],
-                      key=lambda x: x[1], reverse=True)[:k]
+            return scores
+        order = torch.argsort(scores, descending=True, stable=True)[:k]
+        names = {index: name for name, index in self.entity_to_idx.items()}
+        return [(names[int(index)], scores[index]) for index in order]
 
-    def single_hop_query_answering(self, query: tuple, only_scores: bool = True, k: Optional[int] = None,
-                                   use_logits: bool = True):
-        h, r = query
-        result = self.predict(h=h, r=r[0], logits=use_logits).squeeze()
-        if only_scores:
-            """ do nothing"""
-        else:
-            query_score_of_all_entities = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), result)]
-            result = sorted(query_score_of_all_entities, key=lambda x: x[1], reverse=True)[:k]
-        return result
+    def single_hop_query_answering(self, query: tuple, only_scores: bool = True,
+                                   k: Optional[int] = None, use_logits: bool = False):
+        return self.answer_multi_hop_query('1p', query, k=len(self.entity_to_idx) if k is None else k,
+                                          only_scores=only_scores, use_logits=use_logits)
 
     def answer_multi_hop_query(
-        self,
-        query_type: Optional[str] = None,
-        query: Optional[Tuple[Union[str, Tuple[str, str]], ...]] = None,
-        queries: Optional[List[Tuple[Union[str, Tuple[str, str]], ...]]] = None,
-        tnorm: str = "prod",
-        neg_norm: str = "standard",
-        lambda_: float = 0.0,
-        k: int = 10,
-        only_scores: bool = False,
-        use_logits: bool = True
-    ) -> Union[List[Tuple[str, torch.Tensor]], List[List[Tuple[str, torch.Tensor]]]]:
+        self, query_type=None, query=None, queries=None, tnorm="prod",
+        neg_norm="standard", lambda_=0.0, k=10, only_scores=False,
+        use_logits=False, *, beam_size=None, context=None, adapter=None,
+        observed_mix=None, row_batch_size=8, cache_bytes=64 * 1024 * 1024,
+        seed=0, samples=None, executor='cqd',
+    ):
+        """Answer the 14 standard query shapes and the +H four-step 4p/4i shapes.
+
+        All entity-prediction models use one evaluator, including ULTRA, TRIX,
+        and Flock. Scores default to sigmoid memberships; ``use_logits=True``
+        explicitly requests legacy raw-score algebra (without an adapter).
+        ``k`` limits returned answers; ``beam_size`` controls existential search
+        independently and defaults to max(1, k). ``only_scores`` returns all
+        entity scores in numeric ID order. Ties use entity ID order.
+        ``executor='qto'`` uses exact projections without a beam limit.
+
+        Pass QueryContext for transductive observed-edge/feature support; graph
+        models use their attached context. Pass QueryScoreAdapter for a learned
+        transform. Context must never contain held-out evaluation answers.
+        See docs/guides/query_adapters.md for fitting and loading adapters.
         """
-        Answer multi-hop EPFO (Existential Positive First-Order) queries.
+        from .query_answering import QueryAnswerer
+        from .query_answering._query import index_query
 
-        Supports 9 query types: 1p, 2p, 3p, 2i, 3i, ip, pi, 2u, up.
-        See docs/guides/multi_hop_queries.md for detailed query patterns.
+        if (query is None) == (queries is None):
+            raise ValueError("Provide exactly one of 'query' or 'queries'")
+        if type(k) is not int or k < 0:
+            raise ValueError('k must be a nonnegative integer')
+        key = (id(self.model), id(context), id(adapter), observed_mix, row_batch_size, seed, samples)
+        if key != getattr(self, '_query_engine_key', None):
+            self._query_engine = QueryAnswerer(self.model, context=context, adapter=adapter, observed_mix=observed_mix,
+                                               row_batch_size=row_batch_size, cache_bytes=cache_bytes, seed=seed, samples=samples)
+            self._query_engine_key = key
+        engine = self._query_engine
+        if cache_bytes < 0:
+            raise ValueError('Cache size must be nonnegative')
+        engine.cache_bytes = cache_bytes
+        beam = max(1, k) if beam_size is None else beam_size
+        names = {index: name for name, index in self.entity_to_idx.items()} if not only_scores else None
 
-        Args:
-            query_type: Query pattern name. One of:
-                - 1p: (e, (r,))                    # One-hop
-                - 2p: (e, (r1, r2))               # Two-hop
-                - 3p: (e, (r1, r2, r3))           # Three-hop
-                - 2i: ((e1, (r1,)), (e2, (r2,)))  # Two-way intersection
-                - 3i: ((e1, (r1,)), (e2, (r2,)), (e3, (r3,)))  # Three-way intersection
-                - ip: (((e1, (r1,)), (e2, (r2,))), (r3,))  # Intersection + projection
-                - pi: ((e, (r1, r2)), (r3,))                # Projection + intersection (2i meets 2p)
-                - 2u: ((e1, (r1,)), (e2, (r2,)))           # Two-way union
-                - up: ((e, (r1, r2)), (e, (r3,)))          # Union + projection
-            query: Single query tuple matching the query_type pattern.
-            queries: Batch of queries. If provided, query must be None.
-            tnorm: T-norm for intersection/union. Options: "prod", "min".
-            neg_norm: Negation norm. Options: "standard", "sugeno", "yager".
-            lambda_: Parameter for sugeno and yager negation (0.0-1.0).
-            k: Number of top answer entities to return.
-            only_scores: If True, return only scores tensor. If False, return (entity, score) tuples.
-            use_logits: If True, use raw model logits. If False, use sigmoid probabilities.
-
-        Returns:
-            For single query: List[(entity, score), ...] of top-k answers.
-            For batch queries: List of such lists, one per query.
-
-        Raises:
-            ValueError: If query_type is not in {1p, 2p, 3p, 2i, 3i, ip, pi, 2u, up}.
-            AssertionError: If query structure doesn't match query_type pattern.
-
-        Examples:
-            >>> # 1p: Find entities located in Asia
-            >>> model.answer_multi_hop_query(
-            ...     query_type="1p",
-            ...     query=("Asia", ("isLocatedIn",)),
-            ...     k=5
-            ... )
-            [("Mongolia", 0.92), ("China", 0.89), ...]
-
-            >>> # 2p: Two-hop query (e.g., "capital of countries in Europe")
-            >>> model.answer_multi_hop_query(
-            ...     query_type="2p",
-            ...     query=("Europe", ("isLocatedIn", "hasCapital")),
-            ...     k=3
-            ... )
-            [("Paris", 0.85), ("Berlin", 0.82), ...]
-
-            >>> # 2i: Intersection query
-            >>> model.answer_multi_hop_query(
-            ...     query_type="2i",
-            ...     query=(("Asia", ("isLocatedIn",)), ("Mountains", ("hasGeography",))),
-            ...     k=5
-            ... )
-            [("Nepal", 0.78), ("Tibet", 0.65), ...]
-
-        See Also:
-            - docs/guides/multi_hop_queries.md: Complete guide with all query patterns
-            - tests/test_answer_multi_hop_query.py: Usage examples
-        """
-
-        if queries is not None:
-            if query is not None:
-                raise ValueError("Provide either 'query' or 'queries', not both")
-            results = []
-            for i in queries:
-                results.append(
-                    self.answer_multi_hop_query(query_type=query_type, query=i, tnorm=tnorm, neg_norm=neg_norm,
-                                                lambda_=lambda_, k=k, only_scores=only_scores,
-                                                use_logits=use_logits))
-            return results
-
-        if not (len(self.entity_to_idx) >= k >= 0):
-            raise ValueError(f"k must satisfy 0 <= k <= {len(self.entity_to_idx)}, got {k}")
-
-        query_name_dict = {
-            ("e", ("r",)): "1p",
-            ("e", ("r", "r")): "2p",
-            ("e", ("r", "r", "r",),): "3p",
-            (("e", ("r",)), ("e", ("r",))): "2i",
-            (("e", ("r",)), ("e", ("r",)), ("e", ("r",))): "3i",
-            ((("e", ("r",)), ("e", ("r",))), ("r",)): "ip",
-            (("e", ("r", "r")), ("e", ("r",))): "pi",
-            # negation
-            (("e", ("r",)), ("e", ("r", "n"))): "2in",
-            (("e", ("r",)), ("e", ("r",)), ("e", ("r", "n"))): "3in",
-            ((("e", ("r",)), ("e", ("r", "n"))), ("r",)): "inp",
-            (("e", ("r", "r")), ("e", ("r", "n"))): "pin",
-            (("e", ("r", "r", "n")), ("e", ("r",))): "pni",
-
-            # union
-            (("e", ("r",)), ("e", ("r",)), ("u",)): "2u",
-            ((("e", ("r",)), ("e", ("r",)), ("u",)), ("r",)): "up",
-
-        }
-
-        # Create an inverse mapping
-        inverse_query_name_dict = {v: k for k, v in query_name_dict.items()}
-
-        # Look up the corresponding query_structure
-        if query_type in inverse_query_name_dict:
-            query_structure = inverse_query_name_dict[query_type]
-        else:
-            supported_queries = sorted([k for k in inverse_query_name_dict.keys() if 'n' not in k])
-            raise ValueError(
-                f"Invalid query type: '{query_type}'\\n"
-                f"\\nSupported query types:\\n"
-                f"  - Basic: {', '.join(supported_queries[:7])}\\n"
-                f"  - Negation: {', '.join([k for k in sorted(inverse_query_name_dict.keys()) if 'n' in k])}\\n"
-                f"\\nExamples:\\n"
-                f"  - 1p: (e, (r,))\\n"
-                f"  - 2p: (e, (r1, r2))\\n"
-                f"  - 2i: ((e1, (r1,)), (e2, (r2,)))\\n"
-                f"  - 2u: ((e1, (r1,)), (e2, (r2,)), ('u',))\\n"
-                f"\\nSee docs/guides/multi_hop_queries.md for complete guide\\n"
-                f"See tests/test_answer_multi_hop_query.py for usage examples\\n"
-            )
-
-        # 1p
-        if query_structure == ("e", ("r",)):
-            return self.single_hop_query_answering(query, only_scores, k, use_logits=use_logits)
-        # 2p
-        elif query_structure == ("e", ("r", "r",)):
-            # ?M : \exist A. r1(e,A) \land r2(A,M)
-            e, (r1, r2) = query
-            top_k_scores1 = []
-            atom2_scores = []
-            # (1) Iterate over top k substitutes of A in the first hop query: r1(e,A) s.t. A<-a
-            for top_k_entity, score_of_e_r1_a in self.answer_multi_hop_query(query_type="1p", query=(e, (r1,)),
-                                                                             only_scores=False, tnorm=tnorm, k=k,
-                                                                             use_logits=use_logits):
-                # (1.1) Store scores of (e, r1, a) s.t. a is a substitute of A and a is a top ranked entity.
-                top_k_scores1.append(score_of_e_r1_a)
-                # (1.2) Compute scores for (a, r2, M): Replace predict with answer_multi_hop_query.
-                atom2_scores.append(self.predict(h=top_k_entity, r=r2, logits=use_logits))
-            # (2) k by E tensor
-            atom2_scores = torch.vstack(atom2_scores)
-            kk, E = atom2_scores.shape
-            # Sanity checking
-            assert k == kk
-            # Top k scores for all replacement of A. torch.Size([k,1])
-            top_k_scores1 = torch.FloatTensor(top_k_scores1).reshape(k, 1)
-            # k x E
-            top_k_scores1 = top_k_scores1.repeat(1, E)
-            # E scores
-            aggregated_query_for_all_entities, _ = torch.max(self.t_norm(top_k_scores1, atom2_scores, tnorm), dim=0)
-            return self.return_multi_hop_query_results(aggregated_query_for_all_entities, k, only_scores)
-        # 3p
-        elif query_structure == ("e", ("r", "r", "r",)):
-            head1, (relation1, relation2, relation3) = query
-            top_k_scores1 = []
-            atom_scores = []
-            # (1) Iterate over top k substitutes of A in the first hop query: r1(e,A) s.t. A<-a
-            for top_k_entity, score_of_e_r1_a in self.answer_multi_hop_query(query_type="2p",
-                                                                             query=(head1, (relation1, relation2)),
-                                                                             tnorm=tnorm,
-                                                                             k=k,
-                                                                             use_logits=use_logits):
-                top_k_scores1.append(score_of_e_r1_a)
-                # () Scores for all entities E
-                atom_scores.append(self.predict(h=[top_k_entity], r=[relation3], logits=use_logits))
-
-            # (2) k by E tensor
-            atom_scores = torch.vstack(atom_scores)
-            kk, E = atom_scores.shape
-            # Sanity checking
-            assert k == kk
-            # Top k scores for all replacement of A. torch.Size([k,1])
-            top_k_scores1 = torch.FloatTensor(top_k_scores1).reshape(k, 1)
-            # k x E
-            top_k_scores1 = top_k_scores1.repeat(1, E)
-            # E scores
-            aggregated_query_for_all_entities, _ = torch.max(self.t_norm(top_k_scores1, atom_scores, tnorm), dim=0)
-            return self.return_multi_hop_query_results(aggregated_query_for_all_entities, k, only_scores)
-
-        # 2in
-        elif query_structure == (("e", ("r",)), ("e", ("r", "n"))):
-            # entity_scores = scores_2in(query, tnorm, neg_norm, lambda_)
-            head1, relation1 = query[0]
-            head2, relation2 = query[1]
-
-            # Calculate entity scores for each query
-            # Get scores for the first atom (positive)
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
-            # Get scores for the second atom (negative)
-            # if neg_norm == "standard":
-            predictions = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
-            atom2_scores = self.negnorm(predictions, lambda_, neg_norm)
-
-            assert len(atom1_scores) == len(self.entity_to_idx)
-
-            combined_scores = self.t_norm(atom1_scores, atom2_scores, tnorm)
+        def answer(item):
+            indexed = index_query(query_type, item, self.entity_to_idx, self.relation_to_idx)
+            scores = engine.predict(indexed, beam_size=beam, tnorm=tnorm, neg_norm=neg_norm,
+                                    lambda_=lambda_, use_logits=use_logits, return_log_scores=not use_logits, executor=executor)
             if only_scores:
-                return combined_scores
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
-        # 3in
-        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("e", ("r", "n"))):
-            # entity_scores = scores_3in(model, query, tnorm, neg_norm, lambda_)
-            head1, relation1 = query[0]
-            head2, relation2 = query[1]
-            head3, relation3 = query[2]
-
-            # Calculate entity scores for each query
-            # Get scores for the first atom (positive)
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
-            # Get scores for the second atom (negative)
-            # modelling standard negation (1-x)
-            atom2_scores = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
-            # Get scores for the third atom
-            # if neg_norm == "standard":
-            predictions = self.predict(h=[head3], r=[relation3[0]], logits=use_logits).squeeze()
-            atom3_scores = self.negnorm(predictions, lambda_, neg_norm)
-
-            assert len(atom1_scores) == len(self.entity_to_idx)
-
-            inter_scores = self.t_norm(atom1_scores, atom2_scores, tnorm)
-            combined_scores = self.t_norm(inter_scores, atom3_scores, tnorm)
-            if only_scores:
-                return combined_scores
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
-        # pni
-        elif query_structure == (("e", ("r", "r", "n")), ("e", ("r",))):
-            # entity_scores = scores_pni(model, query, tnorm, neg_norm, lambda_, k_)
-            head1, (relation1, relation2, _) = query[0]
-            head3, relation3 = query[1]
-            # Calculate entity scores for each query
-            # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1], logits=use_logits).squeeze()
-
-            assert len(atom1_scores) == len(self.entity_to_idx)
-            # sort atom1_scores in descending order and get the top k entities indices
-            top_k_scores1, top_k_indices = torch.topk(atom1_scores, k)
-
-            # using model.entity_to_idx.keys() take the name of entities from topk heads 2
-            entity_to_idx_keys = list(self.entity_to_idx.keys())
-            top_k_heads = [entity_to_idx_keys[idx.item()] for idx in top_k_indices]
-
-            # Get scores for the second atom
-            # Initialize an empty tensor
-            atom2_scores = torch.empty(0, len(self.entity_to_idx)).to(atom1_scores.device)
-
-            # Get scores for the second atom
-            for head2 in top_k_heads:
-                # The score tensor for the current head2
-                atom2_score = self.predict(h=[head2], r=[relation2], logits=use_logits)
-                neg_atom2_score = self.negnorm(atom2_score, lambda_, neg_norm)
-                # Concatenate the score tensor for the current head2 with the previous scores
-                atom2_scores = torch.cat([atom2_scores, neg_atom2_score], dim=0)
-
-            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom2_scores.shape[1])
-
-            inter_scores = self.t_norm(topk_scores1_expanded, atom2_scores, tnorm)
-
-            scores_2pn_query, _ = torch.max(inter_scores, dim=0)
-            scores_1p_query = self.predict(h=[head3], r=[relation3[0]], logits=use_logits).squeeze()
-
-            combined_scores = self.t_norm(scores_2pn_query, scores_1p_query, tnorm)
-            if only_scores:
-                return combined_scores
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
-        # pin
-        elif query_structure == (("e", ("r", "r")), ("e", ("r", "n"))):
-            # entity_scores = scores_pin(model, query, tnorm, neg_norm, lambda_, k_)
-            head1, (relation1, relation2) = query[0]
-            head3, relation3 = query[1]
-            # Calculate entity scores for each query
-            # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1], logits=use_logits).squeeze()
-
-            assert len(atom1_scores) == len(self.entity_to_idx)
-
-            # sort atom1_scores in descending order and get the top k entities indices
-            top_k_scores1, top_k_indices = torch.topk(atom1_scores, k)
-
-            # using model.entity_to_idx.keys() take the name of entities from topk heads 2
-            entity_to_idx_keys = list(self.entity_to_idx.keys())
-            top_k_heads = [entity_to_idx_keys[idx.item()] for idx in top_k_indices]
-
-            # Initialize an empty tensor
-            atom2_scores = torch.empty(0, len(self.entity_to_idx)).to(atom1_scores.device)
-
-            # Get scores for the second atom
-            for head2 in top_k_heads:
-                # The score tensor for the current head2
-                atom2_score = self.predict(h=[head2], r=[relation2], logits=use_logits)
-                # Concatenate the score tensor for the current head2 with the previous scores
-                atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
-
-            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom2_scores.shape[1])
-
-            inter_scores = self.t_norm(topk_scores1_expanded, atom2_scores, tnorm)
-
-            scores_2p_query, _ = torch.max(inter_scores, dim=0)
-
-            scores_1p_query = self.predict(h=[head3], r=[relation3[0]], logits=use_logits).squeeze()
-            # taking negation for the e,(r,n) part of query
-            neg_scores_1p_query = self.negnorm(scores_1p_query, lambda_, neg_norm)
-            combined_scores = self.t_norm(scores_2p_query, neg_scores_1p_query, tnorm)
-            if only_scores:
-                return combined_scores
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
-        # inp
-        elif query_structure == ((("e", ("r",)), ("e", ("r", "n"))), ("r",)):
-            # entity_scores = scores_inp(model, query, tnorm, neg_norm, lambda_, k_)
-            head1, relation1 = query[0][0]
-            head2, relation2 = query[0][1]
-            relation_1p = query[1]
-
-            # Calculate entity scores for each query
-            # Get scores for the first atom (positive)
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
-            # Get scores for the second atom (negative)
-            # if neg_norm == "standard":
-            predictions = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
-            atom2_scores = self.negnorm(predictions, lambda_, neg_norm)
-
-            assert len(atom1_scores) == len(self.entity_to_idx)
-
-            scores_2in_query = self.t_norm(atom1_scores, atom2_scores, tnorm)
-
-            # sort atom1_scores in descending order and get the top k entities indices
-            top_k_scores1, top_k_indices = torch.topk(scores_2in_query, k)
-
-            # using model.entity_to_idx.keys() take the name of entities from topk heads 2
-            entity_to_idx_keys = list(self.entity_to_idx.keys())
-            top_k_heads = [entity_to_idx_keys[idx.item()] for idx in top_k_indices]
-
-            # Get scores for the second atom
-            # Initialize an empty tensor
-            atom3_scores = torch.empty(0, len(self.entity_to_idx)).to(scores_2in_query.device)
-
-            # Get scores for the second atom
-            for head3 in top_k_heads:
-                # The score tensor for the current head2
-                atom3_score = self.predict(h=[head3], r=[relation_1p[0]], logits=use_logits)
-                # Concatenate the score tensor for the current head2 with the previous scores
-                atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
-
-            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom3_scores.shape[1])
-
-            combined_scores = self.t_norm(topk_scores1_expanded, atom3_scores, tnorm)
-
-            res, _ = torch.max(combined_scores, dim=0)
-            if only_scores:
-                return res
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
-            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
-        # 2i
-        elif query_structure == (("e", ("r",)), ("e", ("r",))):
-            # entity_scores = scores_2i(model, query, tnorm)
-            head1, relation1 = query[0]
-            head2, relation2 = query[1]
-
-            # Calculate entity scores for each query
-            # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
-            # Get scores for the second atom
-            atom2_scores = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
-
-            assert len(atom1_scores) == len(self.entity_to_idx)
-
-            combined_scores = self.t_norm(atom1_scores, atom2_scores, tnorm)
-            if only_scores:
-                return combined_scores
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
-        # 3i
-        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("e", ("r",))):
-            # entity_scores = scores_3i(model, query, tnorm)
-            head1, relation1 = query[0]
-            head2, relation2 = query[1]
-            head3, relation3 = query[2]
-            # Calculate entity scores for each query
-            # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
-            # Get scores for the second atom
-            atom2_scores = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
-            # Get scores for the third atom
-            atom3_scores = self.predict(h=[head3], r=[relation3[0]], logits=use_logits).squeeze()
-
-            assert len(atom1_scores) == len(self.entity_to_idx)
-
-            inter_scores = self.t_norm(atom1_scores, atom2_scores, tnorm)
-            combined_scores = self.t_norm(inter_scores, atom3_scores, tnorm)
-            if only_scores:
-                return combined_scores
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
-        # pi
-        elif query_structure == (("e", ("r", "r")), ("e", ("r",))):
-            # entity_scores = scores_pi(model, query, tnorm, k_)
-            head1, (relation1, relation2) = query[0]
-            head3, relation3 = query[1]
-            # Calculate entity scores for each query
-            # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1], logits=use_logits).squeeze()
-
-            assert len(atom1_scores) == len(self.entity_to_idx)
-            # sort atom1_scores in descending order and get the top k entities indices
-            top_k_scores1, top_k_indices = torch.topk(atom1_scores, k)
-
-            # using model.entity_to_idx.keys() take the name of entities from topk heads 2
-            entity_to_idx_keys = list(self.entity_to_idx.keys())
-            top_k_heads = [entity_to_idx_keys[idx.item()] for idx in top_k_indices]
-
-            # Initialize an empty tensor
-            atom2_scores = torch.empty(0, len(self.entity_to_idx)).to(atom1_scores.device)
-
-            # Get scores for the second atom
-            for head2 in top_k_heads:
-                # The score tensor for the current head2
-                atom2_score = self.predict(h=[head2], r=[relation2], logits=use_logits).unsqueeze(0)
-                # Concatenate the score tensor for the current head2 with the previous scores
-                atom2_scores = torch.cat([atom2_scores, atom2_score], dim=0)
-
-            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom2_scores.shape[1])
-
-            inter_scores = self.t_norm(topk_scores1_expanded, atom2_scores, tnorm)
-
-            scores_2p_query, _ = torch.max(inter_scores, dim=0)
-
-            scores_1p_query = self.predict(h=[head3], r=[relation3[0]], logits=use_logits).squeeze()
-
-            combined_scores = self.t_norm(scores_2p_query, scores_1p_query, tnorm)
-            if only_scores:
-                return combined_scores
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
-        # ip
-        elif query_structure == ((("e", ("r",)), ("e", ("r",))), ("r",)):
-            # entity_scores = scores_ip(model, query, tnorm, k_)
-            head1, relation1 = query[0][0]
-            head2, relation2 = query[0][1]
-            relation_1p = query[1]
-            # Calculate entity scores for each query
-            # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
-            # Get scores for the second atom
-            atom2_scores = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
-
-            assert len(atom1_scores) == len(self.entity_to_idx)
-
-            scores_2i_query = self.t_norm(atom1_scores, atom2_scores, tnorm)
-            # Get the top k entities from the 2i query
-
-            # sort atom1_scores in descending order and get the top k entities indices
-            top_k_scores1, top_k_indices = torch.topk(scores_2i_query, k)
-
-            # using model.entity_to_idx.keys() take the name of entities from topk heads
-            entity_to_idx_keys = list(self.entity_to_idx.keys())
-            top_k_heads = [entity_to_idx_keys[idx.item()] for idx in top_k_indices]
-
-            # Get scores for the second atom
-            # Initialize an empty tensor
-            atom3_scores = torch.empty(0, len(self.entity_to_idx)).to(scores_2i_query.device)
-
-            # Get scores for the second atom
-            for head3 in top_k_heads:
-                # The score tensor for the current head2
-                atom3_score = self.predict(h=[head3], r=[relation_1p[0]], logits=use_logits).unsqueeze(0)
-
-                # Concatenate the score tensor for the current head2 with the previous scores
-                atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
-
-            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom3_scores.shape[1])
-
-            combined_scores = self.t_norm(topk_scores1_expanded, atom3_scores, tnorm)
-            res, _ = torch.max(combined_scores, dim=0)
-            if only_scores:
-                return res
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
-            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
-        # disjunction
-        # 2u
-        elif query_structure == (("e", ("r",)), ("e", ("r",)), ("u",)):
-            # entity_scores = scores_2u(model, query, tnorm)
-            head1, relation1 = query[0]
-            head2, relation2 = query[1]
-
-            # Calculate entity scores for each query
-            # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
-            # Get scores for the second atom
-            atom2_scores = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
-
-            assert len(atom1_scores) == len(self.entity_to_idx)
-
-            combined_scores = self.t_conorm(atom1_scores, atom2_scores, tnorm)
-            if only_scores:
-                return combined_scores
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), combined_scores)]
-            entity_scores = sorted(entity_scores, key=lambda x: x[1], reverse=True)
-
-            return entity_scores
-        # up
-        # here the second tnorm is for t-conorm (used in pairs)
-        elif query_structure == ((("e", ("r",)), ("e", ("r",)), ("u",)), ("r",)):
-            # entity_scores = scores_up(model, query, tnorm, tnorm, k_)
-            head1, relation1 = query[0][0]
-            head2, relation2 = query[0][1]
-            relation_1p = query[1]
-
-            # Get scores for the first atom
-            atom1_scores = self.predict(h=[head1], r=[relation1[0]], logits=use_logits).squeeze()
-
-            # Get scores for the second atom
-            atom2_scores = self.predict(h=[head2], r=[relation2[0]], logits=use_logits).squeeze()
-
-            assert len(atom1_scores) == len(self.entity_to_idx)
-
-            scores_2u_query = self.t_conorm(atom1_scores, atom2_scores, tnorm)
-
-            # Sort atom1_scores in descending order and get the top k entities indices
-            top_k_scores1, top_k_indices = torch.topk(scores_2u_query, k)
-
-            # Using model.entity_to_idx.keys() take the name of entities from topk heads
-            entity_to_idx_keys = list(self.entity_to_idx.keys())
-            top_k_heads = [entity_to_idx_keys[idx.item()] for idx in top_k_indices]
-
-            # Initialize an empty tensor
-            atom3_scores = torch.empty(0, len(self.entity_to_idx)).to(scores_2u_query.device)
-
-            for head3 in top_k_heads:
-                # The score tensor for the current head3
-                atom3_score = self.predict(h=[head3], r=[relation_1p[0]], logits=use_logits).unsqueeze(0)
-
-                # Concatenate the score tensor for the current head3 with the previous scores
-                atom3_scores = torch.cat([atom3_scores, atom3_score], dim=0)
-
-            topk_scores1_expanded = top_k_scores1.view(-1, 1).repeat(1, atom3_scores.shape[1])
-            combined_scores = self.t_norm(topk_scores1_expanded, atom3_scores, tnorm)
-            res, _ = torch.max(combined_scores, dim=0)
-            if only_scores:
-                return res
-            entity_scores = [(ei, s) for ei, s in zip(self.entity_to_idx.keys(), res)]
-            return sorted(entity_scores, key=lambda x: x[1], reverse=True)
-        else:
-            raise RuntimeError(f"Incorrect query_structure {query_structure}")
+                return scores if use_logits else scores.exp()
+            # Rank in log space before converting to memberships, avoiding underflow ties.
+            order = torch.argsort(scores, descending=True, stable=True)[:k]
+            values = scores if use_logits else scores.exp()
+            return [(names[int(index)], values[index]) for index in order]
+
+        return [answer(item) for item in queries] if queries is not None else answer(query)
 
     def find_missing_triples(self, confidence: float, entities: Optional[List[str]] = None, relations: Optional[List[str]] = None,
                              topk: int = 10,
