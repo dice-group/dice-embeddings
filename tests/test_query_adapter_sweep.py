@@ -68,7 +68,8 @@ def test_reuse_requires_completed_unlocked_verified_predecessor(tmp_path, monkey
         sweep.reuse_baseline(out, config)
 
 
-def test_evaluation_keeps_trace_open_until_queries_finish(tmp_path, monkeypatch):
+@pytest.mark.parametrize('tnorm', ['prod', 'min'])
+def test_evaluation_keeps_trace_open_until_queries_finish(tmp_path, monkeypatch, tnorm):
     from types import SimpleNamespace
 
     import torch
@@ -87,11 +88,12 @@ def test_evaluation_keeps_trace_open_until_queries_finish(tmp_path, monkeypatch)
     QueryScoreAdapter('global', metadata={'backbone_state_sha256': state_fingerprint(model)}).save(adapter_path/'adapter.json')
 
     def benchmark(_model, _data, **kwargs):
+        assert kwargs['tnorm'] == tnorm
         kwargs['on_query'](queries[0].query, '1p', {'mrr': .5})
         return dict(per_shape={'1p': {'mrr': .5}}, seconds=1.)
 
     monkeypatch.setattr(sweep, 'benchmark_model', benchmark)
-    sweep.evaluate_worker(tmp_path, dict(root=str(tmp_path), size=1, sampling_seed=0),
+    sweep.evaluate_worker(tmp_path, dict(root=str(tmp_path), size=1, sampling_seed=0, variants={'baseline': {'tnorm': tnorm}}),
                           'ultra', 'baseline', 'toy', 1, 1)
     result = json.loads((tmp_path/'benchmark'/'ultra'/'baseline'/'toy'/'result.json').read_text())
     assert result['report']['per_shape']['1p']['mrr'] == .5

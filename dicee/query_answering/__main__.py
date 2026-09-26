@@ -36,6 +36,7 @@ def main():
     fit.add_argument('--bias-bound', type=float, default=4.)
     fit.add_argument('--scale-bound', type=lambda v: None if v == 'none' else float(v), default=2.)
     fit.add_argument('--beam-size', type=int, default=64)
+    fit.add_argument('--tnorm', choices=['prod', 'min'], default='prod')
     fit.add_argument('--normalization', choices=['none', 'standard'], default='none')
     fit.add_argument('--hidden-dim', type=int, default=0)
     fit.add_argument('--validation-every', type=int)
@@ -43,6 +44,11 @@ def main():
     fit.add_argument('--seed', type=int, default=2026090851)
     fit.add_argument('--samples', type=int)
     fit.add_argument('--device', default='cpu')
+    fit.add_argument('--training-device', choices=['cpu', 'cuda'], default='cpu')
+    fit.add_argument('--validation-device', choices=['cpu', 'cuda'])
+    fit.add_argument('--cpu-threads', type=int)
+    fit.add_argument('--training-cache-mb', type=int, default=1536)
+    fit.add_argument('--device-cache-mb', type=int, default=512)
     fit.add_argument('--compare-global', action='store_true', help='Also fit a two-parameter baseline, reusing frozen score banks')
     args = parser.parse_args()
     if args.command == 'benchmark':
@@ -57,6 +63,11 @@ def main():
         print(f'Saved {len(data.train)} training and {len(data.validation)} validation queries to {args.output}')
         return
     from ..knowledge_graph_embeddings import KGE
+    if args.cpu_threads is not None:
+        if args.cpu_threads < 1:
+            parser.error('--cpu-threads must be positive')
+        import torch
+        torch.set_num_threads(args.cpu_threads)
     kge = KGE(path=args.experiment)
     kge.to(args.device)
     sources = [AdapterTrainingData.load(path) for path in args.data]
@@ -70,10 +81,14 @@ def main():
                                    epochs=args.epochs, batch_size=args.batch_size, learning_rate=args.learning_rate,
                                    row_batch_size=args.row_batch_size, seed=args.seed, samples=args.samples,
                                    cache_dir=args.output / 'score-banks', bias_bound=args.bias_bound,
-                                   scale_bound=args.scale_bound, beam_size=args.beam_size,
+                                   scale_bound=args.scale_bound, beam_size=args.beam_size, tnorm=args.tnorm,
                                    normalization=args.normalization, hidden_dim=args.hidden_dim,
                                    validation_every=args.validation_every,
-                                   early_stopping_patience=args.early_stopping_patience)
+                                   early_stopping_patience=args.early_stopping_patience,
+                                   training_device=args.training_device, training_cache_bytes=args.training_cache_mb * 2**20,
+                                   validation_device=args.validation_device,
+                                   device_cache_bytes=args.device_cache_mb * 2**20,
+                                   checkpoint_path=args.output / f'{mode or "default"}-fit-state.pt')
         name = result.adapter.feature_mode
         path = args.output / f'{name}.json'
         result.adapter.save(path)

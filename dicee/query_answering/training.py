@@ -3,10 +3,13 @@
 Fits the shared inference transform using a filtered-softmax loss.
 """
 
+import copy
 import hashlib
 import json
 import math
+import os
 import random
+import time
 from contextlib import ExitStack
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -205,11 +208,13 @@ def prepare_adapter_data(source, *, name='source', mask_fraction=.3, train_per_s
                                     validation_per_shape=validation_per_shape, shapes=list(shapes)))
 
 
-def _bank(model, data, *, cache_dir, row_batch_size, seed, samples):
+def _bank(model, data, *, cache_dir, row_batch_size, seed, samples, device='cpu',
+          cache_bytes=128 * 1024**2, device_cache_bytes=0):
     if any(q.shape not in FLAT_SHAPES for q in (*data.train, *data.validation)):
         from ._training_rows import TrainingRows
         provider = TrainingRows(model, data.context, cache_dir=cache_dir, row_batch_size=row_batch_size,
-                                seed=seed, samples=samples)
+                                seed=seed, samples=samples, device=device,
+                                cache_bytes=cache_bytes, device_cache_bytes=device_cache_bytes)
         return dict(provider=provider, identity=provider.identity, context=data.context)
     from ..models._inference import float32_precision_token
     conditions = sorted({pair for q in (*data.train, *data.validation) for pair in q.conditions})
@@ -254,7 +259,8 @@ def _bank(model, data, *, cache_dir, row_batch_size, seed, samples):
 def _prepared_bank(adapter, bank):
     if 'provider' in bank:
         return bank
-    if bank.get('prepared_configuration') == adapter.configuration:
+    device = adapter.weights.device
+    if bank.get('prepared_configuration') == adapter.configuration and bank.get('prepared_device') == str(device):
         return bank
     raw, observed, features = [], [], []
     for start in range(0, len(bank['raw']), 32):
@@ -263,8 +269,9 @@ def _prepared_bank(adapter, bank):
         raw.append(r)
         observed.append(o)
         features.append(f)
-    return dict(bank, prepared_raw=torch.cat(raw), prepared_observed=torch.cat(observed), features=torch.cat(features),
-                prepared_configuration=adapter.configuration)
+    return dict(bank, prepared_raw=torch.cat(raw).to(device), prepared_observed=torch.cat(observed).to(device),
+                features=torch.cat(features).to(device),
+                prepared_configuration=adapter.configuration, prepared_device=str(device))
 
 
 def _context_answers(bank, query):
@@ -284,15 +291,18 @@ def _query_logs(adapter, bank, query):
             batch = heads[start:start + batch_size]
             conditions = [(head, relation) for head in batch]
             if provider is not None:
-                raw, observed, features = provider.prepared(adapter, conditions)
+                raw, observed, features = provider.prepared(adapter, conditions, device=adapter.weights.device)
             else:
                 indices = [bank['indices'][pair] for pair in conditions]
                 raw, observed, features = (bank[k][indices] for k in ('prepared_raw', 'prepared_observed', 'features'))
             yield batch, adapter.transform(raw, observed, features)
 
-    tree = compile_query(query.query)
-    result, _ = execute_query(tree, rows, n=context.num_entities, device='cpu', row_batch_size=batch_size,
-                              beam_size=bank.get('beam_size', 64))
+    trees = bank.setdefault('trees', {})
+    if query.query not in trees:
+        trees[query.query] = compile_query(query.query)
+    tree = trees[query.query]
+    result, _ = execute_query(tree, rows, n=context.num_entities, device=adapter.weights.device, row_batch_size=batch_size,
+                              beam_size=bank.get('beam_size', 64), tnorm=bank.get('tnorm', 'prod'))
     if adapter.observed_mix == 1 and positive(tree):
         result = result.clone()
         result[sorted(_context_answers(bank, query))] = 0.
@@ -315,10 +325,28 @@ def filtered_softmax_loss(logs, answers, hard_answers):
     return (torch.logaddexp(positives, negative_mass) - positives).mean()
 
 
+def _filtered_ranks(scores, answers, hard):
+    eligible = torch.ones_like(scores, dtype=torch.bool)
+    eligible[sorted(answers)] = False
+    negatives, targets = scores[eligible], scores[sorted(hard)]
+    if targets.isnan().any() or negatives.isnan().any():
+        raise ValueError('Cannot rank NaN prediction scores')
+    if len(hard) < 8:
+        better = (negatives[None] > targets[:, None]).sum(1)
+        tied = (negatives[None] == targets[:, None]).sum(1)
+    else:
+        ordered = negatives.sort().values
+        left = torch.searchsorted(ordered, targets)
+        right = torch.searchsorted(ordered, targets, right=True)
+        better, tied = len(ordered) - right, right - left
+    return (1 + better + tied.to(torch.float64) / 2).tolist()
+
+
 def _validation(adapter, sources, banks):
-    from ..evaluation._filtering import FilteredRanker
     result = {}
-    ranker = FilteredRanker('optimistic')
+    device = banks[0].get('validation_device', adapter.weights.device) if banks else adapter.weights.device
+    if torch.device(device) != adapter.weights.device:
+        adapter = copy.deepcopy(adapter).to(device)
     with torch.no_grad():
         for source, bank in zip(sources, banks):
             bank = _prepared_bank(adapter, bank)
@@ -329,14 +357,35 @@ def _validation(adapter, sources, banks):
                         continue
                     scores = _query_logs(adapter, bank, query)
                     hard = query.answers - _context_answers(bank, query)
-                    bounds = [ranker.bounds_batch(scores[None], [answer], [sorted(query.answers)])[0] for answer in sorted(hard)]
-                    ranks = [better + tied / 2 for better, tied in bounds]
+                    ranks = _filtered_ranks(scores, query.answers, hard)
                     metrics.append([sum(1 / rank for rank in ranks) / len(ranks),
                                     *(sum(rank <= k for rank in ranks) / len(ranks) for k in (1, 3, 10))])
                 if metrics:
                     average = torch.tensor(metrics, dtype=torch.float64).mean(0).tolist()
                     result[f'{source.name}/{shape}'] = dict(zip(('mrr', 'hits1', 'hits3', 'hits10'), average), queries=len(metrics))
     return result
+
+
+def _baseline_validation(adapter, sources, banks, cache_dir):
+    from ._checkpoint import write_json
+    from .benchmark import _implementation_fingerprint
+    if cache_dir is None:
+        return _validation(adapter, sources, banks)
+    identity = fingerprint(dict(adapter=adapter.to_dict(), implementation=_implementation_fingerprint(),
+                                cpu_threads=torch.get_num_threads(),
+                                sources=[fingerprint(s.to_dict()) for s in sources],
+                                banks=[b['identity'] for b in banks],
+                                execution=[dict(beam=b.get('beam_size', 64), tnorm=b.get('tnorm', 'prod'), shapes=b.get('validation_shapes', TRAINING_SHAPES),
+                                                device=str(b.get('validation_device', b.get('device', 'cpu')))) for b in banks]))
+    path = Path(cache_dir)/f'validation-{identity}.json'
+    if path.exists():
+        saved = json.loads(path.read_text())
+        if saved['identity'] != identity or saved['sha256'] != fingerprint(saved['metrics']):
+            raise ValueError('Corrupt baseline validation cache')
+        return saved['metrics']
+    metrics = _validation(adapter, sources, banks)
+    write_json(path, dict(identity=identity, metrics=metrics, sha256=fingerprint(metrics)))
+    return metrics
 
 
 @dataclass
@@ -346,14 +395,34 @@ class AdapterFitResult:
     validation: dict
 
 
+def _save_fit(path, state):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(path.suffix + '.tmp')
+    with temporary.open('wb') as stream:
+        torch.save(state, stream)
+        stream.flush()
+        os.fsync(stream.fileno())
+    temporary.replace(path)
+
+
 def fit_query_adapter(model, sources, *, feature_mode=None, observed_mix=1., epochs=20, batch_size=8,
                       learning_rate=.02, identity_penalty=.001, gradient_clip=1., seed=2026090851,
                       cache_dir=None, row_batch_size=8, samples=None, bias_bound=4., normalization='none',
                       hidden_dim=0, scale_bound=2., beam_size=64, validation_every=None, validation_sources=None, on_epoch=None,
                       train_shapes=None, training_sources=None, train_per_shape=None,
-                      early_stopping_patience=None, validation_shapes=None):
+                      early_stopping_patience=None, validation_shapes=None, training_device='cpu',
+                      training_cache_bytes=1536 * 1024**2, device_cache_bytes=512 * 1024**2,
+                      checkpoint_path=None, validation_device=None, tnorm='prod'):
     """Fit a frozen-backbone adapter; optionally select epochs on source validation."""
     sources = list(sources)
+    if tnorm not in ('prod', 'min'):
+        raise ValueError('Choose prod or min t-norm')
+    device = torch.device(training_device)
+    validation_device = torch.device(validation_device or device)
+    cache_device = device if device.type == 'cuda' else validation_device
+    if any(d.type not in ('cpu', 'cuda') for d in (device, validation_device)) or min(training_cache_bytes, device_cache_bytes) < 0:
+        raise ValueError('Choose CPU/CUDA training and nonnegative cache budgets')
     if not sources or len({d.name for d in sources}) != len(sources):
         raise ValueError('Provide nonempty, uniquely named sources')
     if min(epochs, batch_size, row_batch_size) < 1 or not all(math.isfinite(v) for v in (learning_rate, identity_penalty, gradient_clip)):
@@ -384,13 +453,16 @@ def fit_query_adapter(model, sources, *, feature_mode=None, observed_mix=1., epo
     with ExitStack() as resources:
         backbone = state_fingerprint(model)
         banks = []
+        total_entities = sum(data.context.num_entities for data in sources)
         for data in sources:
-            bank = _bank(model, data, cache_dir=cache_dir, row_batch_size=row_batch_size, seed=seed, samples=samples)
+            bank = _bank(model, data, cache_dir=cache_dir, row_batch_size=row_batch_size, seed=seed, samples=samples,
+                         device=cache_device, cache_bytes=training_cache_bytes * data.context.num_entities // total_entities,
+                         device_cache_bytes=device_cache_bytes * data.context.num_entities // total_entities)
             banks.append(bank)
             if 'provider' in bank:
                 resources.callback(bank['provider'].close)
         for bank in banks:
-            bank.update(beam_size=beam_size, validation_shapes=validation_shapes)
+            bank.update(beam_size=beam_size, tnorm=tnorm, validation_shapes=validation_shapes, device=device, validation_device=validation_device)
         selection_names = set(validation_sources) if validation_sources is not None else {s.name for s in sources}
         validation_indices = [i for i, s in enumerate(sources) if s.name in selection_names and s.validation]
         if validation_every is not None and (not validation_indices or selection_names - {s.name for s in sources}):
@@ -401,11 +473,13 @@ def fit_query_adapter(model, sources, *, feature_mode=None, observed_mix=1., epo
                         shapes=sorted({q.shape for s in sources for q in s.train if q.shape in train_shapes}),
                         validation_sources=sorted(selection_names), validation_every=validation_every,
                         training_sources=sorted(training_names), train_per_shape=train_per_shape,
-                        early_stopping_patience=early_stopping_patience, beam_size=beam_size, validation_shapes=list(validation_shapes))
+                        early_stopping_patience=early_stopping_patience, beam_size=beam_size, tnorm=tnorm, validation_shapes=list(validation_shapes),
+                        device=str(device), validation_device=str(validation_device), cpu_threads=torch.get_num_threads(), training_cache_bytes=training_cache_bytes,
+                        device_cache_bytes=device_cache_bytes)
         adapter = QueryScoreAdapter(feature_mode, observed_mix, metadata=dict(
             backbone_state_sha256=backbone, training=settings, score_banks=[bank['identity'] for bank in banks],
             sources={source.name: fingerprint(source.to_dict()) for source in sources}), bias_bound=bias_bound, scale_bound=scale_bound,
-            normalization=normalization, hidden_dim=hidden_dim, seed=seed)
+            normalization=normalization, hidden_dim=hidden_dim, seed=seed).to(device)
         prepared = [_prepared_bank(adapter, bank) for bank in banks]
         optimizer = torch.optim.Adam(adapter.parameters(), lr=learning_rate)
         examples = []
@@ -425,24 +499,42 @@ def fit_query_adapter(model, sources, *, feature_mode=None, observed_mix=1., epo
         counts = {cell: sum((i, q.shape) == cell for i, q in examples) for cell in cells}
         rng, history, best = random.Random(seed), [], None
         stopped_early = False
-        for epoch in range(epochs):
+        from .benchmark import _implementation_fingerprint
+        resume_identity = fingerprint(dict(adapter=adapter.to_dict(), implementation=_implementation_fingerprint(),
+                                           learning_rate=learning_rate, identity_penalty=identity_penalty,
+                                           gradient_clip=gradient_clip, seed=seed))
+        if checkpoint_path is not None and Path(checkpoint_path).exists():
+            saved = torch.load(checkpoint_path, map_location='cpu', weights_only=True)
+            if saved['identity'] != resume_identity:
+                raise ValueError('Adapter checkpoint inputs/settings changed')
+            adapter.load_state_dict(saved['adapter'])
+            optimizer.load_state_dict(saved['optimizer'])
+            rng.setstate(saved['rng'])
+            history, best = saved['history'], saved['best']
+            stopped_early = history[-1].get('early_stopped', False) if history else False
+        for epoch in range(epochs if stopped_early else len(history), epochs):
+            if device.type == 'cuda':
+                torch.cuda.synchronize(device)
+            started = time.perf_counter()
             order = list(range(len(examples)))
             rng.shuffle(order)
             epoch_loss = 0.
             for start in range(0, len(order), batch_size):
                 optimizer.zero_grad()
                 batch = order[start:start + batch_size]
-                batch_loss = 0.
+                batch_terms = []
                 for index in batch:
                     i, query = examples[index]
                     hard = hard_answers[index]
                     logs = _query_logs(adapter, prepared[i], query)
                     weight = len(examples) / (len(cells) * counts[i, query.shape])
                     term = weight * filtered_softmax_loss(logs, query.answers, hard) / len(batch)
-                    if not torch.isfinite(term):
-                        raise FloatingPointError('Nonfinite adapter training objective')
                     term.backward()
-                    batch_loss += float(term.detach())
+                    batch_terms.append(term.detach())
+                terms = torch.stack(batch_terms).tolist()
+                if not all(math.isfinite(term) for term in terms):
+                    raise FloatingPointError('Nonfinite adapter training objective')
+                batch_loss = sum(terms)
                 penalty = torch.cat([p.reshape(-1) for p in adapter.parameters()]).square().mean()
                 loss = identity_penalty * penalty
                 if not torch.isfinite(loss):
@@ -451,19 +543,28 @@ def fit_query_adapter(model, sources, *, feature_mode=None, observed_mix=1., epo
                 torch.nn.utils.clip_grad_norm_(adapter.parameters(), gradient_clip, error_if_nonfinite=True)
                 optimizer.step()
                 epoch_loss += batch_loss + float(loss.detach())
-            record = dict(epoch=epoch + 1, loss=epoch_loss / math.ceil(len(examples) / batch_size))
+            if device.type == 'cuda':
+                torch.cuda.synchronize(device)
+            record = dict(epoch=epoch + 1, loss=epoch_loss / math.ceil(len(examples) / batch_size),
+                          train_seconds=time.perf_counter() - started)
             if validation_every and ((epoch + 1) % validation_every == 0 or epoch + 1 == epochs):
+                started = time.perf_counter()
                 metrics = _validation(adapter, [sources[i] for i in validation_indices], [prepared[i] for i in validation_indices])
+                record['validation_seconds'] = time.perf_counter() - started
                 record['validation_mrr'] = sum(v['mrr'] for v in metrics.values()) / len(metrics)
                 if not math.isfinite(record['validation_mrr']):
                     raise FloatingPointError('Nonfinite source-validation MRR')
                 if best is None or record['validation_mrr'] > best[0]:
-                    best = (record['validation_mrr'], epoch + 1, {k: v.detach().clone() for k, v in adapter.state_dict().items()})
+                    best = (record['validation_mrr'], epoch + 1,
+                            {k: v.detach().clone() for k, v in adapter.state_dict().items()}, metrics)
                 if early_stopping_patience is not None:
                     record.update(best_epoch=best[1], epochs_without_improvement=epoch + 1 - best[1])
                     stopped_early = epoch + 1 < epochs and epoch + 1 - best[1] >= early_stopping_patience
                     record['early_stopped'] = stopped_early
             history.append(record)
+            if checkpoint_path is not None and ((epoch + 1) % (validation_every or 1) == 0 or epoch + 1 == epochs):
+                _save_fit(checkpoint_path, dict(identity=resume_identity, adapter=adapter.state_dict(),
+                          optimizer=optimizer.state_dict(), rng=rng.getstate(), history=history, best=best))
             if on_epoch is not None:
                 on_epoch(record)
             if stopped_early:
@@ -476,6 +577,8 @@ def fit_query_adapter(model, sources, *, feature_mode=None, observed_mix=1., epo
                         training_queries=len(examples), optimizer_steps=len(history) * math.ceil(len(examples) / batch_size))
         if state_fingerprint(model) != backbone:
             raise RuntimeError('Backbone changed during adapter fitting')
-        variants = {'sigmoid': QueryScoreAdapter('global'), 'observed': QueryScoreAdapter('global', 1.), 'fitted': adapter}
-        validation = {name: _validation(value, sources, banks) for name, value in variants.items()}
+        settings['row_cache'] = {source.name: dict(bank['provider'].stats) for source, bank in zip(sources, banks) if 'provider' in bank}
+        variants = {'sigmoid': QueryScoreAdapter('global').to(device), 'observed': QueryScoreAdapter('global', 1.).to(device)}
+        validation = {name: _baseline_validation(value, sources, banks, cache_dir) for name, value in variants.items()}
+        validation['fitted'] = best[3] if best is not None and len(validation_indices) == len(sources) else _validation(adapter, sources, banks)
         return AdapterFitResult(adapter, history, validation)

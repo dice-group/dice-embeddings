@@ -196,9 +196,11 @@ Unique complete atomic rows are collected once, detached, and kept on CPU.
 For multi-hop queries, the trainer shares the inference executor and selects
 the beam again after adapter updates (`beam_size=64` by default). Gradients flow
 through retained scores, not the discrete top-k indices. Rows are fetched as
-needed from a persistent SQLite cache, with 128 MiB of prepared CPU rows and
-8 GiB of stored raw-row payload per source/backbone. Eviction recomputes missing
-rows without changing scoring. Each query backpropagates separately within its
+needed from a persistent SQLite cache. Parameter-independent features are stored
+alongside raw scores and survive memory eviction. The default prepared-row RAM
+budget is 1536 MiB total, divided in proportion to source vocabulary sizes; raw-row storage is limited to
+8 GiB per source/backbone. Eviction recomputes missing rows without changing
+scoring. Each query backpropagates separately within its
 optimizer batch to bound activation memory. Backbone microbatches remain small.
 Optional disk banks verify row checksums and bind to backbone weights, graph,
 query conditions, sampling, runtime, and precision settings. Changing these
@@ -207,6 +209,25 @@ but never feed validation answers into optimization. Flock uses a local seed
 per graph/head/relation/sample count, independent of row order and outer query
 batching, without modifying caller RNG state. Changing its internal sampling
 configuration changes the recorded bank identity.
+
+Set `training_device="cuda"` to compose queries and train the adapter on GPU,
+still in float64. `validation_device="cpu"` can keep ranking and small validation
+queries on CPU. The backbone device is independent. `device_cache_bytes`
+defaults to 512 MiB total across sources; `training_cache_bytes` controls the
+host budget. These budgets exclude model weights and transient activations.
+The CLI exposes `--training-device`, `--validation-device`, `--training-cache-mb`,
+`--device-cache-mb`, and `--cpu-threads`. Benchmark sweeps default to CUDA training,
+CPU validation, and four CPU
+threads; tune thread counts using complete epochs on the target machine.
+
+`checkpoint_path` saves adapter weights, Adam state, shuffle state, history,
+and the best validation checkpoint at validation intervals (each epoch without
+validation). Passing the same path resumes the fit and rejects changed inputs,
+code, or runtime settings. Epoch records include training/validation timings;
+reports include cache counters. The CLI and sweep runner enable this automatically.
+Untrained baseline validation results are cached with source, scoring, runtime,
+and implementation provenance. The selected all-source validation result is reused
+when producing the final fitted-adapter report.
 
 The **new** objective averages, for each hard answer `a`,
 `log(1 + sum_negative exp(log_score_negative - log_score_a))`.
@@ -354,3 +375,66 @@ release GPU memory between jobs and resume from checkpoints. Repeat the command
 with the same output directory to resume its recorded configuration and code.
 This first screen uses one training seed; confirm close results with more seeds
 and larger samples before drawing conclusions.
+
+Use `--continue-from OLD_RUN --output NEW_RUN` to continue a stopped controlled
+study with a new implementation snapshot. The runner preserves study settings,
+imports completed adapter fits with their original reports, and records the
+imports in `continuation.json`. Raw rows are imported only after verifying the
+old implementation and matching the backbone-scoring code. The old run must
+have exited; its files remain unchanged. Numerical equivalence must be checked
+before combining results produced by different training runtimes.
+
+For a controlled t-norm comparison, reuse the query-type study's prepared pools:
+
+```bash
+python -m dicee.scripts.benchmark_query_adapters \
+  --output Experiments/query-benchmarks/adapter-tnorm \
+  --study tnorm --prepared-from Experiments/query-benchmarks/adapter-query-types \
+  --after-run Experiments/query-benchmarks/adapter-scale \
+  --training-cache-mb 6144 --prepare-only
+```
+
+This fits product and min adapters separately, each with 840 `2i`/`3i` queries,
+`context_scores_v1`, observed facts, bias bound 8, and scale bound 2. Training,
+checkpoint selection, diagnostics, and target inference use the matching operator.
+Raw backbone rows are shared; validation caches and fit checkpoints are operator-specific.
+The standalone fitting command also accepts `--tnorm prod|min`.
+
+Before target evaluation, the runner freezes one policy per backbone in
+`policies/`. It selects min for a type only when the min adapter's source-validation
+MRR exceeds the product adapter's MRR on all three sources (tolerance `1e-12`).
+Otherwise it retains product. `ip`, `pi`, `2u`, and `up` always use product and
+do not participate in checkpoint or operator selection. The same policy applies
+to every target dataset. Its results reuse the paired global runs' query traces;
+their runtime is reported as reused, not as a measured policy inference time.
+
+This is an exploratory single-seed screen. Source validation also selects
+checkpoints, so agreement across sources is not a significance test. These
+controls do not remove any source/target graph overlap in the benchmark suite.
+
+To screen saved adapters on +H without retraining:
+
+```bash
+python -m dicee.scripts.benchmark_query_adapters \
+  --output Experiments/query-benchmarks/adapter-plus-h \
+  --evaluate-from Experiments/query-benchmarks/adapter-screen \
+                  Experiments/query-benchmarks/adapter-query-types \
+                  Experiments/query-benchmarks/adapter-scale \
+  --suite plus-h --size 25 --exclude-variants reference_500ep \
+  --after-run Experiments/query-benchmarks/adapter-scale --prepare-only
+```
+
+The default +H data root is `KGs/query-benchmarks-plus-h`; override it with
+`--benchmark-root`. The screen covers FB15k-237+H, NELL995+H, and ICEWS18+H,
+including all 16 types (`4p` and `4i` included). Uniform sampling is stratified
+by dataset and query type, deterministic, and shared across adapters. Published
+answer filters and full candidate vocabularies are retained. Validation uses
+the training graph; test graphs and test queries are not used.
+
+The runner pins available adapter hashes and the configurations of queued fits.
+Every source run must complete and release its lock before adapters are imported.
+`adapter-imports.json` records exact checkpoints; reused baselines are evaluated
+once when their original source run is included. No adapters are selected or
+refitted using +H labels. Keep +H summaries separate from the UltraQuery suite.
+This small screen covers every dataset/type, but close rankings need a larger
+sample before a final comparison.
