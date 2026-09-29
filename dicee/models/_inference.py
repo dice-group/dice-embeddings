@@ -12,8 +12,9 @@ def float32_precision_token():
         # getters can raise when backends (or cuDNN conv/RNN) use different modes.
         cudnn, mkldnn = torch.backends.cudnn, torch.backends.mkldnn
         backends = (torch.backends, torch.backends.cuda.matmul, cudnn, mkldnn,
-                    getattr(cudnn, 'conv'), getattr(cudnn, 'rnn'), getattr(mkldnn, 'matmul'))
-        return tuple(getattr(backend, 'fp32_precision') for backend in backends)
+                    getattr(cudnn, 'conv', None), getattr(cudnn, 'rnn', None), getattr(mkldnn, 'matmul', None))
+        # Some PyTorch releases expose fp32_precision on only a subset of these backends.
+        return tuple(getattr(backend, 'fp32_precision', None) for backend in backends)
     return torch.get_float32_matmul_precision(), torch.backends.cudnn.allow_tf32
 
 

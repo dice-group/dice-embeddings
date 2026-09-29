@@ -19,7 +19,8 @@ def small_thread_pool(monkeypatch):
     if hasattr(torch.backends.cuda.matmul, 'fp32_precision'):
         for backend in (torch.backends.cuda.matmul, torch.backends.mkldnn.matmul,
                         torch.backends.cudnn.conv, torch.backends.cudnn.rnn):
-            monkeypatch.setattr(backend, 'fp32_precision', 'ieee')
+            if hasattr(backend, 'fp32_precision'):  # cudnn.rnn lacks it on some torch releases
+                monkeypatch.setattr(backend, 'fp32_precision', 'ieee')
     else:
         monkeypatch.setattr(torch.backends.cuda.matmul, 'allow_tf32', False)
         monkeypatch.setattr(torch.backends.cudnn, 'allow_tf32', False)
