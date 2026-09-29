@@ -7,6 +7,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [Unreleased]
+
+### Added
+- `NegSampleMargin` scoring technique (margin-based ranking loss) and `--margin` argument, verified across all models
+- Native ULTRA implementation with pretrained-checkpoint compatibility, plus Flock entity/relation foundation models (KGFM)
+- Frozen-checkpoint KGFM benchmarks (ULTRA 4g/50g, KINSHIP, NELL) and comparisons against official implementations
+- Configurable prediction tie strategies
+- Sharded checkpoint save/resume for the `torchFSDP` trainer
+- Adaptive Momentum Weight Averaging and soft-label support
+- `--log_level` CLI flag; TriX model
+
+### Changed
+- KGFM inference accelerated (fused kernels, query reuse, Flock execution)
+- Regression bounds updated for the new embedding initialization (AConEx, CoKE)
+- DeCaL initialization delegates embedding setup to dedicated methods (part of #427)
+- CI ratchets the mypy error count instead of `continue-on-error`
+
+### Fixed
+- Label smoothing in `LabelSmoothingLoss.forward`, `KvsAll`, `AllvsAll` and `KvsSample` targets
+- `WeightedBCELoss` wired into `loss_fn` dispatch; unreachable `adversarial_temperature` branch; `current_epoch` threading in `loss_function` (#442, #443)
+- Gradient accumulation in `TorchTrainer`; batch-size finder returns the last safe size; auto batch finding rejected for FSDP
+- Candidate restrictions respected in head prediction; unequal target lengths in `AllvsAll`; unsigned filter indices for CPU tie ranking
+- Completed `torchFSDP` models can be loaded via `KGE`/`load_model()`; run-directory/memmap setup gated on global rank
+- Dataset memory duplication in worker processes; `BytE` BPE-save crash
+- Implicit-`Optional` parameter defaults; partial config validation
+- Precision lookup crashed on PyTorch releases lacking `fp32_precision` on some backends (e.g. `cudnn.rnn` in 2.10)
+
+### Known issues
+- NELL-995-h25/h50/h75 splits (inherited from the MuRP authors' files) contain train/valid/test overlaps and duplicate rows (#462)
+
+---
+
 ## [1.0.3.3] - 2026-07-20
 
 ### Added

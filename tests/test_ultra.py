@@ -16,9 +16,12 @@ from dicee.models.ultra import ULTRA
 @pytest.fixture(autouse=True)
 def small_thread_pool():
     previous = torch.get_num_threads()
+    previous_precision = torch.get_float32_matmul_precision()
+    torch.set_float32_matmul_precision('highest')
     torch.set_num_threads(2)
     yield
     torch.set_num_threads(previous)
+    torch.set_float32_matmul_precision(previous_precision)
 
 
 @pytest.fixture

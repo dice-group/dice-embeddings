@@ -19,9 +19,12 @@ CUDA = pytest.mark.skipif(not torch.cuda.is_available(), reason='CUDA unavailabl
 @pytest.fixture(autouse=True)
 def small_thread_pool():
     previous = torch.get_num_threads()
+    previous_precision = torch.get_float32_matmul_precision()
+    torch.set_float32_matmul_precision('highest')
     torch.set_num_threads(2)
     yield
     torch.set_num_threads(previous)
+    torch.set_float32_matmul_precision(previous_precision)
 
 
 @CUDA
