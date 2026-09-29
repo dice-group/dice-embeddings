@@ -189,7 +189,7 @@ def get_default_arguments(description=None):
                         help="Trainable Weight Averaging")
     parser.add_argument("--auto_batch_finding",
                         action="store_true",
-                        help="Find a batch size fitting in GPUs. Only available for TP trainer")
+                        help="Find a batch size fitting in GPU memory. Not supported with torchFSDP")
     parser.add_argument('--degree', type=int, default=0,
                         help='degree for polynomial embeddings')
 
