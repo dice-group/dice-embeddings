@@ -15,6 +15,7 @@ from setuptools import setup, find_packages
 _core_deps = [
     "numpy==1.26.4",
     "torch>=2.5.1",
+    "torch_geometric>=2.5.0",
     "lightning>=2.5.0.post0",
     "pandas>=2.1.0",
     "requests>=2.32.3",

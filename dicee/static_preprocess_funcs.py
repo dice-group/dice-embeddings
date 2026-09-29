@@ -68,6 +68,9 @@ def preprocesses_input_args(args):
         # Relation prediction ranks the supplied relation vocabulary. Inverses
         # are internal message-passing edges, not additional prediction labels.
         args.apply_reciprical_or_noise = False
+    if args.model in ("RGCN", "GATv2"):
+        # Message passing needs both edge directions in the training graph.
+        args.apply_reciprical_or_noise = True
     if args.sample_triples_ratio is not None:
         assert 1.0 >= args.sample_triples_ratio >= 0.0
     assert args.backend in ["pandas", "polars", "rdflib"]

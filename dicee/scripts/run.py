@@ -72,7 +72,8 @@ def get_default_arguments(description=None):
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
                                  "Pykeen_HolE", "Pykeen_ProjE", "Pykeen_RotatE",
                                  "Pykeen_TransE", "Pykeen_TransF", "Pykeen_TransH",
-                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx","LFMult", "DeCaL"],
+                                 "Pykeen_TransR", "Pykeen_TuckER", "Pykeen_ComplEx","LFMult", "DeCaL",
+                                 "RGCN", "GATv2"],
                         help="Available knowledge graph embedding models. "
                              "To use other knowledge graph embedding models available in python, e.g.,"
                              "**Pykeen_BoxE** and add this into choices")
@@ -244,6 +245,14 @@ def get_default_arguments(description=None):
                         help="Initial beta before enough delta history exists.")
     parser.add_argument("--amwa_beta_floor", type=float, default=1e-8,
                         help="Numerical floor for beta_n.")
+
+    parser.add_argument("--gnn_num_layers", type=int, default=2,
+                        help="Number of message-passing layers in the GNN encoder.")
+    parser.add_argument("--gnn_attn_heads", type=int, default=4,
+                        help="Number of attention heads for the GATv2 encoder.")
+    parser.add_argument("--gnn_num_bases", type=int, default=None,
+                        help="Number of relation bases for the RGCN encoder's basis decomposition. "
+                             "Default uses one weight matrix per relation.")
 
     if description is None:
         return parser.parse_args()

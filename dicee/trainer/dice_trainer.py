@@ -26,6 +26,7 @@ from dicee.callbacks import (
 from dicee.dataset_classes import construct_dataset
 from dicee.knowledge_graph import KG
 from dicee.models.base_model import BaseKGE
+from dicee.models.gnn import RelationalGNNEncoder
 from dicee.static_funcs import select_model, timeit
 from dicee.weight_averaging import AMWA, ASWA, EMA, SWA, SWAG, TWA
 
@@ -401,7 +402,7 @@ class DICE_Trainer:
     def prepare_graph_model(self, model, knowledge_graph):
         """Attach only training facts, preserving the indexed external vocabulary."""
         from dicee.models.graph_model import GraphKGE
-        if not isinstance(model, GraphKGE):
+        if not isinstance(model, (GraphKGE, RelationalGNNEncoder)):
             return
         raw_mapping: Union[dict, polars.DataFrame, pd.DataFrame, None]
         if isinstance(knowledge_graph, KG):

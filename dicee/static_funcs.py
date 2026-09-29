@@ -29,6 +29,7 @@ from .models.base_model import BaseKGE
 from .models.ensemble import EnsembleKGE
 from .models.flock import Flock, FlockRelation
 from .models.fsdp_models import FSDPShardedEntityModel, create_fsdp_sharded_model_class
+from .models.gnn import RGCN, GATv2, RelationalGNNEncoder
 from .models.graph_model import GraphKGE
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
@@ -68,6 +69,8 @@ MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
     'DeCaL': (DeCaL, 'EntityPrediction'),
     'DualE': (DualE, 'EntityPrediction'),
     'CoKE': (CoKE, 'EntityPrediction'),
+    'RGCN': (RGCN, 'EntityPrediction'),
+    'GATv2': (GATv2, 'EntityPrediction'),
 }
 
 def create_recipriocal_triples(df: pd.DataFrame) -> pd.DataFrame:
@@ -371,7 +374,7 @@ def load_model(path_of_experiment_folder: str, model_name='model.pt',verbose=0) 
         model.load_state_dict(weights.state_dict())
     else:
         model.load_state_dict(weights)
-    if isinstance(model, GraphKGE):
+    if isinstance(model, (GraphKGE, RelationalGNNEncoder)):
         model.load_graph(os.path.join(path_of_experiment_folder, model.graph_filename))
     # (6) Set it into eval model.
     for parameter in model.parameters():
@@ -440,7 +443,7 @@ def load_model_ensemble(path_of_experiment_folder: str) -> Tuple[BaseKGE, Tuple[
     model, _ = intialize_model(configs, for_inference=True)
     # (4.3) Put (3) into their places
     model.load_state_dict(weights, strict=True)
-    if isinstance(model, GraphKGE):
+    if isinstance(model, (GraphKGE, RelationalGNNEncoder)):
         model.load_graph(os.path.join(path_of_experiment_folder, model.graph_filename))
     # (6) Set it into eval model.
     logger.info('Setting Eval mode & requires_grad params to False')
@@ -511,7 +514,7 @@ def store(trained_model, full_storage_path: str, model_name: str = 'model',
     assert isinstance(model_name, str)
     assert len(model_name) > 1
     save_checkpoint_model(model=trained_model, path=full_storage_path + f'/{model_name}.pt')
-    if isinstance(trained_model, GraphKGE):
+    if isinstance(trained_model, (GraphKGE, RelationalGNNEncoder)):
         trained_model.save_graph(os.path.join(full_storage_path, trained_model.graph_filename))
 
     if save_embeddings_as_csv:

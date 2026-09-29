@@ -286,6 +286,17 @@ class Namespace(argparse.Namespace):
         self.amwa_beta_floor: float = 1e-8
         """Numerical floor for beta_n."""
 
+        # RelationalGNNEncoder subclasses (RGCN, GATv2); see dicee/models/gnn.py.
+        self.gnn_num_layers: int = 2
+        """Number of message-passing layers in the GNN encoder."""
+
+        self.gnn_attn_heads: int = 4
+        """Number of attention heads for the GATv2 encoder."""
+
+        self.gnn_num_bases: Optional[int] = None
+        """Number of relation bases for the RGCN encoder's basis decomposition. None uses one
+        weight matrix per relation."""
+
 
     def __iter__(self):
         # Iterate
