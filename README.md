@@ -351,7 +351,7 @@ The run reuses configuration and serialized artifacts from the existing experime
 ```bash
 dicee --continual_learning "KeciFamilyRun" --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --backend rdflib --eval_model None
 ```
-The continual directory should contain the stored configuration and serialized training data (for example `configuration.json`, `memory_map_train_set.npy`, and mapping files `entity_to_idx`/`relation_to_idx` in `.csv` or legacy `.p` format).
+The continual directory should contain the stored configuration and serialized training data (for example `configuration.json`, `memory_map_train_set.npy`, and mapping files `entity_to_idx`/`relation_to_idx` in `.csv` or `.p` format).
 If `--eval_model` is set, evaluation runs after training using stored indexed artifacts. If `--eval_model None`, no evaluation is executed.
 Periodic evaluation and weight-averaging callbacks are also supported in continual training.
 
@@ -491,53 +491,99 @@ predictions = model.predict_topk(h=["Mongolia"], t=["Asia"], topk=5)
 
 </details>
 
-## Multi-Hop Query Answering
-<details> <summary> EPFO Queries (1p, 2p, 3p, 2i, 3i, ip, pi, 2u, up) </summary>
+## Complex Query Answering (CQA)
+
+Answer path, intersection, union, and negated queries with [CQD](https://arxiv.org/abs/2011.03459)
+over KGEs or [ULTRA](https://arxiv.org/abs/2310.04562)/[TRIX](https://arxiv.org/abs/2502.19512)/[Flock](https://arxiv.org/abs/2510.01510),
+with optional learned score adapters. [ConE](https://arxiv.org/abs/2110.13715),
+[CLMPT](https://arxiv.org/abs/2402.12954), [CQD-Hybrid](https://arxiv.org/abs/2410.12537),
+[GNN-QE](https://proceedings.mlr.press/v162/zhu22c.html), [QTO](https://proceedings.mlr.press/v202/bai23b.html),
+and [UltraQuery](https://arxiv.org/abs/2404.07198) are available as native DICE implementations through `dicee.query_answering.methods`.
+
+<details>
+<summary>Examples: 1-hop, 2-hop, and 3-hop queries</summary>
+
+`KGE` loads both ordinary KGEs and saved KGFM experiments. Keep the KGFM's saved
+graph and vocabulary files alongside its weights. Save an adapter fitted for the
+chosen backbone and t-norm as `adapter.json` in that experiment folder.
+Adapter training defaults to linear `context_scores` (16 parameters); the paper
+configuration uses it with the product t-norm.
 
 ```python
-from dicee import KGE
+import numpy as np
 
-# Load pre-trained model
-model = KGE(path="...")
+from dicee import KGE
+from dicee.models.graph_model import GraphKGE
+from dicee.query_answering import QueryContext, QueryScoreAdapter
+
+# Choose one saved DICE experiment for the family graph.
+model = KGE(path="Experiments/complex-family")       # KGE: ComplEx
+# model = KGE(path="Experiments/ultra-family")       # KGFM: ULTRA
+# model = KGE(path="Experiments/trix-family")        # KGFM: TRIX
+# model = KGE(path="Experiments/flock-family")       # KGFM: Flock
+
+adapter = QueryScoreAdapter.load(f"{model.path}/adapter.json", model=model.model)
+
+# KGFMs reuse their saved graph; context-aware KGE adapters need observed facts.
+context = None
+if not isinstance(model.model, GraphKGE):
+    context = QueryContext(
+        np.load(f"{model.path}/train_set.npy"), model.num_entities, model.num_relations,
+    )
 
 # 1-hop: Who are the siblings of F9M167?
-# Query: ?E : ∃E.hasSibling(E, F9M167)
+# Query: hasSibling(F9M167, E)
 predictions = model.answer_multi_hop_query(
     query_type="1p",
-    query=('http://www.benchmark.org/family#F9M167',
-           ('http://www.benchmark.org/family#hasSibling',)),
-    tnorm="min", k=3
+    query=("http://www.benchmark.org/family#F9M167",
+           ("http://www.benchmark.org/family#hasSibling",)),
+    adapter=adapter, context=context, tnorm="prod", k=3,
 )
-# => [('F9F141', 0.99), ('F9M157', 0.98), ...]
 
 # 2-hop: To whom is a sibling of F9M167 married?
-# Query: ?D : ∃E.Married(D,E) ∧ hasSibling(E, F9M167)
+# Query: ∃E. hasSibling(F9M167, E) ∧ married(E, D)
 predictions = model.answer_multi_hop_query(
     query_type="2p",
     query=("http://www.benchmark.org/family#F9M167",
            ("http://www.benchmark.org/family#hasSibling",
             "http://www.benchmark.org/family#married")),
-    tnorm="min", k=3
+    adapter=adapter, context=context, tnorm="prod", beam_size=64, k=3,
 )
-# => [('F9F158', 0.95), ('F9M142', 0.93), ...]
 
-# 3-hop: What type of people are married to a sibling of F9M167?
-# Query: ?T : ∃D.type(D,T) ∧ Married(D,E) ∧ hasSibling(E, F9M167)
+# 3-hop: What types do those spouses have?
+# Query: ∃E,D. hasSibling(F9M167, E) ∧ married(E, D) ∧ type(D, T)
 predictions = model.answer_multi_hop_query(
     query_type="3p",
     query=("http://www.benchmark.org/family#F9M167",
            ("http://www.benchmark.org/family#hasSibling",
             "http://www.benchmark.org/family#married",
             "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
-    tnorm="min", k=5
+    adapter=adapter, context=context, tnorm="prod", beam_size=64, k=5,
 )
-# => [('Person', 0.99), ('Male', 0.99), ('Father', 0.98), ...]
+# Each call returns a list of (entity, score) pairs.
 ```
 
-**📖 [See multi-hop query examples →](tests/test_answer_multi_hop_query.py)**  
-**Supported query types:** `1p` (1-hop projection), `2p` (2-hop), `3p` (3-hop), `2i` (2-way intersection), `3i` (3-way intersection), `ip` (intersection-projection), `pi` (projection-intersection), `2u` (2-way union), `up` (union-projection)
+`beam_size` limits intermediate candidates; `k` limits returned answers.
+Set `adapter = None` to use unadapted sigmoid scores.
 
 </details>
+
+See the [CQA guide](docs/guides/multi_hop_queries.md) for adapters and method evaluation.
+
+**Benchmarks.** [`benchmarks/cqa`](benchmarks/cqa/README.md) evaluates these methods on the
+23 UltraQuery datasets and on **+H**: FB15k237+H, NELL995+H and ICEWS18+H from
+[Gregucci et al.](https://arxiv.org/abs/2410.12537), built so that complex queries cannot be
+reduced to simpler link prediction. Select any methods, datasets and query types:
+
+```bash
+python -m benchmarks.cqa plus_h evaluate --output results/plus-h-subset \
+  --methods cqd cqd-hybrid qto --datasets FB15k237+H NELL995+H --query-types 2p 3p
+```
+
+The verified workflow freezes inputs and query batches, checks validation predictions against
+the pinned upstream implementations, runs in a pinned Docker image, and reports sort-based and
+expected random-tie metrics with paired adapter controls. The [protocol](benchmarks/cqa/PROTOCOL.md)
+records every known deviation from the publications.
 
 ## Literal Prediction
 <details> <summary> Predicting Numeric/Literal Values </summary>
