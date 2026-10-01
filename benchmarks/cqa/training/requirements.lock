@@ -1,0 +1,22 @@
+# Author runtime additions to the locked +H/UltraQuery image; Python 3.11 / Linux x86_64.
+# Install without dependencies: the base image supplies the remaining pinned dependencies.
+torchdrug==0.2.1 --hash=sha256:f416dbbfb3fc697770e9ee7fa7769611fad060a4749ee49499d87583cfb58ee2
+torch-geometric==2.6.1 --hash=sha256:8faeb353f9655f7dbec44c5e0b44c721773bdfb279994da96b9b8b12fd30f427
+ninja==1.13.2 --hash=sha256:65a24341b5ac09fcadcc37082660be40a94174e51a937fabf6e2cae26225fa2c
+fair-esm==2.0.0 --hash=sha256:7dcb58828a401155d1457d071a03800bd1a50331ddf24ac79ad1dd0f2ea682a2
+easydict==1.13 --hash=sha256:6b787daf4dcaf6377b4ad9403a5cee5a86adbc0ca9a5bcf5410e9902002aeac2
+decorator==5.3.1 --hash=sha256:f47fe6fdbd2edd623ecfe36875d37aba411624e2670dd395dddae1358689bb3c
+lmdb==2.3.0 --hash=sha256:4d0019870b5b93b2160fc324a609ffee1447024b2b8ce0da3b3f2f04b0131870
+rdkit==2026.3.6 --hash=sha256:dcf09347e1a0dc1d7e5fcc34f5da79d1f4bb0e04ecadee669449b82ae2492799
+pillow==12.3.0 --hash=sha256:23d27a3e0307ec2244cc51e7287b919aa68d097504ebe19df4e76a98a3eea5bd
+matplotlib==3.11.2 --hash=sha256:07d9b9fa60cd4c393692f50d0bb03123242ddf61c99bb0e95e75feb354e7c1a8
+pyparsing==3.3.3 --hash=sha256:ece8c00a69cf01b45d0b1dedabb469c90d8caf996d4fda40f147627a122849a4
+cycler==0.12.1 --hash=sha256:85cef7cff222d8644161529808465972e51340599459b8ac3ccbac5a854e0d30
+kiwisolver==1.5.1 --hash=sha256:95a02752aa032eef4aed01cda6d9b687c669bd0396bf4519eef8bba22a286720
+fonttools==4.66.1 --hash=sha256:72299346b96b9244dabcc051b24e4653da4edfda6105544cfb10ce856a1afaac
+contourpy==1.3.3 --hash=sha256:51e79c1f7470158e838808d4a996fa9bac72c498e93d8ebe5119bc1e6becb0db
+ogb==1.3.6 --hash=sha256:29ab84078c66a7846bf137c9be9545978616a053e734c032a2ff731d026bb5e9
+outdated==0.2.2 --hash=sha256:3e9c2ee6d17e86ae8cc7bb71d70c4172690121cda367155a30994742172678c8
+littleutils==0.2.4 --hash=sha256:d10d5fe2e107c49fe2fc2904a08d6e5a302b41f8405921835ffcc323782d5dbc
+torch_scatter @ https://data.pyg.org/whl/torch-2.9.0%2Bcu128/torch_scatter-2.1.2%2Bpt29cu128-cp311-cp311-linux_x86_64.whl --hash=sha256:58b82728cd48fe565ceae3a049b58f8a1378dbdcae75d24aecdf870a29196331
+torch_cluster @ https://data.pyg.org/whl/torch-2.9.0%2Bcu128/torch_cluster-1.6.3%2Bpt29cu128-cp311-cp311-linux_x86_64.whl --hash=sha256:f605601a14406d65c904297437b1e56cb339cb7db8ba48a39397a31a1703eb51

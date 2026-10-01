@@ -18,6 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Adaptive Momentum Weight Averaging and soft-label support
 - `--log_level` CLI flag; TriX model
 - Complex query answering (`dicee.query_answering`): CQD beam search over KGEs and KGFMs with learned score adapters, negated query types, native UltraQuery, GNN-QE, QTO, CQD, CQD-Hybrid, ConE and CLMPT checked against their upstream implementations, and resumable filtered evaluation with exact expected ranks under ties
+- Reproducible UltraQuery and +H benchmarks (`python -m benchmarks.cqa`): frozen studies verified against the pinned upstream implementations, a pinned Docker runtime, paired adapter, answer-filter and inference-graph ablations, and paper tables
 
 ### Changed
 - KGFM inference accelerated (fused kernels, query reuse, Flock execution)
