@@ -148,7 +148,7 @@ def get_default_arguments(description=None):
                         choices=["None", "train", "train_val", "train_val_test", "test", "val_test", "val", "train_test"],
                         help='Evaluating link prediction performance on data splits. ')
     parser.add_argument("--eval_tie_policy", choices=TIE_POLICIES, default="sort",
-                        help="Prediction ties: legacy sort ordering, best rank (optimistic), "
+                        help="Prediction ties: sort ordering, best rank (optimistic), "
                              "uniform random tied rank, or worst rank (pessimistic).")
     parser.add_argument("--eval_tie_seed", type=int, default=None,
                         help="Seed for independent random tie-breaking; defaults to random_seed.")

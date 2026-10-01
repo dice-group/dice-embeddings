@@ -34,7 +34,7 @@ import torch
 from torch import nn
 
 from ._fused_message import tensor_version
-from ._inference import float32_precision_token
+from ._inference import float32_precision_token, to_device
 from .base_model import BaseKGE
 
 
@@ -254,7 +254,12 @@ class GraphKGE(BaseKGE):
             raise ValueError('Tail queries must have shape [B, 2] in (head, relation) order')
         if x.numel() and (x.min() < 0 or x[:, 0].max() >= self.num_entities or x[:, 1].max() >= self.num_relations):
             raise ValueError('Query IDs are outside the graph vocabulary')
-        x = x.to(device=self.device)
+        # Host queries were validated without a device read; keep their relation
+        # IDs on the host so inference caches need no device-to-host copy.
+        host_ids = None
+        if x.device.type == 'cpu' and self.device.type != 'cpu':
+            host_ids = (self._host_relation_map()[x[:, 1]] % self.num_direct_relations).tolist()
+        x = to_device(x, self.device)
         queries = torch.stack((x[:, 0], self.relation_id_map[x[:, 1]]), dim=1)
         candidates = target_entity_idx.to(dtype=torch.long)
         if candidates.ndim == 1:
@@ -267,7 +272,20 @@ class GraphKGE(BaseKGE):
         candidates = candidates.to(device=self.device)
         if all_entities:
             candidates._dicee_all_entities = True
-        return self._score(queries[:, 0], queries[:, 1], candidates, queries[:, 1] % self.num_direct_relations, self._training_edges(queries=queries))
+        query_relations = queries[:, 1] % self.num_direct_relations
+        if host_ids is not None:
+            query_relations._dicee_ids = host_ids
+        return self._score(queries[:, 0], queries[:, 1], candidates, query_relations, self._training_edges(queries=queries))
+
+    def _host_relation_map(self):
+        """Host copy of the internal relation map, reused while the buffer is unchanged."""
+        mapping = self.relation_id_map
+        version = tensor_version(mapping)
+        cached = getattr(self, '_host_relation_cache', None)
+        if cached is None or cached[0] is not mapping or cached[1] != version or version is None:
+            cached = mapping, version, mapping.cpu()
+            self._host_relation_cache = cached
+        return cached[2]
 
     def forward_k_vs_all(self, x):
         num_entities, _ = self._require_graph()

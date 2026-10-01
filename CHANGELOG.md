@@ -17,9 +17,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sharded checkpoint save/resume for the `torchFSDP` trainer
 - Adaptive Momentum Weight Averaging and soft-label support
 - `--log_level` CLI flag; TriX model
+- Complex query answering (`dicee.query_answering`): CQD beam search over KGEs and KGFMs with learned score adapters, negated query types, native UltraQuery, GNN-QE, QTO, CQD, CQD-Hybrid, ConE and CLMPT checked against their upstream implementations, and resumable filtered evaluation with exact expected ranks under ties
 
 ### Changed
 - KGFM inference accelerated (fused kernels, query reuse, Flock execution)
+- Deterministic KGFM message passing splits hub nodes into balanced, order-preserving partial sums and avoids per-query host synchronization; predictions are bitwise unchanged
+- `KGE.answer_multi_hop_query` uses the shared query engine and accepts score adapters
 - Regression bounds updated for the new embedding initialization (AConEx, CoKE)
 - DeCaL initialization delegates embedding setup to dedicated methods (part of #427)
 - CI ratchets the mypy error count instead of `continue-on-error`

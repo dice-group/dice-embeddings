@@ -35,7 +35,7 @@ import torch
 from torch import nn
 
 from ._fused_message import fused_distmult_sum, fused_norm_relu
-from ._inference import candidate_features, candidate_slice, compiled_conv_update, conditioned_score, inference_only
+from ._inference import cached_relation_batch, candidate_features, candidate_slice, compiled_conv_update, conditioned_score, host_ids, inference_only, to_device
 from .graph_model import GraphKGE
 
 UPSTREAM_COMMIT = "427966ad8ed60420eef034063d44f3153addff90"
@@ -198,14 +198,14 @@ class ULTRA(GraphKGE):
         if token != self._relation_cache_token:
             self.clear_inference_cache()
             self._relation_cache_token = token
-        ids = query_relations.tolist()
+        ids = host_ids(query_relations)
         missing = list(dict.fromkeys(q for q in ids if q not in self._relation_cache))
         # Keep current-call values alive even when they exceed the LRU capacity.
         values = {q: self._relation_cache[q] for q in set(ids) if q in self._relation_cache}
         for start in range(0, len(missing), self.query_batch_size):
             keys = missing[start:start + self.query_batch_size]
             rels = self.relation_model(self.rel_edge_index, self.rel_edge_type, 2 * self.num_direct_relations,
-                                       query_relations.new_tensor(keys))
+                                       to_device(torch.tensor(keys), query_relations.device))
             for key, value in zip(keys, rels):
                 values[key] = value.clone()
         for key in dict.fromkeys(ids):
@@ -228,7 +228,7 @@ class ULTRA(GraphKGE):
         missing = list(dict.fromkeys(q for q in ids if q not in self._projection_cache))
         values = {q: self._projection_cache[q] for q in set(ids) if q in self._projection_cache}
         if missing:
-            indices = rels.new_tensor([ids.index(q) for q in missing], dtype=torch.long)
+            indices = to_device(torch.tensor([ids.index(q) for q in missing], dtype=torch.long), rels.device)
             source = rels.index_select(0, indices)
             projected = [layer.relation_projection(source) for layer in self.entity_model.layers]
             for i, key in enumerate(missing):
@@ -238,7 +238,7 @@ class ULTRA(GraphKGE):
             self._projection_cache.move_to_end(key)
         while len(self._projection_cache) > capacity:
             self._projection_cache.popitem(last=False)
-        return tuple(torch.stack([values[q][i] for q in ids]) for i in range(self.num_layers))
+        return tuple(cached_relation_batch({q: value[i] for q, value in values.items()}, ids) for i in range(self.num_layers))
 
     def _score(self, heads, relations, candidates, query_relations, edges):
         output = []
