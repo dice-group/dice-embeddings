@@ -1,0 +1,96 @@
+{
+  "version": 1,
+  "answer_filter": "released",
+  "data_root": "KGs/UltraQuery",
+  "seed": 0,
+  "threads": 4,
+  "archives": {
+    "datasets": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90#datasets-1", "checksum_status": "Every extracted runtime input is independently pinned by freeze."},
+    "models": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90/ckpts", "checksum_status": "Released checkpoint and adapter bytes are independently pinned by freeze."}
+  },
+  "recipes": [
+    {
+      "defaults": {
+        "id": "qto-{dataset}",
+        "method": "qto",
+        "checkpoint": "checkpoints/ultraquery_benchmark-trained/qto-FB15kLogicalQuery/checkpoint.pt",
+        "options": {"threshold": 0.001, "negation_scale": 6, "row_batch_size": 32, "cache_bytes": 536870912, "reference_batching": true},
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni"],
+        "query_batch_size": 1,
+        "query_order": "upstream-pickle",
+        "reference": {
+          "status": "native reference port; full reproduction pending",
+          "settings": "https://arxiv.org/html/2410.12537v3#A6",
+          "notes": ["Train with the pinned QTO FB15k recipe, then verify against independent QTO inference."],
+          "inference_graph": "train"
+        },
+        "blockers": [],
+        "training": "checkpoints/ultraquery_benchmark-trained/qto-FB15kLogicalQuery/training.json"
+      },
+      "entries": [{"dataset": "FB15kLogicalQuery"}]
+    },
+    {
+      "defaults": {
+        "id": "inductive-gnnqe-{dataset}",
+        "method": "inductive-gnnqe",
+        "options": {"logic": "product"},
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni"],
+        "query_batch_size": 64,
+        "query_order": "upstream-pickle",
+        "reference": {
+          "status": "requires locally trained v2 checkpoint and independent validation parity",
+          "settings": "https://github.com/DeepGraphLearning/InductiveQE/blob/ab49a0e64e3449e687e484a42269d9898e1d1325/config/complex_query/gnnqe_main.yaml",
+          "notes": ["Train on corrected Zenodo 7306046 version 2.0; validation-only model selection."]
+        },
+        "blockers": []
+      },
+      "entries": [
+        {
+          "dataset": "InductiveFB15k237Query:106",
+          "checkpoint": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:106/checkpoint.pt",
+          "training": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:106/training.json"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:113",
+          "checkpoint": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:113/checkpoint.pt",
+          "training": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:113/training.json"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:122",
+          "checkpoint": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:122/checkpoint.pt",
+          "training": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:122/training.json"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:134",
+          "checkpoint": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:134/checkpoint.pt",
+          "training": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:134/training.json"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:150",
+          "checkpoint": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:150/checkpoint.pt",
+          "training": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:150/training.json"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:175",
+          "checkpoint": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:175/checkpoint.pt",
+          "training": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:175/training.json"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:217",
+          "checkpoint": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:217/checkpoint.pt",
+          "training": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:217/training.json"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:300",
+          "checkpoint": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:300/checkpoint.pt",
+          "training": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:300/training.json"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:550",
+          "checkpoint": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:550/checkpoint.pt",
+          "training": "checkpoints/ultraquery_benchmark-trained/inductive-gnnqe-InductiveFB15k237Query:550/training.json"
+        }
+      ]
+    }
+  ]
+}

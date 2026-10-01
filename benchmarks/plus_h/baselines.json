@@ -1,0 +1,359 @@
+{
+  "version": 1,
+  "answer_filter": "corrected",
+  "data_root": "KGs/query-benchmarks-plus-h",
+  "seed": 0,
+  "threads": 4,
+  "archives": {
+    "models": {"sha256": "d30b77a9c84d28de766bb5722c600bdc3c1e46d16cdaa3066ed4faca2b9b236f", "bytes": 4507216854, "source": "https://github.com/april-tools/is-cqa-complex#pre-trained-models"},
+    "datasets": {
+      "source": "https://github.com/april-tools/is-cqa-complex/releases/tag/benchs-1.0",
+      "checksum_status": "Official release API digest; extracted runtime files are independently pinned by freeze.",
+      "sha256": "bf60135d7b1bc109ab9d90892e318fa96ace905fdc8204afd270b1fd98002a80",
+      "bytes": 1675873193
+    }
+  },
+  "recipes": [
+    {
+      "defaults": {
+        "id": "cone-{dataset}",
+        "method": "cone",
+        "options": {"center_reg": 0.02},
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni", "4p", "4i"],
+        "query_batch_size": 4,
+        "query_order": "upstream-pickle",
+        "reference": {
+          "status": "native reference port; full reproduction pending",
+          "settings": "https://arxiv.org/html/2410.12537v3#A6",
+          "notes": ["Query batch size 4 follows the released checkpoint configuration."],
+          "graph_independent": true
+        },
+        "blockers": [],
+        "inference_graph": "train"
+      },
+      "entries": [
+        {"dataset": "FB15k237+H", "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/ConE/FB15k237/checkpoint"},
+        {"dataset": "NELL995+H", "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/ConE/NELL995/checkpoint"},
+        {"dataset": "ICEWS18+H", "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/ConE/ICEWS18/checkpoint"}
+      ]
+    },
+    {
+      "defaults": {
+        "id": "gnnqe-{dataset}",
+        "method": "gnnqe",
+        "options": {"logic": "product", "edge_batch_size": 65536},
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni", "4p", "4i"],
+        "query_order": "upstream-pickle",
+        "reference": {
+          "status": "native reference port; full reproduction pending",
+          "settings": "https://arxiv.org/html/2410.12537v3#A6",
+          "notes": ["Inference preserves the released query batch sizes, sparse reduction order and normalization arithmetic.", "Validation GPU scores, orders and ties match the pinned upstream batches."],
+          "inference_graph": "train"
+        },
+        "blockers": [],
+        "inference_graph": "train+valid"
+      },
+      "entries": [
+        {"dataset": "FB15k237+H", "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/GNN-QE/model/model_FB15k237.pth", "query_batch_size": 48},
+        {"dataset": "NELL995+H", "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/GNN-QE/model/model_NELL995.pth", "query_batch_size": 8},
+        {"dataset": "ICEWS18+H", "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/GNN-QE/model/model_ICEWS18.pth", "query_batch_size": 48}
+      ]
+    },
+    {
+      "defaults": {
+        "id": "ultraquery-{dataset}",
+        "method": "ultraquery",
+        "checkpoint": "Experiments/query-baselines/upstream/ultra/ckpts/ultraquery.pth",
+        "options": {"logic": "product", "threshold": 0.0, "cache_bytes": 67108864},
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni", "4p", "4i"],
+        "query_batch_size": 32,
+        "query_order": "upstream-pickle",
+        "reference": {
+          "status": "native reference port; full reproduction pending",
+          "settings": "https://arxiv.org/html/2410.12537v3#A6",
+          "notes": [
+            "The +H model archive README explicitly references this public PyG checkpoint.",
+            "Inference preserves the released query batch sizes, sparse reduction order and normalization arithmetic.",
+            "Validation GPU scores, orders and ties match the pinned upstream batches."
+          ],
+          "inference_graph": "train"
+        },
+        "blockers": [],
+        "inference_graph": "train+valid"
+      },
+      "entries": [{"dataset": "FB15k237+H"}, {"dataset": "NELL995+H"}, {"dataset": "ICEWS18+H"}]
+    },
+    {
+      "defaults": {
+        "id": "clmpt-{dataset}",
+        "method": "clmpt",
+        "options": {"aggregation": "mean", "candidate_batch_size": 1024},
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni", "4p", "4i"],
+        "query_order": "upstream-pickle",
+        "reference": {
+          "status": "native reference port; full reproduction pending",
+          "settings": "https://arxiv.org/html/2410.12537v3#A6",
+          "notes": [
+            "Batch sizes follow the original CLMPT README/defaults; query grouping is reconstructed using the released converter and +H pickle iteration order.",
+            "Post-norm predictions depend on batch membership. Both up branches use the original relation groundings.",
+            "Conversion uses the released query files and pinned batches.",
+            "Independent attention heads are evaluated separately to bound workspace while preserving complete query batches."
+          ],
+          "graph_independent": true
+        },
+        "blockers": [],
+        "inference_graph": "train"
+      },
+      "entries": [
+        {"dataset": "FB15k237+H", "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CLMPT/CLMPT-fb15k237.ckpt", "query_batch_size": 5000},
+        {"dataset": "NELL995+H", "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CLMPT/CLMPT-nell995.ckpt", "query_batch_size": 8},
+        {"dataset": "ICEWS18+H", "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CLMPT/CLMPT-icews18.ckpt", "query_batch_size": 5000}
+      ]
+    },
+    {
+      "defaults": {
+        "id": "cqd-{dataset}",
+        "method": "cqd",
+        "options": {
+          "beam_size": 2,
+          "tnorm": "prod",
+          "max_k": 512,
+          "normalize": true,
+          "reference_quirks": true,
+          "row_batch_size": 32,
+          "cache_bytes": 536870912,
+          "per_shape": {
+            "2p": {"tnorm": "prod"},
+            "3p": {"tnorm": "prod"},
+            "2i": {"tnorm": "prod"},
+            "3i": {"tnorm": "prod"},
+            "pi": {"tnorm": "prod"},
+            "ip": {"tnorm": "prod"},
+            "2u": {},
+            "up": {"tnorm": "min"},
+            "4p": {"beam_size": 2, "tnorm": "prod"},
+            "4i": {"beam_size": 2, "tnorm": "prod"}
+          },
+          "reference_batching": true,
+          "atomic_negation": true
+        },
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni", "4p", "4i"],
+        "query_batch_size": 1,
+        "query_order": "upstream-pickle",
+        "reference": {"status": "native reference port; full reproduction pending", "settings": "https://arxiv.org/html/2410.12537v3#A6", "graph_independent": true},
+        "blockers": [],
+        "inference_graph": "train"
+      },
+      "entries": [
+        {
+          "dataset": "FB15k237+H",
+          "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CQD:CQD-HYBRID:QTO/QTO/fb15k237checkpoint",
+          "options": {
+            "per_shape": {
+              "2p": {"beam_size": 512},
+              "3p": {"beam_size": 8},
+              "2i": {"beam_size": 128},
+              "3i": {"beam_size": 128},
+              "pi": {"beam_size": 256},
+              "ip": {"beam_size": 64},
+              "2u": {"beam_size": 512, "tnorm": "prod"},
+              "up": {"beam_size": 512}
+            }
+          },
+          "reference": {
+            "notes": [
+              "All 16 types are enabled, including the five negated types using CQD-A signed-atom negation with +H scoring.",
+              "Released 3p/4p quirks are preserved.",
+              "FB 2u uses product: full-query CPU diagnostics reproduce published 40.1/42.2, while the appendix states min. The up setting uses the documented min."
+            ]
+          }
+        },
+        {
+          "dataset": "NELL995+H",
+          "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CQD:CQD-HYBRID:QTO/QTO/nellcheckpoint",
+          "options": {
+            "per_shape": {
+              "2p": {"beam_size": 512},
+              "3p": {"beam_size": 2},
+              "2i": {"beam_size": 2},
+              "3i": {"beam_size": 2},
+              "pi": {"beam_size": 256},
+              "ip": {"beam_size": 256},
+              "2u": {"beam_size": 512, "tnorm": "min"},
+              "up": {"beam_size": 512}
+            }
+          },
+          "reference": {
+            "notes": ["All 16 types are enabled, including the five negated types using CQD-A signed-atom negation with +H scoring.", "Released 3p/4p quirks are preserved."]
+          }
+        },
+        {
+          "dataset": "ICEWS18+H",
+          "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CQD:CQD-HYBRID:QTO/ICEWS18/checkpoint",
+          "options": {
+            "per_shape": {
+              "2p": {"beam_size": 32},
+              "3p": {"beam_size": 2},
+              "2i": {"beam_size": 2},
+              "3i": {"beam_size": 2},
+              "pi": {"beam_size": 512},
+              "ip": {"beam_size": 256},
+              "2u": {"beam_size": 2, "tnorm": "min"},
+              "up": {"beam_size": 2}
+            }
+          },
+          "reference": {
+            "notes": ["All 16 types are enabled, including the five negated types using CQD-A signed-atom negation with +H scoring.", "Released 3p/4p quirks are preserved."]
+          }
+        }
+      ]
+    },
+    {
+      "defaults": {
+        "id": "cqd-hybrid-{dataset}",
+        "method": "cqd-hybrid",
+        "options": {
+          "beam_size": 2,
+          "tnorm": "prod",
+          "max_k": 512,
+          "normalize": true,
+          "reference_quirks": true,
+          "row_batch_size": 32,
+          "cache_bytes": 536870912,
+          "per_shape": {
+            "2p": {"tnorm": "prod"},
+            "3p": {"tnorm": "prod"},
+            "2i": {"tnorm": "prod"},
+            "3i": {"tnorm": "prod"},
+            "pi": {"tnorm": "prod"},
+            "ip": {"tnorm": "prod"},
+            "2u": {},
+            "up": {"tnorm": "min"},
+            "4p": {"beam_size": 2, "tnorm": "prod"},
+            "4i": {"beam_size": 2, "tnorm": "prod"}
+          },
+          "reference_batching": true,
+          "final_batch_size": 32,
+          "atomic_negation": true
+        },
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni", "4p", "4i"],
+        "query_batch_size": 1,
+        "query_order": "upstream-pickle",
+        "reference": {"status": "native reference port; full reproduction pending", "settings": "https://arxiv.org/html/2410.12537v3#A6"},
+        "blockers": [],
+        "inference_graph": "train+valid"
+      },
+      "entries": [
+        {
+          "dataset": "FB15k237+H",
+          "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CQD:CQD-HYBRID:QTO/QTO/fb15k237checkpoint",
+          "options": {
+            "per_shape": {
+              "2p": {"beam_size": 512},
+              "3p": {"beam_size": 8},
+              "2i": {"beam_size": 128},
+              "3i": {"beam_size": 128},
+              "pi": {"beam_size": 256},
+              "ip": {"beam_size": 64},
+              "2u": {"beam_size": 512, "tnorm": "prod"},
+              "up": {"beam_size": 512}
+            }
+          },
+          "reference": {
+            "notes": [
+              "All 16 types are enabled, including the five negated types using CQD-A signed-atom negation with +H scoring.",
+              "Released 3p/4p quirks are preserved.",
+              "Stream the final projection with global stage normalization; bounded 4p reference preserves the released quirks.",
+              "FB 2u uses product: full-query CPU diagnostics reproduce published 40.1/42.2, while the appendix states min. The up setting uses the documented min."
+            ],
+            "inference_graph": "train+valid"
+          }
+        },
+        {
+          "dataset": "NELL995+H",
+          "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CQD:CQD-HYBRID:QTO/QTO/nellcheckpoint",
+          "options": {
+            "per_shape": {
+              "2p": {"beam_size": 512},
+              "3p": {"beam_size": 2},
+              "2i": {"beam_size": 2},
+              "3i": {"beam_size": 2},
+              "pi": {"beam_size": 256},
+              "ip": {"beam_size": 256},
+              "2u": {"beam_size": 512, "tnorm": "min"},
+              "up": {"beam_size": 512}
+            }
+          },
+          "reference": {
+            "notes": [
+              "All 16 types are enabled, including the five negated types using CQD-A signed-atom negation with +H scoring.",
+              "Released 3p/4p quirks are preserved.",
+              "Stream the final projection with global stage normalization; bounded 4p reference preserves the released quirks."
+            ],
+            "inference_graph": "train+valid"
+          }
+        },
+        {
+          "dataset": "ICEWS18+H",
+          "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CQD:CQD-HYBRID:QTO/ICEWS18/checkpoint",
+          "options": {
+            "per_shape": {
+              "2p": {"beam_size": 32},
+              "3p": {"beam_size": 2},
+              "2i": {"beam_size": 2},
+              "3i": {"beam_size": 2},
+              "pi": {"beam_size": 512},
+              "ip": {"beam_size": 256},
+              "2u": {"beam_size": 2, "tnorm": "min"},
+              "up": {"beam_size": 2},
+              "4p": {"max_k": 64}
+            }
+          },
+          "reference": {
+            "notes": [
+              "All 16 types are enabled, including the five negated types using CQD-A signed-atom negation with +H scoring.",
+              "Released 3p/4p quirks are preserved.",
+              "Stream the final projection with global stage normalization; bounded 4p reference preserves the released quirks."
+            ],
+            "inference_graph": "unverified"
+          }
+        }
+      ]
+    },
+    {
+      "defaults": {
+        "id": "qto-{dataset}",
+        "method": "qto",
+        "options": {"threshold": 0.0002, "row_batch_size": 32, "cache_bytes": 536870912, "reference_batching": true},
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni", "4p", "4i"],
+        "query_batch_size": 1,
+        "query_order": "upstream-pickle",
+        "reference": {
+          "status": "native reference port; full reproduction pending",
+          "settings": "https://arxiv.org/html/2410.12537v3#A6",
+          "notes": [],
+          "inference_graph": "train"
+        },
+        "blockers": [],
+        "inference_graph": "train+valid"
+      },
+      "entries": [
+        {
+          "dataset": "FB15k237+H",
+          "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CQD:CQD-HYBRID:QTO/QTO/fb15k237checkpoint",
+          "options": {"negation_scale": 3}
+        },
+        {
+          "dataset": "NELL995+H",
+          "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CQD:CQD-HYBRID:QTO/QTO/nellcheckpoint",
+          "options": {"negation_scale": 6}
+        },
+        {
+          "dataset": "ICEWS18+H",
+          "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CQD:CQD-HYBRID:QTO/ICEWS18/checkpoint",
+          "options": {"negation_scale": 3}
+        }
+      ]
+    }
+  ]
+}
