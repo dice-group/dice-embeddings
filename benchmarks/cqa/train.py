@@ -55,11 +55,14 @@ def verify_v2(folder, version):
 
 
 def compatibility():
-    """Python 3.11 import compatibility; neither GNN arithmetic nor losses change."""
+    """Python 3.11 and newer-PyTorch import compatibility; neither GNN arithmetic nor losses change."""
     collections.Sequence = collections.abc.Sequence
     drawing = types.ModuleType('rdkit.Chem.Draw.mplCanvas')
     drawing.Canvas = object
     sys.modules[drawing.__name__] = drawing
+    from torch.utils import cpp_extension, file_baton
+    if not hasattr(cpp_extension, 'FileBaton'):  # Newer PyTorch no longer re-exports it.
+        cpp_extension.FileBaton = file_baton.FileBaton
 
 
 def train_qto(job, folder, source, output, args):
