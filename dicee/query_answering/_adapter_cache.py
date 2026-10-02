@@ -34,10 +34,13 @@ class TrainingRows:
         self.feature_cache = OrderedDict()
         self.stats = dict(host_hits=0, device_hits=0, disk_rows=0, scored_rows=0, feature_preparations=0, seconds=0.)
         self.disk_limit = disk_bytes if cache_dir is not None else min(disk_bytes, cache_bytes)
+        from ..models.flock import Flock
+        # Only sampled backbones (Flock walks) depend on the scoring seed; others share rows across seeds.
+        sampled = isinstance(model, Flock)
         settings = dict(version=2, backbone=state_fingerprint(model), context=context.identity,
                         scoring_code=scoring_fingerprint(), architecture=str(model),
                         args={k: str(v) for k, v in getattr(model, 'args', {}).items()},
-                        row_batch_size=row_batch_size, seed=seed, samples=samples,
+                        row_batch_size=row_batch_size, seed=seed if sampled else None, samples=samples if sampled else None,
                         precision=float32_precision_token(), torch=str(torch.__version__),
                         deterministic=torch.are_deterministic_algorithms_enabled(),
                         autocast=torch.is_autocast_enabled(next(model.parameters()).device.type),
