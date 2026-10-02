@@ -51,6 +51,38 @@ def test_shared_atomic_cache_preserves_batches_and_invalidates_weights():
     assert model.calls == 4
 
 
+def test_row_cache_reuses_rows_across_batches_and_invalidates_weights():
+    model = BatchRows().eval()
+    cache = AtomicBatchCache(10_000, granularity='row')
+    scorer = AtomicScorer(model, row_batch_size=2, raw_cache=cache)
+    first = scorer.rows([(0, 0), (1, 0)])
+    assert model.calls == 1 and cache.computed == 2
+    mixed = scorer.rows([(1, 0), (2, 0), (1, 0)])
+    # Only the missing row is computed, in a batch of its own; the fixture marks batch sizes in the values.
+    assert model.calls == 2 and cache.computed == 3 and cache.hits == 2
+    assert torch.equal(mixed[0], first[1]) and torch.equal(mixed[2], first[1])
+    assert torch.equal(mixed[1], model.values[2].detach() + 1 / 100)
+    mixed.zero_()
+    assert torch.equal(scorer.rows([(0, 0)])[0], first[0]) and model.calls == 2
+    with torch.no_grad():
+        model.values.add_(1)
+    assert torch.equal(scorer.rows([(0, 0), (1, 0)]), first + 1) and model.calls == 3
+
+
+def test_cache_token_is_computed_once_per_evaluation(monkeypatch):
+    from dicee.query_answering import engine
+    calls = []
+    original = engine.state_token
+    monkeypatch.setattr(engine, 'state_token', lambda model: calls.append(model) or original(model))
+    scorer = AtomicScorer(BatchRows().eval(), row_batch_size=1, raw_cache=AtomicBatchCache(10_000, granularity='row'))
+    with scorer.evaluation():
+        for head in range(3):
+            scorer.rows([(head, 0)])
+    assert len(calls) == 1
+    scorer.rows([(0, 0)])
+    assert len(calls) == 2
+
+
 def test_paired_resume_replays_both_variants_and_preserves_metrics(tmp_path):
     data = small_data()
 

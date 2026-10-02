@@ -264,11 +264,14 @@ def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_predict
     backbone = entry['method'].split('-')[0]
     options = entry['options']
     allowed = {'beam_size', 'row_batch_size', 'backend_batch_size', 'cache_bytes', 'raw_cache_bytes', 'observed_facts',
-               'raw_cache_device', 'relation_cache_mb', 'projection_cache_mb'}
+               'raw_cache_device', 'raw_cache_granularity', 'relation_cache_mb', 'projection_cache_mb'}
     if options.keys() - allowed:
         raise ValueError('Unknown KGFM execution option')
     if options.get('raw_cache_device', 'cpu') not in ('cpu', 'model'):
         raise ValueError('Atomic cache device must be cpu or model')
+    granularity = options.get('raw_cache_granularity', 'batch')
+    if granularity not in ('batch', 'row'):
+        raise ValueError('Atomic cache granularity must be batch or row')
     model = {'ultra': ULTRA, 'trix': TRIX}[backbone](dict(
         num_entities=1, num_relations=1, graph_inference_backend='auto',
         graph_relation_cache_mb=options.get('relation_cache_mb', 64),
@@ -288,8 +291,9 @@ def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_predict
     shape_by_query = {query.query: query.shape for query in data.queries}
     stats = Counter()
     paired = entry.get('adapter_ablation', False)
-    raw_cache = AtomicBatchCache(options.get('raw_cache_bytes', 2 * 1024**3),
-                                 device=options.get('raw_cache_device', 'cpu')) if paired else None
+    # Row granularity also helps a single configuration: beams of different queries share rows.
+    raw_cache = AtomicBatchCache(options.get('raw_cache_bytes', 2 * 1024**3), device=options.get('raw_cache_device', 'cpu'),
+                                 granularity=granularity) if paired or granularity == 'row' else None
     with ExitStack() as stack:
         stack.enter_context(deterministic_kgfm())
         stack.enter_context(attached_context(model, data.context))
