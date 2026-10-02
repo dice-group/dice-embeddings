@@ -277,7 +277,7 @@ def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_predict
             entry['checkpoint']).to(device).eval().requires_grad_(False)
     adapters = {name: QueryScoreAdapter.load(path, model=model) for name, path in entry['adapters'].items()}
     for operator, adapter in adapters.items():
-        expected = 'prod' if operator == 'product' else 'min'
+        expected = 'prod' if operator.partition(':')[0] == 'product' else 'min'
         if adapter.metadata.get('training', {}).get('tnorm', 'prod') != expected:
             raise ValueError('Operator must use an adapter fitted with the matching t-norm')
     observed_facts = options.get('observed_facts')
@@ -332,7 +332,7 @@ def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_predict
             operator = entry['operators'][shape_by_query[query]]
             engine = engines[variant][operator]
             result = engine.predict(query, beam_size=options.get('beam_size', 64),
-                                    tnorm='prod' if operator == 'product' else 'min', return_log_scores=True)
+                                    tnorm='prod' if operator.partition(':')[0] == 'product' else 'min', return_log_scores=True)
             record(engine.last_info)
             callback = on_prediction if variant == 'learned' else on_control_prediction
             if callback:

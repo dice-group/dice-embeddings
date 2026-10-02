@@ -139,5 +139,10 @@ def check_recipe(entry: dict, shapes: list[str] | tuple[str, ...]) -> None:
     if entry.get('selection_protocol') not in ('source-validation', 'target-validation'):
         raise ValueError('Declare the operator selection protocol')
     operators = entry.get('operators', {})
-    if set(operators) != set(shapes) or set(operators.values()) - {'product', 'min'} or set(operators.values()) - entry.get('adapters', {}).keys():
-        raise ValueError('Each query type needs one operator, product or min, with its matching adapter')
+
+    def valid(operator):  # A t-norm, optionally labelled to route query types to different adapters ('product:chains').
+        norm, colon, label = operator.partition(':')
+        return norm in ('product', 'min') and (not colon or (label != '' and all(c.isalnum() or c in '-_' for c in label)))
+
+    if set(operators) != set(shapes) or not all(map(valid, operators.values())) or set(operators.values()) - entry.get('adapters', {}).keys():
+        raise ValueError('Each query type needs one operator, product or min (optionally labelled), with its matching adapter')
