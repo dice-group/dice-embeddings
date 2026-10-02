@@ -9,8 +9,10 @@ import pytest
 import torch
 
 from dicee.query_answering import BenchmarkQuery, QueryBenchmark, QueryContext, evaluate_benchmark
+from dicee.query_answering._query import compile_query
 from dicee.query_answering.benchmark import QueryMetrics
 from dicee.query_answering.methods import REFERENCES, load_method
+from dicee.query_answering.methods._common import union_branches
 
 ROOT = Path(__file__).parent / 'fixtures' / 'query_baselines'
 
@@ -48,7 +50,12 @@ def test_checkpoint_scores_ranks_ties_and_metrics(tmp_path, fixture, case):
         actual = model.predict(fixture['queries'][shape])
         torch.testing.assert_close(actual, expected, atol=3e-5, rtol=3e-5, msg=shape)
         if case['name'] == 'cone' and shape in ('2u', 'up'):
-            torch.testing.assert_close(actual, expected, atol=0, rtol=0, msg='ConE union branches must use the reference joint projection batch')
+            # The reference embeds all DNF branches in one projection batch. Batch composition changes the
+            # float bits, so rebuild that joint batch on this CPU instead of comparing bits recorded on another.
+            branches = union_branches(compile_query(fixture['queries'][shape]))
+            joint = [values.reshape(1, len(branches), -1) for values in model.embed_batch(branches)]
+            torch.testing.assert_close(actual, model.score_embeddings(joint)[0], atol=0, rtol=0,
+                                       msg='ConE union branches must use the reference joint projection batch')
         assert torch.equal(actual.argsort(descending=True), expected.argsort(descending=True)), shape
         assert torch.equal(actual[:, None] == actual[None], expected[:, None] == expected[None]), shape
         for policy in ('sort', 'expected'):
