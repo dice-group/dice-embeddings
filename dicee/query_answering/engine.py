@@ -15,6 +15,7 @@ from .score_adapter import QueryScoreAdapter
 
 # Public contexts derived from graph models, released with the model.
 _MODEL_CONTEXTS = weakref.WeakKeyDictionary()
+_UNSET = object()
 
 
 def _model_context(model, token, tensors):
@@ -33,15 +34,21 @@ class AtomicBatchCache:
 
     ``model`` keeps scores on their producing device, avoiding host round trips
     when GPU memory is available. CPU storage remains the portable default.
+    ``granularity='row'`` stores single rows and computes only missing rows, in
+    batches of their own. Rows are then reused whatever batch requests them, so
+    a row's last bits can depend on the batch that first computed it.
     """
 
-    def __init__(self, max_bytes, *, device='cpu'):
+    def __init__(self, max_bytes, *, device='cpu', granularity='batch'):
         if type(max_bytes) is not int or max_bytes < 0:
             raise ValueError('Atomic cache size must be a nonnegative integer')
         if device not in ('cpu', 'model'):
             raise ValueError('Atomic cache device must be cpu or model')
+        if granularity not in ('batch', 'row'):
+            raise ValueError('Atomic cache granularity must be batch or row')
         self.max_bytes = max_bytes
         self.device = device
+        self.granularity = granularity
         self.rows, self.token, self.used = OrderedDict(), None, 0
         self.hits, self.computed, self.peak = 0, 0, 0
 
@@ -75,6 +82,41 @@ class AtomicBatchCache:
         target = values.device if self.device == 'model' else 'cpu'
         self.rows[key] = values.detach().to(target, copy=True)
         self.used += size
+        self.peak = max(self.peak, self.used)
+
+    def lookup(self, token, conditions):
+        """Row granularity: cached rows by condition and the distinct missing conditions."""
+        if token is None or token != self.token:
+            self.clear()
+            self.token = token
+        found, missing = {}, []
+        for key in dict.fromkeys(conditions):
+            if token is not None and key in self.rows:
+                self.rows.move_to_end(key)
+                found[key] = self.rows[key]
+            else:
+                missing.append(key)
+        self.hits += sum(key in found for key in conditions)
+        return found, missing
+
+    def put_rows(self, conditions, values):
+        """Row granularity: store each row of a computed batch on its own."""
+        self.computed += len(conditions)
+        if self.token is None or not len(conditions):
+            return
+        size = values[0].numel() * values.element_size()
+        if size > self.max_bytes:
+            return
+        stored = values.detach().to(values.device if self.device == 'model' else 'cpu')
+        for key, row in zip(conditions, stored):
+            if key in self.rows:
+                self.used -= self.rows.pop(key).numel() * row.element_size()
+            while self.rows and self.used + size > self.max_bytes:
+                _, old = self.rows.popitem(last=False)
+                self.used -= old.numel() * old.element_size()
+            # A copy per row lets eviction release each row's memory.
+            self.rows[key] = row.clone()
+            self.used += size
         self.peak = max(self.peak, self.used)
 
 
@@ -127,13 +169,21 @@ class AtomicScorer:
             yield
             return
         with evaluation_mode(self.model):
-            self._evaluating = True
+            self._evaluating, self._token_memo = True, _UNSET
             try:
                 yield
             finally:
-                self._evaluating = False
+                self._evaluating, self._token_memo = False, _UNSET
 
     def cache_token(self):
+        """Walking the model's tensors is costly; one evaluation context cannot change them, so it walks once."""
+        if getattr(self, '_evaluating', False):
+            if self._token_memo is _UNSET:
+                self._token_memo = self._cache_token()
+            return self._token_memo
+        return self._cache_token()
+
+    def _cache_token(self):
         from ..models._inference import float32_precision_token
         from ..models.flock import Flock
         # Training callers can still reuse rows within a query, but never carry
@@ -154,8 +204,6 @@ class AtomicScorer:
 
     @torch.no_grad()
     def rows(self, conditions):
-        from ..models.flock import Flock
-        from ..models.graph_model import GraphKGE
         conditions = [tuple(map(int, pair)) for pair in conditions]
         if not conditions:
             return torch.empty((0, self.n), device=self.device)
@@ -163,26 +211,55 @@ class AtomicScorer:
             raise ValueError('Atomic query outside the public vocabulary')
         token = self.cache_token() if self.raw_cache is not None else None
         with self.evaluation():
+            if self.raw_cache is not None and self.raw_cache.granularity == 'row':
+                return self._cached_rows(token, conditions)
             cached = self.raw_cache.get(token, conditions) if self.raw_cache is not None else None
             if cached is not None:
                 return cached.to(self.device, copy=True)
-            if isinstance(self.model, Flock):
-                samples = self.model.test_samples if self.samples is None else self.samples
-                seeds = [int(fingerprint([self.context.identity, self.seed, samples, h, r])[:15], 16) for h, r in conditions]
-                result = self.model.forward_k_vs_all_seeded(torch.tensor(conditions, device=self.device), seeds, samples=samples)
-            else:
-                # Graph models validate and map host queries before an asynchronous copy.
-                host = self.graph_model and type(self.model).forward_k_vs_sample is GraphKGE.forward_k_vs_sample
-                batches = (torch.tensor(conditions[start:start + self.row_batch_size])
-                           for start in range(0, len(conditions), self.row_batch_size))
-                result = torch.cat([self.model.forward_k_vs_all(batch if host else to_device(batch, self.device))
-                                    for batch in batches])
-        if result.shape != (len(conditions), self.n):
-            raise ValueError('Atomic scorer must return finite complete [rows, entities] logits')
-        require(torch.isfinite(result).all(), ValueError('Atomic scorer must return finite complete [rows, entities] logits'))
+            result = self._compute(conditions)
         if self.raw_cache is not None:
             self.raw_cache.put(conditions, result)
         return result.detach()
+
+    def _cached_rows(self, token, conditions):
+        """Row-granular reuse: compute only rows missing from the cache, then restore the requested order."""
+        found, missing = self.raw_cache.lookup(token, conditions)
+        fresh = {}
+        if missing:
+            computed = self._compute(missing)
+            self.raw_cache.put_rows(missing, computed)
+            fresh = {key: i for i, key in enumerate(missing)}
+        reused = [i for i, key in enumerate(conditions) if key not in fresh]
+        if not reused:
+            return computed[[fresh[key] for key in conditions]].detach()
+        # Stacking copies, so callers never alias cached storage.
+        rows = torch.stack([found[conditions[i]] for i in reused]).to(self.device)
+        if not fresh:
+            return rows
+        result = torch.empty((len(conditions), self.n), dtype=computed.dtype, device=self.device)
+        result[reused] = rows
+        new = [i for i, key in enumerate(conditions) if key in fresh]
+        result[new] = computed[[fresh[conditions[i]] for i in new]]
+        return result.detach()
+
+    def _compute(self, conditions):
+        from ..models.flock import Flock
+        from ..models.graph_model import GraphKGE
+        if isinstance(self.model, Flock):
+            samples = self.model.test_samples if self.samples is None else self.samples
+            seeds = [int(fingerprint([self.context.identity, self.seed, samples, h, r])[:15], 16) for h, r in conditions]
+            result = self.model.forward_k_vs_all_seeded(torch.tensor(conditions, device=self.device), seeds, samples=samples)
+        else:
+            # Graph models validate and map host queries before an asynchronous copy.
+            host = self.graph_model and type(self.model).forward_k_vs_sample is GraphKGE.forward_k_vs_sample
+            batches = (torch.tensor(conditions[start:start + self.row_batch_size])
+                       for start in range(0, len(conditions), self.row_batch_size))
+            result = torch.cat([self.model.forward_k_vs_all(batch if host else to_device(batch, self.device))
+                                for batch in batches])
+        if result.shape != (len(conditions), self.n):
+            raise ValueError('Atomic scorer must return finite complete [rows, entities] logits')
+        require(torch.isfinite(result).all(), ValueError('Atomic scorer must return finite complete [rows, entities] logits'))
+        return result
 
 
 class QueryAnswerer:
