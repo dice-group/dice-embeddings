@@ -55,8 +55,15 @@ _SHAPE_NAMES = {_canonical_query(QUERY_SHAPES[s]): s for s in TRAINING_SHAPES}
 
 @dataclass(frozen=True)
 class AdapterQuery:
+    """A source query, its complete answers, and optionally the hard answers it is trained on.
+
+    ``positives`` defaults to every hard answer (answers not provable from the
+    masked context). Other answers are filtered from the ranking either way.
+    """
+
     query: tuple
     answers: frozenset
+    positives: frozenset | None = None
 
     def __post_init__(self):
         query = _canonical_query(nested(self.query))
@@ -69,6 +76,8 @@ class AdapterQuery:
             raise ValueError('Training intersections require distinct atoms')
         object.__setattr__(self, 'query', query)
         object.__setattr__(self, 'answers', frozenset(self.answers))
+        if self.positives is not None:
+            object.__setattr__(self, 'positives', frozenset(self.positives))
 
     @property
     def shape(self):
@@ -104,12 +113,15 @@ class AdapterTrainingData:
             easy = self.context.answers(tree)
             if ('n' not in item.shape and not easy <= item.answers) or not item.answers - easy:
                 raise ValueError('Source answers must contain hard answers and all positive context proofs')
+            if item.positives is not None and (not item.positives or not item.positives <= item.answers - easy):
+                raise ValueError('Positives must be a nonempty subset of the hard answers')
             if len(item.answers) == self.context.num_entities:
                 raise ValueError('Training queries need at least one negative candidate')
 
     def to_dict(self):
         def records(items):
-            return [dict(query=q.query, answers=sorted(q.answers)) for q in items]
+            return [dict(query=q.query, answers=sorted(q.answers),
+                         **({} if q.positives is None else dict(positives=sorted(q.positives)))) for q in items]
         return dict(version=1, name=self.name, context=self.context.to_dict(), train=records(self.train),
                     validation=records(self.validation), metadata=self.metadata)
 
@@ -126,17 +138,81 @@ class AdapterTrainingData:
                    tuple(AdapterQuery(**q) for q in data.get('validation', [])), data.get('metadata', {}))
 
 
+def answer_levels(tree, full, observed):
+    """Minimum number of unobserved links each answer needs, counted along positive branches.
+
+    Intersections add their branches' counts and unions take the cheapest
+    branch. Negated branches restrict answers by ``full`` truth without adding
+    links. Answers provable from ``observed`` alone have level 0.
+    """
+    op = tree[0]
+    if op == 'anchor':
+        return {tree[1]: 0}
+    if op == 'project':
+        result = {}
+        for head, cost in answer_levels(tree[2], full, observed).items():
+            seen = observed.outgoing.get(head, {}).get(tree[1], ())
+            for tail in full.outgoing.get(head, {}).get(tree[1], ()):
+                value = cost + (tail not in seen)
+                if value < result.get(tail, value + 1):
+                    result[tail] = value
+        return result
+    if op == 'or':
+        result = {}
+        for child in tree[1:]:
+            for answer, value in answer_levels(child, full, observed).items():
+                result[answer] = min(result.get(answer, value), value)
+        return result
+    if op == 'and' and any(child[0] != 'not' for child in tree[1:]):
+        parts = [answer_levels(child, full, observed) for child in tree[1:] if child[0] != 'not']
+        result = {a: sum(part[a] for part in parts) for a in min(parts, key=len) if all(a in part for part in parts)}
+        for child in tree[1:]:
+            if child[0] == 'not':
+                for answer in full.answers(child[1]):
+                    result.pop(answer, None)
+        return result
+    raise ValueError('Answer levels need a positive anchored branch')
+
+
+def _max_level(tree):
+    if tree[0] in ('anchor', 'not'):
+        return 0
+    if tree[0] == 'project':
+        return 1 + _max_level(tree[2])
+    levels = [_max_level(child) for child in tree[1:]]
+    return sum(levels) if tree[0] == 'and' else max(levels)
+
+
+def _shape_tree(shape):
+    """Compile a query type's pattern with placeholder IDs."""
+    def visit(pattern):
+        if pattern in ('e', 'r', 'n', 'u'):
+            return {'e': 0, 'r': 0, 'n': -2, 'u': -1}[pattern]
+        return tuple(visit(part) for part in pattern)
+    return compile_query(visit(QUERY_SHAPES[shape]))
+
+
+def _split(total, parts):
+    return [total // parts + (i < total % parts) for i in range(parts)]
+
+
 def prepare_adapter_data(source, *, name='source', mask_fraction=.3, train_per_shape=96,
                          validation_per_shape=32, seed=2026090851, max_attempts=100_000, shapes=('2i', '3i'),
-                         extend=None, train_counts=None):
+                         extend=None, train_counts=None, hardness='standard'):
     """Mask reciprocal pairs and reuse QueryGenerator's grounding on source facts.
 
     ``source`` must contain source-training facts only. Never pass target test
     facts here. Answer supervision uses the source; scoring sees only the mask.
+
+    ``hardness='balanced'`` gives each query a level in rotation, from 1 to the
+    type's maximum, and trains it on its hard answers at that level (see
+    ``answer_levels``), so every level gets the same number of queries.
     """
     from ..query_generator import QueryGenerator
     if not 0 < mask_fraction < 1 or train_per_shape < 1 or validation_per_shape < 0 or max_attempts < 1:
         raise ValueError('Require 0 < mask_fraction < 1 and positive training/attempt counts')
+    if hardness not in ('standard', 'balanced') or (hardness == 'balanced' and extend is not None):
+        raise ValueError("Choose hardness 'standard' or 'balanced'; only standard data can be extended")
     shapes = tuple(shapes)
     if not shapes or len(set(shapes)) != len(shapes) or any(s not in TRAINING_SHAPES for s in shapes):
         raise ValueError(f'Choose distinct training shapes from {TRAINING_SHAPES}')
@@ -171,11 +247,14 @@ def prepare_adapter_data(source, *, name='source', mask_fraction=.3, train_per_s
     for shape in shapes:
         width = int(shape[0]) if shape in FLAT_SHAPES else 1
         targets = sorted(t for t, rs in generator.ent_in.items() if sum(map(len, rs.values())) >= width)
-        examples = []
-        required = (counts[shape] - sum(q.shape == shape for q in training) if extend is not None
-                    else counts[shape] + validation_per_shape)
+        levels = _max_level(_shape_tree(shape)) if hardness == 'balanced' else 1
+        train_demand, validation_demand = _split(counts[shape], levels), _split(validation_per_shape, levels)
+        if extend is not None:
+            train_demand = [counts[shape] - sum(q.shape == shape for q in training)]
+        demand = [t + (0 if extend is not None else v) for t, v in zip(train_demand, validation_demand)]
+        pools = [[] for _ in range(levels)]
         for _ in range(max_attempts):
-            if len(examples) == required or not targets:
+            if all(len(pool) == n for pool, n in zip(pools, demand)) or not targets:
                 break
             query = generator.tuple2list(QUERY_SHAPES[shape])
             if generator.fill_query(query, generator.ent_in, generator.ent_out, rng.choice(targets)):
@@ -190,22 +269,39 @@ def prepare_adapter_data(source, *, name='source', mask_fraction=.3, train_per_s
                 continue
             if 'n' in shape and not context_answers - answers:
                 continue
+            if hardness == 'standard':
+                seen.add(query)
+                pools[0].append(AdapterQuery(query, answers))
+                continue
+            hard = answers - context_answers
+            level = answer_levels(tree, source, context)
+            if not hard <= level.keys() or not all(1 <= level[a] <= levels for a in hard):
+                raise RuntimeError(f'Answer levels disagree with exact answers for {shape} {query}')
+            # Rarer, higher levels first; skip queries whose levels are already filled.
+            chosen = next((v for v in sorted({level[a] for a in hard}, reverse=True) if len(pools[v - 1]) < demand[v - 1]), None)
+            if chosen is None:
+                continue
             seen.add(query)
-            examples.append(AdapterQuery(query, answers))
-        if len(examples) != required:
-            raise ValueError(f'Only generated {len(examples)} distinct {shape} queries; reduce counts or supply prepared data')
-        rng.shuffle(examples)
-        if extend is None:
-            training.extend(examples[:counts[shape]])
-            validation.extend(examples[counts[shape]:])
-        else:
-            training.extend(examples)
+            pools[chosen - 1].append(AdapterQuery(query, answers, frozenset(a for a in hard if level[a] == chosen)))
+        if any(len(pool) != n for pool, n in zip(pools, demand)):
+            raise ValueError(f'Only generated {sum(map(len, pools))} distinct {shape} queries; reduce counts or supply prepared data')
+        shape_train, shape_validation = [], []
+        for pool, n in zip(pools, train_demand):
+            rng.shuffle(pool)
+            shape_train.extend(pool[:n])
+            shape_validation.extend(pool[n:])
+        if hardness == 'balanced':
+            rng.shuffle(shape_train)
+            rng.shuffle(shape_validation)
+        training.extend(shape_train)
+        validation.extend(shape_validation)
     return AdapterTrainingData(name, context, tuple(training), tuple(validation),
                                dict(extend.metadata if extend is not None else {},
                                     source_sha256=source.identity, seed=seed, mask_fraction=mask_fraction,
                                     masked_fact_pairs=count, train_per_shape=train_per_shape,
                                     train_counts=counts,
-                                    validation_per_shape=validation_per_shape, shapes=list(shapes)))
+                                    validation_per_shape=validation_per_shape, shapes=list(shapes),
+                                    **({} if hardness == 'standard' else dict(hardness=hardness))))
 
 
 def _bank(model, data, *, cache_dir, row_batch_size, seed, samples, device='cpu',
@@ -350,7 +446,7 @@ def _validation(adapter, sources, banks):
                     if query.shape != shape:
                         continue
                     scores = _query_logs(adapter, bank, query)
-                    hard = query.answers - _context_answers(bank, query)
+                    hard = query.positives if query.positives is not None else query.answers - _context_answers(bank, query)
                     ranks = _filtered_ranks(scores, query.answers, hard)
                     metrics.append([sum(1 / rank for rank in ranks) / len(ranks),
                                     *(sum(rank <= k for rank in ranks) / len(ranks) for k in (1, 3, 10))])
@@ -487,7 +583,8 @@ def fit_query_adapter(model, sources, *, feature_mode='context_scores', observed
                     selected_counts[cell] = selected_counts.get(cell, 0) + 1
         if not examples:
             raise ValueError('No queries for the selected training shapes')
-        hard_answers = [q.answers - sources[i].context.answers(compile_query(q.query)) for i, q in examples]
+        hard_answers = [q.positives if q.positives is not None else q.answers - sources[i].context.answers(compile_query(q.query))
+                        for i, q in examples]
         cells = {(i, q.shape) for i, q in examples}
         counts = {cell: sum((i, q.shape) == cell for i, q in examples) for cell in cells}
         rng, history, best = random.Random(seed), [], None
