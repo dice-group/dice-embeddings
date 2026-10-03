@@ -44,7 +44,7 @@
             "Training graphs: FB15k237, WN18RR and CoDExMedium. No target test labels select these recipes.",
             "Backbone parity is checked separately; per-run KGFM evidence verifies adapter/composition against independently captured atomic logits.",
             "Adapter training uses only 2i and 3i; checkpoint selection uses reserved source validation.",
-            "Recipe inclusion is informed by the 23-dataset UltraQuery validation sweep (50 sampled queries/type), not target-untuned model selection."
+            "One shared recipe across both backbones and both suites, selected on validation queries of both suites; this is not target-untuned zero-shot selection."
           ]
         },
         "blockers": [],
@@ -111,7 +111,7 @@
             "Training graphs: FB15k237, WN18RR and CoDExMedium. No target test labels select these recipes.",
             "Backbone parity is checked separately; per-run KGFM evidence verifies adapter/composition against independently captured atomic logits.",
             "Adapter training uses only 2i and 3i; checkpoint selection uses reserved source validation.",
-            "Recipe inclusion is informed by the 23-dataset UltraQuery validation sweep (50 sampled queries/type), not target-untuned model selection."
+            "One shared recipe across both backbones and both suites, selected on validation queries of both suites; this is not target-untuned zero-shot selection."
           ]
         },
         "blockers": [],
