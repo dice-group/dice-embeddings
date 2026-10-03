@@ -84,11 +84,13 @@ execution options. Each suite directory holds its public recipes:
 | `plus_h/kgfm_adapters.json` | ULTRA and TRIX with `2i`/`3i`-trained adapters (6 entries, each with an identity control) |
 | `plus_h/kgfm_seeds.json` | Adapter training seeds 1-4 of the same recipes (24 entries) |
 | `plus_h/kgfm_14types.json` | The same backbones with 14-type adapters |
+| `plus_h/kgfm_ablations.json` | Adapter fit without FB15k237 (both backbones) and the ULTRA 4g and 50g backbones with refitted adapters (12 entries) |
 | `plus_h/published_results.json` | Scores reported by the +H authors, for `report` |
 | `ultraquery/baselines.json` | Native UltraQuery on all 23 datasets |
 | `ultraquery/kgfm_adapters.json` | ULTRA and TRIX with `2i`/`3i`-trained adapters on all 23 datasets |
 | `ultraquery/kgfm_seeds.json` | Adapter training seeds 1-4 of the same recipes (184 entries) |
 | `ultraquery/kgfm_14types.json` | The same backbones with 14-type adapters |
+| `ultraquery/kgfm_ablations.json` | Adapter fit without FB15k237 (both backbones) and the ULTRA 4g and 50g backbones with refitted adapters (92 entries) |
 | `ultraquery/comparisons.json` | ULTRA link-prediction weights, an incoming-relation heuristic and QTO |
 | `ultraquery/trained_baselines.json` | QTO on FB15k and inductive GNN-QE, after `train` |
 
@@ -158,6 +160,9 @@ Each ablation is a separate study with its own verification.
   with released filters only.
 - **Adapters**: every shipped ULTRA/TRIX entry has a `without-adapter` control
   scored from the same backbone batches; the seed entries share it.
+- **Adapter recipe and backbone**: `kgfm_ablations.json` fits the adapter
+  without FB15k237 and swaps in the ULTRA 4g and 50g backbones, one seed
+  each, compared with seed 0 of the shipped recipe.
 
 `report` writes paired effects with query-bootstrap confidence intervals
 conditional on the frozen weights: `adapter-effects`, `filter-effects` and

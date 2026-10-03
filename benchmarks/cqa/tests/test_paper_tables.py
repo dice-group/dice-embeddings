@@ -999,6 +999,19 @@ def test_seed_replicates_are_labeled_by_seed_tag_in_the_appendix():
     assert set(tables.run_labels(reports).values()) == {'ULTRA + adapter (seed tag 0)', 'ULTRA + adapter (seed tag 1)'}
 
 
+@pytest.mark.parametrize('suite', ['ultraquery', 'plus_h'])
+def test_public_seed_and_ablation_recipes_are_read_as_planned(suite):
+    shipped = tables.shipped_recipes()
+    entries = [e for name in ('kgfm_seeds.json', 'kgfm_ablations.json')
+               for e in read_manifest(suite_directory(suite) / name)['entries']]
+    systems = {summary.system_of(e) for e in entries}
+    seeds = {seed for (method, _, recipe), seed in systems if recipe == shipped[suite, method]}
+    assert seeds == {1, 2, 3, 4}
+    tokens = {(method.split('-')[0], recipe.split('-', 1)[1]) for (method, _, recipe), _ in systems if recipe != shipped[suite, method]}
+    assert tokens == set(summary.PLANNED_ABLATIONS) - {('ultra', 'beam256'), ('trix', 'beam256')}
+    assert all(not e['adapter_ablation'] for e in entries)
+
+
 def test_tables_listing_every_run_show_each_seed_replicate_once():
     reports = tables.Reports()
     art = ['WikiTopicsQuery:art']
