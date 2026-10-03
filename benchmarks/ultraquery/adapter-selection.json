@@ -1,0 +1,98 @@
+{
+  "selection": "Highest overall validation MRR at matched beam 64; no target test labels used.",
+  "default_training_shapes": [
+    "2i",
+    "3i"
+  ],
+  "split": "valid",
+  "datasets": 23,
+  "sample_queries_per_type": 50,
+  "sampling_seed": 20260923,
+  "training_seed": 2026090851,
+  "logic": "product",
+  "beam_size": 64,
+  "source_graphs": [
+    "FB15k237",
+    "WN18RR",
+    "CoDExMedium"
+  ],
+  "source_validation_shapes": [
+    "1p",
+    "2p",
+    "3p",
+    "2i",
+    "3i",
+    "2in",
+    "3in",
+    "inp",
+    "pin",
+    "pni"
+  ],
+  "checkpoints": {
+    "ultra": {
+      "path": "checkpoints/ultra_3g.pth",
+      "sha256": "fdedc01b0045fc089d2ad5da08569466b7b221691fe978a18e91082bbb133c18"
+    },
+    "trix": {
+      "path": "checkpoints/trix/entity_prediction.pth",
+      "sha256": "8f6e7266093c2d15ad88d41e9825e4b327171143543cf060cfee907d9a890342"
+    }
+  },
+  "original_artifacts": {
+    "Experiments/query-benchmarks/adapter-query-types-fast-20260925/configuration.json": "657c72f6c9ae477fbabdd9f15cd2abdd9cb916117efd03ce07dd747d92742aa9",
+    "Experiments/query-benchmarks/adapter-query-types-fast-20260925/comparison.json": "456556b68231ad7bfeda424125823bc70945c9cbd235a491d2a3d0b5b90fa5fd"
+  },
+  "validation_mrr": {
+    "ultra": {
+      "types_2": {
+        "all": 0.29545510504844663,
+        "epfo": 0.3427436284241025,
+        "negation": 0.21033576297226622
+      },
+      "types_4": {
+        "all": 0.29248278828146207,
+        "epfo": 0.3393942458170859,
+        "negation": 0.20804216471733925
+      },
+      "types_10": {
+        "all": 0.28412003322436374,
+        "epfo": 0.33251126949022614,
+        "negation": 0.19701580794581117
+      },
+      "types_14": {
+        "all": 0.2873066495706771,
+        "epfo": 0.3337582011149137,
+        "negation": 0.20369385679105118
+      }
+    },
+    "trix": {
+      "types_2": {
+        "all": 0.30968589414712117,
+        "epfo": 0.35993500259596384,
+        "negation": 0.2192374989392039
+      },
+      "types_4": {
+        "all": 0.30224871928794084,
+        "epfo": 0.35610511371622044,
+        "negation": 0.20530720931703744
+      },
+      "types_10": {
+        "all": 0.3073343875281233,
+        "epfo": 0.354272497970421,
+        "negation": 0.22284578873198727
+      },
+      "types_14": {
+        "all": 0.3014499988137945,
+        "epfo": 0.3543890143430875,
+        "negation": 0.20615977086106704
+      }
+    }
+  },
+  "shipped_adapters": {
+    "adapters/trix_product_14types.json": "7009c7f613dc0efa974fb807a9daadf306a53882170b64154aac14a9545b18f8",
+    "adapters/trix_product_intersections.json": "74d2fafb2d7d595ecde466932edc662ccc21bbf2ea6b5f25a60190d122ae07b3",
+    "adapters/ultra_product_14types.json": "b678b0eb2d779b2d94975ad8969879a856549dc11359ab6301bc83f1ef605687",
+    "adapters/ultra_product_intersections.json": "9848eb27f03837c1986a55be5ee855ddf4b437a52c483d66ebfe642ce1429135"
+  },
+  "scope": "Sampled validation recipe selection; not a full-test result, independent final-run parity certificate, or training-seed comparison."
+}

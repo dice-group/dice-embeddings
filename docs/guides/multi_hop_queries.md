@@ -1,6 +1,10 @@
-# Multi-Hop Query Answering
+# Complex Query Answering (CQA)
 
-This guide explains how to use DICE Embeddings for complex multi-hop query answering using EPFO (Existential Positive First-Order) queries.
+This guide explains how to use DICE Embeddings for complex multi-hop query answering using EPFO (Existential Positive First-Order) queries and their supported negated forms.
+
+Ordinary KGEs and ULTRA/TRIX/Flock share the same evaluator. Scores default to
+sigmoid memberships (`use_logits=False`), and every query respects the answer
+limit `k`. Use `beam_size` to control intermediate search independently.
 
 ## Table of Contents
 
@@ -9,12 +13,13 @@ This guide explains how to use DICE Embeddings for complex multi-hop query answe
 - [Usage Examples](#usage-examples)
 - [Advanced Patterns](#advanced-patterns)
 - [Performance Tips](#performance-tips)
+- [Training and evaluating query methods](#training-and-evaluating-query-methods)
 
 ---
 
 ## Overview
 
-Multi-hop query answering allows you to ask complex questions that require reasoning over multiple relationships in a knowledge graph. DICE Embeddings supports **9 query types** covering projections, intersections, and unions.
+Multi-hop query answering combines relationships in a knowledge graph. DICE supports the **14 UltraQuery query types**, including `2in`, `3in`, `inp`, `pin`, and `pni` for negation, and the additional `4p` and `4i` types used by +H.
 
 ### Supported Query Types
 
@@ -396,15 +401,15 @@ for query_id, preds in results.items():
 The `tnorm` parameter controls how conjunctions are computed:
 
 ```python
-# Minimum t-norm (default, most commonly used)
+# Minimum t-norm
 model.answer_multi_hop_query(..., tnorm="min")
 
-# Product t-norm (multiplicative semantics)
+# Product t-norm (default, multiplicative semantics)
 model.answer_multi_hop_query(..., tnorm="prod")
 ```
 
 **When to use:**
-- **`min`**: Standard choice, preserves highest score in conjunction
+- **`min`**: Takes the lower membership in a conjunction
 - **`prod`**: More strict, all conditions must have high scores
 
 ### Filtering Results
@@ -580,7 +585,7 @@ candidate_drugs = model.answer_multi_hop_query(
 
 ### Limitations
 
-1. **Negation not supported** — Cannot express "NOT" queries
+1. **Fixed query structures** — Only the 16 types above; negation is available through `2in`, `3in`, `inp`, `pin`, and `pni`
 2. **Numerical constraints not supported** — Cannot express "> 5" or "between X and Y"
 3. **Recursive queries not supported** — Cannot express "transitive closure"
 4. **Performance degrades with query complexity** — 3-hop queries slower than 1-hop
@@ -621,7 +626,7 @@ candidate_drugs = model.answer_multi_hop_query(
 **Problem:** Queries take too long
 
 **Solutions:**
-1. Reduce `k` parameter
+1. Reduce `beam_size` to limit intermediate candidates; `k` controls only the returned answers
 2. Use simpler query types when possible
 3. Ensure model is on GPU: `model.to("cuda")`
 4. Cache repeated query patterns
@@ -632,7 +637,7 @@ candidate_drugs = model.answer_multi_hop_query(
 
 - **Tests:** [test_answer_multi_hop_query.py](../../tests/test_answer_multi_hop_query.py) — Complete examples
 - **Research:** [Query2Box paper](https://arxiv.org/abs/2002.05969) — Theoretical foundation
-- **Benchmarks:** [examples/multi_hop_query_answering/](../../examples/multi_hop_query_answering/) — Performance evaluation
+- **Benchmarks:** [benchmarks/cqa](../../benchmarks/cqa/README.md) — Reproducible UltraQuery and +H evaluation
 
 ---
 
@@ -646,12 +651,50 @@ candidate_drugs = model.answer_multi_hop_query(
 | Follow chain of relations | `2p`, `3p` |
 | Find entities satisfying AND conditions | `2i`, `3i` |
 | Find entities satisfying OR conditions | `2u` |
-| Complex patterns | `ip`, `pi`, `up` |
+| Exclude entities (NOT) | `2in`, `3in`, `inp`, `pin`, `pni` |
+| Complex patterns | `ip`, `pi`, `up`, `4p`, `4i` |
 
 **Best Practices:**
 - ✅ Start with simple queries (1p, 2p)
-- ✅ Use `tnorm="min"` as default
+- ✅ Compare `tnorm="prod"` and `tnorm="min"` on validation queries
 - ✅ Train with `AllvsAll` for best reasoning
 - ✅ Use high `embedding_dim` (≥ 256)
 - ✅ Validate query syntax carefully
 - ✅ Benchmark on known ground truth first
+
+## Training and evaluating query methods
+
+Fit adapters with `python -m dicee.query_answering fit --help`; prepare source
+queries with `python -m dicee.query_answering prepare --help`. The backbone stays
+frozen, and the saved adapter records its configuration and backbone fingerprint.
+The default is linear `context_scores` (16 parameters) for every backbone;
+`--feature-mode context` or `global` selects simpler alternatives.
+
+The `dicee.query_answering.methods` package exposes ConE, CLMPT, CQD/CQD-Hybrid,
+GNN-QE, QTO, UltraQuery, and `load_method()` for their released checkpoints.
+`dicee.query_answering.evaluate_method()` evaluates these methods and our
+ULTRA/TRIX adapters through the same filtered ranking and checkpoint machinery.
+It accepts a recipe with `method`, `checkpoint`, `dataset`, and `root`; KGFM recipes
+also specify `adapters`, per-type `operators`, and `selection_protocol`.
+
+The CLI evaluates a JSON recipe, or a list of recipes with unique `id` fields:
+
+```bash
+python -m dicee.scripts.evaluate_query_methods \
+  --manifest recipe.json --output results/cqa-pilot \
+  --split valid --max-queries-per-shape 2 --device cuda
+```
+
+It supports every loaded dataset family, including UltraQuery and +H. The
+[benchmark harness](../../benchmarks/cqa/README.md) selects methods, datasets and
+query types from the public recipes, freezes query batches, verifies upstream
+parity, and renders paper tables:
+
+```bash
+python -m benchmarks.cqa plus_h evaluate --methods ultra-adapter --datasets FB15k237+H \
+  --query-types 2p 3p --output results/cqa-pilot --split valid --max-queries-per-shape 2
+```
+
+Query groups are `all`, `epfo`, and `negation`. Shipped +H CQD/CQD-Hybrid recipes
+default to all 16 types with atomic negation enabled. Adapter definitions are in
+`score_adapter.py`; fitting and source-query preparation are in `adapter_training.py`.

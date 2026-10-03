@@ -1,0 +1,147 @@
+{
+  "version": 1,
+  "answer_filter": "released",
+  "data_root": "KGs/UltraQuery",
+  "seed": 0,
+  "threads": 4,
+  "archives": {
+    "datasets": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90#datasets-1", "checksum_status": "Every extracted runtime input is independently pinned by freeze."},
+    "models": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90/ckpts", "checksum_status": "Released checkpoint and adapter bytes are independently pinned by freeze."}
+  },
+  "recipes": [
+    {
+      "defaults": {
+        "id": "ultra-product-intersections-{dataset}",
+        "method": "ultra-adapter",
+        "checkpoint": "checkpoints/ultra_3g.pth",
+        "adapters": {"product": "benchmarks/adapters/ultra_product_intersections.json"},
+        "options": {"beam_size": 64, "row_batch_size": 8, "backend_batch_size": 8, "cache_bytes": 536870912, "raw_cache_bytes": 2147483648},
+        "operators": {
+          "1p": "product",
+          "2p": "product",
+          "3p": "product",
+          "2i": "product",
+          "3i": "product",
+          "ip": "product",
+          "pi": "product",
+          "2u": "product",
+          "up": "product",
+          "2in": "product",
+          "3in": "product",
+          "inp": "product",
+          "pin": "product",
+          "pni": "product"
+        },
+        "selection_protocol": "target-validation",
+        "finalized": true,
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni"],
+        "query_batch_size": 16,
+        "query_order": "relation",
+        "reference": {
+          "status": "frozen transfer recipe; independent KGFM verification required",
+          "notes": [
+            "Frozen source-trained product adapter; CQD beam 64; paired learned/identity calibration with shared atomic batches.",
+            "Training graphs: FB15k237, WN18RR and CoDExMedium. No target test labels select these recipes.",
+            "Backbone parity is checked separately; per-run KGFM evidence verifies adapter/composition against independently captured atomic logits.",
+            "Adapter training uses only 2i and 3i; checkpoint selection uses reserved source validation.",
+            "Recipe inclusion is informed by the 23-dataset UltraQuery validation sweep (50 sampled queries/type), not target-untuned model selection."
+          ]
+        },
+        "blockers": [],
+        "adapter_ablation": true
+      },
+      "entries": [
+        {"dataset": "FB15k237LogicalQuery"},
+        {"dataset": "FB15kLogicalQuery"},
+        {"dataset": "NELL995LogicalQuery"},
+        {"dataset": "InductiveFB15k237Query:106"},
+        {"dataset": "InductiveFB15k237Query:113"},
+        {"dataset": "InductiveFB15k237Query:122"},
+        {"dataset": "InductiveFB15k237Query:134"},
+        {"dataset": "InductiveFB15k237Query:150"},
+        {"dataset": "InductiveFB15k237Query:175"},
+        {"dataset": "InductiveFB15k237Query:217"},
+        {"dataset": "InductiveFB15k237Query:300"},
+        {"dataset": "InductiveFB15k237Query:550"},
+        {"dataset": "WikiTopicsQuery:art"},
+        {"dataset": "WikiTopicsQuery:award"},
+        {"dataset": "WikiTopicsQuery:edu"},
+        {"dataset": "WikiTopicsQuery:health"},
+        {"dataset": "WikiTopicsQuery:infra"},
+        {"dataset": "WikiTopicsQuery:loc"},
+        {"dataset": "WikiTopicsQuery:org"},
+        {"dataset": "WikiTopicsQuery:people"},
+        {"dataset": "WikiTopicsQuery:sci"},
+        {"dataset": "WikiTopicsQuery:sport"},
+        {"dataset": "WikiTopicsQuery:tax"}
+      ]
+    },
+    {
+      "defaults": {
+        "id": "trix-product-intersections-{dataset}",
+        "method": "trix-adapter",
+        "checkpoint": "checkpoints/trix/entity_prediction.pth",
+        "adapters": {"product": "benchmarks/adapters/trix_product_intersections.json"},
+        "options": {"beam_size": 64, "row_batch_size": 1, "backend_batch_size": 1, "cache_bytes": 536870912, "raw_cache_bytes": 2147483648},
+        "operators": {
+          "1p": "product",
+          "2p": "product",
+          "3p": "product",
+          "2i": "product",
+          "3i": "product",
+          "ip": "product",
+          "pi": "product",
+          "2u": "product",
+          "up": "product",
+          "2in": "product",
+          "3in": "product",
+          "inp": "product",
+          "pin": "product",
+          "pni": "product"
+        },
+        "selection_protocol": "target-validation",
+        "finalized": true,
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni"],
+        "query_batch_size": 16,
+        "query_order": "relation",
+        "reference": {
+          "status": "frozen transfer recipe; independent KGFM verification required",
+          "notes": [
+            "Frozen source-trained product adapter; CQD beam 64; paired learned/identity calibration with shared atomic batches.",
+            "Training graphs: FB15k237, WN18RR and CoDExMedium. No target test labels select these recipes.",
+            "Backbone parity is checked separately; per-run KGFM evidence verifies adapter/composition against independently captured atomic logits.",
+            "Adapter training uses only 2i and 3i; checkpoint selection uses reserved source validation.",
+            "Recipe inclusion is informed by the 23-dataset UltraQuery validation sweep (50 sampled queries/type), not target-untuned model selection."
+          ]
+        },
+        "blockers": [],
+        "adapter_ablation": true
+      },
+      "entries": [
+        {"dataset": "FB15k237LogicalQuery"},
+        {"dataset": "FB15kLogicalQuery"},
+        {"dataset": "NELL995LogicalQuery"},
+        {"dataset": "InductiveFB15k237Query:106"},
+        {"dataset": "InductiveFB15k237Query:113"},
+        {"dataset": "InductiveFB15k237Query:122"},
+        {"dataset": "InductiveFB15k237Query:134"},
+        {"dataset": "InductiveFB15k237Query:150"},
+        {"dataset": "InductiveFB15k237Query:175"},
+        {"dataset": "InductiveFB15k237Query:217"},
+        {"dataset": "InductiveFB15k237Query:300"},
+        {"dataset": "InductiveFB15k237Query:550"},
+        {"dataset": "WikiTopicsQuery:art"},
+        {"dataset": "WikiTopicsQuery:award"},
+        {"dataset": "WikiTopicsQuery:edu"},
+        {"dataset": "WikiTopicsQuery:health"},
+        {"dataset": "WikiTopicsQuery:infra"},
+        {"dataset": "WikiTopicsQuery:loc"},
+        {"dataset": "WikiTopicsQuery:org"},
+        {"dataset": "WikiTopicsQuery:people"},
+        {"dataset": "WikiTopicsQuery:sci"},
+        {"dataset": "WikiTopicsQuery:sport"},
+        {"dataset": "WikiTopicsQuery:tax"}
+      ]
+    }
+  ]
+}
