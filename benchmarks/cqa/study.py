@@ -37,7 +37,7 @@ def code_identity():
     The dicee package without its command-line scripts, and this harness without
     tests or paper tooling, so local scripts never break verification elsewhere.
     """
-    package, harness = SOURCE_ROOT / 'dicee', Path(__file__).parent
+    package, harness = SOURCE_ROOT / 'dicee', Path(__file__).resolve().parent
     paths = [path for path in package.rglob('*.py') if path.relative_to(package).parts[0] != 'scripts']
     paths += [path for path in harness.rglob('*.py') if path.relative_to(harness).parts[0] not in ('tests', 'paper')]
     return source_fingerprint(paths, SOURCE_ROOT)
