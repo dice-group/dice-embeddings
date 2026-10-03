@@ -48,7 +48,7 @@ def test_invalid_hardware_settings_fail_before_inputs(settings):
 @pytest.mark.parametrize('suite', ['plus_h', 'ultraquery'])
 def test_hardware_profile_cli_and_container_forwarding(tmp_path, capsys, suite):
     output = tmp_path / 'run'
-    cli.main([suite, 'evaluate', '--hardware-profile', 'h100', '--kgfm-batch-size', '16', '--methods', 'ultra-adapter',
+    cli.main([suite, 'evaluate', '--split', 'test', '--hardware-profile', 'h100', '--kgfm-batch-size', '16', '--methods', 'ultra-adapter',
               '--output', str(output), '--dry-run'])
     entries = json.loads(capsys.readouterr().out)['entries']
     assert all(e['options']['backend_batch_size'] == 16 and e['options']['raw_cache_device'] == 'model' for e in entries)
@@ -126,7 +126,7 @@ def test_invalid_combinations_fail_before_opening_inputs(selection):
 def test_evaluate_dry_run_resolves_default_cqd_coverage_without_inputs(tmp_path, capsys, query_group):
     from dicee.query_answering._query import PLUS_H_SHAPES
     output = tmp_path / 'no-results'
-    args = ['plus_h', 'evaluate', '--methods', 'cqd', 'cqd-hybrid', '--input-root', str(tmp_path / 'missing-inputs'),
+    args = ['plus_h', 'evaluate', '--split', 'test', '--methods', 'cqd', 'cqd-hybrid', '--input-root', str(tmp_path / 'missing-inputs'),
             '--output', str(output), '--dry-run']
     if query_group is not None:
         args += ['--query-types', query_group]
@@ -165,7 +165,7 @@ def test_direct_subset_evaluation_scores_only_selected_methods_datasets_and_quer
     path = tmp_path / 'manifest.json'
     path.write_text(json.dumps(manifest))
     output = tmp_path / 'results'
-    args = ['plus_h', 'evaluate', '--manifests', str(path), '--answer-filter', 'released', '--methods', 'cqd', 'cqd-hybrid',
+    args = ['plus_h', 'evaluate', '--split', 'test', '--manifests', str(path), '--answer-filter', 'released', '--methods', 'cqd', 'cqd-hybrid',
             '--datasets', 'FB15k237+H', '--query-types', 'negation', '--input-root', str(tmp_path), '--output', str(output),
             '--device', 'cpu', '--threads', '2']
     cli.main(args)
@@ -285,7 +285,8 @@ def test_container_forwards_combination_selectors_and_keeps_queries_frozen(tmp_p
                                                                                  '--query-types', '2p', '3p')
     assert '--methods qto --datasets ICEWS18+H' in launched('run', '--methods', 'qto', '--datasets', 'ICEWS18+H')
     for command, extra in [('run', ['--query-types', '2p']), ('run', ['--atomic-negation']), ('run', ['--split', 'valid']),
-                           ('evaluate', ['--methods']), ('evaluate', ['--max-queries-per-shape', '0'])]:
+                           ('evaluate', ['--split', 'valid', '--methods']), ('evaluate', ['--split', 'valid', '--max-queries-per-shape', '0']),
+                           ('evaluate', ['--methods', 'qto'])]:
         with pytest.raises(SystemExit):
             launched(command, *extra)
 
@@ -387,7 +388,7 @@ def test_container_forwards_parallel_gpus_only_for_evaluate_and_run(tmp_path, ca
     common = ['--input-root', str(tmp_path), '--output', str(tmp_path / 'out'), *IMAGE]
     cli.main(['plus_h', 'run', *common, '--gpus', '0', '1', 'GPU-2c', '--workers-per-gpu', '2'])
     assert '--gpus 0 1 GPU-2c --workers-per-gpu 2' in capsys.readouterr().out
-    cli.main(['plus_h', 'evaluate', *common, '--gpus', '1'])
+    cli.main(['plus_h', 'evaluate', *common, '--split', 'test', '--gpus', '1'])
     assert '--gpus 1' in capsys.readouterr().out
     for command, extra in [('prepare', ['--gpus', '0']), ('run', ['--workers-per-gpu', '2']), ('run', ['--gpus'])]:
         with pytest.raises(SystemExit):

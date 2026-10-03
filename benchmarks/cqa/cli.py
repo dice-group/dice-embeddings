@@ -92,7 +92,8 @@ def build_parser():
     selection(p)
     p.add_argument('--output', type=Path, required=True)
     p.add_argument('--device', default='cuda')
-    p.add_argument('--split', choices=('valid', 'test'), default='test')
+    p.add_argument('--split', choices=('valid', 'test'), required=True,
+                   help='Query split; required, so the test split is only ever evaluated on request')
     p.add_argument('--max-queries-per-shape', type=int, help='Uniform sample of each query type')
     p.add_argument('--seed', type=int)
     p.add_argument('--threads', type=int)
