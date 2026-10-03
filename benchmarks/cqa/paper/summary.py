@@ -15,6 +15,7 @@ cell, and a cell no seed covers is "-". Main tables show one decimal; the
 appendix keeps two.
 """
 
+import copy
 import math
 import re
 from collections import defaultdict
@@ -194,6 +195,30 @@ def primary_runs(reports: 'tables.Reports', *, identities: bool = False) -> list
             if key not in others or condition_priority(record) < condition_priority(others[key]):
                 others[key] = record
     return output + list(others.values())
+
+
+def lowest_seed_reports(reports: 'tables.Reports') -> 'tables.Reports':
+    """The reports without seed replicates, for appendix tables that list every run.
+
+    Of entry IDs that differ only by ``-seedN``, the lowest tag stays (untagged
+    is 0), with its difficulty rows; effects that name a dropped run go too.
+    """
+    entries = set(reports.results) | {row['entry'] for row in reports.difficulty if row.get('entry')}
+    kept: dict[str, tuple[int, str]] = {}
+    for entry in entries:
+        match = SEED.search(entry)
+        candidate = (int(match.group(1)) if match else 0, entry)
+        key = SEED.sub('', entry)
+        kept[key] = min(kept.get(key, candidate), candidate)
+    dropped = entries - {entry for _, entry in kept.values()}
+    if not dropped:
+        return reports
+    subset = copy.copy(reports)
+    subset.results = {entry: record for entry, record in reports.results.items() if entry not in dropped}
+    subset.difficulty = [row for row in reports.difficulty if row.get('entry') not in dropped]
+    subset.effects = {kind: [effect for effect in effects if not dropped & {v for v in effect.values() if isinstance(v, str)}]
+                      for kind, effects in reports.effects.items()}
+    return subset
 
 
 def system_order(method: str, identity: bool) -> tuple:

@@ -520,11 +520,13 @@ def display_method(reports, record):
 
 @functools.lru_cache(maxsize=None)
 def shipped_recipes():
-    """{(suite, adapter method): recipe} of the checked-in kgfm_adapters.json manifests."""
+    """{(suite, adapter method): recipe} of the checked-in kgfm_adapters.json manifests, without seed tags."""
+    from . import summary
     recipes = {}
     for suite in SUITES:
         for entry in read_manifest(suite_directory(suite) / 'kgfm_adapters.json')['entries']:
-            recipes[suite, entry['method']] = entry['id'].replace(entry['dataset'], '').strip('-')
+            recipe = summary.SEED.sub('', entry['id'].replace(entry['dataset'], ''))
+            recipes[suite, entry['method']] = re.sub('-+', '-', recipe).strip('-')
     return recipes
 
 
@@ -1372,13 +1374,15 @@ def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HAR
     adapter_values.sort(key=lambda row: (dataset_order(row[0]), row[1]))
     adapter_values = [[row[0] + (' (' + row[1] + ')' if len(adapter_recipe_counts[row[0]]) > 1 else ''),
                        *row[3:]] for row in adapter_values]
+    # Tables that list every run show seed replicates once, at the lowest tag (A9 lists every tag).
+    listed = summary.lowest_seed_reports(reports)
     ultra_panels = defaultdict(list)
-    for row in ultra_matrix_rows(reports, policy):
+    for row in ultra_matrix_rows(listed, policy):
         ultra_panels[row[2]].append([row[0], row[1], *row[3:]])
     for rows in ultra_panels.values():
         rows.sort(key=lambda row: (dataset_order(row[0]), method_order(row[1]), row[2] != 'MRR'))
     protocol = defaultdict(list)
-    for row in compact_protocol_rows(reports, policy):
+    for row in compact_protocol_rows(listed, policy):
         factor, dataset, method, a_name, b_name, *scores = row
         protocol[factor, a_name, b_name].append([dataset, method, *scores])
     protocol_panels_data = []
@@ -1400,7 +1404,7 @@ def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HAR
              note='Equal dataset averages over full tests with all 14 query types. Coverage is evaluated/total datasets '
                   '(planned in the empty template). Evaluation settings are in A11. Appendix tables use each method\'s default '
                   'recipe (adapters: the primary recipe) at its lowest seed tag, except A2 and A9, which report every seed '
-                  'tag, and A3, A6, A10 and A11, which list every supplied run.'
+                  'tag, and A3, A6, A10 and A11, which list every supplied run at its lowest seed tag.'
                   + (' Protocol variants: ' + '; '.join(variation_notes) if variation_notes else '')),
         dict(headers=['Method', 'EPFO MRR', 'Negation MRR', 'EPFO MRR', 'Negation MRR'], widths=[60, 34, 34, 34, 34],
              rows=summary.freebase_rows(reports, policy),
@@ -1425,7 +1429,7 @@ def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HAR
              note='For +H test results, all hardness categories use training + validation facts as the fixed reference; '
                   'valid witnesses are checked offline against training + validation + test facts. ' + hardness_note),
         dict(headers=['Dataset', 'Method / counts', 'Bin', 'Metric', *PLUS_H_TYPES], widths=[25, 38, 19, 13, *([9] * 16)],
-             panels=hardness_panels(reports, policy), options=dict(numeric_from=4),
+             panels=hardness_panels(listed, policy), options=dict(numeric_from=4),
              note='Overall panels identify the inference facts. Numbered bins count missing positive links, as in A5. '
                   'Hardness scores average bin answers within participating queries, then participating queries; query counts '
                   'can overlap across bins and cannot recombine these means. Parent-query coverage is described in panel '
@@ -1455,7 +1459,7 @@ def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HAR
              panels=protocol_panels_data, options=dict(numeric_from=2, group_by=lambda row: row[0]),
              note='Delta is the second condition minus the first, in MRR points. Supplied intervals are paired 95% '
                   'confidence intervals; unavailable values are "-".'),
-        dict(headers=['Applies to', 'Setting', 'Value'], widths=[62, 49, 133], rows=shared_metadata_rows(reports),
+        dict(headers=['Applies to', 'Setting', 'Value'], widths=[62, 49, 133], rows=shared_metadata_rows(listed),
              options=dict(row_group=lambda row: row[1]),
              note='Shared settings are listed once. Checkpoints are identified by filename and method/dataset; full paths '
                   'and run records remain in the input reports. Values in empty templates are manifest defaults; '

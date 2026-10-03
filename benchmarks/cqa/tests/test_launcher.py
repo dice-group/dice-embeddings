@@ -25,11 +25,10 @@ def test_h100_profile_preserves_protocol_and_records_execution_options(suite):
             assert changed[key] == original[key]
         options = changed['options']
         if original['method'].endswith('-adapter'):
-            assert options['raw_cache_device'] == 'model'
+            assert options['raw_cache_device'] == 'cpu' and options['raw_cache_granularity'] == 'row'
             assert options['row_batch_size'] == options['backend_batch_size'] == 16
-            assert options['cache_bytes'] == 4 * 2**30 and options['raw_cache_bytes'] == 2 * 2**30
+            assert options['cache_bytes'] == 512 * 2**20 and options['raw_cache_bytes'] == 24 * 2**30
             assert options['beam_size'] == original['options']['beam_size']
-            assert options['relation_cache_mb'] == 256 and options['projection_cache_mb'] == 512
         else:
             assert changed == original
     override = prepare_manifest(paths, hardware_profile='h100', kgfm_batch_size=8, **settings)
@@ -51,7 +50,7 @@ def test_hardware_profile_cli_and_container_forwarding(tmp_path, capsys, suite):
     cli.main([suite, 'evaluate', '--split', 'test', '--hardware-profile', 'h100', '--kgfm-batch-size', '16', '--methods', 'ultra-adapter',
               '--output', str(output), '--dry-run'])
     entries = json.loads(capsys.readouterr().out)['entries']
-    assert all(e['options']['backend_batch_size'] == 16 and e['options']['raw_cache_device'] == 'model' for e in entries)
+    assert all(e['options']['backend_batch_size'] == 16 and e['options']['raw_cache_granularity'] == 'row' for e in entries)
     common = ['--input-root', str(tmp_path), '--output', str(output), *IMAGE]
     flags = ['--hardware-profile', 'h100', '--kgfm-batch-size', '16']
     cli.main([suite, 'prepare', *common, *flags])

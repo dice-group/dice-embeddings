@@ -22,10 +22,12 @@ SUITES = {
     'ultraquery': dict(title='UltraQuery benchmark (released PyG)', answer_filter='released'),
 }
 KGFM_EXECUTION = {
-    # H100 / H100 NVL starting point for ULTRA/TRIX adapters: larger atomic
-    # batches and bounded GPU caches. Native methods need no profile.
-    'h100': dict(row_batch_size=16, backend_batch_size=16, cache_bytes=4 * 2**30, raw_cache_bytes=2 * 2**30,
-                 raw_cache_device='model', relation_cache_mb=256, projection_cache_mb=512),
+    # ULTRA/TRIX adapters on H100 / H100 NVL, as measured on full validation
+    # splits: atomic batches of 16 and a per-row cache of raw backbone scores
+    # in host memory, which beams of different queries share. Native methods
+    # need no profile.
+    'h100': dict(row_batch_size=16, backend_batch_size=16, cache_bytes=512 * 2**20, raw_cache_bytes=24 * 2**30,
+                 raw_cache_device='cpu', raw_cache_granularity='row'),
 }
 
 
@@ -261,7 +263,7 @@ def prepare_manifest(paths, *, profile='bounded', entries=None, methods=None, da
             entry['options'].update(KGFM_EXECUTION[hardware_profile])
             entry['reference']['status'] = 'H100 execution profile; independent validation required'
             entry['reference'].setdefault('notes', []).append(
-                'H100 / H100 NVL starting configuration, not a measured optimum. Float32 IEEE, query batches, beams, '
+                'H100 / H100 NVL configuration measured on full validation splits. Float32 IEEE, query batches, beams, '
                 'operators and observed facts retained. Validate memory, scores, orders and ties on the target GPU.')
         if kgfm and kgfm_batch_size is not None:
             entry['options'].update(row_batch_size=kgfm_batch_size, backend_batch_size=kgfm_batch_size)

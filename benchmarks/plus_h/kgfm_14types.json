@@ -16,10 +16,10 @@
   "recipes": [
     {
       "defaults": {
-        "id": "ultra-product-intersections-{dataset}",
+        "id": "ultra-product-14type-{dataset}",
         "method": "ultra-adapter",
         "checkpoint": "checkpoints/ultra_3g.pth",
-        "adapters": {"product": "benchmarks/adapters/ultra_product_intersections.json"},
+        "adapters": {"product": "benchmarks/adapters/ultra_product_14types.json"},
         "options": {"beam_size": 64, "row_batch_size": 8, "backend_batch_size": 8, "cache_bytes": 536870912, "raw_cache_bytes": 2147483648},
         "operators": {
           "1p": "product",
@@ -45,11 +45,10 @@
         "query_batch_size": 16,
         "query_order": "relation",
         "reference": {
-          "status": "frozen shared 2-type recipe; verification pending",
+          "status": "frozen shared 14-type recipe; verification pending",
           "notes": [
-            "Linear score-aware adapter, observed facts, bias bound 8, scale bound 2; trained on 2i and 3i source queries; product t-norm; k=64.",
-            "Training graphs: FB15k237, WN18RR and CoDExMedium; checkpoint selection uses reserved source validation. No target test labels select this recipe.",
-            "One shared recipe across both backbones and both suites, selected on validation queries of both suites; this is not target-untuned zero-shot selection.",
+            "Linear score-aware adapter, observed facts, bias bound 8, scale bound 2; all 14 source query types; product t-norm; k=64.",
+            "One shared recipe across both backbones and all three datasets. +H validation screening informed recipe selection; this is not target-untuned zero-shot selection.",
             "The 4p and 4i types were not included in adapter training.",
             "Paired learned/identity calibration: alpha=1 and beta=0 in the control; retain observed facts, normalization, query plan, operators and beam width. Share exact atomic batches through a bounded 2 GiB CPU cache; split the 512 MiB calibrated cache equally."
           ]
@@ -62,10 +61,10 @@
     },
     {
       "defaults": {
-        "id": "trix-product-intersections-{dataset}",
+        "id": "trix-product-14type-{dataset}",
         "method": "trix-adapter",
         "checkpoint": "checkpoints/trix/entity_prediction.pth",
-        "adapters": {"product": "benchmarks/adapters/trix_product_intersections.json"},
+        "adapters": {"product": "benchmarks/adapters/trix_product_14types.json"},
         "options": {"beam_size": 64, "row_batch_size": 1, "backend_batch_size": 1, "cache_bytes": 536870912, "raw_cache_bytes": 2147483648},
         "operators": {
           "1p": "product",
@@ -91,11 +90,10 @@
         "query_batch_size": 16,
         "query_order": "relation",
         "reference": {
-          "status": "frozen shared 2-type recipe; verification pending",
+          "status": "frozen shared 14-type recipe; verification pending",
           "notes": [
-            "Linear score-aware adapter, observed facts, bias bound 8, scale bound 2; trained on 2i and 3i source queries; product t-norm; k=64.",
-            "Training graphs: FB15k237, WN18RR and CoDExMedium; checkpoint selection uses reserved source validation. No target test labels select this recipe.",
-            "One shared recipe across both backbones and both suites, selected on validation queries of both suites; this is not target-untuned zero-shot selection.",
+            "Linear score-aware adapter, observed facts, bias bound 8, scale bound 2; all 14 source query types; product t-norm; k=64.",
+            "One shared recipe across both backbones and all three datasets. +H validation screening informed recipe selection; this is not target-untuned zero-shot selection.",
             "The 4p and 4i types were not included in adapter training.",
             "Paired learned/identity calibration: alpha=1 and beta=0 in the control; retain observed facts, normalization, query plan, operators and beam width. Share exact atomic batches through a bounded 2 GiB CPU cache; split the 512 MiB calibrated cache equally."
           ]

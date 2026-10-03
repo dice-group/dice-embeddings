@@ -999,6 +999,23 @@ def test_seed_replicates_are_labeled_by_seed_tag_in_the_appendix():
     assert set(tables.run_labels(reports).values()) == {'ULTRA + adapter (seed tag 0)', 'ULTRA + adapter (seed tag 1)'}
 
 
+def test_tables_listing_every_run_show_each_seed_replicate_once():
+    reports = tables.Reports()
+    art = ['WikiTopicsQuery:art']
+    reports.consume(suite_runs('ultra-r', 'ultra-adapter', .3, datasets=art)
+                    + suite_runs('ultra-r', 'ultra-adapter', .2, datasets=art, identity_of='ultra-r')
+                    + suite_runs('ultra-r-seed1', 'ultra-adapter', .4, datasets=art))
+    listed = summary.lowest_seed_reports(reports)
+    assert set(listed.results) == {'ultra-r-WikiTopicsQuery:art', 'ultra-r-WikiTopicsQuery:art-without-adapter'}
+    assert len(reports.results) == 3 and summary.lowest_seed_reports(listed) is listed
+    bodies = paper_bodies(tables.render_tables(reports))
+    full = [cells(row) for row in bodies[2].splitlines()]
+    assert sorted(row[3] for row in full if row[2] == 'MRR') == ['20.00', '30.00']
+    ties = [cells(row) for row in bodies[9].splitlines()]
+    assert len(ties) == 2
+    assert [cells(row)[1] for row in bodies[8].splitlines()] == ['0', '1']
+
+
 def test_freebase_split_averages_each_group_separately():
     reports = tables.Reports()
     for dataset in ULTRAQUERY_DATASETS:

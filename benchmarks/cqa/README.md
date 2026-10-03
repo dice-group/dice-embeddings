@@ -81,17 +81,23 @@ execution options. Each suite directory holds its public recipes:
 | File | Contents |
 |---|---|
 | `plus_h/baselines.json` | The seven published methods on the three +H datasets (21 entries) |
-| `plus_h/kgfm_adapters.json` | ULTRA and TRIX with 14-type adapters (6 entries, each with an identity control) |
+| `plus_h/kgfm_adapters.json` | ULTRA and TRIX with `2i`/`3i`-trained adapters (6 entries, each with an identity control) |
+| `plus_h/kgfm_seeds.json` | Adapter training seeds 1-4 of the same recipes (24 entries) |
+| `plus_h/kgfm_14types.json` | The same backbones with 14-type adapters |
 | `plus_h/published_results.json` | Scores reported by the +H authors, for `report` |
 | `ultraquery/baselines.json` | Native UltraQuery on all 23 datasets |
 | `ultraquery/kgfm_adapters.json` | ULTRA and TRIX with `2i`/`3i`-trained adapters on all 23 datasets |
-| `ultraquery/kgfm_14types.json` | The same backbones with the 14-type +H adapters |
+| `ultraquery/kgfm_seeds.json` | Adapter training seeds 1-4 of the same recipes (184 entries) |
+| `ultraquery/kgfm_14types.json` | The same backbones with 14-type adapters |
 | `ultraquery/comparisons.json` | ULTRA link-prediction weights, an incoming-relation heuristic and QTO |
 | `ultraquery/trained_baselines.json` | QTO on FB15k and inductive GNN-QE, after `train` |
 
 Defaults are `baselines.json` and `kgfm_adapters.json`; `--manifests FILE ...`
-replaces them. Adapter weights shared by both suites are in
-[`benchmarks/adapters`](../adapters). Recipe files list shared `defaults` once
+replaces them. The paper's adapter rows add `kgfm_seeds.json`, four more
+adapter training seeds of the shipped recipes. Seed entries have no identity
+control: identity calibration takes nothing from the training seed, so the
+shipped entry's control serves every seed. Adapter weights shared by both
+suites are in [`benchmarks/adapters`](../adapters). Recipe files list shared `defaults` once
 per method, and each entry only what differs; `{dataset}` in an ID is filled in.
 [`tests/recipe_fingerprints.json`](tests/recipe_fingerprints.json) pins every
 resolved entry, so a recipe change is always visible in review.
@@ -148,8 +154,8 @@ Each ablation is a separate study with its own verification.
 - **Answer filters** (+H): every prediction is also scored with the released
   filters (`-released-filters`); `--answer-filter released` prepares a study
   with released filters only.
-- **Adapters**: every ULTRA/TRIX entry has a `without-adapter` control scored
-  from the same backbone batches.
+- **Adapters**: every shipped ULTRA/TRIX entry has a `without-adapter` control
+  scored from the same backbone batches; the seed entries share it.
 
 `report` writes paired effects with query-bootstrap confidence intervals
 conditional on the frozen weights: `adapter-effects`, `filter-effects` and
@@ -157,18 +163,20 @@ conditional on the frozen weights: `adapter-effects`, `filter-effects` and
 
 ## Hardware and parallelism
 
-`--hardware-profile h100` (on `prepare` or `evaluate`) is a starting point for
-H100 80 GB and H100 NVL GPUs: ULTRA/TRIX use atomic batches of 16, a 4 GiB
-budget for calibrated scores, 2 GiB of raw scores on the GPU, and 256/512 MiB
-relation/projection caches. `--kgfm-batch-size N` overrides the batch. Other
+`--hardware-profile h100` (on `prepare` or `evaluate`) is the configuration
+measured on full validation splits on H100 80 GB and H100 NVL GPUs: ULTRA/TRIX
+use atomic batches of 16, a 512 MiB budget for calibrated scores, and a 24 GiB
+cache of raw backbone scores in host memory, kept per row so that the beams of
+different queries share it. `--kgfm-batch-size N` overrides the batch. Other
 methods keep their settings. These settings can change floating-point results,
 so they are frozen with the study and verified on the target GPU.
 
 `run` and `evaluate` accept `--gpus 0 1 2 3`: each entry runs in a fresh worker
 that sees one GPU, longest methods first, with results identical to a
 sequential run. `--workers-per-gpu 2` overlaps one worker's host work with
-another's GPU work; with the H100 profile a KGFM worker needs about 6 GiB. Keep
-one worker per GPU on GPUs shared with other jobs.
+another's GPU work, for about 1.5 times the throughput of one worker; with the
+H100 profile each KGFM worker stays below 12 GiB of GPU memory and holds up to
+24 GiB of host memory. Keep one worker per GPU on GPUs shared with other jobs.
 
 ## UltraQuery comparison baselines
 
