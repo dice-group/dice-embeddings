@@ -351,8 +351,12 @@ def prepare(parser, args):
 
 
 def verify(parser, args):
-    """Run every entry's parity check in a fresh process, then freeze the passing evidence."""
-    from .study import freeze, verify_bundle
+    """Run every entry's parity check in a fresh process, then freeze the passing evidence.
+
+    A passing KGFM integration check of an unchanged entry is reused, so an
+    interrupted verification resumes and checks can run as separate jobs.
+    """
+    from .study import freeze, integration_passed, verify_bundle
     study, root = args.output.resolve(), args.input_root.resolve()
     if (study / 'verified-bundle' / 'bundle.json').exists():
         raise ValueError('A verified bundle already exists; use a new output directory for new evidence')
@@ -360,13 +364,16 @@ def verify(parser, args):
     if args.study_path is None and not study.is_relative_to(root):
         raise ValueError('The study directory must be below --input-root, where evidence paths are recorded')
     relative = Path(args.study_path) if args.study_path is not None else study.relative_to(root)
-    manifest = verify_bundle(study / 'bundle', root)['manifest']
+    bundle = verify_bundle(study / 'bundle', root)
+    manifest = bundle['manifest']
     jobs = []
     for entry in manifest['entries']:
         common = [sys.executable, '-u', '-m', 'benchmarks.cqa', args.suite]
         options = ['--bundle', str(study / 'bundle'), '--input-root', str(root), '--entry', entry['id'], '--device', args.device]
         if entry['method'].endswith('-adapter'):
             target = study / 'verification' / entry['id']
+            if integration_passed(target / 'integration.json', bundle, entry):
+                continue
             if (target / 'pilot').exists():
                 raise ValueError(f'KGFM verification requires a fresh directory: {target}')
             jobs.append((entry['id'], [*common, 'integration', *options, '--output', str(target)]))

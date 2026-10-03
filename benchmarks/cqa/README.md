@@ -133,7 +133,9 @@ The exporter imports no DICE code. Acceptance needs scores within tolerance and
 identical candidate order and ties for every query. ULTRA/TRIX entries need no
 oracle: an independent implementation checks calibration, pruning, composition
 and identity controls on captured backbone logits; the backbones' own parity is
-tested separately. Evidence binds inputs, query batches, source, image and
+tested separately. A passing check of an unchanged ULTRA/TRIX entry is reused,
+so an interrupted `verify` resumes; an incomplete check must be removed from
+`STUDY/verification` first. Evidence binds inputs, query batches, source, image and
 hardware; a change to any of them needs a new study. For the bounded profile,
 `--comparison-references` additionally compares CQD with dense oracles.
 

@@ -9,7 +9,7 @@ import torch
 from benchmarks.cqa import cli
 from benchmarks.cqa.manifests import REPO, suite_directory
 from benchmarks.cqa.reports import adapter_effects, export_reports, trace_queries
-from benchmarks.cqa.study import freeze, read, run_job, write_json
+from benchmarks.cqa.study import freeze, integration_passed, read, run_job, verify_bundle, write_json
 from benchmarks.cqa.tests.test_protocol import paper_fixture, small_data, use_ultraquery_fixture
 from dicee.query_answering.benchmark import evaluate_benchmark
 from dicee.query_answering.context import state_fingerprint
@@ -183,6 +183,43 @@ def test_paired_kgfm_verification_full_run_and_reports(tmp_path, backbone, facts
     (tmp_path / 'test/without-adapter/result.json').write_text('{}')
     with pytest.raises(ValueError, match='comparison checksum'):
         run_job(tmp_path / 'verified-bundle', entry['id'], tmp_path, tmp_path / 'test', phase='test')
+
+
+def test_verify_reuses_passing_integration_checks_and_rejects_partial_ones(tmp_path, monkeypatch, capsys):
+    from dicee.models import ULTRA
+    from dicee.query_answering.score_adapter import QueryScoreAdapter
+    manifest = paper_fixture(tmp_path)
+    model = ULTRA(dict(num_entities=1, num_relations=1))
+    torch.save({'model': model.state_dict()}, tmp_path / 'kgfm.pt')
+    QueryScoreAdapter('context_scores', 1., bias_bound=8., weights=torch.full((2, 8), .1, dtype=torch.float64),
+                      metadata={'backbone_state_sha256': state_fingerprint(model)}).save(tmp_path / 'adapter.json')
+    entry = manifest['entries'][0]
+    entry.update(id='ultra-paired', method='ultra-adapter', checkpoint='kgfm.pt',
+                 options={'beam_size': 2, 'row_batch_size': 1, 'backend_batch_size': 1, 'cache_bytes': 4096, 'raw_cache_bytes': 4096},
+                 adapters={'product': 'adapter.json'}, operators={shape: 'product' for shape in entry['query_types']},
+                 selection_protocol='source-validation', finalized=True, adapter_ablation=True,
+                 query_batch_size=4, query_order='relation')
+    manifest['entries'] = [entry]
+    study = tmp_path / 'study'
+    freeze(manifest, study / 'bundle', tmp_path)
+    target = study / 'verification' / entry['id']
+    # The check verify would run, launched as a separate job.
+    subprocess.run([sys.executable, '-m', 'benchmarks.cqa', 'plus_h', 'integration', '--bundle', str(study / 'bundle'),
+                    '--input-root', str(tmp_path), '--entry', entry['id'], '--output', str(target), '--device', 'cpu'],
+                   check=True, cwd=REPO)
+    bundle = verify_bundle(study / 'bundle', tmp_path)
+    assert integration_passed(target / 'integration.json', bundle, entry)
+    assert not integration_passed(target / 'integration.json', bundle, dict(entry, options=dict(entry['options'], beam_size=3)))
+    args = ['plus_h', 'verify', '--input-root', str(tmp_path), '--output', str(study), '--device', 'cpu']
+    (target / 'integration.json').rename(tmp_path / 'integration.json')
+    with pytest.raises(SystemExit):
+        cli.main(args)
+    assert 'KGFM verification requires a fresh directory' in capsys.readouterr().err
+    (tmp_path / 'integration.json').rename(target / 'integration.json')
+    monkeypatch.setattr(cli.subprocess, 'run', lambda command: pytest.fail('A passing check was run again'))
+    cli.main(args)
+    assert read(study / 'verified-manifest.json')['entries'][0]['verification'] == 'study/evidence/ultra-paired.json'
+    assert read(study / 'evidence/ultra-paired.json') == read(target / 'integration.json')
 
 
 def test_graph_effects_pair_calibrations_and_reject_changed_recipes(tmp_path):
