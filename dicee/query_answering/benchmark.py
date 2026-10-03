@@ -210,8 +210,10 @@ def evaluate_benchmark(data: QueryBenchmark, predict: Callable[[tuple], torch.Te
     Args:
         data: Benchmark queries, inference graph and candidates.
         predict: Scores of every entity for one query.
-        tie_policy: ``'sort'`` (stable descending order) or ``'expected'`` (exact
-            expectation under random order within ties).
+        tie_policy: ``'sort'`` (PyTorch's default descending argsort, as in the
+            reference evaluator; not guaranteed stable, so exact ties may order
+            differently across devices) or ``'expected'`` (exact expectation
+            under random order within ties, which removes that dependence).
         max_queries_per_shape: Sample at most this many queries per type.
         progress: Called with completed and total query counts.
         prepare: Called with each batch of queries before they are predicted.

@@ -3,6 +3,7 @@
 import math
 import weakref
 from collections import OrderedDict
+from collections.abc import Hashable, Sequence
 from contextlib import contextmanager
 
 import torch
@@ -84,7 +85,7 @@ class AtomicBatchCache:
         self.used += size
         self.peak = max(self.peak, self.used)
 
-    def lookup(self, token, conditions):
+    def lookup(self, token: Hashable | None, conditions: Sequence[Hashable]) -> tuple[dict[Hashable, torch.Tensor], list[Hashable]]:
         """Row granularity: cached rows by condition and the distinct missing conditions."""
         if token is None or token != self.token:
             self.clear()
@@ -99,7 +100,7 @@ class AtomicBatchCache:
         self.hits += sum(key in found for key in conditions)
         return found, missing
 
-    def put_rows(self, conditions, values):
+    def put_rows(self, conditions: Sequence[Hashable], values: torch.Tensor) -> None:
         """Row granularity: store each row of a computed batch on its own."""
         self.computed += len(conditions)
         if self.token is None or not len(conditions):
@@ -176,7 +177,11 @@ class AtomicScorer:
                 self._evaluating, self._token_memo = False, _UNSET
 
     def cache_token(self):
-        """Walking the model's tensors is costly; one evaluation context cannot change them, so it walks once."""
+        """Walking the model's tensors is costly, so one evaluation context walks them once.
+
+        This assumes parameters, buffers and the attached graph do not change inside
+        the context; a caller that mutates them there must leave and re-enter it.
+        """
         if getattr(self, '_evaluating', False):
             if self._token_memo is _UNSET:
                 self._token_memo = self._cache_token()

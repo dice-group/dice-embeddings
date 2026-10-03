@@ -257,3 +257,36 @@ def test_filter_controls_share_predictions_and_resume_all_traces(tmp_path, monke
     options['filter_corrections'] = {}
     with pytest.raises(ValueError, match='inputs/settings changed'):
         evaluate_benchmark(data, predict, **options)
+
+
+@pytest.mark.parametrize('backbone', ['ultra', 'trix'])
+def test_row_granular_raw_cache_reaches_the_engine_and_keeps_scores(tmp_path, backbone):
+    from dicee.models import TRIX, ULTRA
+    from dicee.query_answering.score_adapter import QueryScoreAdapter
+    manifest = paper_fixture(tmp_path)
+    use_ultraquery_fixture(manifest, tmp_path)
+    model = {'ultra': ULTRA, 'trix': TRIX}[backbone](dict(num_entities=1, num_relations=1))
+    torch.save({'model': model.state_dict()}, tmp_path / 'kgfm.pt')
+    QueryScoreAdapter('context_scores', 1., bias_bound=8.,
+                      weights=torch.randn(2, 8, generator=torch.Generator().manual_seed(4)).double() / 5,
+                      metadata={'backbone_state_sha256': state_fingerprint(model)}).save(tmp_path / 'adapter.json')
+    entry = manifest['entries'][0]
+    entry.update(id=f'{backbone}-paired', method=f'{backbone}-adapter', checkpoint='kgfm.pt',
+                 options={'beam_size': 2, 'row_batch_size': 2, 'backend_batch_size': 2, 'cache_bytes': 4096,
+                          'raw_cache_bytes': 1 << 20, 'raw_cache_device': 'model', 'relation_cache_mb': 1, 'projection_cache_mb': 1},
+                 adapters={'product': 'adapter.json'}, operators={shape: 'product' for shape in entry['query_types']},
+                 selection_protocol='source-validation', finalized=True, adapter_ablation=True,
+                 query_batch_size=4, query_order='relation')
+    results = {}
+    for granularity in ('batch', 'row'):
+        entry['options']['raw_cache_granularity'] = granularity
+        write_json(tmp_path / 'manifest.json', manifest)
+        cli.main(['ultraquery', 'evaluate', '--manifests', str(tmp_path / 'manifest.json'), '--input-root', str(tmp_path),
+                  '--output', str(tmp_path / granularity), '--entries', entry['id'], '--split', 'test', '--device', 'cpu'])
+        results[granularity] = read(tmp_path / granularity / entry['id'] / 'result.json')
+    row, batch = results['row'], results['batch']
+    assert row['inference']['options']['raw_cache_granularity'] == 'row'
+    for shape, values in batch['per_shape'].items():
+        assert row['per_shape'][shape]['mrr'] == pytest.approx(values['mrr'], abs=1e-6)
+    statistics = row['inference']['cache_statistics'], batch['inference']['cache_statistics']
+    assert statistics[0]['backbone_computed_rows'] <= statistics[1]['backbone_computed_rows']

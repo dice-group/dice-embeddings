@@ -15,10 +15,12 @@ query types equally within a dataset group; suite means weight datasets
 equally. Reports state whether a run covers the full split and every query
 type of its dataset, and partial runs are never presented as full-suite scores.
 
-Ties are scored twice from the same predictions: `sort` follows the order of a
-stable descending sort, and `expected` is the exact expectation of each rank
-under uniformly random ordering within a tied block. `expected` is not the
-midpoint rank. Rank traces store every hard answer's ranks under both policies,
+Ties are scored twice from the same predictions: `sort` follows PyTorch's
+default descending argsort, as the reference evaluator does. That sort is not
+guaranteed stable, so exactly tied scores can order differently on another
+device or library version. `expected` is the exact expectation of each rank
+under uniformly random ordering within a tied block, which removes that
+dependence. `expected` is not the midpoint rank. Rank traces store every hard answer's ranks under both policies,
 so later analyses never rerun inference.
 
 Each suite keeps its released candidates and inference graphs. UltraQuery
