@@ -330,3 +330,13 @@ def entry_inputs_identity(bundle, entry):
         selected.add(entry['training'])
     prefix = str(Path(bundle['manifest']['data_root']) / dataset_spec(entry['dataset'])[1]) + '/'
     return fingerprint({key: value for key, value in bundle['files'].items() if key in selected or key.startswith(prefix)})
+
+
+def integration_passed(path, bundle, entry):
+    """Whether ``path`` holds a passing KGFM integration check of this frozen entry, inputs and source."""
+    if not Path(path).is_file():
+        return False
+    evidence = read(path)
+    return bool(evidence.get('passed') and evidence.get('source_sha256') == bundle['source_sha256']
+                and evidence.get('entry_sha256') == fingerprint({k: v for k, v in entry.items() if k != 'verification'})
+                and evidence.get('inputs_sha256') == entry_inputs_identity(bundle, entry))
