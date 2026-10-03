@@ -24,7 +24,7 @@ MODEL_URL = ('https://rssiste-my.sharepoint.com/:u:/g/personal/'
              'EccKx4K6sZ1Nhy_fJTL8L44BFtpNRZwmI43-ffPRSmb28g?e=kO5dYk&download=1')
 MODEL_PREFIX = 'checkpoints/query-baselines/'
 # SHA-256 of the released files, extracted from the archive pinned in the +H
-# manifests. The three standalone weights are from the pinned ULTRA/TRIX trees.
+# manifests. The standalone weights are from the pinned ULTRA/TRIX trees.
 WEIGHT_HASHES = {
     'Experiments/query-baselines/upstream/ultra/ckpts/ultraquery.pth': '9b6dc20801c35e7c9ebe65764acb4ed9cb5bffc6b0a0a727bd48935589e9388d',
     'checkpoints/query-baselines/iscqa-compl-models/models/CLMPT/CLMPT-fb15k237.ckpt': '4ce1e2abeda74199970c9350e3da10d928d34f974f3c1f42ead553a9c13799b9',
@@ -41,6 +41,8 @@ WEIGHT_HASHES = {
     'checkpoints/query-baselines/iscqa-compl-models/models/GNN-QE/model/model_NELL995.pth': '086619b977d7b45658c11b4804b6e0e1c92a356cd4f427b4bf5b8ea1ee7016b3',
     'checkpoints/trix/entity_prediction.pth': '8f6e7266093c2d15ad88d41e9825e4b327171143543cf060cfee907d9a890342',
     'checkpoints/ultra_3g.pth': 'fdedc01b0045fc089d2ad5da08569466b7b221691fe978a18e91082bbb133c18',
+    'checkpoints/ultra_4g.pth': '48a046e708adf5632d87c30eacae01f5f51466b2301effdc2cb42358d22854e0',
+    'checkpoints/ultra_50g.pth': 'f1c5377b2cf547aaa67520ffb6fce27b75b6eb3417b86dc9cf9dba89964ed10f',
 }
 
 
@@ -49,6 +51,8 @@ def weight_urls():
                    for repository, commit in (catalog().ULTRA, catalog().TRIX))
     return {'Experiments/query-baselines/upstream/ultra/ckpts/ultraquery.pth': f'{ultra}/ckpts/ultraquery.pth',
             'checkpoints/ultra_3g.pth': f'{ultra}/ckpts/ultra_3g.pth',
+            'checkpoints/ultra_4g.pth': f'{ultra}/ckpts/ultra_4g.pth',
+            'checkpoints/ultra_50g.pth': f'{ultra}/ckpts/ultra_50g.pth',
             'checkpoints/trix/entity_prediction.pth': f'{trix}/entity_prediction.pth'}
 
 
