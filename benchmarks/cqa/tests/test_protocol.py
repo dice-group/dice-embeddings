@@ -15,7 +15,7 @@ import torch
 
 from benchmarks.cqa.oracles import verify_predictions
 from benchmarks.cqa.reports import export_reports, summarize_trace, trace_queries
-from benchmarks.cqa.study import freeze, read, run_job, verify_bundle
+from benchmarks.cqa.study import SOURCE_ROOT, code_identity, freeze, read, run_job, verify_bundle
 from dicee.query_answering import BenchmarkQuery, QueryBenchmark, QueryContext
 from dicee.query_answering._checkpoint import BenchmarkCheckpoint, write_json
 from dicee.query_answering._query import PLUS_H_SHAPES, QUERY_SHAPES
@@ -66,6 +66,15 @@ def threads():
 def small_data():
     queries = tuple(BenchmarkQuery('1p', (i, (0,)), frozenset({0}), frozenset({1, 2})) for i in range(6))
     return QueryBenchmark('test', 'transductive', 'valid', QueryContext([(0, 0, 1)], 6, 1), queries, tuple(range(6)))
+
+
+def test_source_identity_is_the_same_through_a_symlinked_checkout(tmp_path):
+    """A checkout imported through a symlink (for example a mounted home) keeps its source identity."""
+    link = tmp_path / 'checkout'
+    link.symlink_to(SOURCE_ROOT, target_is_directory=True)
+    linked = subprocess.run([sys.executable, '-c', 'from benchmarks.cqa.study import code_identity; print(code_identity())'],
+                            cwd=tmp_path, env=dict(os.environ, PYTHONPATH=str(link)), capture_output=True, text=True, check=True)
+    assert linked.stdout.strip() == code_identity()
 
 
 def test_resume_preserves_completed_cache_report_and_resets_live_cache(tmp_path):
