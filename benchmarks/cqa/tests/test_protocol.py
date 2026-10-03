@@ -362,7 +362,7 @@ def test_shared_study_and_reports_use_dataset_coverage(tmp_path):
     assert rows[0]['complete_test'] and not rows[0]['complete_16_type_test']
     assert rows[0]['types'] == 14 and rows[0]['published_mrr'] == 10.
     write_json(tmp_path / 'manifest.json', manifest)
-    main(['ultraquery', 'evaluate', '--manifests', str(tmp_path / 'manifest.json'), '--input-root', str(tmp_path),
+    main(['ultraquery', 'evaluate', '--split', 'test', '--manifests', str(tmp_path / 'manifest.json'), '--input-root', str(tmp_path),
           '--output', str(tmp_path / 'cli'), '--entries', entry['id'], '--device', 'cpu'])
     cli = read(tmp_path / 'cli' / entry['id'] / 'result.json')
     assert cli['per_shape'] == result['per_shape']
@@ -377,7 +377,7 @@ def test_corrected_filter_cli_preserves_query_type_selection(tmp_path, query_ord
     entry = manifest['entries'][0]
     entry.update(query_types=['1p'], query_order=query_order)
     write_json(tmp_path / 'manifest.json', manifest)
-    main(['plus_h', 'evaluate', '--manifests', str(tmp_path / 'manifest.json'), '--input-root', str(tmp_path),
+    main(['plus_h', 'evaluate', '--split', 'test', '--manifests', str(tmp_path / 'manifest.json'), '--input-root', str(tmp_path),
           '--output', str(tmp_path / 'cli'), '--entries', entry['id'], '--device', 'cpu'])
     destination = tmp_path / 'cli' / entry['id']
     result = read(destination / 'result.json')

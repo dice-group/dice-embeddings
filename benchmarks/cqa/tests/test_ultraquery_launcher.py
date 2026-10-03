@@ -110,7 +110,7 @@ def test_public_recipes_cover_all_datasets_and_selected_adapters():
 
 
 def test_cli_subset_and_suite_policies_fail_before_opening_inputs(tmp_path, capsys):
-    cli.main(['ultraquery', 'evaluate', '--methods', 'ultraquery', 'ultra-adapter', '--datasets', 'WikiTopicsQuery:art',
+    cli.main(['ultraquery', 'evaluate', '--split', 'test', '--methods', 'ultraquery', 'ultra-adapter', '--datasets', 'WikiTopicsQuery:art',
           'InductiveFB15k237Query:106', '--query-types', 'negation', '--input-root', str(tmp_path),
           '--output', str(tmp_path / 'results'), '--dry-run'])
     manifest = json.loads(capsys.readouterr().out)
@@ -119,7 +119,7 @@ def test_cli_subset_and_suite_policies_fail_before_opening_inputs(tmp_path, caps
     assert not (tmp_path / 'results').exists()
     for selection in (['--answer-filter', 'corrected'], ['--datasets', 'FB15k237+H'], ['--methods', 'bad']):
         with pytest.raises(SystemExit):
-            cli.main(['ultraquery', 'evaluate', '--output', str(tmp_path / 'results'), '--dry-run', *selection])
+            cli.main(['ultraquery', 'evaluate', '--split', 'test', '--output', str(tmp_path / 'results'), '--dry-run', *selection])
 
 
 @pytest.mark.parametrize('action', ['prepare', 'evaluate', 'run', 'report'])
@@ -128,6 +128,8 @@ def test_docker_actions_use_the_shared_runtime_and_correct_suite(tmp_path, capsy
             '--gpu', 'none', '--dry-run']
     if action in ('evaluate', 'run'):
         args += ['--device', 'cpu']
+    if action == 'evaluate':
+        args += ['--split', 'test']
     if action == 'report':
         args += ['--results', str(tmp_path / 'results/test')]
     else:

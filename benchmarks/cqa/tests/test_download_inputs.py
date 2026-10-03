@@ -140,7 +140,7 @@ def test_host_commands_need_only_the_standard_library(tmp_path, suite, method):
     checked = subprocess.run([*common, 'setup', *selection, '--check'], capture_output=True, text=True, cwd=REPO)
     assert checked.returncode == 1 and 'Missing:' in checked.stdout
     root.mkdir()
-    launch = subprocess.check_output([*common, 'evaluate', *selection, '--output', str(root / 'results'),
+    launch = subprocess.check_output([*common, 'evaluate', '--split', 'test', *selection, '--output', str(root / 'results'),
                                       '--image', 'example:test', '--dry-run'], text=True, cwd=REPO)
     assert launch.startswith('docker run') and f'example:test {suite} evaluate --input-root /inputs' in launch
     assert list(root.iterdir()) == []
@@ -176,7 +176,7 @@ def test_evaluate_sets_up_selected_inputs_before_evaluation(tmp_path, monkeypatc
         calls.append(('evaluate', manifest, kwargs))
 
     monkeypatch.setattr(evaluate, 'evaluate_manifest', evaluated)
-    args = [suite, 'evaluate', '--methods', 'ultraquery', '--datasets', DATASET[suite], '--input-root', str(tmp_path),
+    args = [suite, 'evaluate', '--split', 'test', '--methods', 'ultraquery', '--datasets', DATASET[suite], '--input-root', str(tmp_path),
             '--output', str(tmp_path / 'results')]
     cli.main(args)
     assert [call[0] for call in calls] == ['setup', 'evaluate']
@@ -203,7 +203,7 @@ def test_docker_launch_fetches_on_host_before_isolated_container(tmp_path, monke
     monkeypatch.setattr(docker, 'run', lambda image, argv, **kwargs: calls.append(('container', image, argv)))
     root = tmp_path / 'inputs'
     root.mkdir()
-    args = [suite, 'evaluate', '--input-root', str(root), '--output', str(root / 'results'), '--image', 'test', '--device', 'cpu',
+    args = [suite, 'evaluate', '--split', 'test', '--input-root', str(root), '--output', str(root / 'results'), '--image', 'test', '--device', 'cpu',
             '--methods', 'ultraquery', '--datasets', DATASET[suite]]
     cli.main(args)
     assert [call[0] for call in calls] == ['setup', 'container'] and calls[0][2] == suite
