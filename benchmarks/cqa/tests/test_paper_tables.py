@@ -914,7 +914,8 @@ def test_main_ultraquery_table_reports_seed_mean_sd_and_marks_best_and_second():
     # Mean .35 with sample s.d. .0707 over two seeds; the control's seed replicates are one run.
     assert rows['ULTRA + adapter (ours)'] == [r'\textbf{35.0}$_{\pm 7.1}$'] * 8
     assert rows['ULTRA (no adapter)'] == [r'\underline{25.0}'] * 8
-    assert 'over 2 training seeds' in latex and 'Full test splits.' in latex
+    assert 'over 2 adapter training seeds' in latex and 'Full test splits.' in latex
+    assert 'only adapter rows vary by seed' in latex
 
 
 def test_main_table_cells_use_only_seeds_with_every_dataset():

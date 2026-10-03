@@ -328,7 +328,9 @@ def seed_sentence(counts: Iterable[int]) -> str:
     counts = sorted({n for n in counts if n})
     if not counts or counts == [1]:
         return ''
-    return (r' Adapter rows: mean$_{\pm\mathrm{s.d.}}$ over ' + '/'.join(map(str, counts)) + ' training seeds.')
+    return (r' Adapter rows: mean$_{\pm\mathrm{s.d.}}$ over ' + '/'.join(map(str, counts)) + ' adapter training seeds. '
+            r'Baselines and backbones are single evaluations of fixed checkpoints; only the adapter is trained here, '
+            r'so only adapter rows vary by seed.')
 
 
 SELECTION_SENTENCE = (' The adapter recipe was chosen on validation queries of both suites; no choice used test queries.')
