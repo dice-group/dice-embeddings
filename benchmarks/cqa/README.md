@@ -5,7 +5,7 @@ Reproducible evaluation of complex query answering (CQA) on two suites:
 | Suite | Datasets | Query types | Answer filters |
 |---|---|---|---|
 | `ultraquery` | The 23 released UltraQuery datasets: 3 transductive, 9 inductive with new entities, 11 WikiTopics with new entities and relations | 14 (9 positive, 5 negated) | released |
-| `plus_h` | **+H**: FB15k237+H, NELL995+H and ICEWS18+H from [Gregucci et al.](https://arxiv.org/abs/2410.12537), built so that complex queries cannot be reduced to simpler link prediction | 16 (adds `4p`, `4i`) | corrected, with released controls |
+| `plus_h` | **+H**: FB15k237+H, NELL995+H and ICEWS18+H from [Gregucci et al.](https://arxiv.org/abs/2410.12537), whose hard answers are balanced across the number of links that must be predicted to reach them | 16 (adds `4p`, `4i`) | corrected, with released controls |
 
 Each suite evaluates published methods (UltraQuery, GNN-QE, QTO, CQD, CQD-Hybrid,
 ConE, CLMPT) through native DICE ports and the ULTRA and TRIX foundation models
@@ -33,10 +33,11 @@ Containers have no network access, read inputs from `--input-root` (default:
 the repository) read-only, and write only below `--output`; `--gpu cdi`
 selects CDI device access and `--gpu none` runs on CPU.
 
-Exploratory evaluation of any subset needs no preparation:
+Exploratory evaluation of any subset needs no preparation. `--split` is
+required, so the test split is only ever evaluated on request:
 
 ```bash
-python -m benchmarks.cqa plus_h evaluate --output results/cqd-negation \
+python -m benchmarks.cqa plus_h evaluate --split valid --output results/cqd-negation \
   --methods cqd cqd-hybrid --datasets FB15k237+H --query-types negation
 ```
 
@@ -200,10 +201,15 @@ changing kernel arithmetic.
 python -m benchmarks.cqa.paper [REPORT.json ...] -o tables.tex [--figures DIR]
 ```
 
-renders nine LaTeX tables from saved reports, using only the standard library;
-without reports it prints the planned layout with every score missing ("-").
-`--figures` also exports the paper figures (needs matplotlib). Scores are never
-imputed and confidence intervals are copied, not estimated.
+renders the paper's three main tables (compact floats: UltraQuery benchmark,
++H, ablations; best bold, second underlined) and eleven appendix tables from saved
+reports, using only the standard library; without reports it prints the planned
+layout with every score missing ("-"). Runs whose entry IDs differ only by a
+`-seedN` token are adapter-seed replicates, reported as mean and sample s.d.;
+`--primary-recipe` names the main adapter recipe. Scores use sort-order ties
+unless `--tie-policy expected` is given. `--figures` also exports the figures and
+a `figures.tex` with their floats and captions (needs matplotlib). Scores are
+never imputed and confidence intervals are copied, not estimated.
 
 ## Tests
 

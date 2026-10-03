@@ -1,6 +1,7 @@
 """Saved synthetic reports verify chart mathematics; never benchmark inference."""
 
 import json
+import math
 import subprocess
 import sys
 
@@ -235,14 +236,22 @@ def test_missing_candidate_context_identity_is_not_a_verified_transfer_point():
 
 def test_empty_figures_have_full_layouts_and_no_fabricated_values(tmp_path):
     payload = figures.generate_figures(tables.Reports(), tmp_path)
-    assert [f['placement'] for f in payload['figures']] == ['Main paper', 'Appendix']
+    assert [f['placement'] for f in payload['figures']] == ['Main paper', 'Main paper', 'Appendix', 'Appendix']
     assert not any('composition' in f['name'] for f in payload['figures'])
-    adapter, transfer = [f['data'] for f in payload['figures']]
+    family, hardness, transfer, adapter = [f['data'] for f in payload['figures']]
+    assert len(family) == 26 * 2 and all(p['value'] is None for p in family)
+    planned = {r['method'] for r in tables.empty_reports().results.values() if r['dataset'] in tables.PLUS_H_DATASETS
+               and not r['paired_with']}
+    assert len(hardness) == 3 * len(planned) * len(figures.PROFILE_TYPES)
+    assert all(p['value'] is None for s in hardness for p in s['points'])
     assert len(adapter) == 26 * 2 and all(p['value'] is None and p['ci'] is None for p in adapter)
     assert len(transfer) == 23 * 2 * 2 and all(p['value'] is None for p in transfer)
-    assert len(list(tmp_path.glob('*.pdf'))) == 2
-    assert len(list(tmp_path.glob('*.svg'))) == len(list(tmp_path.glob('*.png'))) == 2
+    assert len(list(tmp_path.glob('*.pdf'))) == 4
+    assert len(list(tmp_path.glob('*.svg'))) == len(list(tmp_path.glob('*.png'))) == 4
     assert json.loads((tmp_path / 'figures.json').read_text()) == payload
+    latex = (tmp_path / 'figures.tex').read_text()
+    assert latex.count(r'\begin{figure}') == 4 and r'\includegraphics[width=\linewidth]{main-01-adapter-gains.pdf}' in latex
+    assert '95%' not in latex and r'95\%' in latex
 
 
 def test_figures_cli_keeps_latex_console_and_file_identical(tmp_path):
@@ -262,7 +271,7 @@ def test_optional_composition_is_appendix_and_keeps_missing_counts(tmp_path):
     assert composition['placement'] == 'Appendix'
     assert len(composition['data']) == 3
     assert all(b['fractions'] is None for c in composition['data'] for b in c['bins'])
-    assert len(list(tmp_path.glob('*.pdf'))) == 3
+    assert len(list(tmp_path.glob('*.pdf'))) == 5
 
 
 def test_only_identical_complete_compositions_share_a_panel():
@@ -315,3 +324,71 @@ def test_figure_output_symlink_cannot_overwrite_an_input_report(tmp_path, filena
                           '-o', str(tmp_path / 'tables.tex')], capture_output=True, text=True, cwd=REPO)
     assert run.returncode == 2 and json.loads(source.read_text()) == raw
     assert 'must not overwrite' in run.stderr
+
+
+def test_family_gains_pair_every_seed_with_the_seed_independent_control():
+    reports = tables.Reports()
+    for entry, score in (('ultra-r', .3), ('ultra-r-seed1', .4)):
+        raw = result('FB15k237+H', 'ultra-adapter', score)
+        raw['benchmark_run']['entry'] = entry + '-FB15k237+H'
+        reports.consume(raw)
+    control = result('FB15k237+H', 'ultra-adapter', .2)
+    control['benchmark_run']['entry'] = 'ultra-r-FB15k237+H-without-adapter'
+    control['paired_with'] = 'ultra-r-FB15k237+H'
+    control['inference']['calibration'] = 'without-adapter'
+    reports.consume(control)
+    point = next(p for p in figures.family_gain_data(reports, 'expected') if p['dataset'] == 'FB15k237+H' and p['method'] == 'ULTRA')
+    assert point['family'] == 'plus_h' and point['seeds'] == 2
+    assert abs(point['value'] - .15) < 1e-12
+    # The fixture has no sort-order scores: the gain stays missing instead of borrowing another policy.
+    missing = next(p for p in figures.family_gain_data(reports, 'sort') if p['dataset'] == 'FB15k237+H' and p['method'] == 'ULTRA')
+    assert missing['value'] is None and missing['status'] == 'missing per-type MRR for selected tie policy'
+
+
+def test_hardness_profiles_use_numeric_bins_of_one_condition_only():
+    reports = tables.Reports()
+    rows = []
+    for graph, filters, offset in (('train+valid', 'corrected', 0), ('train', 'released', .3)):
+        for label, score in (('0', .9), ('1', .4), ('2', .3), ('3', .2)):
+            rows.append(dict(dataset='FB15k237+H', method='qto', entry='qto-FB15k237+H', shape='3p',
+                             grouping='inferred_positive_edges', label=label, comparison_graph=graph,
+                             answer_filter=filters, sort=dict(mrr=score + offset)))
+    rows.append(dict(dataset='FB15k237+H', method='qto', entry='qto-FB15k237+H', shape='3p', grouping='difficulty',
+                     label='partial', comparison_graph='train+valid', answer_filter='corrected', sort=dict(mrr=.7)))
+    reports.consume(rows)
+    series = figures.hardness_profile_data(reports, 'sort')
+    assert len(series) == 1 and series[0]['method'] == 'QTO'
+    assert [p['value'] for p in series[0]['points']] == [.4, .3, .2]
+
+
+def test_family_gains_accept_seed_recipe_hashes_but_reject_other_changes():
+    reports = tables.Reports()
+    for entry, score, digest in (('ultra-r', .3, 'a'), ('ultra-r-seed1', .4, 'b')):
+        raw = result('FB15k237+H', 'ultra-adapter', score)
+        raw['benchmark_run']['entry'] = entry + '-FB15k237+H'
+        raw['graph_recipe_sha256'] = digest * 64
+        reports.consume(raw)
+    control = result('FB15k237+H', 'ultra-adapter', .2)
+    control['benchmark_run']['entry'] = 'ultra-r-FB15k237+H-without-adapter'
+    control['paired_with'] = 'ultra-r-FB15k237+H'
+    control['inference']['calibration'] = 'without-adapter'
+    control['graph_recipe_sha256'] = 'c' * 64
+    reports.consume(control)
+    # Frozen runs hash each seed's own adapter into its recipe; that alone must not break the pairing.
+    point = next(p for p in figures.family_gain_data(reports, 'expected') if p['dataset'] == 'FB15k237+H' and p['method'] == 'ULTRA')
+    assert point['seeds'] == 2 and abs(point['value'] - .15) < 1e-12
+    reports.results['ultra-r-seed1-FB15k237+H']['raw']['candidate_sha256'] = 'other'
+    with pytest.raises(ValueError, match='candidate_sha256'):
+        figures.family_gain_data(reports, 'expected')
+
+
+def test_hardness_profiles_break_lines_at_missing_bins():
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    series = [dict(dataset='FB15k237+H', shape='4p', method='QTO', entry='qto',
+                   points=[dict(links=1, value=.4), dict(links=2, value=None), dict(links=3, value=.2), dict(links=4, value=.1)])]
+    fig = figures.hardness_profile_plot(plt, series)
+    lines = [line for ax in fig.axes for line in ax.get_lines() if len(line.get_xdata()) == 4]
+    assert len(lines) == 1 and math.isnan(lines[0].get_ydata()[1])
+    plt.close(fig)

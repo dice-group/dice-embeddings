@@ -5,16 +5,27 @@ are loaded. Fractions remain fractions in figures.json; displayed MRR is x100.
 """
 
 import json
+import math
 from collections import defaultdict
 from pathlib import Path
 
-from . import tables
+from . import summary, tables
 
+# Okabe-Ito colours; the first two mark the two adapter backbones in every figure.
 COLORS = ('#0072B2', '#D55E00', '#009E73', '#CC79A7')
+METHOD_STYLES = {'ULTRA + adapter': ('#0072B2', 'o', 1.6), 'TRIX + adapter': ('#D55E00', 'D', 1.6),
+                 'QTO': ('#009E73', 's', 1.0), 'CQD-Hybrid': ('#CC79A7', 'v', 1.0), 'GNN-QE': ('#E69F00', '^', 1.0),
+                 'UltraQuery': ('#56B4E9', 'P', 1.0), 'CQD': ('#999999', 'X', .9), 'CLMPT': ('#666666', '<', .9),
+                 'ConE': ('#BBBBBB', '>', .9)}
 BACKBONES = ('ULTRA', 'TRIX')
 ADAPTERS = ('ultra-adapter', 'trix-adapter')
-FIGURE_NAMES = ('main-01-adapter-gains', 'appendix-01-transfer-gains')
-COMPOSITION_NAME = 'appendix-02-hardness-composition'
+PROFILE_TYPES = ('3p', '4p', '3i', '4i')
+FAMILY_ROWS = (('transductive', 'Transductive'), ('inductive-e', 'Inductive (e)'), ('inductive-er', 'Inductive (e,r)'),
+               ('plus_h', '+H'))
+FIGURE_NAMES = ('main-01-adapter-gains', 'main-02-hardness-profiles', 'appendix-01-transfer-gains',
+                'appendix-02-adapter-gains-by-dataset')
+COMPOSITION_NAME = 'appendix-03-hardness-composition'
+TEXT_WIDTH = 5.5  # inches: one text column of NeurIPS/ICLR; two-column venues use figure*
 
 
 def figure_names(*, hardness_composition=False):
@@ -233,10 +244,9 @@ def composition_plot(plt, data):
     signatures = [(c['graph'], c['filters'], [b['fractions'] for b in c['bins']]) for c in data]
     shared = comparable and all(s == signatures[0] for s in signatures)
     panels = data[:1] if shared else data
-    fig, axes = plt.subplots(len(panels), 1, figsize=(7.2, 3.2 if shared else 6.0),
+    fig, axes = plt.subplots(len(panels), 1, figsize=(TEXT_WIDTH, 2.4 if shared else 5.0),
                              squeeze=False, layout='constrained')
     axes = axes[:, 0]
-    fig.suptitle('+H hardness composition', fontsize=11)
     for ax, cohort in zip(axes, panels):
         for i, item in enumerate(cohort['bins']):
             fractions = item['fractions']
@@ -256,16 +266,14 @@ def composition_plot(plt, data):
         graph, filters = cohort['graph'] or '-', cohort['filters'] or '-'
         datasets = ', '.join(tables.dataset_name(c['dataset']) for c in data) if shared else tables.dataset_name(cohort['dataset'])
         separator = '\n' if shared else '  |  '
-        ax.set_title(f"{datasets}{separator}label graph: {graph}; filters: {filters}", loc='left', fontsize=9)
+        ax.set_title(f"{datasets}{separator}label graph: {graph}; filters: {filters}", loc='left', fontsize=8)
         style_axes(ax)
         ax.grid(axis='x', visible=False)
         ax.grid(axis='y', color='#E6E6E6', linewidth=.5)
     from matplotlib.patches import Patch
     axes[0].legend(handles=[Patch(facecolor=c, label=str(i)) for i, c in enumerate(COLORS, 1)],
                    title='Missing positive links', ncol=4, fontsize=7, title_fontsize=7,
-                   loc='upper center', bbox_to_anchor=(.5, 1.38), frameon=False)
-    fig.supxlabel("QA-pair proportions, not aggregate MRR weights\n"
-                  "'-': missing counts; hatched bars: partial or unknown parent-query coverage", fontsize=7)
+                   loc='lower right', bbox_to_anchor=(1, 1.02), frameon=False)
     return fig
 
 
@@ -296,15 +304,17 @@ def forest_axes(ax, points, datasets, limits, *, legend=False):
     ax.axvline(0, color='#777777', linewidth=.7)
     style_axes(ax)
     if legend:
-        ax.legend(handles=[Line2D([], [], color=COLORS[j], marker='o' if j == 0 else 'D', linestyle='none',
-                                  markersize=4, label=name) for j, name in enumerate(BACKBONES)],
-                  loc='lower right', bbox_to_anchor=(1, 1.02), ncol=2, frameon=False, fontsize=8)
+        ax.figure.legend(handles=[Line2D([], [], color=COLORS[j], marker='o' if j == 0 else 'D', linestyle='none',
+                                         markersize=4, label=name) for j, name in enumerate(BACKBONES)],
+                         loc='outside upper right', ncol=2, frameon=False, fontsize=7)
 
 
 def effect_limits(points):
+    """Zero and every value or interval endpoint stay visible, without an empty mirrored half."""
     endpoints = [100 * v for p in points for v in [p.get('value'), *(p.get('ci') or [])] if v is not None]
-    extent = max((abs(v) for v in endpoints), default=1)
-    return -max(1, extent * 1.15), max(1, extent * 1.15)
+    low, high = min([0, *endpoints]), max([0, *endpoints])
+    pad = max(.08 * (high - low), .5)
+    return low - pad, high + pad
 
 
 def adapter_plot(plt, points):
@@ -312,38 +322,206 @@ def adapter_plot(plt, points):
     groups = [(name, ds) for name, ds in (
         ('+H', [d for d in datasets if d in tables.PLUS_H_DATASETS]),
         ('UltraQuery benchmark', [d for d in datasets if d not in tables.PLUS_H_DATASETS])) if ds]
-    height = 1.1 * len(groups) + .18 * len(datasets) + .8
-    fig, axes = plt.subplots(len(groups), 1, figsize=(7.2, height), squeeze=False,
+    height = .9 * len(groups) + .17 * len(datasets) + .4
+    fig, axes = plt.subplots(len(groups), 1, figsize=(TEXT_WIDTH, height), squeeze=False,
                              gridspec_kw={'height_ratios': [max(3, len(ds)) for _, ds in groups]}, layout='constrained')
-    fig.suptitle('Learned vs identity adapter', fontsize=11)
     limits = effect_limits(points)
     for index, ((name, ds), ax) in enumerate(zip(groups, axes[:, 0])):
         forest_axes(ax, points, ds, limits, legend=index == 0)
-        ax.set_title(name, loc='left', fontsize=9)
-        ax.set_xlabel('Learned - identity MRR (points)')
-    fig.supxlabel("Whiskers: supplied paired 95% CI; no whisker: CI unavailable\n"
-                  "Open marker: partial/unknown coverage or pair identity; '-': missing paired MRR", fontsize=7)
+        ax.set_title(name, loc='left', fontsize=8)
+        ax.set_xlabel('MRR gain from the adapter (points)')
     return fig
 
 
 def transfer_plot(plt, points):
     datasets = sorted({p['dataset'] for p in points}, key=lambda d: tables.dataset_order(tables.dataset_name(d)))
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 1.8 + .2 * len(datasets)), sharey=True, layout='constrained')
-    fig.suptitle('Transfer gains over UltraQuery', fontsize=11)
+    fig, axes = plt.subplots(1, 2, figsize=(TEXT_WIDTH, 1.2 + .17 * len(datasets)), sharey=True, layout='constrained')
     limits = effect_limits(points)
     for category, ax in zip(('epfo', 'negation'), axes):
         forest_axes(ax, [p for p in points if p['category'] == category], datasets, limits, legend=category == 'epfo')
-        ax.set_title('Positive queries (EPFO)' if category == 'epfo' else 'Negated queries', fontsize=9, pad=26)
-        ax.set_xlabel('Adapter - UltraQuery MRR (points)')
+        ax.set_title('Positive queries (EPFO)' if category == 'epfo' else 'Negated queries', fontsize=8)
+        ax.set_xlabel('Adapter minus UltraQuery MRR (points)')
         for i in range(1, len(datasets)):
             if tables.family(datasets[i]) != tables.family(datasets[i - 1]):
                 ax.axhline(i - .5, color='#AAAAAA', linewidth=.7)
-    fig.supxlabel("Equal query-type means within each dataset/category; full matched tests only\n"
-                  "'-': missing or incomparable results; no confidence intervals estimated", fontsize=7)
     return fig
 
 
-def generate_figures(reports, output, *, policy='expected', hardness_composition=False):
+def validate_seed_pair(learned, control):
+    """A learned seed and the shared no-adapter control must score the same queries the same way.
+
+    Unlike same-run pairs, a seed's recipe hash covers its own adapter file, so only
+    the adapter identity may differ: the backbone, execution options, query and
+    answer counts, candidates and context must all match.
+    """
+    reference = dict(control, raw=dict(control.get('raw') or {}, graph_recipe_sha256=None),
+                     detail=dict(control.get('detail') or {}, graph_recipe_sha256=None))
+    candidate = dict(learned, raw=dict(learned.get('raw') or {}, graph_recipe_sha256=None),
+                     detail=dict(learned.get('detail') or {}, graph_recipe_sha256=None))
+    tables.validate_pair(candidate, reference, kind='adapter')
+
+
+def family_gain_data(reports: 'tables.Reports', policy: str) -> list[dict]:
+    """Learned-minus-identity MRR per dataset and backbone, averaged over adapter seeds.
+
+    Every seed of the primary recipe is paired with the no-adapter control of the
+    same dataset, which identity calibration makes independent of the seed. Pairs
+    must pass the appendix pair checks except for the adapter identity itself. No
+    intervals here: per-dataset paired intervals are in the appendix figure and table.
+    """
+    points = []
+    for suite in ('ultraquery', 'plus_h'):
+        selected = summary.selected_systems(reports, suite)
+        for name, method in zip(BACKBONES, ADAPTERS):
+            learned = next((runs for (m, identity, _), runs in selected.items() if m == method and not identity), {})
+            control = next((runs for (m, identity, _), runs in selected.items() if m == method and identity), {})
+            for dataset in summary.suite_datasets(suite):
+                family = 'plus_h' if suite == 'plus_h' else tables.family(dataset)
+                point = dict(dataset=dataset, family=family, method=name, value=None, seeds=0,
+                             status='missing learned/identity pair')
+                if dataset in learned and dataset in control:
+                    reference = next(iter(control[dataset].values()))
+                    base = summary.category_mean(reference, policy, 'all')
+                    deltas = []
+                    for record in learned[dataset].values():
+                        validate_seed_pair(record, reference)
+                        value = summary.category_mean(record, policy, 'all')
+                        if value is not None and base is not None:
+                            deltas.append(value - base)
+                    if deltas:
+                        point.update(value=sum(deltas) / len(deltas), seeds=len(deltas), status='available')
+                    else:
+                        point['status'] = 'missing per-type MRR for selected tie policy'
+                points.append(point)
+    return points
+
+
+def family_gain_plot(plt, points: list[dict]):
+    """Datasets as small dots and family means as large markers, one lane per backbone."""
+    from matplotlib.lines import Line2D
+    fig, ax = plt.subplots(figsize=(TEXT_WIDTH, 2.3), layout='constrained')
+    rows = [(key, label) for key, label in FAMILY_ROWS]
+    for i, (key, label) in enumerate(rows):
+        if i % 2 == 0:
+            ax.axhspan(i - .5, i + .5, color='#F7F7F7', zorder=0)
+        for j, name in enumerate(BACKBONES):
+            y = i + (j - .5) * .34
+            selected = [100 * p['value'] for p in points if p['family'] == key and p['method'] == name and p['value'] is not None]
+            if not selected:
+                ax.text(.97, y, '-', transform=ax.get_yaxis_transform(), ha='center', va='center', color=COLORS[j], fontsize=8)
+                continue
+            jitter = [(k % 5 - 2) * .025 for k in range(len(selected))]
+            ax.scatter(selected, [y + d for d in jitter], s=9, color=COLORS[j], alpha=.45, linewidths=0, zorder=2)
+            ax.plot(sum(selected) / len(selected), y, marker='o' if j == 0 else 'D', markersize=6.5, color=COLORS[j],
+                    markeredgecolor='black', markeredgewidth=.6, linestyle='none', zorder=3)
+    counts = {key: len({p['dataset'] for p in points if p['family'] == key}) for key, _ in rows}
+    ax.set_yticks(range(len(rows)), [f'{label} ({counts[key]})' for key, label in rows])
+    ax.set_ylim(len(rows) - .5, -.5)
+    ax.set_xlim(*effect_limits(points))
+    ax.axvline(0, color='#777777', linewidth=.7)
+    ax.set_xlabel('MRR gain from the adapter (points)')
+    style_axes(ax)
+    handles = [Line2D([], [], color=COLORS[j], marker='o' if j == 0 else 'D', linestyle='none', markersize=5,
+                      markeredgecolor='black', markeredgewidth=.5, label=name) for j, name in enumerate(BACKBONES)]
+    handles.append(Line2D([], [], color='#777777', marker='o', linestyle='none', markersize=3, alpha=.6, label='single dataset'))
+    ax.legend(handles=handles, loc='lower right', bbox_to_anchor=(1, 1.01), ncol=3, frameon=False, fontsize=7)
+    return fig
+
+
+def hardness_profile_data(reports: 'tables.Reports', policy: str, types: tuple[str, ...] = PROFILE_TYPES) -> list[dict]:
+    """MRR by missing positive links for every method, one run and condition per dataset/method.
+
+    Bins come only from supplied answer-level difficulty rows; zero-cost diagnostics
+    and coarse or released groupings are excluded, and no bin is interpolated.
+    """
+    primary = {r['id'] for r in tables.paper_records(reports)}
+    rows = [r for r in tables.paper_hardness_rows(reports) if r['grouping'] == 'inferred_positive_edges'
+            and r['shape'] in types and tables.missing_link_count(r) > 0]
+    rows = [r for r in rows if not summary.identity_run(tables.hardness_record(reports, r) | {'id': r.get('entry') or ''})]
+    conditions = defaultdict(lambda: defaultdict(list))
+    for row in rows:
+        record = tables.hardness_record(reports, row)
+        name = tables.short_method(tables.method_name(record))
+        conditions[row.get('dataset'), name][row.get('entry'), row.get('comparison_graph'), row.get('answer_filter')].append(row)
+    series = []
+    for (dataset, name), options in sorted(conditions.items(), key=lambda item: str(item[0])):
+        def priority(key):
+            entry, graph, filters = key
+            return (entry not in primary, graph != 'train+valid', filters != 'corrected',
+                    any(tables.hardness_scope(reports, r)[0] is not True for r in options[key]), str(key))
+        chosen = options[min(options, key=priority)]
+        for shape in types:
+            bins = {}
+            for row in chosen:
+                if row['shape'] == shape:
+                    value = (row.get(policy) or {}).get('mrr')
+                    tables.number(value)
+                    bins[tables.missing_link_count(row)] = None if tables.is_missing(value) else value
+            if bins:
+                series.append(dict(dataset=dataset, shape=shape, method=name, entry=chosen[0].get('entry'),
+                                   points=[dict(links=k, value=bins.get(k)) for k in range(1, tables.POSITIVE_EDGES[shape] + 1)]))
+    if not series:
+        for dataset in tables.PLUS_H_DATASETS:
+            for shape in types:
+                series.append(dict(dataset=dataset, shape=shape, method=None, entry=None,
+                                   points=[dict(links=k, value=None) for k in range(1, tables.POSITIVE_EDGES[shape] + 1)]))
+    return series
+
+
+def hardness_profile_plot(plt, series: list[dict]):
+    """Small multiples, datasets by query type; lines break at missing bins instead of bridging them."""
+    from matplotlib.lines import Line2D
+    datasets = [d for d in tables.PLUS_H_DATASETS if any(s['dataset'] == d for s in series)] or list(tables.PLUS_H_DATASETS)
+    types = [t for t in PROFILE_TYPES if any(s['shape'] == t for s in series)] or list(PROFILE_TYPES)
+    fig, axes = plt.subplots(len(datasets), len(types), figsize=(TEXT_WIDTH, 1.25 * len(datasets) + .55),
+                             sharex='col', sharey='row', squeeze=False, layout='constrained')
+    methods = sorted({s['method'] for s in series if s['method']},
+                     key=lambda m: (list(METHOD_STYLES).index(m) if m in METHOD_STYLES else len(METHOD_STYLES), m))
+    for i, dataset in enumerate(datasets):
+        for j, shape in enumerate(types):
+            ax = axes[i][j]
+            bound = tables.POSITIVE_EDGES[shape]
+            drawn = False
+            for item in series:
+                if item['dataset'] != dataset or item['shape'] != shape or not item['method']:
+                    continue
+                color, marker, width = METHOD_STYLES.get(item['method'], ('#444444', '.', .9))
+                xs = [p['links'] for p in item['points']]
+                ys = [math.nan if p['value'] is None else 100 * p['value'] for p in item['points']]
+                if any(not math.isnan(y) for y in ys):
+                    ax.plot(xs, ys, color=color, marker=marker, markersize=3.2, linewidth=width,
+                            zorder=3 if 'adapter' in item['method'] else 2)
+                    drawn = True
+            if not drawn:
+                ax.text(.5, .5, '-', transform=ax.transAxes, ha='center', va='center', color='#666666')
+            ax.set_xticks(range(1, bound + 1))
+            ax.set_xlim(.7, bound + .3)
+            ax.set_ylim(bottom=0)
+            style_axes(ax)
+            ax.grid(axis='y', color='#E6E6E6', linewidth=.5)
+            if i == 0:
+                ax.set_title(shape, fontsize=8)
+            if j == 0:
+                ax.set_ylabel(tables.dataset_name(dataset) + '\nMRR', fontsize=7)
+            if i == len(datasets) - 1:
+                ax.set_xlabel('missing links', fontsize=7)
+    if methods:
+        handles = [Line2D([], [], color=METHOD_STYLES.get(m, ('#444444', '.', .9))[0],
+                          marker=METHOD_STYLES.get(m, ('#444444', '.', .9))[1], markersize=3.5,
+                          linewidth=METHOD_STYLES.get(m, ('#444444', '.', .9))[2], label=m) for m in methods]
+        fig.legend(handles=handles, loc='outside upper center', ncol=min(len(handles), 5), frameon=False, fontsize=7)
+    return fig
+
+
+def figure_environment(name: str, caption: str, *, star: bool = False) -> str:
+    """A LaTeX figure float for one exported figure; captions are escaped text."""
+    environment = 'figure*' if star else 'figure'
+    return '\n'.join([rf'\begin{{{environment}}}[t]', r'\centering',
+                      rf'\includegraphics[width=\linewidth]{{{name}.pdf}}',
+                      rf'\caption{{{tables.escape(caption)}}}\label{{fig:{name}}}', rf'\end{{{environment}}}'])
+
+
+def generate_figures(reports, output, *, policy='sort', hardness_composition=False):
     if not (reports.results or reports.difficulty or any(reports.effects.values())):
         reports = tables.empty_reports()
     if policy not in ('sort', 'expected'):
@@ -357,10 +535,20 @@ def generate_figures(reports, output, *, policy='expected', hardness_composition
     payload = dict(tie_policy=policy, score_units='fraction; displayed MRR differences x100',
                    template=reports.template, figures=[])
     specifications = (
-        ('main-01-adapter-gains', 'Main paper', lambda r: adapter_data(r, policy), adapter_plot,
-         'Learned-minus-identity adapter macro MRR in points, under the selected tie policy. Whiskers are supplied paired 95% confidence intervals conditional on frozen weights, never estimated or combined. Supplied candidate/context identities must match. Open markers indicate partial/unknown coverage or unavailable pair identity; a point without a whisker has no supplied interval.'),
+        ('main-01-adapter-gains', 'Main paper', lambda r: family_gain_data(r, policy), family_gain_plot,
+         'MRR gain from the learned adapter over the same frozen backbone without it (identity calibration), in points over '
+         'all query types. Small dots are single datasets, averaged over adapter training seeds; large markers are the mean '
+         'of each dataset family. Each seed is paired with the no-adapter control of its dataset on the same queries. '
+         'Paired 95% confidence intervals per dataset are in the appendix. A dash marks a family without paired results.'),
+        ('main-02-hardness-profiles', 'Main paper', lambda r: hardness_profile_data(r, policy), hardness_profile_plot,
+         'MRR on +H by the minimum number of missing positive links an answer needs (x-axis), for the longest path (3p, 4p) '
+         'and intersection (3i, 4i) query types. Scores average answers within each query that has such answers, then '
+         'queries; no bin is interpolated, and missing bins are not drawn. All parent types and counts are in the '
+         'appendix. A dash marks a panel without supplied bins.'),
         ('appendix-01-transfer-gains', 'Appendix', lambda r: transfer_data(r, policy), transfer_plot,
-         'Per-dataset adapter-minus-UltraQuery MRR in points, shown separately for EPFO and negation. Each category weights its query types equally. Only full 14-type tests with matching graph, filters, query/answer counts, candidate counts, and candidate/context identities are compared. These descriptive cross-method differences have no inferred confidence intervals.'),
+         'Per-dataset adapter-minus-UltraQuery MRR in points, shown separately for EPFO and negation. Each category weights its query types equally. Only full 14-type tests with matching graph, filters, query/answer counts, candidate counts, and candidate/context identities are compared. These descriptive cross-method differences have no inferred confidence intervals. Circles: ULTRA; diamonds: TRIX; a dash marks missing or incomparable results.'),
+        ('appendix-02-adapter-gains-by-dataset', 'Appendix', lambda r: adapter_data(r, policy), adapter_plot,
+         'Learned-minus-identity adapter macro MRR in points per dataset, under the selected tie policy. Whiskers are supplied paired 95% confidence intervals conditional on frozen weights, never estimated or combined. Supplied candidate/context identities must match. Open markers indicate partial/unknown coverage or unavailable pair identity; a point without a whisker has no supplied interval; a dash marks a missing paired MRR.'),
     )
     if hardness_composition:
         specifications += ((COMPOSITION_NAME, 'Appendix', composition_data, composition_plot,
@@ -384,4 +572,7 @@ def generate_figures(reports, output, *, policy='expected', hardness_composition
             payload['figures'].append(dict(name=name, placement=placement, files=files, caption=caption, data=data))
     path = output / 'figures.json'
     path.write_text(json.dumps(payload, indent=2, allow_nan=False) + '\n', encoding='utf-8')
+    floats = [f'% {f["placement"]}\n' + figure_environment(f['name'], f['caption']) for f in payload['figures']]
+    (output / 'figures.tex').write_text('% Generated by python -m benchmarks.cqa.paper --figures; needs graphicx.\n\n'
+                                       + '\n\n'.join(floats) + '\n', encoding='utf-8')
     return payload

@@ -1,4 +1,4 @@
-"""Render saved +H/UltraQuery JSON reports as nine LaTeX paper tables.
+"""Render saved +H/UltraQuery JSON reports as LaTeX paper tables: three main floats and appendix A1--A11.
 
 Table generation uses only the standard library; --figures uses matplotlib.
 It never loads models, datasets,
@@ -9,8 +9,10 @@ comparison.json, inference-difficulty.json, and
 """
 
 import argparse
+import functools
 import json
 import math
+import re
 import sys
 from collections import defaultdict
 from copy import copy
@@ -24,8 +26,8 @@ MAIN_HARDNESS_TYPES = ('2p', '3p', '4p', '2i', '3i', '4i', '3in', 'pin', 'inp')
 PLUS_H_DATASETS = catalog().PLUS_H_DATASETS
 GRAPH_INDEPENDENT_METHODS = catalog().GRAPH_INDEPENDENT_METHODS
 FAMILIES = {'transductive': ('Transductive', len(catalog().TRANSDUCTIVE)),
-            'inductive-e': ('New entities', len(catalog().INDUCTIVE_VERSIONS)),
-            'inductive-er': ('New entities and relations', len(catalog().WIKITOPICS)),
+            'inductive-e': ('Inductive (e)', len(catalog().INDUCTIVE_VERSIONS)),
+            'inductive-er': ('Inductive (e,r)', len(catalog().WIKITOPICS)),
             'all': ('All datasets', len(catalog().BENCHMARK_DATASETS))}
 METRICS = ('mrr', 'hits1', 'hits3', 'hits10')
 MISSING = '-'
@@ -39,11 +41,12 @@ METHOD_NAMES = {'cone': 'ConE', 'gnnqe': 'GNN-QE', 'ultraquery': 'UltraQuery',
                 'ultra-adapter': 'ULTRA + adapter', 'trix-adapter': 'TRIX + adapter',
                 'ultraquery-lp': 'UltraQuery-LP', 'incoming-relation': 'Incoming relation',
                 'inductive-gnnqe': 'Inductive GNN-QE'}
+# Appendix tables A1--A11; the main paper's compact tables are in summary.py.
 TABLE_TITLES = (
-    'UltraQuery Transfer Performance', '+H Per-Query-Type Performance',
-    '+H Performance by Hardness', 'Learned vs Identity Adapter',
-    'Full UltraQuery Results', 'Full +H Hardness Breakdowns',
-    '+H Performance by Author Query Reduction',
+    'UltraQuery Results by Dataset Family', 'UltraQuery Results by Freebase Derivation', 'Full UltraQuery Results',
+    '+H Per-Query-Type Performance', '+H Performance by Hardness',
+    'Full +H Hardness Breakdowns', '+H Performance by Author Query Reduction',
+    'Learned vs Identity Adapter', 'Adapter Training Seeds',
     'Protocol Sensitivity', 'Data, Training, and Selection Details',
 )
 LATEX_ESCAPES = {'\\': r'\textbackslash{}', '&': r'\&', '%': r'\%', '$': r'\$',
@@ -139,7 +142,7 @@ def transfer_settings(record):
     """Comparable recipe cohorts exclude dataset sizes, weights and plan hashes.
 
     Dataset-normalized entry IDs declare the cohort. Dataset-trained checkpoints
-    may differ within it; A4 retains their identities and strict paired checks
+    may differ within it; A11 retains their identities and strict paired checks
     still require matching supplied weights and candidate domains.
     """
     settings = execution_settings(record)
@@ -217,6 +220,7 @@ class Reports:
         self.difficulty = []
         self.effects = {'adapter': [], 'filter': [], 'graph': []}
         self.template = False
+        self.primary_recipes = ()
 
     def add_result(self, record):
         key = record['id']
@@ -432,28 +436,6 @@ def adapter_rows(reports, policy):
 
 
 
-def metadata_rows(reports):
-    rows = []
-    for r in sorted(reports.results.values(), key=lambda r: (r['dataset'], r['id'])):
-        raw = r['raw']
-        inference = raw.get('inference') or {}
-        training = (inference.get('paper_protocol') or {}).get('training') or {}
-        values = {'method': r['method'], 'scope': scope(r), 'inference graph': r['graph'],
-                  'answer filters': r['filter'], 'execution profile': r['profile'],
-                  'calibration': r['calibration'], 'observed facts': r['facts'],
-                  'queries': raw.get('queries'), 'candidates': raw.get('num_candidates'),
-                  'checkpoint': inference.get('checkpoint', (inference.get('manifest') or {}).get('checkpoint')),
-                  'checkpoint SHA256': inference.get('checkpoint_sha256'),
-                  'selection protocol': inference.get('selection_protocol'),
-                  'training': training or None, 'options': inference.get('options'),
-                  'operators': inference.get('operators'), 'device': inference.get('device'),
-                  'seed': inference.get('seed'), 'PyTorch': inference.get('torch'),
-                  'reference status': r['reference'].get('status')}
-        for key, value in values.items():
-            rows.append([escape(r['dataset']), escape(r['id']), escape(key), escape(value)])
-    return rows
-
-
 def dataset_name(name):
     if name is None:
         return MISSING
@@ -501,7 +483,8 @@ def labeled_records(reports):
 
 
 def run_labels(reports):
-    """Compact default names, unique labels whenever a dataset has multiple runs."""
+    """Compact default names, unique labels whenever a dataset has multiple runs; seed replicates say so."""
+    from . import summary
     records = labeled_records(reports)
     groups = defaultdict(list)
     for entry, record in records.items():
@@ -509,10 +492,25 @@ def run_labels(reports):
     labels = {}
     for (_, base), entries in sorted(groups.items(), key=lambda item: str(item[0])):
         full_names = [method_name(records[entry]) for entry in entries]
+        systems = {entry: summary.system_of(records[entry]) if records[entry].get('dataset') else ((entry,), 0)
+                   for entry in entries}
+        # Several runs: name the recipe (without the backbone) and, for replicates, the seed tag.
+        recipes = defaultdict(set)
+        for entry in entries:
+            recipes[systems[entry][0]].add(systems[entry][1])
+        tags = {}
+        for entry in entries:
+            system, seed = systems[entry]
+            parts = [] if len(recipes) == 1 else [summary.recipe_token(records[entry])] if records[entry].get('dataset') else []
+            if len(recipes[system]) > 1:
+                parts.append(f'seed tag {seed}')
+            tags[entry] = ', '.join(p for p in parts if p)
+        # Colliding names get recipe/seed labels when those name every run uniquely, else numbers.
+        named = all(tags.values()) and len(set(tags.values())) == len(tags)
         for index, entry in enumerate(sorted(entries), 1):
             name = method_name(records[entry])
             labels[entry] = (base if len(entries) == 1 else name if full_names.count(name) == 1
-                             else name + f' [R{index}]')
+                             else name + f' ({tags[entry]})' if named else name + f' [R{index}]')
     return labels
 
 
@@ -520,30 +518,20 @@ def display_method(reports, record):
     return run_labels(reports).get(record['id'], method_name(record))
 
 
+@functools.lru_cache(maxsize=None)
+def shipped_recipes():
+    """{(suite, adapter method): recipe} of the checked-in kgfm_adapters.json manifests."""
+    recipes = {}
+    for suite in SUITES:
+        for entry in read_manifest(suite_directory(suite) / 'kgfm_adapters.json')['entries']:
+            recipes[suite, entry['method']] = entry['id'].replace(entry['dataset'], '').strip('-')
+    return recipes
+
+
 def paper_records(reports, *, identities=False):
-    """Choose primary conditions for the main paper; keep all data in appendices."""
-    groups = defaultdict(list)
-    for r in reports.results.values():
-        identity = bool(r['paired_with'] or r['calibration'] == 'without-adapter' or '-without-adapter' in r['id'])
-        if identity and not identities or r['id'].endswith('-released-filters'):
-            continue
-        groups[r['dataset'], r['method'], identity].append(r)
-    selected = []
-    for candidates in groups.values():
-        def priority(r):
-            target_filter = 'corrected' if r['dataset'] in PLUS_H_DATASETS else 'released'
-            target_graph = 'train' if r['method'] in GRAPH_INDEPENDENT_METHODS else 'train+valid'
-            method = r['method']
-            if method.endswith('-adapter'):
-                recipe = method.split('-')[0] + ('-product-14type-' if r['dataset'] in PLUS_H_DATASETS else '-product-intersections-')
-            else:
-                recipe = method + '-'
-            expected_id = recipe + r['dataset'] + ('-without-adapter' if r['paired_with'] or r['calibration'] == 'without-adapter' else '')
-            normalized_id = r['id'].replace('-graph-train-valid', '').replace('-graph-train', '')
-            return (normalized_id != expected_id, r['filter'] != target_filter, r['dataset'] in PLUS_H_DATASETS and r['graph'] != target_graph,
-                    r['profile'] == 'reference' and r['method'] in ('cqd', 'cqd-hybrid'), not r['complete'], r['id'])
-        selected.append(min(candidates, key=priority))
-    return sorted(selected, key=lambda r: (r['dataset'], method_name(r), r['id']))
+    """One run per dataset, method and identity flag, as in the main tables (see summary.primary_runs)."""
+    from . import summary
+    return sorted(summary.primary_runs(reports, identities=identities), key=lambda r: (r['dataset'], method_name(r), r['id']))
 
 
 def subset_reports(reports, records):
@@ -560,7 +548,7 @@ def main_transfer_rows(reports, policy):
 
 
 def main_plus_h_records(reports):
-    """Table 2 compares one fact graph and answer-filter policy across methods."""
+    """The +H tables compare one fact graph and answer-filter policy across methods."""
     records = [r for r in paper_records(reports) if r['dataset'] in PLUS_H_DATASETS]
     for field, label in (('graph', 'inference graph'), ('filter', 'answer filters')):
         applicable = [r for r in records if field != 'graph' or r['method'] not in GRAPH_INDEPENDENT_METHODS]
@@ -568,7 +556,7 @@ def main_plus_h_records(reports):
         if len(conditions) > 1 or any(is_missing(value) for value in conditions):
             details = ', '.join(f'{method_name(r)} ({dataset_name(r["dataset"])}): {r[field] or "unavailable"}'
                                 for r in applicable)
-            raise ValueError(f'Table 2 requires the same {label}, explicitly recorded across methods and datasets; {details}')
+            raise ValueError(f'The +H tables require the same {label}, explicitly recorded across methods and datasets; {details}')
     return records
 
 
@@ -688,7 +676,7 @@ def main_hardness_matrix(reports, policy, main_types):
     candidates = selected_hardness(reports, main_types)
     methods = sorted({short_method(method_name(hardness_record(reports, r))) for r in candidates},
                      key=lambda name: (0 if name == 'QTO' else 1 if name.startswith('ULTRA') else 2 if name.startswith('TRIX') else 3, name))
-    # Three method blocks fit a landscape page; other methods are fully retained in A2.
+    # Three method blocks fit a landscape page; other methods are fully retained in A6.
     methods = methods[:3]
     levels = range(1, max((POSITIVE_EDGES[s] for s in main_types), default=4) + 1)
     cells = {}
@@ -715,6 +703,7 @@ def main_hardness_matrix(reports, policy, main_types):
 
 
 def main_adapter_matrix(reports, policy):
+    from . import summary
     selected = {r['id'] for r in paper_records(reports)}
     pairs = adapter_rows(reports, policy)  # validates paired coverage and preserves supplied CIs
     cells, scopes, names = {}, defaultdict(set), set()
@@ -725,10 +714,11 @@ def main_adapter_matrix(reports, policy):
         effect = next((e for e in reports.effects['adapter'] if escape(e['learned']) == row[1]), {})
         r = entry_record(reports, learned_id or effect.get('learned'), effect.get('dataset'))
         dataset = r['dataset'] or effect.get('dataset')
-        # The training recipe is recorded in A4; ULTRA and TRIX remain common column blocks.
+        # The training recipe is recorded in A11; ULTRA and TRIX remain common column blocks.
         name = METHOD_NAMES.get(r['method'], r['method'] or MISSING).replace(' + adapter', '')
         names.add(name)
-        recipe = '2i/3i' if 'intersections' in r['id'] else '14-type' if '14type' in r['id'] else MISSING
+        recipe = ('2i/3i' if 'intersections' in r['id'] else '14-type' if '14type' in r['id']
+                  else summary.recipe_token(r) if r.get('dataset') else MISSING)
         key = (dataset, recipe, name)
         if key in cells and cells[key] != row[4:]:
             raise ValueError('Ambiguous adapter recipes; supply one primary recipe per backbone')
@@ -1251,13 +1241,16 @@ def method_order(name):
 
 
 def dataset_order(name):
+    plus_h = [dataset_name(d) for d in PLUS_H_DATASETS]
+    if name in plus_h:
+        return 3, plus_h.index(name)
     if name in ('FB15k', 'FB15k-237', 'NELL995'):
         return 0, name
     if name.startswith('FB15k-237 v'):
-        return 1, int(name.split(' v')[1])
+        return 1, int(re.match(r'\d+', name.split(' v')[1]).group())
     if name.startswith('WikiTopics '):
         return 2, name
-    return 3, name
+    return 4, name
 
 
 def scope_notes(records):
@@ -1311,7 +1304,8 @@ def hardness_panels(reports, policy):
     return output
 
 
-def render_tables(reports, *, policy='expected', fragment=False, main_types=MAIN_HARDNESS_TYPES):
+def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HARDNESS_TYPES):
+    from . import summary
     if policy not in ('sort', 'expected'):
         raise ValueError('Tie policy must be sort or expected')
     if set(main_types) - set(PLUS_H_TYPES):
@@ -1319,13 +1313,14 @@ def render_tables(reports, *, policy='expected', fragment=False, main_types=MAIN
     if not (reports.results or reports.difficulty or any(reports.effects.values())):
         reports = empty_reports()
     lines = ['% Generated by python -m benchmarks.cqa.paper.',
-             '% Required packages: geometry (landscape recommended), booktabs, longtable, array.',
-             '% Metric cells use x100. Missing data is shown as "-"; no scores are imputed.',
+             '% Required packages: booktabs, longtable, array; the appendix needs a landscape page (geometry).',
+             '% Main tables are floats with one decimal; appendix tables are long tables with two.',
+             '% Scores are x100. Missing data is shown as "-"; no scores are imputed.',
              f'% Selected tie policy: {policy}.',
              '% Empty templates: python -m benchmarks.cqa.paper',
              '% Populate: python -m benchmarks.cqa.paper REPORT.json ... -o tables.tex',
              '% Use --fragment to omit the preamble; retain both section headers.',
-             '% Appendix table numbering is reset to A1--A5.']
+             '% Appendix table numbering is reset to A1--A11.']
     if not fragment:
         lines.extend([r'\documentclass[10pt]{article}', r'\usepackage[a4paper,landscape,margin=15mm]{geometry}',
                       r'\usepackage{booktabs,longtable,array}', r'\setlength{\LTcapwidth}{\textwidth}',
@@ -1339,13 +1334,12 @@ def render_tables(reports, *, policy='expected', fragment=False, main_types=MAIN
                      r'using the default baselines and adapters. Identity and filter comparisons are separate tables. '
                      r'Dataset coverage is planned; no evaluation has been run. Scores, intervals and unavailable counts are "-". '
                      r'Hardness bins contain 1 to 4 missing positive links, as permitted by each parent type; further breakdowns appear only when supplied.\par}')
+    for index, render in enumerate((summary.ultraquery_table, summary.plus_h_table, summary.ablation_table), 1):
+        lines.extend([f'% BEGIN MAIN TABLE {index}', render(reports, policy), f'% END MAIN TABLE {index}'])
     hardness_headers, hardness_widths, hardness_rows = main_hardness_matrix(reports, policy, main_types)
     adapter_headers, adapter_widths, adapter_values = main_adapter_matrix(reports, policy)
     primary = paper_records(reports)
     plus_h_records = main_plus_h_records(reports)
-    lines.append(r'{\normalsize For +H test results, all hardness categories use training + validation facts as the fixed reference. '
-                 r'Valid witnesses are checked offline against training + validation + test facts. '
-                 + escape(main_plus_h_protocol_notes(plus_h_records)) + r'\par}')
     transfer = main_transfer_rows(reports, policy)
     variations = defaultdict(set)
     for row in transfer:
@@ -1374,9 +1368,10 @@ def render_tables(reports, *, policy='expected', fragment=False, main_types=MAIN
     adapter_recipe_counts = defaultdict(set)
     for row in adapter_values:
         adapter_recipe_counts[row[0]].add(row[1])
+    # Sort by dataset before a recipe label is appended to its name.
+    adapter_values.sort(key=lambda row: (dataset_order(row[0]), row[1]))
     adapter_values = [[row[0] + (' (' + row[1] + ')' if len(adapter_recipe_counts[row[0]]) > 1 else ''),
                        *row[3:]] for row in adapter_values]
-    adapter_values.sort(key=lambda row: dataset_order(row[0]))
     ultra_panels = defaultdict(list)
     for row in ultra_matrix_rows(reports, policy):
         ultra_panels[row[2]].append([row[0], row[1], *row[3:]])
@@ -1391,73 +1386,95 @@ def render_tables(reports, *, policy='expected', fragment=False, main_types=MAIN
         rows.sort(key=lambda row: (dataset_order(row[0]), method_order(row[1])))
         protocol_panels_data.append((f'{factor}: {a_name} to {b_name}', rows,
                                      ['Dataset', 'Method', a_name + ' MRR', b_name + ' MRR', r'$\Delta$', r'95\% CI']))
+    hardness_note = ('MRR by the minimum number of missing positive links in a valid witness for an answer (numbered columns). '
+                     'For paths, these are hops requiring inference; negated atoms are not counted. Counts differ from released structural reductions, particularly for unions. '
+                     'Within each bin, scores average answers per participating query, then participating queries; queries can occur in multiple bins. '
+                     'Impossible or unavailable bins are "-". Coarse partial/full scores cannot supply numeric bins. '
+                     'One run and filter condition is used per method/dataset. No cross-type hardness mean. '
+                     + main_hardness_notes(reports, main_types))
+    seed_rows, seed_recipes = summary.seed_rows(reports, policy)
     specifications = [
-        (['Method', 'Dataset family', 'Coverage', *(['MRR', 'H@10'] * 2)],
-         [42, 49, 18, 30, 30, 30, 30], transfer,
-         'Equal dataset averages over full tests with all 14 query types. Coverage is evaluated/total datasets (planned in the empty template). Evaluation settings are in A5.'
-         + (' Protocol variants: ' + '; '.join(variation_notes) if variation_notes else '')),
-        (['Dataset', 'Method', *[escape(s) for s in PLUS_H_TYPES]],
-         [30, 40, *([11] * 16)], plus_h,
-         'MRR for all 16 query types, including five negation types. Default adapter training uses 14 query types. '
-         + scope_notes(plus_h_records)),
-        (hardness_headers, hardness_widths, hardness_rows,
-         'MRR by the minimum number of missing positive links in a valid witness for an answer (numbered columns). '
-         'For paths, these are hops requiring inference; negated atoms are not counted. Counts differ from released structural reductions, particularly for unions. '
-         'Within each bin, scores average answers per participating query, then participating queries; queries can occur in multiple bins. '
-         'Impossible or unavailable bins are "-". Coarse partial/full scores cannot supply numeric bins. '
-         'One run and filter condition is used per method/dataset. No cross-type hardness mean. '
-         + main_hardness_notes(reports, main_types)),
-        (adapter_headers, [39, *adapter_widths[3:]], adapter_values,
-         'Paired MRR; delta is learned minus identity. Default adapter training uses 2i/3i for UltraQuery and 14 query types for +H. Supplied 95% confidence intervals are conditional on frozen weights. '
-         + scope_notes([r for r in primary if r['method'].endswith('-adapter')])),
-        (['Dataset', 'Method', 'Metric', 'All', 'EPFO', 'Neg.', *ULTRA_TYPES],
-         [29, 40, 13, *([9] * 17)], [],
-         'MRR and H@10, including identity controls. Default UltraQuery adapters use 2i/3i training. Means weight query types equally; protocol and partial scopes are identified in panel headings.'),
-        (['Dataset', 'Method / counts', 'Bin', 'Metric', *PLUS_H_TYPES],
-         [25, 38, 19, 13, *([9] * 16)], [],
-         'The default adapter recipe uses 14 query types. Overall panels identify the inference facts. '
-         'Numbered bins count missing positive links, as in Table 3. '
-         'Hardness scores average bin answers within participating queries, then participating queries; query counts can overlap across bins and cannot recombine these means. '
-         'Parent-query coverage is described in panel headings. Identical count vectors are shown once. Additional bins appear only when supplied.'),
-        (['Type', 'Method', 'Overall', *[AUTHOR_QUERY_NAMES.get(shape, shape) for shape in AUTHOR_REDUCTION_TYPES], 'Partial', 'Full'],
-         [16, 38, *([11] * 12), 16, 16], [],
-         'MRR grouped by the +H authors\' structural query reductions. Columns describe the remaining query shape; 2u denotes two union branches, for which one predicted link can suffice. '
-         'For negated queries, Partial and Full refer to the positive reasoning tree. '
-         'Query-type names follow the authors\' notation (for example, up is 2u1p). One run and filter condition is used per method/dataset. '
-         'Scores average category answers within participating queries, then queries. Counts are in A2; unavailable or impossible categories are "-".'),
-        (['Dataset', 'Method', 'MRR A', 'MRR B', r'$\Delta$', r'95\% CI'],
-         [35, 60, 35, 35, 28, 46], [],
-         'Delta is the second condition minus the first, in MRR points. Supplied intervals are paired 95% confidence intervals; unavailable values are "-".'),
-        (['Applies to', 'Setting', 'Value'], [62, 49, 133], shared_metadata_rows(reports),
-         'Shared settings are listed once. Checkpoints are identified by filename and method/dataset; full paths and run records remain in the input reports. Values in empty templates are manifest defaults; unavailable values are "-".'),
+        dict(headers=['Method', 'Dataset family', 'Coverage', *(['MRR', 'H@10'] * 2)], widths=[42, 49, 18, 30, 30, 30, 30],
+             rows=transfer, options=dict(spanners=(('', 3), ('EPFO', 2), ('Negation', 2)), numeric_from=3,
+                                         row_group=lambda row: row[0], keep_group=True),
+             note='Equal dataset averages over full tests with all 14 query types. Coverage is evaluated/total datasets '
+                  '(planned in the empty template). Evaluation settings are in A11. Appendix tables use each method\'s default '
+                  'recipe (adapters: the primary recipe) at its lowest seed tag, except A2 and A9, which report every seed '
+                  'tag, and A3, A6, A10 and A11, which list every supplied run.'
+                  + (' Protocol variants: ' + '; '.join(variation_notes) if variation_notes else '')),
+        dict(headers=['Method', 'EPFO MRR', 'Negation MRR', 'EPFO MRR', 'Negation MRR'], widths=[60, 34, 34, 34, 34],
+             rows=summary.freebase_rows(reports, policy),
+             options=dict(spanners=(('', 1), ('Freebase-derived (11)', 2), ('Other (12)', 2)), numeric_from=1),
+             note='FB15k, FB15k-237 and the nine inductive FB15k-237 splits derive from Freebase, which UltraQuery '
+                  'training queries, the pretraining of the ULTRA and TRIX backbones and the source queries of the adapters '
+                  'also use. NELL995 and the eleven WikiTopics datasets do not derive from Freebase, but UltraQuery is '
+                  'initialised from ULTRA 4g, whose pretraining includes NELL995. Equal query-type means per dataset, then '
+                  'dataset means; adapter rows give the mean and sample standard deviation over seed tags, as in the main tables.'),
+        dict(headers=['Dataset', 'Method', 'Metric', 'All', 'EPFO', 'Neg.', *ULTRA_TYPES], widths=[29, 40, 13, *([9] * 17)],
+             panels=[(('Scope: ' + context) if context != 'full test' else '', values)
+                     for context, values in sorted(ultra_panels.items())],
+             options=dict(numeric_from=3, group_by=lambda row: row[0]),
+             note='MRR and H@10, including identity controls. Means weight query types equally; protocol and partial '
+                  'scopes are identified in panel headings. Adapter recipes are listed in A11.'),
+        dict(headers=['Dataset', 'Method', *[escape(s) for s in PLUS_H_TYPES]], widths=[30, 40, *([11] * 16)], rows=plus_h,
+             options=dict(numeric_from=2, row_group=lambda row: row[0], keep_group=True),
+             note='MRR for all 16 query types, including five negation types. Adapter recipes are listed in A11. '
+                  + main_plus_h_protocol_notes(plus_h_records) + ' ' + scope_notes(plus_h_records)),
+        dict(headers=hardness_headers, widths=hardness_widths, rows=hardness_rows,
+             options=dict(spanners=hardness_spanners, numeric_from=2, row_group=lambda row: row[0], keep_group=True),
+             note='For +H test results, all hardness categories use training + validation facts as the fixed reference; '
+                  'valid witnesses are checked offline against training + validation + test facts. ' + hardness_note),
+        dict(headers=['Dataset', 'Method / counts', 'Bin', 'Metric', *PLUS_H_TYPES], widths=[25, 38, 19, 13, *([9] * 16)],
+             panels=hardness_panels(reports, policy), options=dict(numeric_from=4),
+             note='Overall panels identify the inference facts. Numbered bins count missing positive links, as in A5. '
+                  'Hardness scores average bin answers within participating queries, then participating queries; query counts '
+                  'can overlap across bins and cannot recombine these means. Parent-query coverage is described in panel '
+                  'headings. Identical count vectors are shown once. Additional bins appear only when supplied.'),
+        dict(headers=['Type', 'Method', 'Overall', *[AUTHOR_QUERY_NAMES.get(shape, shape) for shape in AUTHOR_REDUCTION_TYPES], 'Partial', 'Full'],
+             widths=[16, 38, *([11] * 12), 16, 16], panels=author_reduction_panels(reports, policy),
+             options=dict(numeric_from=3, group_by=lambda row: row[0],
+                          spanners=(('', 3), ('Structural reductions', 11), ('Negated queries', 2))),
+             note='MRR grouped by the +H authors\' structural query reductions. Columns describe the remaining query shape; '
+                  '2u denotes two union branches, for which one predicted link can suffice. For negated queries, Partial and '
+                  'Full refer to the positive reasoning tree. Query-type names follow the authors\' notation (for example, up '
+                  'is 2u1p). One run and filter condition is used per method/dataset. Scores average category answers within '
+                  'participating queries, then queries. Counts are in A6; unavailable or impossible categories are "-".'),
+        dict(headers=adapter_headers, widths=[39, *adapter_widths[3:]], rows=adapter_values,
+             options=dict(spanners=adapter_spanners, numeric_from=1),
+             note='Paired MRR; delta is learned minus identity. Supplied 95% confidence intervals are conditional on frozen '
+                  'weights. Adapter recipes are listed in A11. '
+                  + scope_notes([r for r in primary if r['method'].endswith('-adapter')])),
+        dict(headers=['Method', 'Seed tag', 'UltraQuery MRR', '+H MRR'], widths=[50, 18, 34, 34],
+             rows=seed_rows, options=dict(numeric_from=1, row_group=lambda row: row[0]),
+             note='Every seed tag of the primary adapter recipes (' + seed_recipes + '): MRR over all query types, '
+                  'averaged over query types and then all datasets of the suite. Seed tags come from entry IDs (-seedN; '
+                  'untagged runs are 0), not from training seeds. A tag without every dataset of a suite is "-". The main '
+                  'tables report the mean and sample standard deviation over these tags; the other appendix tables use the '
+                  'lowest tag.'),
+        dict(headers=['Dataset', 'Method', 'MRR A', 'MRR B', r'$\Delta$', r'95\% CI'], widths=[35, 60, 35, 35, 28, 46],
+             panels=protocol_panels_data, options=dict(numeric_from=2, group_by=lambda row: row[0]),
+             note='Delta is the second condition minus the first, in MRR points. Supplied intervals are paired 95% '
+                  'confidence intervals; unavailable values are "-".'),
+        dict(headers=['Applies to', 'Setting', 'Value'], widths=[62, 49, 133], rows=shared_metadata_rows(reports),
+             options=dict(row_group=lambda row: row[1]),
+             note='Shared settings are listed once. Checkpoints are identified by filename and method/dataset; full paths '
+                  'and run records remain in the input reports. Values in empty templates are manifest defaults; '
+                  'unavailable values are "-".'),
     ]
-    for index, (headers, widths, rows, note) in enumerate(specifications):
-        if index == 4:
-            lines.extend([r'\clearpage', r'\section*{Appendix}', r'\setcounter{table}{0}',
-                          r'\renewcommand{\thetable}{A\arabic{table}}'])
-        elif index and not fragment:
+    lines.extend([r'\clearpage', r'\section*{Appendix}', r'\setcounter{table}{0}', r'\renewcommand{\thetable}{A\arabic{table}}'])
+    for index, spec in enumerate(specifications, 1):
+        if index > 1 and not fragment:
             # In the standalone preview, each logical table starts together.
             lines.append(r'\clearpage')
-        label = f'tab:benchmark-paper-{index + 1}'
-        lines.append(f'% BEGIN PAPER TABLE {index + 1}')
-        if index in (4, 5, 6, 7):
-            panels = ([(('Scope: ' + context) if context != 'full test' else '', values)
-                       for context, values in sorted(ultra_panels.items())] if index == 4 else
-                      hardness_panels(reports, policy) if index == 5 else
-                      author_reduction_panels(reports, policy) if index == 6 else protocol_panels_data)
-            lines.append(protocol_panels(TABLE_TITLES[index], label, headers, widths, panels, note,
-                                         numeric_from=(3 if index in (4, 6) else 4 if index == 5 else 2),
-                                         group_by=(lambda row: row[0]) if index in (4, 6, 7) else None,
-                                         spanners=(('', 3), ('Structural reductions', 11), ('Negated queries', 2)) if index == 6 else ()))
+        label = f'tab:benchmark-paper-{index}'
+        lines.append(f'% BEGIN PAPER TABLE {index}')
+        if 'panels' in spec:
+            lines.append(protocol_panels(TABLE_TITLES[index - 1], label, spec['headers'], spec['widths'], spec['panels'],
+                                         spec['note'], **spec['options']))
         else:
-            options = {0: dict(spanners=(('', 3), ('EPFO', 2), ('Negation', 2)), numeric_from=3,
-                               row_group=lambda row: row[0], keep_group=True),
-                       1: dict(numeric_from=2, row_group=lambda row: row[0], keep_group=True),
-                       2: dict(spanners=hardness_spanners, numeric_from=2, row_group=lambda row: row[0], keep_group=True),
-                       3: dict(spanners=adapter_spanners, numeric_from=1),
-                       8: dict(row_group=lambda row: row[1])}[index]
-            lines.append(table(TABLE_TITLES[index], label, headers, widths, rows, note, **options))
-        lines.append(f'% END PAPER TABLE {index + 1}')
+            lines.append(table(TABLE_TITLES[index - 1], label, spec['headers'], spec['widths'], spec['rows'],
+                               spec['note'], **spec['options']))
+        lines.append(f'% END PAPER TABLE {index}')
     if not fragment:
         lines.append(r'\end{document}')
     return '\n\n'.join(lines) + '\n'
@@ -1482,25 +1499,39 @@ def main(argv=None):
   python -m benchmarks.cqa.paper REPORT.json ... --figures --hardness-composition
       Also export the optional +H composition diagnostic for the appendix.
 
-Main paper (in order):
-  1. UltraQuery Transfer Performance: equal dataset means by family;
-     complete 14-type tests only, with available/full dataset counts.
-  2. +H Per-Query-Type Performance: all 16 parent types; partial scopes labeled.
-  3. +H Performance by Hardness: parent types as rows, QTO/ULTRA/TRIX
-     MRR by missing-positive-link count (1-4) as columns; all methods remain in A2.
-  4. Learned vs Identity Adapter: dataset rows, backbone columns, paired CIs.
-Appendix (A1--A5):
-  A1. Full UltraQuery Results: query types as columns; MRR and H@10 rows.
-  A2. Full +H Hardness Breakdowns: query types as columns; counts shared
-      when identical; additional bins appear only when supplied.
-  A3. +H Performance by Author Query Reduction: query types/methods as rows;
-      author reduction columns and negation partial/full categories.
-  A4. Protocol Sensitivity: ties, answer filters and inference graphs.
-  A5. Data, Training, and Selection Details: shared settings printed once.
+Main paper (compact floats, one decimal, best bold and second underlined):
+  1. UltraQuery benchmark: methods as rows; EPFO/negation MRR per dataset
+     family (transductive, inductive (e), inductive (e,r), all).
+  2. +H: methods trained on each target graph vs transferred models; EPFO and
+     negation MRR per dataset and their average.
+  3. Ablations: each other adapter recipe against the primary recipe.
+  Adapter rows aggregate seed replicates (entry IDs differing only by -seedN):
+  mean and sample s.d. over seeds; --primary-recipe picks the main recipe.
+Appendix (A1--A11, long tables, two decimals):
+  A1. UltraQuery results by family: MRR and H@10, coverage per family.
+  A2. UltraQuery results by Freebase derivation: the 11 Freebase-derived
+      datasets apart from the 12 others, seed means and s.d.
+  A3. Full UltraQuery results: query types as columns; MRR and H@10 rows.
+  A4. +H per-query-type performance: all 16 types; partial scopes labeled.
+  A5. +H performance by hardness: QTO/ULTRA/TRIX MRR by missing-positive-link
+      count (1-4); all methods remain in A6.
+  A6. Full +H hardness breakdowns: query types as columns; counts shared when
+      identical; additional bins appear only when supplied.
+  A7. +H performance by author query reduction: reduction columns and
+      negation partial/full categories.
+  A8. Learned vs identity adapter: dataset rows, backbone columns, paired CIs.
+  A9. Adapter training seeds: suite MRR of every seed tag of the primary recipes.
+  A10. Protocol sensitivity: ties, answer filters and inference graphs.
+  A11. Data, training, and selection details: shared settings printed once.
+  Appendix tables use the lowest seed tag of each primary recipe; A2 and A9
+  report every seed.
 
 Optional figures (--figures [DIRECTORY]):
-  Main paper: learned-minus-identity adapter gains with supplied paired CIs.
-  Appendix: per-dataset transfer gains over UltraQuery, EPFO/negation separate.
+  Main paper: adapter gain by dataset family (datasets as dots, family means);
+      +H hardness profiles, MRR by missing positive links for 3p/4p/3i/4i.
+  Appendix: per-dataset transfer gains over UltraQuery, EPFO/negation separate;
+      per-dataset adapter gains with supplied paired CIs.
+  figures.tex holds a float with an escaped caption for every figure.
   --hardness-composition adds an optional appendix diagnostic of evaluated
       QA pairs by minimum missing positive links; not a model-performance result.
   figures.json records placement, captions, numerical data, selected runs and
@@ -1523,12 +1554,15 @@ CIs and unavailable counts stay "-". Dataset coverage assumes full evaluation.
     parser.add_argument('results', nargs='*', type=Path, metavar='REPORT.json', help='Saved JSON reports; omit for the full default evaluation layout with scores "-"')
     parser.add_argument('-o', '--output', type=Path, default=Path('results/paper_tables.tex'), help='LaTeX file (default: results/paper_tables.tex)')
     parser.add_argument('--fragment', action='store_true', help='Emit tables and section headers without a document preamble')
-    parser.add_argument('--tie-policy', choices=('sort', 'expected'), default='expected',
-                        help='Scores to print: expected random ties (default) or original sort ordering; missing policy is shown as "-"')
+    parser.add_argument('--tie-policy', choices=('sort', 'expected'), default='sort',
+                        help='Scores to print: original sort ordering (default, the protocol\'s primary metric) or expected random ties; missing policy is shown as "-"')
     parser.add_argument('--main-hardness-types', nargs='+', choices=PLUS_H_TYPES, metavar='TYPE', default=MAIN_HARDNESS_TYPES,
-                        help='Parent types in main hardness table (default: %(default)s); appendix retains all types')
+                        help='Parent types of the hardness table A5 (default: %(default)s); A6 retains all types')
+    parser.add_argument('--primary-recipe', action='append', default=[], metavar='RECIPE',
+                        help='Main adapter recipe, with or without its backbone prefix (for example types2); '
+                             'default: the shipped recipe, else the recipe with the most seeds')
     parser.add_argument('--figures', nargs='?', const=Path('results/paper_figures'), type=Path, metavar='DIRECTORY',
-                        help='Also export the two paper figures as PDF/SVG/PNG plus figures.json (default directory: results/paper_figures)')
+                        help='Also export the paper figures as PDF/SVG/PNG plus figures.json and figures.tex (default directory: results/paper_figures)')
     parser.add_argument('--hardness-composition', action='store_true',
                         help='With --figures, also export the optional +H QA-pair composition diagnostic for the appendix')
     args = parser.parse_args(argv)
@@ -1538,13 +1572,14 @@ CIs and unavailable counts stay "-". Dataset coverage assumes full evaluation.
         if args.output.resolve() in {path.resolve() for path in args.results}:
             raise ValueError('Output must not overwrite an input report')
         reports = load_reports(args.results)
+        reports.primary_recipes = tuple(args.primary_recipe)
         latex = render_tables(reports, policy=args.tie_policy, fragment=args.fragment, main_types=args.main_hardness_types)
         if args.figures is not None:
             from .figures import figure_names, generate_figures
             targets = {(args.figures / (name + '.' + extension)).resolve()
                        for name in figure_names(hardness_composition=args.hardness_composition)
                        for extension in ('pdf', 'svg', 'png')}
-            targets.add((args.figures / 'figures.json').resolve())
+            targets |= {(args.figures / name).resolve() for name in ('figures.json', 'figures.tex')}
             if targets & {path.resolve() for path in args.results} or args.output.resolve() in targets:
                 raise ValueError('Figure outputs must not overwrite input reports or the LaTeX output')
             figures = generate_figures(reports, args.figures, policy=args.tie_policy,

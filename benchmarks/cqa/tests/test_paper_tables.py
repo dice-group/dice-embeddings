@@ -9,7 +9,7 @@ import sys
 import pytest
 
 from benchmarks.cqa.manifests import REPO, read_manifest, suite_directory
-from benchmarks.cqa.paper import tables
+from benchmarks.cqa.paper import summary, tables
 
 CLI = [sys.executable, '-m', 'benchmarks.cqa.paper']
 
@@ -37,6 +37,13 @@ def paper_bodies(latex):
                        for line in body.splitlines() if ' & ' in line) for section in sections]
 
 
+def main_bodies(latex):
+    """Data rows of the main paper's compact floats."""
+    sections = re.findall(r'% BEGIN MAIN TABLE \d+\n(.*?)\n% END MAIN TABLE \d+', latex, re.DOTALL)
+    return ['\n'.join(line for line in section.split('\\midrule', 1)[1].splitlines() if ' & ' in line)
+            for section in sections]
+
+
 def cells(row):
     return [cell.strip() for cell in re.sub(r'\\\\\*?$', '', row).split(' & ')]
 
@@ -45,15 +52,22 @@ def test_no_data_has_full_evaluation_rows_and_missing_scores_in_paper_order():
     latex = tables.render_tables(tables.Reports())
     assert latex.startswith('% Generated') and r'\begin{document}' in latex
     assert latex.index(r'\section*{Main paper}') < latex.index(r'\section*{Appendix}')
-    captions = re.findall(r'\\caption\{([^}]*)\}', latex)
+    appendix = latex[latex.index(r'\section*{Appendix}'):]
+    captions = re.findall(r'\\caption\{([^}]*)\}', appendix)
     assert captions == list(tables.TABLE_TITLES)
+    mains = main_bodies(latex)
+    assert [len(body.splitlines()) for body in mains] == [5, 11, 8]
+    for body, count in zip(mains, (8, 8, 4)):
+        for row in body.splitlines():
+            # Reference rows of the ablation table have no change from themselves.
+            assert all(cell in ('-', r'\textemdash{}') for cell in cells(row)[-count:])
     bodies = paper_bodies(latex)
-    assert len(bodies) == 9
-    score_columns = (4, 16, 4, 4, 5, 4, 14, 4)
+    assert len(bodies) == 11
+    score_columns = (4, 4, 5, 16, 4, 4, 14, 4, 2, 4)
     for body, count in zip(bodies, score_columns):
         for row in body.splitlines():
             assert cells(row)[-count:] == ['-'] * count
-    assert '0.00' not in ''.join(bodies[:8])
+    assert '0.00' not in ''.join(bodies[:10]) + ''.join(mains)
     assert all(len(body.splitlines()) > 1 for body in bodies)
     assert 'No-data template: planned full test' in latex
     assert 'A dash (-) indicates unavailable data' in latex
@@ -138,7 +152,7 @@ def test_table_two_requires_shared_graph_and_filters_but_accepts_graph_independe
     assert 'ConE, CLMPT and plain CQD do not consume graph facts at inference.' in latex
     assert 'All methods use released answer filters.' in latex
     reports.consume(result(method='cqd-hybrid'))
-    with pytest.raises(ValueError, match='Table 2 requires the same inference graph'):
+    with pytest.raises(ValueError, match=r'The \+H tables require the same inference graph'):
         tables.render_tables(reports)
 
 
@@ -147,7 +161,7 @@ def test_table_two_rejects_mixed_answer_filters_for_graph_independent_methods():
     corrected = result(method='cqd')
     corrected['protocol']['answer_filter'] = 'corrected'
     reports.consume([corrected, result(method='clmpt')])
-    with pytest.raises(ValueError, match='Table 2 requires the same answer filters'):
+    with pytest.raises(ValueError, match=r'The \+H tables require the same answer filters'):
         tables.main_plus_h_rows(reports, 'expected')
 
 
@@ -298,8 +312,8 @@ def test_author_table_preserves_union_reductions_and_prefers_author_negation_par
     assert union[3 + tables.AUTHOR_REDUCTION_TYPES.index('up')] == '40.00'
     assert '80.00' not in union
     assert rows['3in'][-2:] == ['18.00', '36.00']
-    latex = tables.render_tables(reports, main_types=['up'])
-    assert '80.00' in paper_bodies(latex)[2]
+    latex = tables.render_tables(reports, policy='expected', main_types=['up'])
+    assert '80.00' in paper_bodies(latex)[4]
     assert '80.00' not in paper_bodies(latex)[6]
     assert 'Structural reductions' in latex and 'Negated queries' in latex
 
@@ -442,7 +456,8 @@ def test_query_score_columns_have_space_in_empty_and_populated_tables():
     reports = tables.Reports()
     reports.consume(result())
     for latex in (tables.render_tables(tables.Reports()), tables.render_tables(reports)):
-        columns = re.findall(r'\\begin\{longtable\}\{([^\n]+)\}', latex)[1]
+        columns = dict((caption, spec) for spec, caption in re.findall(
+            r'\\begin\{longtable\}\{([^\n]+)\}\n\\caption\{([^}]*)\}', latex))['+H Per-Query-Type Performance']
         assert [int(w) for w in re.findall(r'p\{(\d+)mm\}', columns)] == [30, 40, *([11] * 16)]
 
 
@@ -482,7 +497,7 @@ def test_cli_empty_input_needs_no_dicee_imports_or_model_dependencies(tmp_path):
     run = subprocess.run([sys.executable, '-S', '-m', 'benchmarks.cqa.paper', '-o', str(destination)],
                          capture_output=True, text=True, check=True, cwd=REPO)
     assert run.stdout == destination.read_text()
-    assert run.stdout.count(r'\caption{') == 9
+    assert run.stdout.count(r'\caption{') == 3 + len(tables.TABLE_TITLES)
 
 
 def test_combined_report_populates_all_nine_tables(tmp_path):
@@ -502,10 +517,10 @@ def test_combined_report_populates_all_nine_tables(tmp_path):
     source = tmp_path / 'combined.json'
     source.write_text(json.dumps(payload))
     reports = tables.load_reports([source])
-    latex = tables.render_tables(reports)
+    latex = tables.render_tables(reports, policy='expected')
     bodies = paper_bodies(latex)
-    assert len(bodies) == 9
-    assert all(body.replace('&', '').replace('\\', '').strip() for body in bodies)
+    assert len(bodies) == 11
+    assert all(body.replace('&', '').replace('\\', '').strip() for body in bodies + main_bodies(latex))
     assert 'expected random ties' in latex and '+10.00' in latex
 
 
@@ -513,11 +528,10 @@ def test_empty_presentation_is_bounded_and_every_table_fits_the_page():
     latex = tables.render_tables(tables.Reports())
     bodies = paper_bodies(latex)
     counts = [len(body.splitlines()) for body in bodies]
-    assert counts[:4] == [12, 27, 27, 26]
-    assert counts[4:8] == [230, 366, 432, 181]
-    assert counts[8] < 120
+    assert counts[:10] == [12, 5, 230, 27, 27, 366, 432, 26, 2, 181]
+    assert counts[10] < 120
     assert sum(counts) < 1500 and len(latex.encode()) < 300_000
-    assert 'released-filters' not in bodies[1] and 'identity' not in bodies[1]
+    assert 'released-filters' not in bodies[3] and 'identity' not in bodies[3]
     assert r'\multicolumn{4}{c}{ULTRA}' in latex and r'\multicolumn{4}{c}{TRIX}' in latex
     for columns in re.findall(r'\\begin\{longtable\}\{([^\n]+)\}', latex):
         widths = [int(width) for width in re.findall(r'p\{(\d+)mm\}', columns)]
@@ -579,11 +593,11 @@ def test_presentation_removes_redundant_columns_without_losing_paired_scores():
     reports.consume(dict(dataset=learned['dataset'], learned=identity['paired_with'],
                          control=identity['benchmark_run']['entry'],
                          macro={'expected': {'mrr': .1, 'mrr_ci95': [.08, .12]}}))
-    latex = tables.render_tables(reports)
+    latex = tables.render_tables(reports, policy='expected')
     headers = '\n'.join(re.findall(r'\\toprule\n(.*?)\\midrule', latex, re.DOTALL))
     assert not any(column in headers for column in ('Condition A', 'Condition B', ' & Scope & ', ' & Recipe & '))
     assert r'\multicolumn{4}{c}{ULTRA}' in latex
-    assert cells(paper_bodies(latex)[3].splitlines()[0])[-4:] == ['29.00', '19.00', '+10.00', '[+8.00, +12.00]']
+    assert cells(paper_bodies(latex)[7].splitlines()[0])[-4:] == ['29.00', '19.00', '+10.00', '[+8.00, +12.00]']
     assert 'Sort MRR' in headers and 'Expected random MRR' in headers
 
 
@@ -597,7 +611,7 @@ def test_panel_context_preserves_graph_filter_scope_and_latex_escaping():
         reports.consume(dict(dataset='FB15k237+H', entry='qto-FB15k237+H', shape='3p',
                              grouping='difficulty', label='partial', comparison_graph=graph,
                              answer_filter=filters, expected=metrics(score)))
-    latex = tables.render_tables(reports)
+    latex = tables.render_tables(reports, policy='expected')
     assert 'FB15k-237+H | filters: released' in latex
     assert 'FB15k-237+H | filters: corrected' in latex
     assert 'hardness reference facts:' not in latex
@@ -640,8 +654,8 @@ def test_main_hardness_never_splices_bins_across_runs_or_conditions():
                      difficulty('qto-other', '2', .2, graph='train', filters='released')])
     assert tables.main_hardness_matrix(reports, 'expected', ['3p'])[2] == [
         ['FB15k-237+H', '3p', '80.00', '-', '40.00']]
-    bodies = paper_bodies(tables.render_tables(reports))
-    assert '20.00' not in bodies[2] and '20.00' not in bodies[5]
+    bodies = paper_bodies(tables.render_tables(reports, policy='expected'))
+    assert '80.00' in bodies[4] and '20.00' not in bodies[4] and '20.00' not in bodies[5]
     notes = tables.main_hardness_notes(reports, ['3p'])
     assert 'Filters: corrected' in notes and 'reference facts' not in notes
 
@@ -649,9 +663,9 @@ def test_main_hardness_never_splices_bins_across_runs_or_conditions():
 def test_hardness_scope_reports_parent_coverage_without_score_markers():
     reports = tables.Reports()
     reports.consume(difficulty('qto-sampled', '3', .24, complete=False))
-    latex = tables.render_tables(reports)
+    latex = tables.render_tables(reports, policy='expected')
     bodies = paper_bodies(latex)
-    assert '24.00' in bodies[2] and '24.00' in bodies[5]
+    assert '24.00' in bodies[4] and '24.00' in bodies[5]
     assert '24.00*' not in latex and '24.00?' not in latex
     assert '10/\\allowbreak{}1000 parent queries' in latex
     assert 'partial parent-type test' in latex and 'queries can occur in multiple bins' in latex
@@ -667,8 +681,8 @@ def test_three_hop_bins_keep_distinct_scores_and_zero_is_only_a_diagnostic():
     headers, _, rows = tables.main_hardness_matrix(reports, 'expected', ['3p'])
     assert headers == ['Dataset', 'Type', 'QTO / 1', 'QTO / 2', 'QTO / 3']
     assert rows == [['FB15k-237+H', '3p', '40.00', '30.00', '20.00']]
-    latex = tables.render_tables(reports, main_types=['3p'])
-    assert '90.00' not in paper_bodies(latex)[2]
+    latex = tables.render_tables(reports, policy='expected', main_types=['3p'])
+    assert '40.00' in paper_bodies(latex)[4] and '90.00' not in paper_bodies(latex)[4]
     assert 'Diagnostic: 0' in paper_bodies(latex)[5]
     assert 'Observed' not in latex and 'Obs.' not in latex
     assert 'Zero-cost answers are excluded' not in latex
@@ -682,8 +696,8 @@ def test_coarse_and_released_reductions_cannot_be_invented_as_numeric_scores():
         row.update(grouping=grouping, label=label)
         reports.consume(row)
     assert tables.main_hardness_matrix(reports, 'expected', ['3p'])[2] == []
-    latex = tables.render_tables(reports, main_types=['3p'])
-    assert '40.00' not in paper_bodies(latex)[2]
+    latex = tables.render_tables(reports, policy='expected', main_types=['3p'])
+    assert '40.00' not in paper_bodies(latex)[4]
     assert 'Coarse: partial' in paper_bodies(latex)[5]
     assert 'Released reduction: 2p' in paper_bodies(latex)[5]
 
@@ -705,8 +719,8 @@ def test_appendix_preserves_alternate_recipes_and_settings_applicability():
     b['inference']['options'] = {'beam_size': 128}
     reports = tables.Reports()
     reports.consume([a, b])
-    latex = tables.render_tables(reports)
-    rows = [cells(row) for row in paper_bodies(latex)[4].splitlines() if cells(row)[2] == 'MRR']
+    latex = tables.render_tables(reports, policy='expected')
+    rows = [cells(row) for row in paper_bodies(latex)[2].splitlines() if cells(row)[2] == 'MRR']
     assert {row[1].replace(r'\allowbreak{}', '') for row in rows} == {
         'ULTRA + adapter (2i/3i)', 'ULTRA + adapter (14-type)'}
     assert {row[3] for row in rows} == {'19.00', '49.00'}
@@ -725,9 +739,9 @@ def test_same_recipe_runs_get_consistent_distinct_labels_in_all_appendices():
     reports = tables.Reports()
     reports.consume([a, b])
     labels = set(tables.run_labels(reports).values())
-    assert labels == {'UltraQuery [R1]', 'UltraQuery [R2]'}
+    assert labels == {'UltraQuery (default)', 'UltraQuery (alternative)'}
     bodies = paper_bodies(tables.render_tables(reports))
-    assert all(label in bodies[4] and label in bodies[8] for label in labels)
+    assert all(label in bodies[2] and label in bodies[10] for label in labels)
     assert {row[2] for row in tables.compact_protocol_rows(reports, 'expected')} == labels
 
 
@@ -770,7 +784,7 @@ def test_effect_delta_is_checked_against_scores_and_ci_only_effect_retains_diffe
     assert tables.adapter_rows(reports, 'expected')[0][-2:] == ['+10.00', '[+8.00, +12.00]']
     reports.effects['adapter'][0]['macro']['expected']['mrr'] = .5
     with pytest.raises(ValueError, match='Inconsistent adapter'):
-        tables.render_tables(reports)
+        tables.render_tables(reports, policy='expected')
 
 
 def test_supplied_paired_tie_interval_survives_comparison_merge_and_scales_once():
@@ -783,7 +797,7 @@ def test_supplied_paired_tie_interval_survives_comparison_merge_and_scales_once(
         reports = tables.Reports()
         reports.consume(inputs)
         assert tables.compact_protocol_rows(reports, 'expected')[0][-2:] == ['-1.00', '[-1.50, -0.50]']
-        assert '[-1.50, -0.50]' in paper_bodies(tables.render_tables(reports))[7]
+        assert '[-1.50, -0.50]' in paper_bodies(tables.render_tables(reports))[9]
 
 
 def test_conflicting_run_recipes_and_inconsistent_saved_averages_are_rejected():
@@ -860,3 +874,143 @@ def test_invalid_absolute_score_range_is_not_formatted_as_a_result():
     for value in (-.01, 1.01):
         with pytest.raises(ValueError, match='fractional range'):
             tables.number(value)
+
+
+ULTRAQUERY_DATASETS = [d for d in tables.catalog().BENCHMARK_DATASETS if tables.family(d)]
+
+
+def suite_runs(entry, method, score, *, datasets=ULTRAQUERY_DATASETS, identity_of=None):
+    """One result per dataset; entry is the recipe ID without the dataset, e.g. 'ultra-r-seed1'."""
+    runs = []
+    for dataset in datasets:
+        raw = result(dataset, method, score)
+        raw['benchmark_run']['entry'] = f'{entry}-{dataset}'
+        if identity_of:
+            raw['benchmark_run']['entry'] += '-without-adapter'
+            raw['paired_with'] = f'{identity_of}-{dataset}'
+            raw['inference']['calibration'] = 'without-adapter'
+        runs.append(raw)
+    return runs
+
+
+def ablation_rows(latex):
+    """Ablation cells keyed by variant name (the backbone is named in its first row only)."""
+    return {cells(row)[1]: cells(row)[2:] for row in main_bodies(latex)[2].splitlines()}
+
+
+def main_rows(latex, index):
+    return {cells(row)[0]: cells(row)[1:] for row in main_bodies(latex)[index].splitlines()}
+
+
+def test_main_ultraquery_table_reports_seed_mean_sd_and_marks_best_and_second():
+    reports = tables.Reports()
+    reports.consume(suite_runs('ultraquery', 'ultraquery', .2) + suite_runs('ultra-r', 'ultra-adapter', .3)
+                    + suite_runs('ultra-r-seed1', 'ultra-adapter', .4)
+                    + suite_runs('ultra-r', 'ultra-adapter', .25, identity_of='ultra-r')
+                    + suite_runs('ultra-r-seed1', 'ultra-adapter', .25, identity_of='ultra-r-seed1'))
+    latex = tables.render_tables(reports)
+    rows = main_rows(latex, 0)
+    assert rows['UltraQuery'] == ['20.0'] * 8
+    # Mean .35 with sample s.d. .0707 over two seeds; the control's seed replicates are one run.
+    assert rows['ULTRA + adapter (ours)'] == [r'\textbf{35.0}$_{\pm 7.1}$'] * 8
+    assert rows['ULTRA (no adapter)'] == [r'\underline{25.0}'] * 8
+    assert 'over 2 training seeds' in latex and 'Full test splits.' in latex
+
+
+def test_main_table_cells_use_only_seeds_with_every_dataset():
+    reports = tables.Reports()
+    reports.consume(suite_runs('ultra-r', 'ultra-adapter', .3)
+                    + suite_runs('ultra-r-seed1', 'ultra-adapter', .4, datasets=ULTRAQUERY_DATASETS[1:]))
+    rows = main_rows(tables.render_tables(reports), 0)['ULTRA + adapter (ours)']
+    families = [f for f, _ in tables.FAMILIES.items()]
+    missing = tables.family(ULTRAQUERY_DATASETS[0])
+    for index, family in enumerate(families):
+        for cell_value in rows[2 * index:2 * index + 2]:
+            if family in (missing, 'all'):
+                assert cell_value == r'\textbf{30.0}'  # seed 1 lacks a dataset of this cell
+            else:
+                assert cell_value == r'\textbf{35.0}$_{\pm 7.1}$'
+
+
+def test_requested_primary_recipe_drives_main_and_seed_matched_ablations():
+    reports = tables.Reports()
+    reports.consume(suite_runs('ultra-a', 'ultra-adapter', .3) + suite_runs('ultra-a-seed1', 'ultra-adapter', .4)
+                    + suite_runs('ultra-b', 'ultra-adapter', .5))
+    reports.primary_recipes = ('b',)
+    latex = tables.render_tables(reports)
+    assert main_rows(latex, 0)['ULTRA + adapter (ours)'][-1] == r'\textbf{50.0}'
+    ablations = ablation_rows(latex)
+    assert ablations['Primary recipe'] == ['50.0', r'\textemdash{}', '-', r'\textemdash{}']
+    assert ablations['a'] == ['35.0$_{\\pm 7.1}$', '-15.0$_{\\pm 7.1}$', '-', '-']
+    reports.primary_recipes = ('a',)
+    ablations = ablation_rows(tables.render_tables(reports))
+    assert ablations['Primary recipe'] == ['35.0$_{\\pm 7.1}$', r'\textemdash{}', '-', r'\textemdash{}']
+    # Seed 0 of the variant is compared with seed 0 of the primary recipe: .5 - .3.
+    assert ablations['b'] == ['50.0', '+20.0', '-', '-']
+    reports.primary_recipes = ('missing',)
+    with pytest.raises(ValueError, match='primary recipe'):
+        tables.render_tables(reports)
+
+
+def test_main_tables_share_ranks_for_displayed_ties_and_name_partial_scope():
+    reports = tables.Reports()
+    for method in ('qto', 'gnnqe', 'cqd'):
+        reports.consume([result(d, method, {'qto': .3, 'gnnqe': .3004, 'cqd': .2}[method], complete=False)
+                         for d in tables.PLUS_H_DATASETS])
+    latex = tables.render_tables(reports)
+    rows = main_rows(latex, 1)
+    assert rows['QTO'][-1] == rows['GNN-QE'][-1] == r'\textbf{30.0}'
+    assert rows['CQD'][-1] == r'\underline{20.0}'
+    assert 'Partial evaluation (test split, query samples); not the full test splits.' in latex
+    assert 'mean$_{\\pm' not in latex
+
+
+def test_appendix_uses_the_main_tables_primary_recipe_without_mutating_reports():
+    reports = tables.Reports()
+    reports.consume(suite_runs('ultra-a', 'ultra-adapter', .3) + suite_runs('ultra-b', 'ultra-adapter', .5))
+    reports.primary_recipes = ('b',)
+    latex = tables.render_tables(reports)
+    assert main_rows(latex, 0)['ULTRA + adapter (ours)'][-1] == r'\textbf{50.0}'
+    by_family = [cells(row) for row in paper_bodies(latex)[0].splitlines()]
+    assert {row[3] for row in by_family if row[0].startswith('ULTRA')} == {'50.00'}
+    assert {r['id'].split('-')[1] for r in tables.paper_records(reports)} == {'b'}
+    assert not hasattr(reports, 'primary_recipe_names')
+
+
+def test_baseline_condition_variants_share_one_main_row():
+    reports = tables.Reports()
+    for dataset in tables.PLUS_H_DATASETS:
+        for suffix, graph, score in (('', 'train+valid', .3), ('-graph-train', 'train', .6)):
+            raw = result(dataset, 'qto', score)
+            raw['benchmark_run']['entry'] = f'qto-{dataset}{suffix}'
+            raw['dataset_metadata']['inference_graph'] = graph
+            raw['protocol']['answer_filter'] = 'corrected'
+            reports.consume(raw)
+    rows = main_rows(tables.render_tables(reports), 1)
+    # One QTO row, from the target graph (training + validation facts).
+    assert list(rows) == ['QTO'] and rows['QTO'][-2] == r'\textbf{30.0}'
+
+
+def test_seed_replicates_are_labeled_by_seed_tag_in_the_appendix():
+    reports = tables.Reports()
+    reports.consume(suite_runs('ultra-r', 'ultra-adapter', .3, datasets=['WikiTopicsQuery:art'])
+                    + suite_runs('ultra-r-seed1', 'ultra-adapter', .4, datasets=['WikiTopicsQuery:art']))
+    assert set(tables.run_labels(reports).values()) == {'ULTRA + adapter (seed tag 0)', 'ULTRA + adapter (seed tag 1)'}
+
+
+def test_freebase_split_averages_each_group_separately():
+    reports = tables.Reports()
+    for dataset in ULTRAQUERY_DATASETS:
+        reports.consume(suite_runs('ultraquery', 'ultraquery', .4 if summary.freebase_derived(dataset) else .2, datasets=[dataset]))
+    assert sum(map(summary.freebase_derived, ULTRAQUERY_DATASETS)) == 11
+    assert summary.freebase_rows(reports, 'sort') == [['UltraQuery', '40.00', '40.00', '20.00', '20.00']]
+
+
+def test_two_backbones_with_custom_recipe_names_share_adapter_rows():
+    reports = tables.Reports()
+    for backbone in ('ultra', 'trix'):
+        reports.consume(suite_runs(f'{backbone}-r', f'{backbone}-adapter', .3)
+                        + suite_runs(f'{backbone}-r', f'{backbone}-adapter', .2, identity_of=f'{backbone}-r'))
+    rows = [cells(row) for row in paper_bodies(tables.render_tables(reports))[7].splitlines()]
+    assert len(rows) == 23 and all('(' not in row[0] for row in rows)
+    assert all(row[1:4] == ['30.00', '20.00', '+10.00'] and row[5:8] == ['30.00', '20.00', '+10.00'] for row in rows)

@@ -572,11 +572,12 @@ See the [CQA guide](docs/guides/multi_hop_queries.md) for adapters and method ev
 
 **Benchmarks.** [`benchmarks/cqa`](benchmarks/cqa/README.md) evaluates these methods on the
 23 UltraQuery datasets and on **+H**: FB15k237+H, NELL995+H and ICEWS18+H from
-[Gregucci et al.](https://arxiv.org/abs/2410.12537), built so that complex queries cannot be
-reduced to simpler link prediction. Select any methods, datasets and query types:
+[Gregucci et al.](https://arxiv.org/abs/2410.12537), whose hard answers are balanced across the
+number of links that must be predicted to reach them. Select any methods, datasets and query
+types; `--split` is required:
 
 ```bash
-python -m benchmarks.cqa plus_h evaluate --output results/plus-h-subset \
+python -m benchmarks.cqa plus_h evaluate --split valid --output results/plus-h-subset \
   --methods cqd cqd-hybrid qto --datasets FB15k237+H NELL995+H --query-types 2p 3p
 ```
 
