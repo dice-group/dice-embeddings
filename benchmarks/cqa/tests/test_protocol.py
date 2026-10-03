@@ -615,3 +615,45 @@ def test_comparison_does_not_relax_reference_verification(tmp_path, monkeypatch)
     with pytest.raises(ValueError, match='Reference inference graphs differ'):
         verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'wrong-graph.pt',
                            tmp_path / 'wrong-graph.json')
+
+
+def test_suite_effects_average_seeds_per_query_and_pair_the_shared_control(tmp_path):
+    from collections import namedtuple
+
+    from benchmarks.cqa.reports import suite_effects
+    from dicee.query_answering._rank_trace import RankTrace
+    from dicee.query_answering.catalog import PLUS_H_DATASETS
+    Query = namedtuple('Query', 'identity shape')
+    records = []
+    runs = (('ultra-r-{}', 'ultra-adapter', 1, {}), ('ultra-r-seed1-{}', 'ultra-adapter', 2, {}),
+            ('ultra-r-{}-without-adapter', 'ultra-adapter', 4, dict(paired_with='ultra-r-{}', calibration='without-adapter')),
+            ('ultraquery-{}', 'ultraquery', 2, {}))
+    for dataset in PLUS_H_DATASETS:
+        for template, method, rank, extra in runs:
+            entry = template.format(dataset)
+            path = tmp_path / entry / 'ranks.sqlite3'
+            with RankTrace(path, {'entry': entry}, 0) as trace:
+                for position, shape in enumerate(['1p'] * 4 + ['2in'] * 4):
+                    trace.add(position, Query(f'{dataset}-{position}', shape), [[7, rank, rank - 1, 1]])
+                trace.commit()
+            records.append(dict(id=entry, dataset=dataset, method=method, complete=True, answer_filter='corrected', trace=path,
+                                paired_with=extra.get('paired_with', '').format(dataset) or None,
+                                calibration=extra.get('calibration', 'learned')))
+    effects = {e['comparison']: e for e in suite_effects(records, bootstrap_samples=20)}
+    assert set(effects) == {'adapter-minus-identity', 'adapter-minus-ultraquery', 'identity-minus-ultraquery'}
+    # Seed tags 0 and 1 rank the answer first and second: a per-query seed mean of 0.75 MRR.
+    for comparison, delta in (('adapter-minus-identity', 50), ('adapter-minus-ultraquery', 25), ('identity-minus-ultraquery', -25)):
+        effect = effects[comparison]
+        assert effect['complete_suite'] and effect['datasets'] == 3
+        for group in ('all', 'epfo', 'negation'):
+            assert effect['macro']['sort'][group]['delta'] == pytest.approx(delta)
+            assert effect['macro']['sort'][group]['ci95'] == pytest.approx([delta, delta])
+    assert [s['sort']['all'] for s in effects['adapter-minus-identity']['per_seed']] == pytest.approx([75, 25])
+    assert effects['adapter-minus-identity']['seed_tags'] == [0, 1]
+    # Only seeds covering every dataset enter the seed mean; a missing baseline run makes the suite incomplete.
+    records[0]['complete'] = False
+    effects = {e['comparison']: e for e in suite_effects(records, bootstrap_samples=0)}
+    assert effects['adapter-minus-identity']['seed_tags'] == [1] and effects['adapter-minus-identity']['complete_suite']
+    next(r for r in records if r['method'] == 'ultraquery')['complete'] = False
+    effects = {e['comparison']: e for e in suite_effects(records, bootstrap_samples=0)}
+    assert effects['adapter-minus-ultraquery']['datasets'] == 2 and not effects['adapter-minus-ultraquery']['complete_suite']
