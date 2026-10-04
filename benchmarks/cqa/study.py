@@ -340,3 +340,13 @@ def integration_passed(path, bundle, entry):
     return bool(evidence.get('passed') and evidence.get('source_sha256') == bundle['source_sha256']
                 and evidence.get('entry_sha256') == fingerprint({k: v for k, v in entry.items() if k != 'verification'})
                 and evidence.get('inputs_sha256') == entry_inputs_identity(bundle, entry))
+
+
+def parity_passed(path, bundle, entry, reference, comparison_reference=None):
+    """Whether ``path`` holds passing parity evidence of this frozen entry, inputs and source against these oracles."""
+    if not integration_passed(path, bundle, entry):
+        return False
+    evidence = read(path)
+    comparison = evidence.get('upstream_comparison', {}).get('reference_sha256')
+    return (evidence.get('reference_sha256') == checksum(reference)
+            and comparison == (checksum(comparison_reference) if comparison_reference is not None else None))
