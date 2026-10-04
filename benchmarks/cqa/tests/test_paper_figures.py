@@ -406,3 +406,37 @@ def test_hardness_profile_rows_share_limits_that_cover_every_panel():
         bottom, top = ax.get_ylim()
         assert bottom == 0 and top >= 45
     plt.close(fig)
+
+
+def test_thesis_theme_writes_grid_sized_pdfs_and_float_files_and_restores_the_paper_palette(tmp_path):
+    import re
+    payload = figures.generate_figures(tables.Reports(), tmp_path, theme='thesis')
+    names = [f['name'] for f in payload['figures']]
+    assert sorted(p.name for p in tmp_path.iterdir()) == sorted(n + e for n in names for e in ('.pdf', '.tex'))
+    for name in names:
+        latex = (tmp_path / f'{name}.tex').read_text()
+        assert rf'\includegraphics{{{figures.THESIS_FIGURES}/{name}.pdf}}' in latex and r'\begin{figure}[tbp]' in latex
+        assert (r'\begin{wideblock}' in latex) == (name in figures.THESIS_WIDE)
+        # Figures are drawn at their width in the thesis grid, so the thesis includes them unscaled.
+        width = float(re.search(rb'/MediaBox \[ ?0 0 ([\d.]+)', (tmp_path / f'{name}.pdf').read_bytes()).group(1))
+        expected = figures.THESIS_WIDTHS['full' if name in figures.THESIS_WIDE else 'measure'] * 72
+        assert abs(width - expected) < .5
+    pdf = (tmp_path / f'{names[0]}.pdf').read_bytes()
+    figures.generate_figures(tables.Reports(), tmp_path, theme='thesis')
+    assert (tmp_path / f'{names[0]}.pdf').read_bytes() == pdf
+    assert figures.COLORS[0] == '#0072B2' and figures.TEXT_WIDTH == 5.5
+    with pytest.raises(ValueError):
+        figures.generate_figures(tables.Reports(), tmp_path, theme='poster')
+
+
+def test_thesis_design_follows_the_thesis_grid_and_accent(tmp_path):
+    assert figures.thesis_design(tmp_path) == (figures.THESIS_WIDTHS, figures.THESIS_COLORS[0])
+    (tmp_path / 'researchreport.sty').write_text('\\newlength\\rr@margincol  \\setlength\\rr@margincol{30mm}\n'
+                                                 '\\setlength\\rr@gutter{5mm}\n\\setlength\\rr@measure{120mm}\n'
+                                                 '\\def\\rr@accent@rust{B5462A}\n\\def\\rr@accent@blue{1F3F7A}\n')
+    (tmp_path / 'main.tex').write_text('\\usepackage[accent=blue]{researchreport}\n')
+    widths, accent = figures.thesis_design(tmp_path)
+    assert accent == '#1F3F7A'
+    assert abs(widths['measure'] * 25.4 - 120) < 1e-9 and abs(widths['full'] * 25.4 - 155) < 1e-9
+    (tmp_path / 'main.tex').write_text('\\usepackage[accent=2e6b4f,showgrid]{researchreport}\n')
+    assert figures.thesis_design(tmp_path)[1] == '#2E6B4F'

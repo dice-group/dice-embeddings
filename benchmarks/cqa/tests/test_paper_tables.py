@@ -880,3 +880,36 @@ def test_preview_fills_planned_cells_with_placeholders_in_the_main_tables_only()
     assert variants['ULTRA 4g backbone$^\\dagger$'] == ['xx.x', '+x.x', 'xx.x', '+x.x']
     assert all('xx.x' not in body and 'QTO' not in body for body in paper_bodies(latex))
     assert 'xx.x' not in tables.render_tables(reports)
+
+
+def test_thesis_tables_are_single_column_floats_that_leave_typesetting_to_the_thesis():
+    reports = tables.Reports()
+    reports.consume(suite_runs('ultra-product-intersections', 'ultra-adapter', .3))
+    files = tables.render_thesis(reports, preview=True)
+    assert set(files) == {name + '.tex' for name in tables.THESIS_MAIN_TABLES} | {'settings.tex', 'appendix.tex'}
+    for name in tables.THESIS_MAIN_TABLES:
+        latex = files[name + '.tex']
+        assert latex.count(r'\begin{table}[tbp]') == 1 and 'table*' not in latex
+        # The caption keeps the page's caption column; the thesis fits the body to its reading column.
+        assert latex.index(r'\caption{') < latex.index(r'\begin{fitblock}') < latex.index(r'\begin{tabular}')
+        assert r'\footnotesize' not in latex and r'\tabcolsep' not in latex and r'\scriptsize' not in latex
+    assert summary.PREVIEW_NOTE in files['main-ultraquery.tex'] and 'xx.x' in files['main-ultraquery.tex']
+    assert summary.PREVIEW_NOTE not in tables.render_thesis(reports)['main-ultraquery.tex']
+    appendix = files['appendix.tex']
+    assert r'\section*' not in appendix and r'\thetable' not in appendix.split(r'\begin{longtable}')[0]
+    assert r'\scriptsize' not in appendix and re.search(r'p\{\d+mm\}', appendix) is None
+    assert r'\linewidth-2\tabcolsep' in appendix and r'\tablenote{' in appendix
+    assert r'\ref{tab:benchmark-paper-7}' in appendix and ' A7' not in appendix
+
+
+def test_thesis_option_writes_tables_and_figures_into_the_thesis_project(tmp_path):
+    (tmp_path / 'thesis').mkdir()
+    subprocess.run([*CLI, '--thesis', str(tmp_path / 'thesis'), '-o', str(tmp_path / 'tables.tex')],
+                   cwd=REPO, check=True, capture_output=True)
+    written = sorted(str(p.relative_to(tmp_path / 'thesis')) for p in (tmp_path / 'thesis').rglob('*') if p.is_file())
+    assert [p for p in written if p.startswith(tables.THESIS_TABLES)] == sorted(
+        f'{tables.THESIS_TABLES}/{name}.tex' for name in (*tables.THESIS_MAIN_TABLES, 'settings', 'appendix'))
+    assert len([p for p in written if p.startswith('figures/cqa/')]) == 2 * 4
+    with pytest.raises(subprocess.CalledProcessError):
+        subprocess.run([*CLI, '--thesis', str(tmp_path / 'missing'), '-o', str(tmp_path / 'tables.tex')],
+                       cwd=REPO, check=True, capture_output=True)

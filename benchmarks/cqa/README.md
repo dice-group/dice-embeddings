@@ -233,6 +233,20 @@ yet to the main tables, so they appear at full size: such cells read `xx.x`
 a `figures.tex` with their floats and captions (needs matplotlib). Scores are
 never imputed and confidence intervals are copied, not estimated.
 
+`--thesis DIR` also writes the same tables and figures into a thesis project
+styled for its research-report design (`researchreport.sty`), so regenerating
+needs no manual edits: `DIR/tables/cqa/` gets the three main tables as
+single-column floats (the thesis fits each to its reading column), the
+shared settings paragraph and the appendix long tables (column widths as
+shares of the line width, for landscape pages), and `DIR/figures/cqa/` gets
+each figure as a PDF drawn at the thesis's column width (TeX Gyre Heros
+labels, black and the thesis accent, greys for baselines) with a float file
+`<name>.tex`. Unchanged data leaves the PDFs byte-identical. The column width
+and the accent colour are read from the thesis (`researchreport.sty`, and the
+`accent=` option in `main.tex`); the other theme settings are `THESIS_*`
+constants in `paper/figures.py`. TeX Gyre Heros is found through `kpsewhich`
+or fontconfig.
+
 ## Tests
 
 ```bash

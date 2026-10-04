@@ -6,6 +6,7 @@ are loaded. Fractions remain fractions in figures.json; displayed MRR is x100.
 
 import json
 import math
+import re
 from collections import defaultdict
 from pathlib import Path
 
@@ -27,9 +28,104 @@ FIGURE_NAMES = ('main-01-adapter-gains', 'main-02-hardness-profiles', 'appendix-
 COMPOSITION_NAME = 'appendix-03-hardness-composition'
 TEXT_WIDTH = 5.5  # inches: one text column of NeurIPS/ICLR; two-column venues use figure*
 
+# Thesis theme (--thesis), matching the thesis's research-report design (researchreport.sty): Helvetica-type
+# labels (TeX Gyre Heros), black and the one accent colour for the two adapters, greys for baselines, which
+# keep their markers. Widths and accent are read from the thesis itself (thesis_design); these are defaults.
+THESIS_FIGURES = 'figures/cqa'  # relative to the thesis project, as main.tex includes them
+THESIS_COLORS = ('#B5462A', '#1A1A1A', '#8C8C8C', '#C8C8C8')
+THESIS_METHOD_STYLES = {'ULTRA + adapter': ('#B5462A', 'o', 1.4), 'TRIX + adapter': ('#1A1A1A', 'D', 1.4),
+                        'UltraQuery': ('#555555', 'P', .9), 'QTO': ('#7A7A7A', 's', .9), 'CQD-Hybrid': ('#7A7A7A', 'v', .9),
+                        'GNN-QE': ('#999999', '^', .9), 'CQD': ('#AAAAAA', 'X', .8), 'CLMPT': ('#AAAAAA', '<', .8),
+                        'ConE': ('#C2C2C2', '>', .8)}
+THESIS_WIDTHS = {'measure': 130 / 25.4, 'full': 170 / 25.4}  # inches: reading column; column plus margin column
+THESIS_WIDE = set()  # figures drawn at the full grid width in a wideblock; the thesis keeps all in its column
+THESIS_FONTS = ('texgyreheros-regular.otf', 'texgyreheros-bold.otf', 'texgyreheros-italic.otf',
+                'texgyreheros-bolditalic.otf')
+THESIS_STYLE = {'font.family': 'sans-serif',
+                'font.sans-serif': ['TeX Gyre Heros', 'Nimbus Sans', 'Helvetica', 'Arial', 'Liberation Sans', 'DejaVu Sans'],
+                'font.size': 7.5, 'axes.labelsize': 7.5, 'axes.titlesize': 8, 'xtick.labelsize': 7, 'ytick.labelsize': 7,
+                'legend.fontsize': 7, 'axes.linewidth': .5, 'axes.edgecolor': '#1A1A1A', 'axes.labelcolor': '#1A1A1A',
+                'xtick.color': '#1A1A1A', 'ytick.color': '#1A1A1A', 'xtick.major.width': .5, 'ytick.major.width': .5,
+                'xtick.major.size': 2.5, 'ytick.major.size': 2.5, 'axes.spines.top': False, 'axes.spines.right': False,
+                'pdf.fonttype': 42, 'axes.unicode_minus': False}
+
 
 def figure_names(*, hardness_composition=False):
     return FIGURE_NAMES + ((COMPOSITION_NAME,) if hardness_composition else ())
+
+
+def thesis_fonts():
+    """Let matplotlib use TeX Gyre Heros, the thesis's sans serif, from a TeX installation or fontconfig.
+
+    Without it, THESIS_STYLE falls back to Nimbus Sans, Helvetica, Arial, Liberation Sans or DejaVu Sans.
+    """
+    import shutil
+    import subprocess
+
+    from matplotlib import font_manager
+    if any(font.name == 'TeX Gyre Heros' for font in font_manager.fontManager.ttflist):
+        return
+    for command in (['kpsewhich', *THESIS_FONTS], ['fc-list', 'TeX Gyre Heros', 'file']):
+        if shutil.which(command[0]):
+            lines = subprocess.run(command, capture_output=True, text=True, check=False).stdout.splitlines()
+            paths = [line.strip().rstrip(':') for line in lines if line.strip()]
+            for path in paths:
+                font_manager.fontManager.addfont(path)
+            if paths:
+                return
+
+
+def thesis_design(directory):
+    """Figure widths (inches) and accent of the thesis in `directory`.
+
+    Reads the grid of researchreport.sty (\\setlength\\rr@measure{...mm}, margin column, gutter) and the accent
+    chosen in main.tex (\\usepackage[accent=rust|blue|teal|<hex>]{researchreport}); defaults where absent.
+    """
+    directory = Path(directory)
+    widths, accent = dict(THESIS_WIDTHS), THESIS_COLORS[0]
+    style = directory / 'researchreport.sty'
+    if not style.is_file():
+        return widths, accent
+    text = style.read_text(encoding='utf-8')
+    grid = {name: float(mm) for name, mm in re.findall(r'\\setlength\\rr@(measure|margincol|gutter)\{([\d.]+)mm\}', text)}
+    if len(grid) == 3:
+        widths = {'measure': grid['measure'] / 25.4, 'full': (grid['margincol'] + grid['gutter'] + grid['measure']) / 25.4}
+    presets = dict(re.findall(r'\\def\\rr@accent@(\w+)\{([0-9A-Fa-f]{6})\}', text))
+    choice = 'rust'
+    main = directory / 'main.tex'
+    if main.is_file():
+        options = re.search(r'\\usepackage\[([^\]]*)\]\{researchreport\}', main.read_text(encoding='utf-8'))
+        found = options and re.search(r'accent\s*=\s*(\w+)', options.group(1))
+        choice = found.group(1) if found else choice
+    code = presets.get(choice, choice if re.fullmatch(r'[0-9A-Fa-f]{6}', choice) else None)
+    return widths, ('#' + code.upper() if code else accent)
+
+
+class thesis_palette:
+    """Within the block, plots use the thesis colours and the width figure `name` takes in the thesis grid."""
+
+    def __init__(self, name, design=None):
+        widths, accent = design or (THESIS_WIDTHS, THESIS_COLORS[0])
+        self.width = widths['full' if name in THESIS_WIDE else 'measure']
+        self.colors = (accent, *THESIS_COLORS[1:])
+        self.styles = {**THESIS_METHOD_STYLES, 'ULTRA + adapter': (accent, *THESIS_METHOD_STYLES['ULTRA + adapter'][1:])}
+
+    def __enter__(self):
+        global COLORS, METHOD_STYLES, TEXT_WIDTH
+        self.saved = COLORS, METHOD_STYLES, TEXT_WIDTH
+        COLORS, METHOD_STYLES, TEXT_WIDTH = self.colors, self.styles, self.width
+
+    def __exit__(self, *exc):
+        global COLORS, METHOD_STYLES, TEXT_WIDTH
+        COLORS, METHOD_STYLES, TEXT_WIDTH = self.saved
+
+
+def thesis_figure_environment(name: str, caption: str) -> str:
+    """A single-column float for the thesis: full-grid figures sit in a wideblock; natural size, no scaling."""
+    graphic = rf'\includegraphics{{{THESIS_FIGURES}/{name}.pdf}}'
+    body = [r'\begin{wideblock}', graphic, r'\end{wideblock}'] if name in THESIS_WIDE else [graphic]
+    return '\n'.join([r'\begin{figure}[tbp]', *body, rf'\caption{{{tables.escape(caption)}}}\label{{fig:{name}}}',
+                      r'\end{figure}'])
 
 
 def default_datasets():
@@ -523,11 +619,17 @@ def figure_environment(name: str, caption: str, *, star: bool = False) -> str:
                       rf'\caption{{{tables.escape(caption)}}}\label{{fig:{name}}}', rf'\end{{{environment}}}'])
 
 
-def generate_figures(reports, output, *, policy='sort', hardness_composition=False):
+def generate_figures(reports, output, *, policy='sort', hardness_composition=False, theme='paper', design=None):
+    """Export the figures. theme='paper': PDF/SVG/PNG, figures.json and figures.tex for a paper.
+    theme='thesis': the thesis theme, PDF only (without a creation date, so unchanged data leaves files
+    unchanged) and one float file per figure, <name>.tex, for main.tex to input; `design` is
+    thesis_design(thesis directory), else the defaults."""
     if not (reports.results or reports.difficulty or any(reports.effects.values())):
         reports = tables.empty_reports()
     if policy not in ('sort', 'expected'):
         raise ValueError('Tie policy must be sort or expected')
+    if theme not in ('paper', 'thesis'):
+        raise ValueError('Figure theme must be paper or thesis')
     try:
         import matplotlib
         matplotlib.use('Agg')
@@ -562,16 +664,30 @@ def generate_figures(reports, output, *, policy='sort', hardness_composition=Fal
     output.mkdir(parents=True, exist_ok=True)
     style = {'font.family': 'DejaVu Sans', 'font.size': 8, 'axes.labelsize': 8, 'xtick.labelsize': 7,
              'ytick.labelsize': 7, 'pdf.fonttype': 42, 'svg.fonttype': 'none', 'axes.unicode_minus': False}
+    if theme == 'thesis':
+        thesis_fonts()
+        style = THESIS_STYLE
     with plt.rc_context(style):
         for name, placement, data, plot, caption in prepared:
-            fig = plot(plt, data)
             files = []
-            for extension in ('pdf', 'svg', 'png'):
-                path = output / f'{name}.{extension}'
-                fig.savefig(path, dpi=220, facecolor='white')
-                files.append(path.name)
+            if theme == 'thesis':
+                with thesis_palette(name, design):
+                    fig = plot(plt, data)
+                fig.savefig(output / f'{name}.pdf', facecolor='white', metadata={'CreationDate': None})
+                (output / f'{name}.tex').write_text('% Generated by python -m benchmarks.cqa.paper --thesis; '
+                                                    'regenerate instead of editing.\n'
+                                                    + thesis_figure_environment(name, caption) + '\n', encoding='utf-8')
+                files.extend([f'{name}.pdf', f'{name}.tex'])
+            else:
+                fig = plot(plt, data)
+                for extension in ('pdf', 'svg', 'png'):
+                    path = output / f'{name}.{extension}'
+                    fig.savefig(path, dpi=220, facecolor='white')
+                    files.append(path.name)
             plt.close(fig)
             payload['figures'].append(dict(name=name, placement=placement, files=files, caption=caption, data=data))
+    if theme == 'thesis':
+        return payload
     path = output / 'figures.json'
     path.write_text(json.dumps(payload, indent=2, allow_nan=False) + '\n', encoding='utf-8')
     floats = [f'% {f["placement"]}\n' + figure_environment(f['name'], f['caption']) for f in payload['figures']]

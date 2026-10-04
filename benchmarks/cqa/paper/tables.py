@@ -909,18 +909,36 @@ def preview_reports(reports, plan=PREVIEW_PLAN):
     return preview
 
 
+def column_width(width, widths, layout):
+    """A p-column width: millimetres on the paper's landscape page; for the thesis a share of the
+    line width, so the table fills whatever page the thesis gives it (padding included)."""
+    if layout == 'thesis':
+        # Rounded down, so the shares never add up to more than the line.
+        return rf'\dimexpr{math.floor(10000 * width / sum(widths)) / 10000:.4f}\linewidth-2\tabcolsep\relax'
+    return f'{width}mm'
+
+
+def thesis_note(text):
+    """Escaped note text for the thesis: appendix tables named A1--A9 become references."""
+    return re.sub(r'(?<![\w-])A([1-9])(?!\w)', r'\\ref{tab:benchmark-paper-\1}', text)
+
+
 def table(title, label, headers, widths, rows, note='', *, spanners=(), numeric_from=None,
-          row_group=None, keep_group=False, banner=''):
-    """Long tables paginate real reports; all unavailable cells use a dash."""
+          row_group=None, keep_group=False, banner='', layout='paper'):
+    """Long tables paginate real reports; all unavailable cells use a dash.
+
+    The thesis layout (researchreport.sty) leaves type size and column padding to the thesis design.
+    """
     columns = ''.join((r'>{\raggedleft\arraybackslash}' if numeric_from is not None and i >= numeric_from
-                      else r'>{\raggedright\arraybackslash}') + f'p{{{width}mm}}'
+                      else r'>{\raggedright\arraybackslash}') + f'p{{{column_width(width, widths, layout)}}}'
                       for i, width in enumerate(widths))
     header = ' & '.join(headers) + r' \\'
     heading = []
     if banner:
         # Panel contexts consist of already escaped report cells.
         banner = banner.replace('/', r'/\allowbreak{}').replace(r'\_', r'\_\allowbreak{}')
-        heading.extend([rf'\multicolumn{{{len(headers)}}}{{p{{{sum(widths)}mm}}}}{{\raggedright {banner}}}\\',
+        span = r'\dimexpr\linewidth-2\tabcolsep\relax' if layout == 'thesis' else f'{sum(widths)}mm'
+        heading.extend([rf'\multicolumn{{{len(headers)}}}{{p{{{span}}}}}{{\raggedright {banner}}}\\',
                         r'\addlinespace[2pt]'])
     if spanners:
         cells, rules, start = [], [], 1
@@ -933,8 +951,9 @@ def table(title, label, headers, widths, rows, note='', *, spanners=(), numeric_
             raise ValueError('Grouped headers must cover every table column')
         heading.extend([' & '.join(cells) + r' \\', ''.join(rules)])
     heading.append(header)
-    lines = [r'\begingroup', r'\scriptsize', r'\setlength{\tabcolsep}{1.5pt}',
-             r'\setlength{\LTpre}{6pt}', r'\setlength{\LTpost}{6pt}',
+    sizing = [] if layout == 'thesis' else [r'\scriptsize', r'\setlength{\tabcolsep}{1.5pt}',
+                                            r'\setlength{\LTpre}{6pt}', r'\setlength{\LTpost}{6pt}']
+    lines = [r'\begingroup', *sizing,
              rf'\begin{{longtable}}{{{columns}}}', rf'\caption{{{escape(title)}}}\label{{{label}}}\\',
              r'\toprule', *heading, r'\midrule', r'\endfirsthead',
              rf'\multicolumn{{{len(headers)}}}{{l}}{{\tablename\ \thetable\ (continued)}}\\',
@@ -953,14 +972,23 @@ def table(title, label, headers, widths, rows, note='', *, spanners=(), numeric_
             lines.append(r'\addlinespace[3pt]')
     lines.extend([r'\end{longtable}', r'\endgroup'])
     if note:
-        lines.append(r'{\scriptsize ' + escape(note) + r'\par}')
+        lines.append(table_note(note, layout))
     return '\n'.join(lines)
 
 
-def protocol_panels(title, label, headers, widths, panels, note='', *, numeric_from=None, group_by=None, spanners=()):
+def table_note(note, layout):
+    """The note under a long table; the thesis design styles \\tablenote."""
+    if layout == 'thesis':
+        return r'\tablenote{' + thesis_note(escape(note)) + '}'
+    return r'{\scriptsize ' + escape(note) + r'\par}'
+
+
+def protocol_panels(title, label, headers, widths, panels, note='', *, numeric_from=None, group_by=None, spanners=(),
+                    layout='paper'):
     """One numbered table; each protocol panel repeats its context on continuation pages."""
     if not panels:
-        return table(title, label, headers, widths, [], note, numeric_from=numeric_from, spanners=spanners)
+        return table(title, label, headers, widths, [], note, numeric_from=numeric_from, spanners=spanners,
+                     layout=layout)
     parts = []
     for index, panel_data in enumerate(panels):
         context, rows, *panel_headers = panel_data
@@ -971,7 +999,7 @@ def protocol_panels(title, label, headers, widths, panels, note='', *, numeric_f
             group_sizes[group_by(row)] += 1
         panel = table(title, label, current_headers, widths, rows, numeric_from=numeric_from,
                       banner=context, row_group=group_by, keep_group=max(group_sizes.values(), default=0) <= 20,
-                      spanners=spanners)
+                      spanners=spanners, layout=layout)
         if index:
             # Longtable increments the table counter even without a caption.
             panel = r'\addtocounter{table}{-1}' + '\n' + panel
@@ -979,7 +1007,7 @@ def protocol_panels(title, label, headers, widths, panels, note='', *, numeric_f
                                   '')
         parts.append(panel)
     if note:
-        parts.append(r'{\scriptsize ' + escape(note) + r'\par}')
+        parts.append(table_note(note, layout))
     return '\n'.join(parts)
 
 
@@ -1088,6 +1116,36 @@ def render_tables(reports, *, policy='sort', fragment=False, preview=False):
                      r'Hardness bins contain 1 to 4 missing positive links, as permitted by each parent type; further breakdowns appear only when supplied.\par}')
     for index, render in enumerate((summary.ultraquery_table, summary.plus_h_table, summary.ablation_table), 1):
         lines.extend([f'% BEGIN MAIN TABLE {index}', render(main, policy), f'% END MAIN TABLE {index}'])
+    lines.extend([r'\clearpage', r'\section*{Appendix}', r'\setcounter{table}{0}', r'\renewcommand{\thetable}{A\arabic{table}}',
+                  r'{\normalsize ' + APPENDIX_INTRO + r'\par}'])
+    for index, spec in enumerate(appendix_specifications(reports, policy), 1):
+        if index > 1 and not fragment:
+            # In the standalone preview, each logical table starts together.
+            lines.append(r'\clearpage')
+        lines.extend([f'% BEGIN PAPER TABLE {index}', appendix_table(index, spec), f'% END PAPER TABLE {index}'])
+    if not fragment:
+        lines.append(r'\end{document}')
+    return '\n\n'.join(lines) + '\n'
+
+
+APPENDIX_INTRO = ("Appendix tables use each method's default recipe (adapters: the primary recipe) at its lowest seed tag; "
+                  'A1 and A6 report every seed tag, and A2, A4 and A7 list every supplied run at its lowest seed tag. '
+                  'Settings shared by all runs are listed once in A7.')
+
+
+def appendix_table(index, spec, layout='paper'):
+    """Appendix table `index` (1-based) from its specification."""
+    label = f'tab:benchmark-paper-{index}'
+    if 'panels' in spec:
+        return protocol_panels(TABLE_TITLES[index - 1], label, spec['headers'], spec['widths'], spec['panels'],
+                               spec['note'], layout=layout, **spec['options'])
+    return table(TABLE_TITLES[index - 1], label, spec['headers'], spec['widths'], spec['rows'], spec['note'],
+                 layout=layout, **spec['options'])
+
+
+def appendix_specifications(reports, policy):
+    """Headers, column widths (mm on the paper's landscape page), rows or panels, options and notes of A1--A7."""
+    from . import summary
     adapter_headers, adapter_widths, adapter_values = main_adapter_matrix(reports, policy)
     primary = paper_records(reports)
     plus_h_records = main_plus_h_records(reports)
@@ -1158,26 +1216,62 @@ def render_tables(reports, *, policy='sort', fragment=False, preview=False):
                   'and run records remain in the input reports. Values in empty templates are manifest defaults; '
                   'unavailable values are "-".'),
     ]
-    lines.extend([r'\clearpage', r'\section*{Appendix}', r'\setcounter{table}{0}', r'\renewcommand{\thetable}{A\arabic{table}}',
-                  r'{\normalsize Appendix tables use each method\'s default recipe (adapters: the primary recipe) at its lowest '
-                  r'seed tag; A1 and A6 report every seed tag, and A2, A4 and A7 list every supplied run at its lowest seed '
-                  r'tag. Settings shared by all runs are listed once in A7.\par}'])
-    for index, spec in enumerate(specifications, 1):
-        if index > 1 and not fragment:
-            # In the standalone preview, each logical table starts together.
-            lines.append(r'\clearpage')
-        label = f'tab:benchmark-paper-{index}'
-        lines.append(f'% BEGIN PAPER TABLE {index}')
-        if 'panels' in spec:
-            lines.append(protocol_panels(TABLE_TITLES[index - 1], label, spec['headers'], spec['widths'], spec['panels'],
-                                         spec['note'], **spec['options']))
-        else:
-            lines.append(table(TABLE_TITLES[index - 1], label, spec['headers'], spec['widths'], spec['rows'],
-                               spec['note'], **spec['options']))
-        lines.append(f'% END PAPER TABLE {index}')
-    if not fragment:
-        lines.append(r'\end{document}')
-    return '\n\n'.join(lines) + '\n'
+    return specifications
+
+
+# Thesis files (--thesis), relative to the thesis project; main.tex inputs them by these names.
+THESIS_TABLES = 'tables/cqa'
+THESIS_MAIN_TABLES = ('main-ultraquery', 'main-plus-h', 'main-ablations')
+
+
+def render_thesis(reports, *, policy='sort', preview=False):
+    """Thesis-ready LaTeX files for the research-report design of the thesis (researchreport.sty).
+
+    Returns {file name: LaTeX}: the three main tables as single-column floats whose bodies the thesis fits
+    to its reading column (fitblock), the shared settings as a paragraph, and the appendix long tables with
+    column widths in shares of the line width, for landscape pages. The thesis design sets type sizes,
+    spacing and captions; appendix tables are numbered by the thesis and referenced by label.
+    """
+    from . import summary
+    if policy not in ('sort', 'expected'):
+        raise ValueError('Tie policy must be sort or expected')
+    if not (reports.results or reports.difficulty or any(reports.effects.values())):
+        reports = empty_reports()
+    main = preview_reports(reports) if preview else reports
+    header = (f'% Generated by python -m benchmarks.cqa.paper --thesis (tie policy: {policy}'
+              + ('; preview' if preview else '') + '). Regenerate instead of editing.')
+    renders = (summary.ultraquery_table, summary.plus_h_table, summary.ablation_table)
+    files = {f'{name}.tex': header + '\n' + render(main, policy, layout='thesis') + '\n'
+             for name, render in zip(THESIS_MAIN_TABLES, renders)}
+    settings = summary.shared_settings(main, policy) + (' ' + summary.PREVIEW_NOTE if preview else '')
+    files['settings.tex'] = header + '\n' + settings + '\n'
+    # The introduction opens the appendix chapter; the long tables follow on landscape pages.
+    appendix = [header, thesis_note(APPENDIX_INTRO) + r'\par', r'\begin{landscapepages}']
+    appendix.extend(appendix_table(index, spec, layout='thesis')
+                    for index, spec in enumerate(appendix_specifications(reports, policy), 1))
+    appendix.append(r'\end{landscapepages}')
+    files['appendix.tex'] = '\n\n'.join(appendix) + '\n'
+    return files
+
+
+def write_thesis(reports, directory, *, policy='sort', preview=False, hardness_composition=False):
+    """Write the thesis tables and figures into the thesis project `directory`; returns the written paths."""
+    directory = Path(directory)
+    if not directory.is_dir():
+        raise ValueError(f'Thesis directory {directory} does not exist')
+    written = []
+    tables_directory = directory / THESIS_TABLES
+    tables_directory.mkdir(parents=True, exist_ok=True)
+    for name, latex in render_thesis(reports, policy=policy, preview=preview).items():
+        path = tables_directory / name
+        path.write_text(latex, encoding='utf-8')
+        written.append(path)
+    from .figures import THESIS_FIGURES, generate_figures, thesis_design
+    payload = generate_figures(reports, directory / THESIS_FIGURES, policy=policy,
+                               hardness_composition=hardness_composition, theme='thesis',
+                               design=thesis_design(directory))
+    written.extend(directory / THESIS_FIGURES / file for figure in payload['figures'] for file in figure['files'])
+    return written
 
 
 def main(argv=None):
@@ -1260,10 +1354,13 @@ CIs and unavailable counts stay "-". Dataset coverage assumes full evaluation.
     parser.add_argument('--released-filters', action='store_true',
                         help='Also show the released-filter twins of +H runs (default: corrected filters wherever a run has them)')
     parser.add_argument('--hardness-composition', action='store_true',
-                        help='With --figures, also export the optional +H QA-pair composition diagnostic for the appendix')
+                        help='With --figures or --thesis, also export the optional +H QA-pair composition diagnostic for the appendix')
+    parser.add_argument('--thesis', type=Path, metavar='DIRECTORY',
+                        help=f'Also write thesis-ready tables ({THESIS_TABLES}/) and figures (figures/cqa/) into this thesis '
+                             'project, styled for its research-report design (researchreport.sty)')
     args = parser.parse_args(argv)
-    if args.hardness_composition and args.figures is None:
-        parser.error('--hardness-composition requires --figures')
+    if args.hardness_composition and args.figures is None and args.thesis is None:
+        parser.error('--hardness-composition requires --figures or --thesis')
     try:
         if args.output.resolve() in {path.resolve() for path in args.results}:
             raise ValueError('Output must not overwrite an input report')
@@ -1283,6 +1380,9 @@ CIs and unavailable counts stay "-". Dataset coverage assumes full evaluation.
                 raise ValueError('Figure outputs must not overwrite input reports or the LaTeX output')
             figures = generate_figures(reports, args.figures, policy=args.tie_policy,
                                        hardness_composition=args.hardness_composition)
+        if args.thesis is not None:
+            thesis_files = write_thesis(reports, args.thesis, policy=args.tie_policy, preview=args.preview,
+                                        hardness_composition=args.hardness_composition)
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(latex, encoding='utf-8')
     except (OSError, ValueError, TypeError, KeyError) as error:
@@ -1293,6 +1393,9 @@ CIs and unavailable counts stay "-". Dataset coverage assumes full evaluation.
         for figure in figures['figures']:
             print(f'{figure["placement"]}: {args.figures / figure["name"]} (.pdf, .svg, .png)', file=sys.stderr)
         print(f'Captions and numerical data: {args.figures / "figures.json"}', file=sys.stderr)
+    if args.thesis is not None:
+        print(f'Thesis files in {args.thesis}:', *(path.relative_to(args.thesis) for path in thesis_files),
+              sep='\n  ', file=sys.stderr)
 
 
 if __name__ == '__main__':

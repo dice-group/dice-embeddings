@@ -342,16 +342,29 @@ def appendix_cell(values: Sequence[float]) -> str:
     return tables.number(mean) + (rf' $\pm$ {100 * sd:.2f}' if sd is not None else '')
 
 
-def compact_table(caption: str, label: str, columns: str, header_rows: Sequence[tuple[list[str], list[tuple[int, int]]]],
-                  rows: Sequence[tuple[str, list[str]]], *, star: bool = True, notes: str = '') -> str:
-    """A booktabs float for a paper page; header rows are (cells, rules); row groups get space.
+PREVIEW_NOTE = 'Preview: xx.x marks a planned result that is not available yet.'
 
-    The caption and notes take the table's own width (threeparttable), not the page's.
+
+def compact_table(caption: str, label: str, columns: str, header_rows: Sequence[tuple[list[str], list[tuple[int, int]]]],
+                  rows: Sequence[tuple[str, list[str]]], *, star: bool = True, notes: str = '',
+                  layout: str = 'paper') -> str:
+    """A booktabs float; header rows are (cells, rules); row groups get space.
+
+    Paper layout: the caption and notes take the table's own width (threeparttable), not the page's.
+    Thesis layout (researchreport.sty): a single-column float whose body sits in a fitblock, which the
+    thesis design sets to fit the reading column (a smaller size and tighter columns when needed); the
+    caption keeps the page's caption column. Notes explain preview placeholders when cells have them.
     """
-    environment = 'table*' if star else 'table'
-    lines = [rf'\begin{{{environment}}}[t]', r'\centering', r'\footnotesize', r'\setlength{\tabcolsep}{4pt}',
-             r'\begin{threeparttable}', rf'\caption{{{caption}}}\label{{{label}}}', rf'\begin{{tabular}}{{{columns}}}',
-             r'\toprule']
+    if layout == 'thesis':
+        lines = [r'\begin{table}[tbp]', rf'\caption{{{caption}}}\label{{{label}}}', r'\begin{fitblock}',
+                 r'\begin{threeparttable}', rf'\begin{{tabular}}{{{columns}}}', r'\toprule']
+        if any(PLACEHOLDER in cell or DELTA_PLACEHOLDER in cell for _, cells in rows for cell in cells):
+            notes = (notes + ' ' + PREVIEW_NOTE).strip()
+    else:
+        environment = 'table*' if star else 'table'
+        lines = [rf'\begin{{{environment}}}[t]', r'\centering', r'\footnotesize', r'\setlength{\tabcolsep}{4pt}',
+                 r'\begin{threeparttable}', rf'\caption{{{caption}}}\label{{{label}}}', rf'\begin{{tabular}}{{{columns}}}',
+                 r'\toprule']
     for cells, rules in header_rows:
         lines.append(' & '.join(cells) + r' \\')
         if rules:
@@ -366,6 +379,11 @@ def compact_table(caption: str, label: str, columns: str, header_rows: Sequence[
         previous = group
         lines.append(' & '.join(cells) + r' \\')
     lines.extend([r'\bottomrule', r'\end{tabular}'])
+    if layout == 'thesis':
+        if notes:
+            lines.append(r'\begin{tablenotes}\item[] ' + notes + r'\end{tablenotes}')
+        lines.extend([r'\end{threeparttable}', r'\end{fitblock}', r'\end{table}'])
+        return '\n'.join(lines)
     if notes:
         lines.append(r'\begin{tablenotes}\scriptsize\item[] ' + notes + r'\end{tablenotes}')
     lines.extend([r'\end{threeparttable}', rf'\end{{{environment}}}'])
@@ -483,7 +501,7 @@ def adapter_seed_counts(rows: Sequence[dict]) -> list[int]:
     return [len(v) for row in rows if row['method'].endswith('-adapter') and not row['identity'] for v in row['values'].values()]
 
 
-def ultraquery_table(reports: 'tables.Reports', policy: str) -> str:
+def ultraquery_table(reports: 'tables.Reports', policy: str, *, layout: str = 'paper') -> str:
     """Main table 1: MRR per method and dataset family, EPFO and negation."""
     rows = ultraquery_rows(reports, policy)
     keys = [(f, c) for f, _ in FAMILY_COLUMNS for c in ('epfo', 'negation')]
@@ -499,7 +517,7 @@ def ultraquery_table(reports: 'tables.Reports', policy: str) -> str:
                + ' Best in bold, second best underlined.' + seed_legend(adapter_seed_counts(rows)))
     header = [grouped_header(groups, 1), (['Method', *(['EPFO', 'Neg.'] * len(groups))], [])]
     return compact_table(caption, 'tab:main-ultraquery', 'l' + 'c' * 2 * len(groups), header,
-                         body or [('', [tables.MISSING] * (1 + 2 * len(groups)))])
+                         body or [('', [tables.MISSING] * (1 + 2 * len(groups)))], layout=layout)
 
 
 def plus_h_rows(reports: 'tables.Reports', policy: str) -> list[dict]:
@@ -518,7 +536,7 @@ def plus_h_rows(reports: 'tables.Reports', policy: str) -> list[dict]:
     return sorted(rows, key=lambda row: system_order(row['method'], row['identity']))
 
 
-def plus_h_table(reports: 'tables.Reports', policy: str) -> str:
+def plus_h_table(reports: 'tables.Reports', policy: str, *, layout: str = 'paper') -> str:
     """Main table 2: MRR per method and +H dataset, EPFO and negation, with their average."""
     rows = plus_h_rows(reports, policy)
     keys = [(d, c) for d in (*tables.PLUS_H_DATASETS, 'average') for c in ('epfo', 'negation')]
@@ -533,7 +551,7 @@ def plus_h_table(reports: 'tables.Reports', policy: str) -> str:
                + ' Best in bold, second best underlined.' + seed_legend(adapter_seed_counts(rows)))
     header = [grouped_header(groups, 1), (['Method', *(['EPFO', 'Neg.'] * len(groups))], [])]
     return compact_table(caption, 'tab:main-plus-h', 'l' + 'c' * 2 * len(groups), header,
-                         body or [('', [tables.MISSING] * (1 + 2 * len(groups)))])
+                         body or [('', [tables.MISSING] * (1 + 2 * len(groups)))], layout=layout)
 
 
 def seed_deltas(reference: Runs, variant: Runs, datasets: Sequence[str], policy: str) -> list[list[float]]:
@@ -594,7 +612,7 @@ def ablation_rows(reports: 'tables.Reports', policy: str) -> tuple[list[dict], d
     return rows, primary
 
 
-def ablation_table(reports: 'tables.Reports', policy: str) -> str:
+def ablation_table(reports: 'tables.Reports', policy: str, *, layout: str = 'paper') -> str:
     """Main table 3: each recipe variant's MRR and its change from the primary recipe."""
     rows, primary = ablation_rows(reports, policy)
     groups = [('UltraQuery (23)', 2), ('+H (3)', 2)]
@@ -614,7 +632,8 @@ def ablation_table(reports: 'tables.Reports', policy: str) -> str:
                r'the primary recipe, or with its seed mean if that seed is missing.')
     header = [grouped_header(groups, 2), (['Backbone', 'Variant', *(['MRR', r'$\Delta$'] * len(groups))], [])]
     return compact_table(caption, 'tab:main-ablations', 'll' + 'c' * 2 * len(groups), header,
-                         body or [('', [tables.MISSING] * (2 + 2 * len(groups)))], star=False, notes=notes)
+                         body or [('', [tables.MISSING] * (2 + 2 * len(groups)))], star=False, notes=notes,
+                         layout=layout)
 
 
 def recipe_description(method: str, recipe: str) -> str:
