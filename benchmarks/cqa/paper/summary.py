@@ -505,7 +505,6 @@ def plus_h_table(reports: 'tables.Reports', policy: str) -> str:
     body = [(row['group'], [tables.escape(row['name']), *[cell(row['values'][key], rank=marks[i][j])
                                                            for i, key in enumerate(keys)]])
             for j, row in enumerate(rows)]
-    records = [r for row in rows for r in row['records']]
     caption = (r'Complex query answering on +H: MRR on the 11 positive (EPFO) and 5 negated query types, averaged over '
                r'query types.'
                + (' The first group is trained on each target graph.' if any(row['group'] == 'trained' for row in rows) else '')

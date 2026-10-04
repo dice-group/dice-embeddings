@@ -132,7 +132,11 @@ python benchmarks/cqa/verification/export_reference.py \
 ```
 
 The exporter imports no DICE code. Acceptance needs scores within tolerance and
-identical candidate order and ties for every query. ULTRA/TRIX entries need no
+identical candidate order and ties for every query. CQD and CQD-Hybrid answer
+the five negated +H types with CQD-A signed-atom negation, which the pinned +H
+code does not implement: their oracles cover the eleven positive types, and
+`verify` records the negated types as evaluated without an upstream
+reference; fixtures check them against CQD-A outputs. ULTRA/TRIX entries need no
 oracle: an independent implementation checks calibration, pruning, composition
 and identity controls on captured backbone logits; the backbones' own parity is
 tested separately. Passing evidence of an unchanged entry is reused (an
