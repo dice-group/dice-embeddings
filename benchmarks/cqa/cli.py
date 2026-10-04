@@ -354,10 +354,11 @@ def prepare(parser, args):
 def verify(parser, args):
     """Run every entry's parity check in a fresh process, then freeze the passing evidence.
 
-    A passing KGFM integration check of an unchanged entry is reused, so an
-    interrupted verification resumes and checks can run as separate jobs.
+    Passing evidence of an unchanged entry (a KGFM integration check, or a
+    parity check against the same oracles) is reused, so an interrupted
+    verification resumes and checks can run as separate jobs.
     """
-    from .study import freeze, integration_passed, verify_bundle
+    from .study import freeze, integration_passed, parity_passed, verify_bundle
     study, root = args.output.resolve(), args.input_root.resolve()
     if (study / 'verified-bundle' / 'bundle.json').exists():
         raise ValueError('A verified bundle already exists; use a new output directory for new evidence')
@@ -382,13 +383,16 @@ def verify(parser, args):
         reference = args.references / f'{entry["id"]}.pt' if args.references else None
         if reference is None or not reference.is_file():
             raise ValueError(f'Missing baseline oracle {entry["id"]}.pt; pass --references')
-        command = [*common, 'parity', *options, '--reference', str(reference), '--output', str(study / 'evidence' / f'{entry["id"]}.json')]
+        evidence = study / 'evidence' / f'{entry["id"]}.json'
+        command = [*common, 'parity', *options, '--reference', str(reference), '--output', str(evidence)]
+        comparison = None
         if args.comparison_references and entry['method'] in ('cqd', 'cqd-hybrid'):
             comparison = args.comparison_references / f'{entry["id"]}.pt'
             if not comparison.is_file():
                 raise ValueError(f'Missing comparison oracle: {comparison}')
             command += ['--comparison-reference', str(comparison)]
-        jobs.append((entry['id'], command))
+        if not parity_passed(evidence, bundle, entry, reference, comparison):
+            jobs.append((entry['id'], command))
     for entry, command in jobs:
         print(json.dumps(dict(entry=entry, state='verifying')), flush=True)
         if subprocess.run(command).returncode:

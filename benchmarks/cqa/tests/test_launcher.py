@@ -6,7 +6,7 @@ import pytest
 
 from benchmarks.cqa import cli
 from benchmarks.cqa.manifests import prepare_manifest, read_manifest, suite_directory, validate_entry
-from benchmarks.cqa.study import freeze, read, run_job
+from benchmarks.cqa.study import entry_inputs_identity, freeze, read, run_job, verify_bundle
 from benchmarks.cqa.tests.test_protocol import paper_fixture
 
 PUBLIC = suite_directory('plus_h')
@@ -454,6 +454,37 @@ def test_verification_runs_each_entry_in_a_fresh_process_and_requires_oracles(tm
     verified = read(study / 'verified-manifest.json')
     assert [entry['verification'] for entry in verified['entries']] == ['study/evidence/cone-fixture.json', 'study/evidence/cqd-example.json']
     assert (study / 'verified-bundle/bundle.json').is_file()
+
+
+def test_verification_reuses_passing_parity_evidence_for_the_same_oracle(tmp_path, monkeypatch):
+    from dicee.query_answering._checkpoint import checksum
+    from dicee.query_answering.context import fingerprint
+    study = tmp_path / 'study'
+    freeze(paper_fixture(tmp_path), study / 'bundle', tmp_path)
+    bundle = verify_bundle(study / 'bundle', tmp_path)
+    entry = bundle['manifest']['entries'][0]
+    references = tmp_path / 'references'
+    references.mkdir()
+    (references / f'{entry["id"]}.pt').write_bytes(b'oracle')
+    evidence = dict(passed=True, source_sha256=bundle['source_sha256'], inputs_sha256=entry_inputs_identity(bundle, entry),
+                    entry_sha256=fingerprint({k: v for k, v in entry.items() if k != 'verification'}),
+                    reference_sha256=checksum(references / f'{entry["id"]}.pt'))
+    cli.write_json(study / 'evidence' / f'{entry["id"]}.json', dict(evidence, reference_sha256='another oracle'))
+    commands = []
+
+    def parity(command):
+        commands.append(command)
+        cli.write_json(command[command.index('--output') + 1], evidence)
+        return subprocess.CompletedProcess(command, 0)
+
+    monkeypatch.setattr(cli.subprocess, 'run', parity)
+    args = ['plus_h', 'verify', '--input-root', str(tmp_path), '--output', str(study), '--references', str(references)]
+    cli.main(args)
+    assert len(commands) == 1
+    # Evidence for the same entry, inputs, source and oracle is reused.
+    (study / 'verified-bundle').rename(tmp_path / 'first-verified-bundle')
+    cli.main(args)
+    assert len(commands) == 1 and (study / 'verified-bundle/bundle.json').is_file()
 
 
 def test_container_rejects_retagged_image_before_launch(tmp_path, monkeypatch):
