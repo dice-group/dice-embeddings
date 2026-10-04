@@ -522,6 +522,14 @@ def display_method(reports, record):
     return run_labels(reports).get(record['id'], method_name(record))
 
 
+def shown_labels(reports, records):
+    """Names unique among the shown runs only: a table of one run per method needs no recipe, seed or condition tags."""
+    shown = copy(reports)
+    shown.results = {r['id']: r for r in records}
+    shown.difficulty = [row for row in reports.difficulty if row.get('entry') in shown.results]
+    return run_labels(shown)
+
+
 @functools.lru_cache(maxsize=None)
 def shipped_recipes():
     """{(suite, adapter method): recipe} of the checked-in kgfm_adapters.json manifests, without seed tags."""
@@ -582,9 +590,11 @@ def main_plus_h_protocol_notes(records):
 
 
 def main_plus_h_rows(reports, policy):
-    return [[escape(dataset_name(r['dataset'])), escape(display_method(reports, r)), escape(scope(r)),
+    records = main_plus_h_records(reports)
+    labels = shown_labels(reports, records)
+    return [[escape(dataset_name(r['dataset'])), escape(labels.get(r['id'], method_name(r))), escape(scope(r)),
              *[number(policy_values(r, policy)['per_shape'].get(s, {}).get('mrr')) for s in PLUS_H_TYPES]]
-            for r in main_plus_h_records(reports)]
+            for r in records]
 
 
 def hardness_record(reports, row):
@@ -840,6 +850,7 @@ def author_reduction_panels(reports, policy):
     positive-tree partial/full scores; numeric-bin means are never combined.
     """
     records = {r['id']: r for r in paper_records(reports) if r['dataset'] in PLUS_H_DATASETS}
+    labels = shown_labels(reports, records.values())
     groups = defaultdict(lambda: defaultdict(list))
     for row in paper_hardness_rows(reports):
         if row.get('dataset') not in PLUS_H_DATASETS:
@@ -910,7 +921,7 @@ def author_reduction_panels(reports, policy):
                    and row['grouping'] == 'overall' and row.get('comparison_graph') == graph
                    and row.get('answer_filter') == filters}
         context = (record['dataset'], reference or MISSING, filters or MISSING, inference_graph or MISSING)
-        name = display_method(reports, record)
+        name = labels.get(record['id'], method_name(record))
         shapes = set(by_shape) | set(offline)
         if entry in reports.results:
             shapes |= set(policy_values(record, policy)['per_shape'])

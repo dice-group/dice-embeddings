@@ -1022,6 +1022,8 @@ def test_filter_companions_are_labeled_by_condition_and_captions_describe_the_re
     reports.consume(corrected + released)
     labels = set(tables.run_labels(reports).values())
     assert labels == {'ULTRA + adapter (2i/3i) (corrected filters)', 'ULTRA + adapter (2i/3i) (released filters)'}
+    # Tables of one run per method name it plainly.
+    assert [row[1] for row in tables.main_plus_h_rows(reports, 'sort')] == ['ULTRA + adapter']
     latex = tables.render_tables(reports)
     assert 'from the primary recipe of the same backbone (ULTRA: adapter trained on 2i/3i queries)' in latex
     assert 'No method is trained on target queries, but FB15k-237+H shares its graph with backbone pretraining' in latex
