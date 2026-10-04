@@ -329,10 +329,14 @@ def appendix_cell(values: Sequence[float]) -> str:
 
 def compact_table(caption: str, label: str, columns: str, header_rows: Sequence[tuple[list[str], list[tuple[int, int]]]],
                   rows: Sequence[tuple[str, list[str]]], *, star: bool = True, notes: str = '') -> str:
-    """A booktabs float for a paper page; header rows are (cells, rules); row groups get space."""
+    """A booktabs float for a paper page; header rows are (cells, rules); row groups get space.
+
+    The caption and notes take the table's own width (threeparttable), not the page's.
+    """
     environment = 'table*' if star else 'table'
     lines = [rf'\begin{{{environment}}}[t]', r'\centering', r'\footnotesize', r'\setlength{\tabcolsep}{4pt}',
-             rf'\caption{{{caption}}}\label{{{label}}}', rf'\begin{{tabular}}{{{columns}}}', r'\toprule']
+             r'\begin{threeparttable}', rf'\caption{{{caption}}}\label{{{label}}}', rf'\begin{{tabular}}{{{columns}}}',
+             r'\toprule']
     for cells, rules in header_rows:
         lines.append(' & '.join(cells) + r' \\')
         if rules:
@@ -348,8 +352,8 @@ def compact_table(caption: str, label: str, columns: str, header_rows: Sequence[
         lines.append(' & '.join(cells) + r' \\')
     lines.extend([r'\bottomrule', r'\end{tabular}'])
     if notes:
-        lines.append(r'\par\smallskip{\scriptsize ' + notes + r'\par}')
-    lines.append(rf'\end{{{environment}}}')
+        lines.append(r'\begin{tablenotes}\scriptsize\item[] ' + notes + r'\end{tablenotes}')
+    lines.extend([r'\end{threeparttable}', rf'\end{{{environment}}}'])
     return '\n'.join(lines)
 
 
@@ -580,8 +584,8 @@ def ablation_table(reports: 'tables.Reports', policy: str) -> str:
         body.append((row['backbone'], [label, row['name'], *values]))
     references = primary_description(primary)
     notes = ' '.join(ABLATION_NOTES[row['token']] for row in rows if row.get('token') in ABLATION_NOTES)
-    caption = (r'Ablations of the adapter recipe: MRR over all query types, averaged over query types and then datasets, '
-               r'and its change ($\Delta$) from the primary recipe of the same backbone'
+    caption = (r'Ablations of the adapter recipe: MRR over all query types and its change ($\Delta$) from the primary '
+               r'recipe of the same backbone'
                + (f' ({references})' if references else '') + r'. Each variant seed is compared with the same seed of '
                r'the primary recipe, or with its seed mean if that seed is missing.')
     header = [grouped_header(groups, 2), (['Backbone', 'Variant', *(['MRR', r'$\Delta$'] * len(groups))], [])]

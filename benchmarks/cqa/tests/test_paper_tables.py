@@ -855,3 +855,12 @@ def test_two_backbones_with_custom_recipe_names_share_adapter_rows():
     rows = [cells(row) for row in paper_bodies(tables.render_tables(reports))[4].splitlines()]
     assert len(rows) == 23 and all('(' not in row[0] for row in rows)
     assert all(row[1:4] == ['30.00', '20.00', '+10.00'] and row[5:8] == ['30.00', '20.00', '+10.00'] for row in rows)
+
+
+def test_main_table_captions_and_notes_take_the_table_width():
+    latex = tables.render_tables(tables.Reports())
+    sections = re.findall(r'% BEGIN MAIN TABLE \d+\n(.*?)\n% END MAIN TABLE \d+', latex, re.DOTALL)
+    assert len(sections) == 3
+    for section in sections:
+        assert section.index(r'\begin{threeparttable}') < section.index(r'\caption{') < section.index(r'\end{threeparttable}')
+    assert r'\begin{tablenotes}' in sections[2] and r'\usepackage{booktabs,longtable,array,threeparttable}' in latex
