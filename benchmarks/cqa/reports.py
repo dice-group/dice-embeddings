@@ -3,13 +3,17 @@
 import csv
 import json
 import math
+import multiprocessing
 import sqlite3
 from collections import defaultdict
+from concurrent.futures import ProcessPoolExecutor
+from contextlib import contextmanager
+from functools import partial
 from pathlib import Path
 
 import numpy as np
 
-from dicee.query_answering._checkpoint import write_json
+from dicee.query_answering._checkpoint import checksum, read, write_json
 from dicee.query_answering._query import PLUS_H_SHAPES
 from dicee.query_answering.benchmark import METRICS, _averages
 from dicee.query_answering.datasets import query_types_for_dataset
@@ -95,28 +99,65 @@ def adapter_effects(learned_trace, control_trace, *, bootstrap_samples=2000, see
                 resamples=bootstrap_samples, seed=seed, scope='Conditional on frozen models and adapters; not training-seed uncertainty.'))
 
 
-def export_reports(results, published, output, *, bootstrap_samples=2000, seed=0, title='CQA benchmark'):
-    """Compare matching coverage only; partial means never become full-suite means."""
-    from dicee.query_answering._checkpoint import checksum, read
+@contextmanager
+def parallel(workers=1):
+    """``starmap(function, argument_tuples)``: results in order, computed in up to ``workers`` processes.
+
+    Every bootstrap seeds its own generator, so results do not depend on the number of workers.
+    """
+    if type(workers) is not int or workers < 1:
+        raise ValueError('Use a positive number of workers')
+    if workers == 1:
+        yield lambda function, calls: [function(*arguments) for arguments in calls]
+        return
+    with ProcessPoolExecutor(workers, mp_context=multiprocessing.get_context('spawn')) as pool:
+        yield lambda function, calls: [future.result() for future in [pool.submit(function, *arguments) for arguments in calls]]
+
+
+def offline_summary(path, bootstrap_samples=2000, seed=0):
+    """(result, expected types, offline summary) of one saved run after checking its rank trace; None for other files."""
+    report = read(path)
+    if report.get('benchmark_run', report.get('paper_run')) is None:
+        return None
+    trace = Path(path).parent / 'ranks.sqlite3'
+    if checksum(trace) != report['rank_trace_sha256']:
+        raise ValueError(f'Rank trace checksum mismatch: {trace}')
+    expected_types = report.get('dataset_metadata', {}).get('expected_query_types')
+    if expected_types is None:
+        expected_types = query_types_for_dataset(report['dataset'])
+    summary = summarize_trace(trace, bootstrap_samples=bootstrap_samples, seed=seed, expected_types=expected_types)
+    for shape, values in summary['per_shape'].items():
+        for policy in ('sort', 'expected'):
+            online = report['per_shape'][shape] if policy == 'sort' else report['additional_tie_metrics'][policy]['per_shape'][shape]
+            if any(not math.isclose(online[metric], values[policy][metric], abs_tol=1e-11) for metric in METRICS):
+                raise ValueError(f'Offline rank metrics differ from evaluation: {path}')
+    return report, expected_types, summary
+
+
+def export_reports(results, published, output, *, bootstrap_samples=2000, seed=0, title='CQA benchmark', workers=1):
+    """Compare matching coverage only; partial means never become full-suite means.
+
+    ``workers`` processes summarize traces and compute effects; the outputs do not depend on it.
+    """
+    with parallel(workers) as starmap:
+        return _export_reports(results, published, output, bootstrap_samples=bootstrap_samples, seed=seed, title=title,
+                               starmap=starmap)
+
+
+def _trace(detail):
+    return Path(detail['result']).parent / 'ranks.sqlite3'
+
+
+def _export_reports(results, published, output, *, bootstrap_samples, seed, title, starmap):
     published = read(published) if published is not None else {'source': None, 'datasets': {}}
     rows, details = [], []
-    for path in sorted(Path(results).rglob('result.json')):
-        report = read(path)
-        run = report.get('benchmark_run', report.get('paper_run'))
-        if run is None:
+    paths = sorted(Path(results).rglob('result.json'))
+    effect = partial(adapter_effects, bootstrap_samples=bootstrap_samples, seed=seed)
+    for path, saved in zip(paths, starmap(offline_summary, [(path, bootstrap_samples, seed) for path in paths])):
+        if saved is None:
             continue
-        trace = path.parent / 'ranks.sqlite3'
-        if checksum(trace) != report['rank_trace_sha256']:
-            raise ValueError(f'Rank trace checksum mismatch: {trace}')
-        expected_types = report.get('dataset_metadata', {}).get('expected_query_types')
-        if expected_types is None:
-            expected_types = query_types_for_dataset(report['dataset'])
-        summary = summarize_trace(trace, bootstrap_samples=bootstrap_samples, seed=seed, expected_types=expected_types)
-        for shape, values in summary['per_shape'].items():
-            for policy in ('sort', 'expected'):
-                online = report['per_shape'][shape] if policy == 'sort' else report['additional_tie_metrics'][policy]['per_shape'][shape]
-                if any(not math.isclose(online[metric], values[policy][metric], abs_tol=1e-11) for metric in METRICS):
-                    raise ValueError(f'Offline rank metrics differ from evaluation: {path}')
+        report, expected_types, summary = saved
+        run = report.get('benchmark_run', report.get('paper_run'))
         method = report['inference']['method']
         scores = published['datasets'].get(report['dataset'], {}).get(method, {})
         coverage = summary['all_benchmark_types'] and report['protocol']['full_split'] and report['split'] == 'test'
@@ -167,17 +208,12 @@ def export_reports(results, published, output, *, bootstrap_samples=2000, seed=0
                      f'{row["sort_mrr"]:.2f} | {row["expected_random_mrr"]:.2f} | {row["tie_delta"]:+.2f} |')
     (output / 'comparison.md').write_text('\n'.join(lines) + '\n')
     lookup = {row['id']: row for row in details}
-    pairs = []
-    for control in details:
-        if control['paired_with'] not in lookup:
-            continue
-        learned = lookup[control['paired_with']]
-        effect = adapter_effects(Path(learned['result']).parent / 'ranks.sqlite3',
-                                 Path(control['result']).parent / 'ranks.sqlite3',
-                                 bootstrap_samples=bootstrap_samples, seed=seed)
-        if learned['answer_filter'] != control['answer_filter']:
-            raise ValueError('Adapter comparison changed answer filters')
-        pairs.append(dict(learned=learned['id'], control=control['id'], dataset=control['dataset'], answer_filter=control['answer_filter'], **effect))
+    controls = [control for control in details if control['paired_with'] in lookup]
+    if any(lookup[control['paired_with']]['answer_filter'] != control['answer_filter'] for control in controls):
+        raise ValueError('Adapter comparison changed answer filters')
+    effects = starmap(effect, [(_trace(lookup[control['paired_with']]), _trace(control)) for control in controls])
+    pairs = [dict(learned=control['paired_with'], control=control['id'], dataset=control['dataset'],
+                  answer_filter=control['answer_filter'], **values) for control, values in zip(controls, effects)]
     write_json(output / 'adapter-effects.json', pairs)
     lines = ['# Learned adapter effect', '',
              'Learned minus identity calibration, MRR ×100. Observed facts, query plans, operators and beams are held fixed.', '',
@@ -202,18 +238,14 @@ def export_reports(results, published, output, *, bootstrap_samples=2000, seed=0
             if detail['inference_graph'] in group:
                 raise ValueError('Duplicate graph-ablation condition')
             group[detail['inference_graph']] = detail
-    graph_pairs = []
-    for group in groups.values():
-        if set(group) != {'train', 'train+valid'}:
-            continue
-        train, extended = group['train'], group['train+valid']
-        if not train['graph_recipe_sha256'] or train['graph_recipe_sha256'] != extended['graph_recipe_sha256']:
+    complete = [group for group in groups.values() if set(group) == {'train', 'train+valid'}]
+    for group in complete:
+        if not group['train']['graph_recipe_sha256'] or group['train']['graph_recipe_sha256'] != group['train+valid']['graph_recipe_sha256']:
             raise ValueError('Graph ablation changed model, adapter, operators, beam, or query settings')
-        effect = adapter_effects(Path(extended['result']).parent / 'ranks.sqlite3',
-                                 Path(train['result']).parent / 'ranks.sqlite3',
-                                 bootstrap_samples=bootstrap_samples, seed=seed)
-        graph_pairs.append(dict(train=train['id'], train_valid=extended['id'], dataset=train['dataset'],
-                                calibration=train['calibration'], answer_filter=train['answer_filter'], **effect))
+    effects = starmap(effect, [(_trace(group['train+valid']), _trace(group['train'])) for group in complete])
+    graph_pairs = [dict(train=group['train']['id'], train_valid=group['train+valid']['id'], dataset=group['train']['dataset'],
+                        calibration=group['train']['calibration'], answer_filter=group['train']['answer_filter'], **values)
+                   for group, values in zip(complete, effects)]
     write_json(output / 'graph-effects.json', graph_pairs)
     lines = ['# Inference graph effect', '',
              'Train+valid minus train, MRR ×100. Checkpoints, operators, queries and answer-filter policy are fixed.', '',
@@ -231,17 +263,13 @@ def export_reports(results, published, output, *, bootstrap_samples=2000, seed=0
                 writer.writerow([pair['train'], pair['train_valid'], pair['dataset'], shape, row['queries'],
                                  row['sort']['mrr'] * 100, row['expected']['mrr'] * 100])
     (output / 'graph-effects.md').write_text('\n'.join(lines) + '\n')
-    filter_pairs = []
-    for control in details:
-        if control['filter_paired_with'] not in lookup:
-            continue
-        corrected = lookup[control['filter_paired_with']]
-        if (corrected['answer_filter'], control['answer_filter']) != ('corrected', 'released'):
-            raise ValueError('Invalid corrected/released filter comparison')
-        effect = adapter_effects(Path(corrected['result']).parent / 'ranks.sqlite3',
-                                 Path(control['result']).parent / 'ranks.sqlite3',
-                                 bootstrap_samples=bootstrap_samples, seed=seed)
-        filter_pairs.append(dict(corrected=corrected['id'], released=control['id'], dataset=control['dataset'], **effect))
+    released = [control for control in details if control['filter_paired_with'] in lookup]
+    if any((lookup[control['filter_paired_with']]['answer_filter'], control['answer_filter']) != ('corrected', 'released')
+           for control in released):
+        raise ValueError('Invalid corrected/released filter comparison')
+    effects = starmap(effect, [(_trace(lookup[control['filter_paired_with']]), _trace(control)) for control in released])
+    filter_pairs = [dict(corrected=control['filter_paired_with'], released=control['id'], dataset=control['dataset'], **values)
+                    for control, values in zip(released, effects)]
     write_json(output / 'filter-effects.json', filter_pairs)
     lines = ['# Answer-filter effect', '',
              'Corrected minus released filters, MRR ×100. Predictions and released hard targets are identical.', '',
@@ -261,9 +289,9 @@ def export_reports(results, published, output, *, bootstrap_samples=2000, seed=0
     (output / 'filter-effects.md').write_text('\n'.join(lines) + '\n')
     records = [dict(id=row['id'], dataset=row['dataset'], method=row['method'], calibration=detail['calibration'],
                     paired_with=detail['paired_with'], complete=row['complete_test'], answer_filter=detail['answer_filter'],
-                    trace=Path(detail['result']).parent / 'ranks.sqlite3')
+                    trace=_trace(detail))
                for row, detail in zip(rows, details)]
-    effects = suite_effects(records, bootstrap_samples=bootstrap_samples, seed=seed)
+    effects = suite_effects(records, bootstrap_samples=bootstrap_samples, seed=seed, starmap=starmap)
     write_json(output / 'suite-effects.json', effects)
     lines = ['# Suite-level paired effects', '',
              'Treatment minus baseline, MRR ×100, equal weight per query type within a dataset and per dataset within '
@@ -293,8 +321,17 @@ def paired_strata(treatments, baseline):
 
     Every trace must cover the same queries with the same types and hard-answer counts.
     """
+    return dataset_strata(treatments, baseline)[0]
+
+
+def dataset_strata(treatments, baseline, singles=False):
+    """paired_strata of the treatments and, with ``singles``, of each treatment alone; every trace is read once."""
     reference = query_scores(baseline)
     scores = [query_scores(path) for path in treatments]
+    return _strata(scores, reference, baseline), [_strata([s], reference, baseline) for s in scores] if singles else []
+
+
+def _strata(scores, reference, baseline):
     if any(set(s) != set(reference) for s in scores) or not reference:
         raise ValueError(f'Suite comparison needs identical nonempty query coverage: {baseline}')
     strata = defaultdict(list)
@@ -339,19 +376,35 @@ def macro_effects(by_dataset, groups, *, bootstrap_samples=2000, seed=0):
     return output
 
 
-def suite_effects(records, *, bootstrap_samples=2000, seed=0):
+NEGATION = frozenset(s for s in PLUS_H_SHAPES if 'n' in s)
+
+
+def any_type(shape):
+    return True
+
+
+def epfo_type(shape):
+    return shape not in NEGATION
+
+
+def negation_type(shape):
+    return shape in NEGATION
+
+
+def suite_effects(records, *, bootstrap_samples=2000, seed=0, starmap=None):
     """Suite-level paired effects of every adapter recipe: against its no-adapter control and against UltraQuery.
 
     Seed replicates (entry IDs differing only by -seedN) are averaged per query; the control,
     which identity calibration makes independent of the adapter seed, is its lowest seed tag.
     Only complete test runs with corrected (+H) or released (UltraQuery) filters are compared.
+    ``starmap`` (see ``parallel``) computes the per-dataset strata and the bootstraps.
     """
     from dicee.query_answering.catalog import BENCHMARK_DATASETS, PLUS_H_DATASETS, dataset_spec
 
     from .paper.summary import system_of
+    starmap = starmap or (lambda function, calls: [function(*arguments) for arguments in calls])
     suites = {'ultraquery': [d for d in BENCHMARK_DATASETS if dataset_spec(d)[0] in ('transductive', 'inductive-e', 'inductive-er')],
               'plus_h': list(PLUS_H_DATASETS)}
-    negation = {s for s in PLUS_H_SHAPES if 'n' in s}
     systems = defaultdict(lambda: defaultdict(dict))
     for record in records:
         target_filter = 'corrected' if record['dataset'] in PLUS_H_DATASETS else 'released'
@@ -359,7 +412,7 @@ def suite_effects(records, *, bootstrap_samples=2000, seed=0):
             continue
         system, tag = system_of(record)
         systems[system][record['dataset']][tag] = record['trace']
-    output = []
+    plans = []
     for (method, identity, recipe), runs in sorted(systems.items()):
         if identity or not method.endswith('-adapter'):
             continue
@@ -369,10 +422,9 @@ def suite_effects(records, *, bootstrap_samples=2000, seed=0):
             present = [d for d in datasets if d in runs]
             if not present:
                 continue
-            families = {'all': (datasets, lambda s: True), 'epfo': (datasets, lambda s: s not in negation),
-                        'negation': (datasets, lambda s: s in negation)}
+            families = {'all': (datasets, any_type), 'epfo': (datasets, epfo_type), 'negation': (datasets, negation_type)}
             if suite == 'ultraquery':
-                families |= {family: ([d for d in datasets if dataset_spec(d)[0] == family], lambda s: True)
+                families |= {family: ([d for d in datasets if dataset_spec(d)[0] == family], any_type)
                              for family in ('transductive', 'inductive-e', 'inductive-er')}
             seeds = sorted(set.intersection(*(set(runs[d]) for d in present)))
             for comparison, reference in (('adapter-minus-identity', control), ('adapter-minus-ultraquery', baseline),
@@ -382,22 +434,29 @@ def suite_effects(records, *, bootstrap_samples=2000, seed=0):
                 else:
                     treatments = {d: [runs[d][tag] for tag in seeds] for d in present}
                 shared = [d for d in present if d in reference and d in treatments and treatments[d]]
-                if not shared:
-                    continue
-                base = {d: reference[d][min(reference[d])] for d in shared}
-                strata = {d: paired_strata(treatments[d], base[d]) for d in shared}
-                per_seed = []
-                if comparison != 'identity-minus-ultraquery':
-                    for tag in seeds:
-                        single = {d: paired_strata([runs[d][tag]], base[d]) for d in shared}
-                        values = macro_effects(single, families, bootstrap_samples=0)
-                        per_seed.append(dict(seed_tag=tag, **{p: {g: v['delta'] for g, v in values[p].items()} for p in values}))
-                output.append(dict(comparison=comparison, method=method, recipe=recipe, suite=suite,
-                                   datasets=len(shared), complete_suite=len(shared) == len(datasets),
-                                   seed_tags=seeds if comparison != 'identity-minus-ultraquery' else [],
-                                   macro=macro_effects(strata, families, bootstrap_samples=bootstrap_samples, seed=seed),
-                                   per_seed=per_seed,
-                                   uncertainty=dict(unit='paired query', stratification='dataset x query type',
-                                                    resamples=bootstrap_samples, seed=seed,
-                                                    scope='Conditional on frozen models, adapters and the evaluated seeds.')))
+                if shared:
+                    plans.append(dict(comparison=comparison, method=method, recipe=recipe, suite=suite, datasets=datasets,
+                                      families=families, seeds=seeds, shared=shared, treatments=treatments,
+                                      base={d: reference[d][min(reference[d])] for d in shared}))
+    # Read every dataset's traces once, for all comparisons at the same time.
+    calls = [(plan['treatments'][d], plan['base'][d], plan['comparison'] != 'identity-minus-ultraquery')
+             for plan in plans for d in plan['shared']]
+    computed = iter(starmap(dataset_strata, calls))
+    for plan in plans:
+        plan['strata'] = {d: next(computed) for d in plan['shared']}
+    macros = starmap(partial(macro_effects, bootstrap_samples=bootstrap_samples, seed=seed),
+                     [({d: pooled for d, (pooled, _) in plan['strata'].items()}, plan['families']) for plan in plans])
+    output = []
+    for plan, macro in zip(plans, macros):
+        per_seed = []
+        for index, tag in enumerate(plan['seeds'] if plan['comparison'] != 'identity-minus-ultraquery' else []):
+            values = macro_effects({d: singles[index] for d, (_, singles) in plan['strata'].items()}, plan['families'], bootstrap_samples=0)
+            per_seed.append(dict(seed_tag=tag, **{p: {g: v['delta'] for g, v in values[p].items()} for p in values}))
+        output.append(dict(comparison=plan['comparison'], method=plan['method'], recipe=plan['recipe'], suite=plan['suite'],
+                           datasets=len(plan['shared']), complete_suite=len(plan['shared']) == len(plan['datasets']),
+                           seed_tags=plan['seeds'] if plan['comparison'] != 'identity-minus-ultraquery' else [],
+                           macro=macro, per_seed=per_seed,
+                           uncertainty=dict(unit='paired query', stratification='dataset x query type',
+                                            resamples=bootstrap_samples, seed=seed,
+                                            scope='Conditional on frozen models, adapters and the evaluated seeds.')))
     return output
