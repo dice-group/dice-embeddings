@@ -666,3 +666,63 @@ def test_suite_effects_average_seeds_per_query_and_pair_the_shared_control(tmp_p
     next(r for r in records if r['method'] == 'ultraquery')['complete'] = False
     effects = {e['comparison']: e for e in suite_effects(records, bootstrap_samples=0)}
     assert effects['adapter-minus-ultraquery']['datasets'] == 2 and not effects['adapter-minus-ultraquery']['complete_suite']
+
+
+def test_reference_exemptions_are_exactly_the_negated_types_of_cqd_with_cqda_negation():
+    import importlib.util
+
+    import benchmarks.cqa.oracles as verification
+    spec = importlib.util.spec_from_file_location('export_reference', Path(__file__).parents[1] / 'verification/export_reference.py')
+    exporter = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(exporter)
+    negated = ['2in', '3in', 'inp', 'pin', 'pni']
+    cases = [(dict(method='cqd', options={'atomic_negation': True}, query_types=list(PLUS_H_SHAPES)), negated),
+             (dict(method='cqd-hybrid', options={'atomic_negation': True}, query_types=['1p', '2in', 'pni']), ['2in', 'pni']),
+             (dict(method='cqd', options={}, query_types=list(PLUS_H_SHAPES)), []),
+             (dict(method='qto', options={'atomic_negation': True}, query_types=list(PLUS_H_SHAPES)), [])]
+    for entry, expected in cases:
+        assert verification.upstream_exempt_types(entry) == exporter.exempt_types(entry) == expected
+    assert exporter.EXEMPTION_REASON == verification.EXEMPTION_REASON
+
+
+def test_exempt_types_are_evaluated_but_not_compared_and_must_be_declared(tmp_path, monkeypatch):
+    import benchmarks.cqa.oracles as verification
+    from benchmarks.cqa.study import entry_inputs_identity
+    from dicee.query_answering.context import fingerprint
+    from dicee.query_answering.datasets import load_benchmark
+    from dicee.query_answering.methods import REFERENCES
+    manifest = paper_fixture(tmp_path)
+    entry = manifest['entries'][0]
+    entry['query_types'] = ['1p', '2in']
+    entry['inference_graph'] = 'train'
+    bundle = freeze(manifest, tmp_path / 'bundle', tmp_path)
+    queries = load_benchmark(tmp_path / 'data', 'FB15k237+H', split='valid').queries
+    checked, exempt = (next(q for q in queries if q.shape == shape) for shape in ('1p', '2in'))
+    scores = torch.arange(8).float()
+    oracle = dict(version=1, entry_sha256=fingerprint(entry), inputs_sha256=entry_inputs_identity(bundle, entry),
+                  validation_plan_sha256=bundle['plans'][entry['id'] + '/valid']['sha256'],
+                  reference_commit=REFERENCES['cone'][1], environment=dict.fromkeys(
+                      ('python', 'torch', 'cuda', 'gpu', 'driver', 'precision', 'threads'), 'fixture'),
+                  graphs={split: bundle['datasets'][f'{entry["dataset"]}/{split}']['context'] for split in ('valid', 'test')},
+                  pilot_queries=1, probe_only=True, scores={checked.identity: scores},
+                  orders={checked.identity: scores.argsort(descending=True)},
+                  exempt_types=dict(types=['2in'], reason=verification.EXEMPTION_REASON))
+    torch.save(oracle, tmp_path / 'oracle.pt')
+
+    def run(*args, on_prediction, **kwargs):
+        on_prediction(checked, scores)
+        on_prediction(exempt, torch.zeros(8))
+        return {'benchmark_run': {'environment': oracle['environment']}}
+
+    monkeypatch.setattr(verification, 'run_job', run)
+    monkeypatch.setattr(verification, 'upstream_exempt_types', lambda entry: ['2in'])
+    result = verification.verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'oracle.pt', tmp_path / 'parity.json')
+    assert result['passed'] and set(result['queries']) == {checked.identity}
+    assert result['exempt_types']['types'] == ['2in'] and result['exempt_types']['evaluated_queries'] == {'2in': 1}
+    # An oracle has to declare exactly the exemptions the rule allows.
+    torch.save({key: value for key, value in oracle.items() if key != 'exempt_types'}, tmp_path / 'undeclared.pt')
+    with pytest.raises(ValueError, match='Reference exemptions differ'):
+        verification.verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'undeclared.pt', tmp_path / 'x.json')
+    monkeypatch.setattr(verification, 'upstream_exempt_types', lambda entry: [])
+    with pytest.raises(ValueError, match='Reference exemptions differ'):
+        verification.verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'oracle.pt', tmp_path / 'y.json')

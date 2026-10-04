@@ -1,7 +1,7 @@
 """Validate independently exported reference scores on the intended hardware."""
 
 import tempfile
-from collections import defaultdict
+from collections import Counter, defaultdict
 
 import torch
 
@@ -12,6 +12,19 @@ from dicee.query_answering.datasets import BENCHMARK_DATASETS
 from dicee.query_answering.methods import REFERENCES
 
 from .study import bundle_entry, checksum, dataset_key, entry_inputs_identity, run_job, verify_bundle
+
+# Query types an upstream oracle cannot cover; the exporter declares exactly these, with this reason.
+NEGATED_TYPES = ('2in', '3in', 'inp', 'pin', 'pni')
+EXEMPTION_REASON = ('No upstream reference: the pinned +H CQD has no negation in its beam search. The negated types use CQD-A '
+                    'signed-atom negation, checked against CQD-A outputs in '
+                    'tests/test_query_baselines.py::test_opt_in_cqd_negation_matches_cqda.')
+
+
+def upstream_exempt_types(entry):
+    """The pinned +H CQD has no negation in its beam search, so CQD-A negated types have no upstream reference."""
+    if entry['method'] in ('cqd', 'cqd-hybrid') and entry['options'].get('atomic_negation'):
+        return sorted(set(entry['query_types']) & set(NEGATED_TYPES))
+    return []
 
 
 def verify_predictions(bundle_dir, entry_id, input_root, reference, output, *, device='cpu', atol=3e-5, rtol=3e-5,
@@ -30,6 +43,10 @@ def verify_predictions(bundle_dir, entry_id, input_root, reference, output, *, d
     if (entry['method'] in REFERENCES and ('inference_graph' in entry or entry['dataset'] in BENCHMARK_DATASETS)
             and oracle.get('graphs') != graphs):
         raise ValueError('Reference inference graphs differ from the frozen validation/test protocol')
+    exempt = set(upstream_exempt_types(entry))
+    if set((oracle.get('exempt_types') or {}).get('types', [])) != exempt:
+        raise ValueError('Reference exemptions differ from the query types its upstream code cannot answer')
+    skipped = Counter()
     control = None
     comparisons = {}
     if comparison_reference is not None:
@@ -42,6 +59,9 @@ def verify_predictions(bundle_dir, entry_id, input_root, reference, output, *, d
     results = {}
 
     def compare(query, actual):
+        if query.shape in exempt:
+            skipped[query.shape] += 1  # evaluated, but without an upstream reference
+            return
         key = query.identity
         gold = oracle['scores'][key].to(actual.device)
         order = oracle['orders'][key].to(actual.device)
@@ -85,8 +105,10 @@ def verify_predictions(bundle_dir, entry_id, input_root, reference, output, *, d
         raise ValueError('Reference was produced with different hardware, precision, or runtime versions')
     if set(results) != set(oracle['scores']) or set(results) != set(oracle['orders']):
         raise ValueError('Reference query coverage differs from the frozen pilot batches')
-    if {row['shape'] for row in results.values()} != set(entry['query_types']):
+    if {row['shape'] for row in results.values()} != set(entry['query_types']) - exempt:
         raise ValueError('Reference omits a requested query type')
+    if set(skipped) != exempt:
+        raise ValueError('An exempt query type was not evaluated')
     evidence = dict(entry_sha256=expected['entry_sha256'], inputs_sha256=expected['inputs_sha256'],
                     source_sha256=bundle['source_sha256'], environment=env, reference_sha256=checksum(reference),
                     reference_commit=oracle.get('reference_commit'), queries=results,
@@ -94,6 +116,7 @@ def verify_predictions(bundle_dir, entry_id, input_root, reference, output, *, d
                     reference_adjustments=oracle.get('runtime_adjustments', []),
                     probe_only=oracle.get('probe_only', False),
                     scope='paired full-candidate validation predictions, exact frozen batch membership',
+                    exempt_types=dict(types=sorted(exempt), reason=EXEMPTION_REASON, evaluated_queries=dict(skipped)) if exempt else None,
                     atol=atol, rtol=rtol, passed=all(value['passed'] for value in results.values()))
     if control is not None:
         groups = defaultdict(list)

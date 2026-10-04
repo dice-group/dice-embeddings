@@ -43,6 +43,20 @@ class ReferenceAttention(TorchFunctionMode):
         return func(*args, **kwargs)
 
 
+# Query types an upstream oracle cannot cover; benchmarks/cqa/oracles.py accepts exactly these exemptions.
+NEGATED_TYPES = ('2in', '3in', 'inp', 'pin', 'pni')
+EXEMPTION_REASON = ('No upstream reference: the pinned +H CQD has no negation in its beam search. The negated types use CQD-A '
+                    'signed-atom negation, checked against CQD-A outputs in '
+                    'tests/test_query_baselines.py::test_opt_in_cqd_negation_matches_cqda.')
+
+
+def exempt_types(entry):
+    """The pinned +H CQD has no negation in its beam search, so CQD-A negated types have no upstream reference."""
+    if entry['method'] in ('cqd', 'cqd-hybrid') and entry['options'].get('atomic_negation'):
+        return sorted(set(entry['query_types']) & set(NEGATED_TYPES))
+    return []
+
+
 FORMULAS = {
     '1p': 'r1(s1,f)', '2p': '(r1(s1,e1))&(r2(e1,f))',
     '3p': '((r1(s1,e1))&(r2(e1,e2)))&(r3(e2,f))',
@@ -404,6 +418,9 @@ def main():
                   inputs_sha256=digest(inputs), validation_plan_sha256=frozen_plan['sha256'],
                   reference_commit=commit, exporter_sha256=sha(Path(__file__)), pilot_queries=args.pilot_queries,
                   probe_only=args.probe_only, scores={}, orders={})
+    exempt = set(exempt_types(entry))
+    if exempt:
+        oracle['exempt_types'] = dict(types=sorted(exempt), reason=EXEMPTION_REASON)
     oracle['graphs'] = graphs
     oracle['runtime_adjustments'] = (['Set the default tensor device during CQD forward; upstream hybrid padding omits device.']
                                      if entry['method'] in ('cqd', 'cqd-hybrid') else [])
@@ -441,7 +458,7 @@ def main():
         for end in plan['batch_ends']:
             keys = plan['queries'][start:end]
             shape = queries[keys[0]][0]
-            if counts[shape] < args.pilot_queries:
+            if counts[shape] < args.pilot_queries and shape not in exempt:
                 values = predict(shape, [queries[key][1] for key in keys])
                 if args.probe_only:
                     keys = keys[:args.pilot_queries - counts[shape]]
