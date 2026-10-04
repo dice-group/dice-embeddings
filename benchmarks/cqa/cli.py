@@ -133,6 +133,7 @@ def build_parser():
     p.add_argument('--published', type=Path, help="Published scores (default: the suite's published_results.json)")
     p.add_argument('--bootstrap-samples', type=int, default=2000)
     p.add_argument('--seed', type=int, default=0)
+    p.add_argument('--workers', type=int, default=1, help='Processes for traces and effects; results do not depend on it')
     container(p)
 
     p = command('difficulty-report', 'Answer-level difficulty from completed frozen rank traces; CPU only')
@@ -432,7 +433,8 @@ def report(parser, args):
     from .reports import export_reports
     published = args.published or suite_directory(args.suite) / 'published_results.json'
     rows = export_reports(args.results, published if published.is_file() else None, args.output,
-                          bootstrap_samples=args.bootstrap_samples, seed=args.seed, title=SUITES[args.suite]['title'])
+                          bootstrap_samples=args.bootstrap_samples, seed=args.seed, title=SUITES[args.suite]['title'],
+                          workers=args.workers)
     print(json.dumps(dict(results=len(rows), output=str(args.output))))
 
 
@@ -482,7 +484,7 @@ def main(argv=None):
             command.error('--gpus needs distinct devices and --workers-per-gpu a positive count')
         if args.device not in ('cuda', 'cuda:0'):
             command.error('With --gpus, use --device cuda; each worker sees only its assigned GPU')
-    for name in ('kgfm_batch_size', 'max_queries_per_shape', 'pilot_queries', 'bootstrap_samples', 'probes'):
+    for name in ('kgfm_batch_size', 'max_queries_per_shape', 'pilot_queries', 'bootstrap_samples', 'probes', 'workers'):
         if getattr(args, name, None) is not None and getattr(args, name) < (0 if name == 'bootstrap_samples' else 1):
             command.error(f'--{name.replace("_", "-")} must be positive')
     try:

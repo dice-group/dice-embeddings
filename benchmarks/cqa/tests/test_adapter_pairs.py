@@ -252,6 +252,37 @@ def test_graph_effects_pair_calibrations_and_reject_changed_recipes(tmp_path):
         export_reports(results, None, tmp_path / 'invalid', bootstrap_samples=0)
 
 
+def test_parallel_reports_are_byte_identical_to_sequential_reports(tmp_path):
+    from dataclasses import replace
+
+    from dicee.query_answering.method_evaluation import save_results
+
+    def scores(offset):
+        return lambda query: torch.rand(6, generator=torch.Generator().manual_seed(17 * query[0] + offset))
+
+    results = tmp_path / 'results'
+    for offset, graph in enumerate(('train', 'train+valid')):
+        data = replace(small_data(), name='FB15k237LogicalQuery', split='test',
+                       metadata=dict(inference_graph=graph, expected_query_types=['1p']))
+        destination = results / graph
+        report = evaluate_benchmark(data, scores(offset), comparison_predictors={'without-adapter': scores(5)},
+                                    checkpoint_dir=destination / 'progress', checkpoint_identity={'fixture': graph},
+                                    rank_trace_path=destination / 'ranks.sqlite3', additional_tie_policies=('expected',))
+        report['inference'] = dict(method='ultra-adapter', calibration='learned')
+        report['comparisons']['without-adapter']['inference'] = dict(method='ultra-adapter', calibration='without-adapter')
+        save_results(report, destination, run=dict(entry=graph, phase='test'),
+                     metadata=dict(reference={}, graph_ablation='paired', graph_recipe_sha256='same'))
+    export_reports(results, None, tmp_path / 'sequential', bootstrap_samples=50)
+    export_reports(results, None, tmp_path / 'parallel', bootstrap_samples=50, workers=3)
+    names = sorted(path.name for path in (tmp_path / 'sequential').iterdir())
+    assert names == sorted(path.name for path in (tmp_path / 'parallel').iterdir())
+    assert all((tmp_path / 'sequential' / name).read_bytes() == (tmp_path / 'parallel' / name).read_bytes() for name in names)
+    suite = read(tmp_path / 'parallel/suite-effects.json')
+    assert len(read(tmp_path / 'parallel/adapter-effects.json')) == 2 and len(suite) == 2
+    low, high = suite[0]['macro']['sort']['all']['ci95']
+    assert low < high
+
+
 def test_filter_controls_share_predictions_and_resume_all_traces(tmp_path, monkeypatch):
     from dataclasses import replace
 
