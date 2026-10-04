@@ -200,7 +200,7 @@
       "defaults": {
         "id": "qto-{dataset}",
         "method": "qto",
-        "options": {"threshold": 0.0002, "row_batch_size": 32, "cache_bytes": 536870912, "reference_batching": true},
+        "options": {"threshold": 0.0002, "row_batch_size": 32, "cache_bytes": 536870912, "reference_batching": true, "matrix_bytes": 6442450944, "host_matrix_bytes": 34359738368},
         "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni"],
         "query_batch_size": 1,
         "query_order": "upstream-pickle",

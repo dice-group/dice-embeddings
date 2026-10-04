@@ -34,6 +34,14 @@ class QueryMethod(nn.Module):
         return scores.clone()
 
 
+def cache_token(model):
+    """Validity token of cached inference tensors; None when nothing may be cached (inference tensors, autocast)."""
+    token = state_token(model)
+    if torch.is_autocast_enabled(next(model.parameters()).device.type):
+        return None
+    return None if token is None else (token, float32_precision_token())
+
+
 class TensorCache:
     """Bounded inference cache, invalidated by parameter and device changes."""
 
@@ -45,12 +53,7 @@ class TensorCache:
         self.optional = OrderedDict()
 
     def refresh(self, model):
-        token = state_token(model)
-        device_type = next(model.parameters()).device.type
-        if torch.is_autocast_enabled(device_type):
-            token = None
-        elif token is not None:
-            token = token, float32_precision_token()
+        token = cache_token(model)
         if token is None or token != self.token:
             self.values.clear()
             self.optional.clear()

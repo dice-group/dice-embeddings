@@ -190,6 +190,13 @@ another's GPU work, for about 1.5 times the throughput of one worker; with the
 H100 profile each KGFM worker stays below 12 GiB of GPU memory and holds up to
 24 GiB of host memory. Keep one worker per GPU on GPUs shared with other jobs.
 
+The QTO recipes build each relation's thresholded calibrated matrix once, from
+the released canonical 100-head blocks, and keep it in CSR form: up to 6 GiB
+on the GPU (`matrix_bytes`) and 32 GiB in host memory (`host_matrix_bytes`),
+least recently used out first. Scores are identical to computing the rows for
+every query, which recomputes almost a whole relation matrix for each chained
+projection and needs days per full test split.
+
 ## UltraQuery comparison baselines
 
 `trained_baselines.json` needs weights trained locally with pinned author code

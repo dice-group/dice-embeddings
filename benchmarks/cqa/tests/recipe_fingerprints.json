@@ -6,21 +6,21 @@
     "clmpt-FB15k237+H": "8594c53f58b3305715e5d45571b7ac4792209a603deacf405c779c8649f8a394",
     "cqd-FB15k237+H": "2f8594e09e9aeaedfd4a530b85115f9029775bc3f3bd8b4f40a4a377374d663f",
     "cqd-hybrid-FB15k237+H": "83dd457559834229bd99e518eaa3482f887d9d24fb908d0c08c51f348a95c1f9",
-    "qto-FB15k237+H": "55544a11fc616298c97b89502368403586c758c15fa58914588ae05b0b9f94fd",
+    "qto-FB15k237+H": "e1d7c0c74e9f26a17e9650007d9e2750c5dc7fc6cdb54e05d17709a3d078769c",
     "cone-NELL995+H": "c8b275487e2b7bd6a25af041b69c3f5bbe9089da718b7f5d26e0d223f7afd1c4",
     "gnnqe-NELL995+H": "4e854b0b944fca240caedfd3db0994870354fa577be2146d9b7155d7d2107a78",
     "ultraquery-NELL995+H": "8daf270d1dfef53ce684e513d7e825385ffc66165ff974792ed90efc44f0cec2",
     "clmpt-NELL995+H": "1d69cdee8d2133eaf09286cd3134c934edee36d5580981d8ae77e20eb94b8bf9",
     "cqd-NELL995+H": "435d309810afafc07fede359c0f53aeee8d6de6f3ea813dcfc7e69e347a04006",
     "cqd-hybrid-NELL995+H": "9572fb778227a97087e871f0c6852240e582e9a41e8fcce83c340c9e485942ea",
-    "qto-NELL995+H": "1d6a0273a6f2d11834132e288612ab0848099810abc5303da9ce7d849b77b754",
+    "qto-NELL995+H": "cbc241f18bacddfe47d801f3aa36a69e0598df782db455469b13ebc832abf6a0",
     "cone-ICEWS18+H": "13714f669fcfe488f65afe8cc18ce25a144f3e25b0b21bccdae403500dba0b74",
     "gnnqe-ICEWS18+H": "62ac479f319b62ab29105b14e327dae0a303a6cf00d5f9989d38e135d833af52",
     "ultraquery-ICEWS18+H": "c0cba93ed7bc90435d613a856b49dc1b22ff7aed523ef704204abd7fe4e48ca8",
     "clmpt-ICEWS18+H": "2c0d83424f3b632f767c1fc8ee9bfc5a325e6de99d72ce1f22b2e28731d466a9",
     "cqd-ICEWS18+H": "742156216a0ee43512138fad200af95e494b2146ae160b17c2e8f4839b893bda",
     "cqd-hybrid-ICEWS18+H": "37e3d6d0307f3661c1a58eebf3f07960605008ae959b421ffc3fe63f98509a89",
-    "qto-ICEWS18+H": "cef09df05749b23f75aff1b0b4dc49dc77de547064cd0e57289219e976f811e0"
+    "qto-ICEWS18+H": "980a9eff4f1feeadae6314974d8e44da51c51bbfe5479b9087c6cc78baf7d01e"
   },
   "plus_h/kgfm_14types.json": {
     "ultra-product-14type-FB15k237+H": "bc15b0f7cc9c5eaed7cc63f6c023964eead80b9e721561cdb28ae5df64244826",
@@ -161,8 +161,8 @@
     "ultraquery-lp-WikiTopicsQuery:tax": "2a3baeefe692b9938f53447f82e53c15b4a1be187462bd49928190d624881a95",
     "ultraquery-lp-no-threshold-WikiTopicsQuery:tax": "150b9d100def6f28df7ec8c060e050dfc506e50b959f8c91d927cec7cc794f5f",
     "incoming-relation-WikiTopicsQuery:tax": "92940ef98b13543f54d4e43f765e51d35aab803ab4e122b570bd27ed7a373433",
-    "qto-FB15k237LogicalQuery": "0d66aa3766e00bb38eb03d1945dae8040b031753f55a16922ed5454e0ebdc787",
-    "qto-NELL995LogicalQuery": "10d947a9870d943ce731cb64fcbf914b3c1a116c1affdebdeba101975272d0e2"
+    "qto-FB15k237LogicalQuery": "6d0c84fe3626ad70e8237e8d373193ed22311262aac96ba7c8b09770ab75ccd5",
+    "qto-NELL995LogicalQuery": "472be331538648555c38e58b7a02c6a0b9d0ac1710bc14686210bcf9d434e879"
   },
   "ultraquery/kgfm_14types.json": {
     "ultra-product-14types-FB15k237LogicalQuery": "7d8622ec5465b312e5b4680dc2165e59b483488a7e576da99a8aff2d8c2d3d80",
@@ -541,7 +541,7 @@
     "trix-product-intersections-seed4-WikiTopicsQuery:tax": "2b1f0c32da51a8b5754991e9458c995b46bf9f76ff8b2906b23454452bc2a0c9"
   },
   "ultraquery/trained_baselines.json": {
-    "qto-FB15kLogicalQuery": "6f769ebd4a6f84d0f42a443486b2f0d778055201557996f01deec98417665cbe",
+    "qto-FB15kLogicalQuery": "fbfdca9fe1cbcf143a8d8e2db1f3df8e341454b21b5325e7abe6b92de9be8b48",
     "inductive-gnnqe-InductiveFB15k237Query:106": "1fa57c57fae80e52dcde4de9dbcca48dc6dcd8b22639792aa2478d79daf530bd",
     "inductive-gnnqe-InductiveFB15k237Query:113": "b77cbaa878b8ae58e5bd878a09df7c1d8a992eb8778ebb6deade5bf55a43845f",
     "inductive-gnnqe-InductiveFB15k237Query:122": "149f13b82a1fb5466de8299340222b1bd6eab900a57d8ecee708b70ff3c76c6c",
