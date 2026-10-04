@@ -238,6 +238,110 @@ def test_qto_empty_intermediate_stays_empty(tmp_path):
     assert torch.equal(model.projection(torch.zeros(context.num_entities), 0, negate=True), torch.zeros(context.num_entities))
 
 
+def _shift_anchors(query, offset, n):
+    if isinstance(query, tuple) and len(query) == 2 and isinstance(query[0], int) and isinstance(query[1], tuple):
+        return (query[0] + offset) % n, query[1]
+    return tuple(_shift_anchors(part, offset, n) if isinstance(part, tuple) else part for part in query)
+
+
+def _random_qto_pair(n=257, relations=5, seed=0, **options):
+    """Row-path and matrix-path QTO on one random graph and ComplEx state spanning several canonical blocks."""
+    from dicee.query_answering.methods import qto
+    from dicee.query_answering.methods.checkpoints import _complex
+    generator = torch.Generator().manual_seed(seed)
+    triples = torch.stack([torch.randint(n, (4 * n,), generator=generator), torch.randint(relations, (4 * n,), generator=generator),
+                           torch.randint(n, (4 * n,), generator=generator)], 1).tolist()
+    context = QueryContext(triples, n, relations)
+    # Small weights spread the softmax, so rows mix entries below and above the threshold.
+    state = {'embeddings.0.weight': .6 * torch.randn(n, 16, generator=generator),
+             'embeddings.1.weight': .6 * torch.randn(relations, 16, generator=generator)}
+    config = dict(threshold=2e-4, negation_scale=3., reference_batching=True)
+    rows = qto.QTO(_complex(state, context), context, **config)
+    matrices = qto.QTO(_complex(state, context), context, **config | options)
+    return rows, matrices
+
+
+@pytest.mark.parametrize('matrix_bytes,dense_elements', [(2**30, 2**24), (1, 2**24), (2**30, 300)])
+def test_qto_relation_matrices_reproduce_row_scores(monkeypatch, matrix_bytes, dense_elements):
+    from dicee.query_answering.methods import qto
+    fixture = torch.load(ROOT / 'qto.pt', weights_only=True)
+    monkeypatch.setattr(qto, 'DENSE_ELEMENTS', dense_elements)
+    rows, matrices = _random_qto_pair(matrix_bytes=matrix_bytes)
+    n = rows.context.num_entities
+    for shape, query in fixture['queries'].items():
+        support = 0
+        for offset in (0, 100, 230):
+            shifted = _shift_anchors(query, offset, n)
+            expected = rows.predict(shifted)
+            support = max(support, int(expected.count_nonzero()))
+            torch.testing.assert_close(matrices.predict(shifted), expected, atol=0, rtol=0, msg=shape)
+        assert support > 10, shape  # the comparison covers nontrivial score vectors of every shape
+    if matrix_bytes > 1:
+        assert 0 < matrices.matrices.bytes['device'] <= matrix_bytes
+    else:
+        assert not matrices.matrices.tiers['device']
+
+
+def test_qto_few_heads_compute_rows_unless_the_matrix_is_resident():
+    from unittest.mock import patch
+
+    from dicee.query_answering.methods import qto
+    rows, matrices = _random_qto_pair(matrix_bytes=2**30)
+    n = rows.context.num_entities
+    anchor = torch.nn.functional.one_hot(torch.tensor(130), n).float()
+    dense = torch.rand(n, generator=torch.Generator().manual_seed(1))
+    with torch.no_grad():
+        torch.testing.assert_close(matrices.projection(anchor, 1), rows.projection(anchor, 1), atol=0, rtol=0)
+        assert not matrices.matrices.tiers['device']
+        torch.testing.assert_close(matrices.projection(dense, 1), rows.projection(dense, 1), atol=0, rtol=0)
+        assert set(matrices.matrices.tiers['device']) == {1}
+        expected = rows.projection(anchor, 1, negate=True)
+        with patch.object(qto, 'complex_rows', wraps=qto.complex_rows) as scorer:
+            actual = matrices.projection(anchor, 1, negate=True)
+            assert scorer.call_count == 0
+    torch.testing.assert_close(actual, expected, atol=0, rtol=0)
+
+
+def test_qto_relation_matrices_match_upstream_fixture_and_invalidate(tmp_path):
+    fixture = torch.load(ROOT / 'qto.pt', weights_only=True)
+    case = fixture['cases'][0]
+    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'])
+    path = tmp_path / 'weights.pt'
+    torch.save(case['state'], path)
+    model = load_method('qto', path, context, reference_batching=True, matrix_bytes=2**20, **case['config'])
+    for shape, query in fixture['queries'].items():
+        torch.testing.assert_close(model.predict(query), case['scores'][shape], msg=shape)
+    rows = load_method('qto', path, context, reference_batching=True, **case['config'])
+    with torch.no_grad():
+        for method in (model, rows):
+            method.model.entity_embeddings.weight.mul_(2)
+    for shape, query in fixture['queries'].items():
+        torch.testing.assert_close(model.predict(query), rows.predict(query), atol=0, rtol=0, msg=shape)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason='host spill of device matrices')
+def test_qto_relation_matrices_spill_to_host_memory():
+    fixture = torch.load(ROOT / 'qto.pt', weights_only=True)
+    rows, matrices = _random_qto_pair(matrix_bytes=40_000, host_matrix_bytes=2**30)
+    rows, matrices = rows.cuda(), matrices.cuda()
+    for shape, query in fixture['queries'].items():
+        for offset in (0, 100, 230):
+            shifted = _shift_anchors(query, offset, rows.context.num_entities)
+            torch.testing.assert_close(matrices.predict(shifted), rows.predict(shifted), atol=0, rtol=0, msg=shape)
+    tiers = matrices.matrices.tiers
+    assert tiers['host'] and all(tensor.device.type == 'cpu' for matrix in tiers['host'].values() for tensor in matrix)
+    assert matrices.matrices.bytes['device'] <= 40_000
+
+
+def test_qto_relation_matrix_options_are_validated():
+    with pytest.raises(ValueError, match='reference_batching'):
+        _random_qto_pair(n=7, matrix_bytes=2**20, reference_batching=False)
+    with pytest.raises(ValueError, match='reference_batching'):
+        _random_qto_pair(n=7, host_matrix_bytes=2**20)
+    with pytest.raises(ValueError, match='nonnegative'):
+        _random_qto_pair(n=7, matrix_bytes=2**20, host_matrix_bytes=-1)
+
+
 def test_dual_tie_protocol_resume_uses_one_prediction(tmp_path):
     data = QueryBenchmark('toy', 'transductive', 'test', QueryContext([], 5, 2),
                           tuple(BenchmarkQuery('1p', (head, (0,)), frozenset({1}), frozenset({3})) for head in range(3)),
