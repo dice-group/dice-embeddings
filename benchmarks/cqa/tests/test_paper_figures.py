@@ -392,3 +392,17 @@ def test_hardness_profiles_break_lines_at_missing_bins():
     lines = [line for ax in fig.axes for line in ax.get_lines() if len(line.get_xdata()) == 4]
     assert len(lines) == 1 and math.isnan(lines[0].get_ydata()[1])
     plt.close(fig)
+
+
+def test_hardness_profile_rows_share_limits_that_cover_every_panel():
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    series = [dict(dataset='FB15k237+H', shape=shape, method='QTO', entry='qto',
+                   points=[dict(links=k + 1, value=v) for k, v in enumerate(values)])
+              for shape, values in (('3p', [.1, .05, .02]), ('3i', [.45, .2, .3]))]
+    fig = figures.hardness_profile_plot(plt, series)
+    for ax in fig.axes:
+        bottom, top = ax.get_ylim()
+        assert bottom == 0 and top >= 45
+    plt.close(fig)

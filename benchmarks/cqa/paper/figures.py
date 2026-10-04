@@ -496,7 +496,6 @@ def hardness_profile_plot(plt, series: list[dict]):
                 ax.text(.5, .5, '-', transform=ax.transAxes, ha='center', va='center', color='#666666')
             ax.set_xticks(range(1, bound + 1))
             ax.set_xlim(.7, bound + .3)
-            ax.set_ylim(bottom=0)
             style_axes(ax)
             ax.grid(axis='y', color='#E6E6E6', linewidth=.5)
             if i == 0:
@@ -505,6 +504,9 @@ def hardness_profile_plot(plt, series: list[dict]):
                 ax.set_ylabel(tables.dataset_name(dataset) + '\nMRR', fontsize=7)
             if i == len(datasets) - 1:
                 ax.set_xlabel('missing links', fontsize=7)
+    # Only once every panel is drawn: the shared row limits must cover all of its panels.
+    for row in axes:
+        row[0].set_ylim(bottom=0)
     if methods:
         handles = [Line2D([], [], color=METHOD_STYLES.get(m, ('#444444', '.', .9))[0],
                           marker=METHOD_STYLES.get(m, ('#444444', '.', .9))[1], markersize=3.5,
