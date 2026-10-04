@@ -70,7 +70,7 @@ def test_no_data_has_full_evaluation_rows_and_missing_scores_in_paper_order():
     assert '0.00' not in ''.join(bodies[:10]) + ''.join(mains)
     assert all(len(body.splitlines()) > 1 for body in bodies)
     assert 'No-data template: planned full test' in latex
-    assert 'A dash (-) indicates unavailable data' in latex
+    assert 'a dash (-) marks unavailable data' in latex
     assert 'unless marked' not in latex and '* = ' not in latex
     assert all('*' not in cell for body in bodies for row in body.splitlines() for cell in cells(row))
     assert r'\renewcommand{\thetable}{A\arabic{table}}' in latex
@@ -521,7 +521,7 @@ def test_combined_report_populates_all_nine_tables(tmp_path):
     bodies = paper_bodies(latex)
     assert len(bodies) == 11
     assert all(body.replace('&', '').replace('\\', '').strip() for body in bodies + main_bodies(latex))
-    assert 'expected random ties' in latex and '+10.00' in latex
+    assert 'uniformly random tie orders' in latex and '+10.00' in latex
 
 
 def test_empty_presentation_is_bounded_and_every_table_fits_the_page():
@@ -1026,7 +1026,9 @@ def test_filter_companions_are_labeled_by_condition_and_captions_describe_the_re
     assert [row[1] for row in tables.main_plus_h_rows(reports, 'sort')] == ['ULTRA + adapter']
     latex = tables.render_tables(reports)
     assert 'from the primary recipe of the same backbone (ULTRA: adapter trained on 2i/3i queries)' in latex
-    assert 'No method is trained on target queries, but FB15k-237+H shares its graph with backbone pretraining' in latex
+    assert 'FB15k-237+H shares its graph with backbone pretraining and the source queries of the adapters.' in latex
+    # The command line keeps the corrected-filter run and sets its released twin aside.
+    assert set(summary.corrected_filter_reports(reports).results) == {'ultra-product-intersections-FB15k237+H'}
 
 
 def test_tables_listing_every_run_show_each_seed_replicate_once():

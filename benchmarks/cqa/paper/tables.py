@@ -1341,9 +1341,9 @@ def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HAR
                       r'\usepackage{booktabs,longtable,array}', r'\setlength{\LTcapwidth}{\textwidth}',
                       r'\setlength{\emergencystretch}{2em}', r'\begin{document}'])
     lines.append(r'\section*{Main paper}')
-    tie_name = 'expected random ties' if policy == 'expected' else 'original sort ordering'
-    lines.append(r'{\normalsize Scores and differences are shown as $\times 100$; counts are unscaled. Tie policy: '
-                 + tie_name + r'. A dash (-) indicates unavailable data.\par}')
+    # Settings shared by every table, stated once for the paper's setup section instead of in each caption.
+    lines.extend(['% BEGIN SHARED SETTINGS', r'{\normalsize ' + summary.shared_settings(reports, policy) + r'\par}',
+                  '% END SHARED SETTINGS'])
     if reports.template:
         lines.append(r'{\scriptsize No-data template: planned full test evaluation over all 23 UltraQuery and three +H datasets, '
                      r'using the default baselines and adapters. Identity and filter comparisons are separate tables. '
@@ -1415,9 +1415,7 @@ def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HAR
              rows=transfer, options=dict(spanners=(('', 3), ('EPFO', 2), ('Negation', 2)), numeric_from=3,
                                          row_group=lambda row: row[0], keep_group=True),
              note='Equal dataset averages over full tests with all 14 query types. Coverage is evaluated/total datasets '
-                  '(planned in the empty template). Evaluation settings are in A11. Appendix tables use each method\'s default '
-                  'recipe (adapters: the primary recipe) at its lowest seed tag, except A2 and A9, which report every seed '
-                  'tag, and A3, A6, A10 and A11, which list every supplied run at its lowest seed tag.'
+                  '(planned in the empty template).'
                   + (' Protocol variants: ' + '; '.join(variation_notes) if variation_notes else '')),
         dict(headers=['Method', 'EPFO MRR', 'Negation MRR', 'EPFO MRR', 'Negation MRR'], widths=[60, 34, 34, 34, 34],
              rows=summary.freebase_rows(reports, policy),
@@ -1478,7 +1476,10 @@ def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HAR
                   'and run records remain in the input reports. Values in empty templates are manifest defaults; '
                   'unavailable values are "-".'),
     ]
-    lines.extend([r'\clearpage', r'\section*{Appendix}', r'\setcounter{table}{0}', r'\renewcommand{\thetable}{A\arabic{table}}'])
+    lines.extend([r'\clearpage', r'\section*{Appendix}', r'\setcounter{table}{0}', r'\renewcommand{\thetable}{A\arabic{table}}',
+                  r'{\normalsize Appendix tables use each method\'s default recipe (adapters: the primary recipe) at its lowest '
+                  r'seed tag; A2 and A9 report every seed tag, and A3, A6, A10 and A11 list every supplied run at its lowest '
+                  r'seed tag. Settings shared by all runs are listed once in A11.\par}'])
     for index, spec in enumerate(specifications, 1):
         if index > 1 and not fragment:
             # In the standalone preview, each logical table starts together.
@@ -1580,6 +1581,8 @@ CIs and unavailable counts stay "-". Dataset coverage assumes full evaluation.
                              'default: the shipped recipe, else the recipe with the most seeds')
     parser.add_argument('--figures', nargs='?', const=Path('results/paper_figures'), type=Path, metavar='DIRECTORY',
                         help='Also export the paper figures as PDF/SVG/PNG plus figures.json and figures.tex (default directory: results/paper_figures)')
+    parser.add_argument('--released-filters', action='store_true',
+                        help='Also show the released-filter twins of +H runs (default: corrected filters wherever a run has them)')
     parser.add_argument('--hardness-composition', action='store_true',
                         help='With --figures, also export the optional +H QA-pair composition diagnostic for the appendix')
     args = parser.parse_args(argv)
@@ -1589,6 +1592,9 @@ CIs and unavailable counts stay "-". Dataset coverage assumes full evaluation.
         if args.output.resolve() in {path.resolve() for path in args.results}:
             raise ValueError('Output must not overwrite an input report')
         reports = load_reports(args.results)
+        if not args.released_filters:
+            from . import summary
+            reports = summary.corrected_filter_reports(reports)
         reports.primary_recipes = tuple(args.primary_recipe)
         latex = render_tables(reports, policy=args.tie_policy, fragment=args.fragment, main_types=args.main_hardness_types)
         if args.figures is not None:

@@ -224,6 +224,29 @@ def lowest_seed_reports(reports: 'tables.Reports') -> 'tables.Reports':
     return subset
 
 
+def corrected_filter_reports(reports: 'tables.Reports') -> 'tables.Reports':
+    """+H runs under corrected answer filters wherever a run has them; their released-filter twins are set aside.
+
+    So are the paired filter effects, which the shared settings still use to state the size of the difference.
+    """
+    def key(record: Record) -> tuple:
+        system, seed = system_of(record)
+        return system, seed, record['dataset'], record.get('graph')
+
+    corrected = {key(r) for r in reports.results.values() if r['dataset'] in tables.PLUS_H_DATASETS and r.get('filter') == 'corrected'}
+    dropped = {entry for entry, r in reports.results.items() if r['dataset'] in tables.PLUS_H_DATASETS
+               and r.get('filter') == 'released' and key(r) in corrected}
+    if not dropped:
+        return reports
+    subset = copy.copy(reports)
+    subset.results = {entry: r for entry, r in reports.results.items() if entry not in dropped}
+    subset.difficulty = [row for row in reports.difficulty if row.get('entry') not in dropped]
+    subset.effects = {kind: [effect for effect in effects if not dropped & {v for v in effect.values() if isinstance(v, str)}]
+                      for kind, effects in reports.effects.items()}
+    subset.set_aside_filter_effects = [e for e in reports.effects.get('filter', []) if e not in subset.effects['filter']]
+    return subset
+
+
 def system_order(method: str, identity: bool) -> tuple:
     """Baselines trained on the target first, then transferred baselines, then ULTRA and TRIX."""
     if method.endswith('-adapter'):
@@ -364,6 +387,68 @@ def seed_sentence(counts: Iterable[int]) -> str:
 SELECTION_SENTENCE = (' The adapter recipe was chosen on validation queries of both suites; no choice used test queries.')
 
 
+def seed_legend(counts: Iterable[int]) -> str:
+    """The caption legend for seed spreads; empty when no cell averages several seeds."""
+    counts = sorted({n for n in counts if n})
+    return '' if not counts or counts == [1] else r' Subscripts: sample s.d. over adapter training seeds.'
+
+
+def shared_settings(reports: 'tables.Reports', policy: str) -> str:
+    """Settings every main table shares, stated once (for the paper's setup section) instead of in each caption."""
+    ultraquery, plus_h = ultraquery_rows(reports, policy), plus_h_rows(reports, policy)
+    rows = [*ultraquery, *plus_h]
+    records = [r for row in rows for r in row['records']]
+    sentences = [r'Scores and differences are MRR $\times 100$; counts are unscaled; a dash (-) marks unavailable data.',
+                 scope_sentence(records) if records else '', seed_sentence(adapter_seed_counts(rows)).strip(),
+                 SELECTION_SENTENCE.strip() if any(row['method'].endswith('-adapter') for row in rows) else '',
+                 tie_sentence(records, policy)]
+    plus_h_records = [r for row in plus_h for r in row['records']]
+    if plus_h_records:
+        notes = tables.escape(tables.main_plus_h_protocol_notes(plus_h_records))
+        sentences.append('On +H, ' + notes[:1].lower() + notes[1:] if notes else '')
+        sentences.append(filter_sentence(reports))
+    uses = [*(['UltraQuery training'] if any(row['method'] == 'ultraquery' for row in rows) else []),
+            'backbone pretraining', 'the source queries of the adapters']
+    shared = ', '.join(uses[:-1]) + ' and ' + uses[-1]
+    if any(row['method'] == 'ultraquery' for row in rows):
+        sentences.append('UltraQuery is trained on FB15k-237 queries from an ULTRA 4g initialisation, whose pretraining '
+                         'includes NELL995; the ULTRA and TRIX backbones (3g pretraining) stay frozen, and the no-adapter rows '
+                         'rank their scores without calibration.')
+    if ultraquery:
+        sentences.append(f'FB15k, FB15k-237 and the nine inductive splits derive from Freebase, which {shared} also use; '
+                         'the appendix reports them separately.')
+    if plus_h:
+        sentences.append(f'FB15k-237+H shares its graph with {shared}.')
+    return ' '.join(s for s in sentences if s)
+
+
+def tie_sentence(records: Sequence[Record], policy: str) -> str:
+    """The tie policy and how much the other one changes any shown run's MRR (all query types)."""
+    name = ('the expectation over uniformly random tie orders' if policy == 'expected'
+            else "the sort order of the reference evaluators")
+    differences = []
+    for record in records:
+        values = [tables.policy_values(record, p)['averages'].get('all', {}).get('mrr') for p in ('sort', 'expected')]
+        if not any(tables.is_missing(v) for v in values):
+            differences.append(abs(values[1] - values[0]) * 100)
+    if not differences:
+        return f'Tied scores are ranked by {name}.'
+    return (f'Tied scores are ranked by {name}; the other tie policy changes any run\'s MRR by at most '
+            f'{max(differences):.2f} points ({sum(differences) / len(differences):.2f} on average).')
+
+
+def filter_sentence(reports: 'tables.Reports') -> str:
+    """How much the released +H answer filters change MRR against the corrected ones, from the paired filter effects."""
+    effects = [*reports.effects.get('filter', []), *getattr(reports, 'set_aside_filter_effects', [])]
+    deltas = [-100 * e['macro']['sort']['mrr'] for e in effects if not tables.is_missing(e.get('macro', {}).get('sort', {}).get('mrr'))]
+    if not deltas:
+        return ''
+    low, high = round(min(deltas), 2) + 0.0, round(max(deltas), 2) + 0.0
+    if low >= 0:
+        return f'With the authors\' released filters instead, a run\'s MRR is at most {high:.2f} points higher.'
+    return f'The authors\' released filters change a run\'s MRR by {low:+.2f} to {high:+.2f} points.'
+
+
 def ultraquery_rows(reports: 'tables.Reports', policy: str, columns=FAMILY_COLUMNS, datasets_of=family_datasets) -> list[dict]:
     """One row per selected system with seed values per (column, category)."""
     rows = []
@@ -387,16 +472,10 @@ def ultraquery_table(reports: 'tables.Reports', policy: str) -> str:
     body = [('adapter' if row['method'].endswith('-adapter') else 'trained' if row['method'] in TRAINED_ON_TARGET else 'transferred',
              [tables.escape(row['name']), *[cell(row['values'][key], rank=marks[i][j]) for i, key in enumerate(keys)]])
             for j, row in enumerate(rows)]
-    caption = (r'Complex query answering on the 23 UltraQuery datasets. MRR ($\times 100$) on the 9 positive (EPFO) '
-               r'and 5 negated query types, averaged over query types and then over the datasets of each family. '
-               r'UltraQuery is trained on FB15k-237 queries from an ULTRA 4g initialisation, whose pretraining includes '
-               r'NELL995; the ULTRA and TRIX backbones (3g pretraining) stay frozen, and the no-adapter rows rank their '
-               r'scores without calibration.'
+    caption = (r'Complex query answering on the 23 UltraQuery datasets: MRR on the 9 positive (EPFO) and 5 negated '
+               r'query types, averaged over query types and then over the datasets of each family.'
                + (' The first group is trained on each target graph.' if any(row['method'] in TRAINED_ON_TARGET for row in rows) else '')
-               + ' Best in bold, second best underlined.' + seed_sentence(adapter_seed_counts(rows)) + SELECTION_SENTENCE
-               + ' FB15k, FB15k-237 and the nine inductive splits derive from Freebase, which UltraQuery training, '
-               r'backbone pretraining and the source queries of the adapters also use; the appendix reports them separately. '
-               + scope_sentence([r for row in rows for r in row['records']]))
+               + ' Best in bold, second best underlined.' + seed_legend(adapter_seed_counts(rows)))
     header = [grouped_header(groups, 1), (['Method', *(['EPFO', 'Neg.'] * len(groups))], [])]
     return compact_table(caption, 'tab:main-ultraquery', 'l' + 'c' * 2 * len(groups), header,
                          body or [('', [tables.MISSING] * (1 + 2 * len(groups)))])
@@ -427,17 +506,10 @@ def plus_h_table(reports: 'tables.Reports', policy: str) -> str:
                                                            for i, key in enumerate(keys)]])
             for j, row in enumerate(rows)]
     records = [r for row in rows for r in row['records']]
-    shared = [*(['UltraQuery training'] if any(row['method'] == 'ultraquery' for row in rows) else []),
-              'backbone pretraining', 'the source queries of the adapters']
-    shared_text = ', '.join(shared[:-1]) + ' and ' + shared[-1]
-    groups_text = ('The first group is trained on each target graph; the second is not trained on target queries, but '
-                   if any(row['group'] == 'trained' for row in rows) else 'No method is trained on target queries, but ')
-    caption = (r'Complex query answering on +H, whose hard answers are balanced across the number of links that must '
-               r'be predicted to reach them. MRR ($\times 100$) on the 11 positive (EPFO) and 5 negated query types, '
-               r'averaged over query types. ' + groups_text + 'FB15k-237+H shares its graph with ' + shared_text
-               + '. Best in bold, second best underlined.'
-               + seed_sentence(adapter_seed_counts(rows)) + SELECTION_SENTENCE + ' '
-               + tables.escape(tables.main_plus_h_protocol_notes(records)) + ' ' + scope_sentence(records))
+    caption = (r'Complex query answering on +H: MRR on the 11 positive (EPFO) and 5 negated query types, averaged over '
+               r'query types.'
+               + (' The first group is trained on each target graph.' if any(row['group'] == 'trained' for row in rows) else '')
+               + ' Best in bold, second best underlined.' + seed_legend(adapter_seed_counts(rows)))
     header = [grouped_header(groups, 1), (['Method', *(['EPFO', 'Neg.'] * len(groups))], [])]
     return compact_table(caption, 'tab:main-plus-h', 'l' + 'c' * 2 * len(groups), header,
                          body or [('', [tables.MISSING] * (1 + 2 * len(groups)))])
@@ -509,11 +581,10 @@ def ablation_table(reports: 'tables.Reports', policy: str) -> str:
         body.append((row['backbone'], [label, row['name'], *values]))
     references = primary_description(primary)
     notes = ' '.join(ABLATION_NOTES[row['token']] for row in rows if row.get('token') in ABLATION_NOTES)
-    caption = (r'Ablations of the adapter recipe: MRR ($\times 100$) over all query types, averaged over query types '
-               r'and then datasets, and its change ($\Delta$) from the primary recipe of the same backbone'
+    caption = (r'Ablations of the adapter recipe: MRR over all query types, averaged over query types and then datasets, '
+               r'and its change ($\Delta$) from the primary recipe of the same backbone'
                + (f' ({references})' if references else '') + r'. Each variant seed is compared with the same seed of '
-               r'the primary recipe, or with its seed mean if that seed is missing. Differences are descriptive; '
-               r'paired intervals of the adapter itself are in the appendix.')
+               r'the primary recipe, or with its seed mean if that seed is missing.')
     header = [grouped_header(groups, 2), (['Backbone', 'Variant', *(['MRR', r'$\Delta$'] * len(groups))], [])]
     return compact_table(caption, 'tab:main-ablations', 'll' + 'c' * 2 * len(groups), header,
                          body or [('', [tables.MISSING] * (2 + 2 * len(groups)))], star=False, notes=notes)

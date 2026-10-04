@@ -538,19 +538,19 @@ def generate_figures(reports, output, *, policy='sort', hardness_composition=Fal
                    template=reports.template, figures=[])
     specifications = (
         ('main-01-adapter-gains', 'Main paper', lambda r: family_gain_data(r, policy), family_gain_plot,
-         'MRR gain from the learned adapter over the same frozen backbone without it (identity calibration), in points over '
-         'all query types. Small dots are single datasets, averaged over adapter training seeds; large markers are the mean '
-         'of each dataset family. Each seed is paired with the no-adapter control of its dataset on the same queries. '
-         'Paired 95% confidence intervals per dataset are in the appendix. A dash marks a family without paired results.'),
+         'MRR gain (points) from the learned adapter over the same frozen backbone without it, over all query types. '
+         'Small dots: single datasets (mean over adapter seeds); large markers: family means. Per-dataset paired 95% '
+         'confidence intervals are in the appendix.'),
         ('main-02-hardness-profiles', 'Main paper', lambda r: hardness_profile_data(r, policy), hardness_profile_plot,
-         'MRR on +H by the minimum number of missing positive links an answer needs (x-axis), for the longest path (3p, 4p) '
-         'and intersection (3i, 4i) query types. Scores average answers within each query that has such answers, then '
-         'queries; no bin is interpolated, and missing bins are not drawn. All parent types and counts are in the '
-         'appendix. A dash marks a panel without supplied bins.'),
+         'MRR on +H by the minimum number of links that must be predicted to reach an answer (x-axis), for the longest path '
+         '(3p, 4p) and intersection (3i, 4i) query types. Missing bins are not drawn; all query types and counts are in the '
+         'appendix.'),
         ('appendix-01-transfer-gains', 'Appendix', lambda r: transfer_data(r, policy), transfer_plot,
-         'Per-dataset adapter-minus-UltraQuery MRR in points, shown separately for EPFO and negation. Each category weights its query types equally. Only full 14-type tests with matching graph, filters, query/answer counts, candidate counts, and candidate/context identities are compared. These descriptive cross-method differences have no inferred confidence intervals. Circles: ULTRA; diamonds: TRIX; a dash marks missing or incomparable results.'),
+         'MRR of the adapter minus UltraQuery per dataset (points), for EPFO and negation query types. Circles: ULTRA; '
+         'diamonds: TRIX.'),
         ('appendix-02-adapter-gains-by-dataset', 'Appendix', lambda r: adapter_data(r, policy), adapter_plot,
-         'Learned-minus-identity adapter macro MRR in points per dataset, under the selected tie policy. Whiskers are supplied paired 95% confidence intervals conditional on frozen weights, never estimated or combined. Supplied candidate/context identities must match. Open markers indicate partial/unknown coverage or unavailable pair identity; a point without a whisker has no supplied interval; a dash marks a missing paired MRR.'),
+         'MRR of the adapter minus the same backbone without it per dataset (points), with paired 95% confidence '
+         'intervals over queries. Open markers: partial coverage.'),
     )
     if hardness_composition:
         specifications += ((COMPOSITION_NAME, 'Appendix', composition_data, composition_plot,
