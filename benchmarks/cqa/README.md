@@ -227,7 +227,9 @@ reports, using only the standard library; without reports it prints the planned
 layout with every score missing ("-"). Runs whose entry IDs differ only by a
 `-seedN` token are adapter-seed replicates, reported as mean and sample s.d.;
 `--primary-recipe` names the main adapter recipe. Scores use sort-order ties
-unless `--tie-policy expected` is given. `--figures` also exports the figures and
+unless `--tie-policy expected` is given. `--preview` adds every planned run without results
+yet to the main tables, so they appear at full size: such cells read `xx.x`
+(`+x.x` for ablation deltas), while "-" keeps meaning unavailable. `--figures` also exports the figures and
 a `figures.tex` with their floats and captions (needs matplotlib). Scores are
 never imputed and confidence intervals are copied, not estimated.
 

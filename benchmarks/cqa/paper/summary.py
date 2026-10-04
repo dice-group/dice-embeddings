@@ -294,6 +294,21 @@ def seed_means(by_dataset: Runs, datasets: Sequence[str], policy: str, category:
     return list(seed_scores(by_dataset, datasets, policy, category).values())
 
 
+# Previews (--preview) show cells of planned runs without results with these placeholders, sized like real numbers.
+PLACEHOLDER, SEED_PLACEHOLDER, DELTA_PLACEHOLDER = 'xx.x', r'xx.x$_{\pm x.x}$', '+x.x'
+
+
+def planned_cell(by_dataset: Runs, datasets: Sequence[str]) -> bool:
+    """Whether a system has a run planned for every dataset of a cell and at least one still awaits results."""
+    return bool(datasets) and all(d in by_dataset for d in datasets) and any(
+        record.get('raw', {}).get('planned') for d in datasets for record in by_dataset[d].values())
+
+
+def placeholder(row: dict) -> str:
+    """The placeholder of a pending main-table cell: adapter rows also reserve their seed spread."""
+    return SEED_PLACEHOLDER if row['method'].endswith('-adapter') and not row['identity'] else PLACEHOLDER
+
+
 def mean_sd(values: Sequence[float]) -> tuple[float | None, float | None]:
     """Mean and sample standard deviation (None for fewer than two values)."""
     if not values:
@@ -458,7 +473,8 @@ def ultraquery_rows(reports: 'tables.Reports', policy: str, columns=FAMILY_COLUM
     rows = []
     for (method, identity, _), runs in selected_systems(reports, 'ultraquery').items():
         values = {(f, c): seed_means(runs, datasets_of(f), policy, c) for f, _ in columns for c in ('epfo', 'negation')}
-        rows.append(dict(method=method, identity=identity, name=display_name(method, identity), values=values,
+        pending = {(f, c): not values[f, c] and planned_cell(runs, datasets_of(f)) for f, c in values}
+        rows.append(dict(method=method, identity=identity, name=display_name(method, identity), values=values, pending=pending,
                          records=[r for d, seeds in runs.items() if tables.family(d) for r in seeds.values()]))
     return sorted(rows, key=lambda row: system_order(row['method'], row['identity']))
 
@@ -474,7 +490,8 @@ def ultraquery_table(reports: 'tables.Reports', policy: str) -> str:
     marks = [ranks([row['values'][key] for row in rows]) for key in keys]
     groups = [(f'{name} ({len(family_datasets(f))})', 2) for f, name in FAMILY_COLUMNS]
     body = [('adapter' if row['method'].endswith('-adapter') else 'trained' if row['method'] in TRAINED_ON_TARGET else 'transferred',
-             [tables.escape(row['name']), *[cell(row['values'][key], rank=marks[i][j]) for i, key in enumerate(keys)]])
+             [tables.escape(row['name']), *[placeholder(row) if row['pending'][key] else cell(row['values'][key], rank=marks[i][j])
+                                            for i, key in enumerate(keys)]])
             for j, row in enumerate(rows)]
     caption = (r'Complex query answering on the 23 UltraQuery datasets: MRR on the 9 positive (EPFO) and 5 negated '
                r'query types, averaged over query types and then over the datasets of each family.'
@@ -489,12 +506,13 @@ def plus_h_rows(reports: 'tables.Reports', policy: str) -> list[dict]:
     """One row per selected system with seed values per (dataset or average, category)."""
     rows = []
     for (method, identity, _), runs in selected_systems(reports, 'plus_h').items():
-        values = {}
+        values, pending = {}, {}
         for dataset in (*tables.PLUS_H_DATASETS, 'average'):
             datasets = list(tables.PLUS_H_DATASETS) if dataset == 'average' else [dataset]
             for category in ('epfo', 'negation'):
                 values[dataset, category] = seed_means(runs, datasets, policy, category)
-        rows.append(dict(method=method, identity=identity, name=display_name(method, identity), values=values,
+                pending[dataset, category] = not values[dataset, category] and planned_cell(runs, datasets)
+        rows.append(dict(method=method, identity=identity, name=display_name(method, identity), values=values, pending=pending,
                          group='trained' if method in TRAINED_ON_TARGET else 'transferred',
                          records=[r for d, seeds in runs.items() if d in tables.PLUS_H_DATASETS for r in seeds.values()]))
     return sorted(rows, key=lambda row: system_order(row['method'], row['identity']))
@@ -506,7 +524,7 @@ def plus_h_table(reports: 'tables.Reports', policy: str) -> str:
     keys = [(d, c) for d in (*tables.PLUS_H_DATASETS, 'average') for c in ('epfo', 'negation')]
     marks = [ranks([row['values'][key] for row in rows]) for key in keys]
     groups = [(tables.escape(tables.dataset_name(d)), 2) for d in tables.PLUS_H_DATASETS] + [('Average', 2)]
-    body = [(row['group'], [tables.escape(row['name']), *[cell(row['values'][key], rank=marks[i][j])
+    body = [(row['group'], [tables.escape(row['name']), *[placeholder(row) if row['pending'][key] else cell(row['values'][key], rank=marks[i][j])
                                                            for i, key in enumerate(keys)]])
             for j, row in enumerate(rows)]
     caption = (r'Complex query answering on +H: MRR on the 11 positive (EPFO) and 5 negated query types, averaged over '
@@ -539,25 +557,28 @@ def ablation_rows(reports: 'tables.Reports', policy: str) -> tuple[list[dict], d
     for method in sorted({m for m, _ in primary}, key=lambda m: system_order(m, False)):
         backbone = method.split('-')[0]
         name = tables.METHOD_NAMES.get(method, method).replace(' + adapter', '')
-        reference_values = []
+        reference_values, reference_pending = [], []
         for suite in ('ultraquery', 'plus_h'):
             reference = systems.get((method, False, primary.get((method, suite))), {})
             reference_values.extend([seed_means(reference, suite_datasets(suite), policy, 'all'), None])
-        rows.append(dict(backbone=name, name='Primary recipe', values=reference_values, token=None))
+            reference_pending.extend([not reference_values[-2] and planned_cell(reference, suite_datasets(suite)), False])
+        rows.append(dict(backbone=name, name='Primary recipe', values=reference_values, token=None, pending=reference_pending))
         mains = {r for (m, _), r in primary.items() if m == method}
         variants = []
         for recipe in sorted(r for (m, identity, r) in systems if m == method and not identity and r not in mains):
             variant = systems[method, False, recipe]
-            values = []
+            values, pending = [], []
             for suite in ('ultraquery', 'plus_h'):
                 datasets = suite_datasets(suite)
                 reference = systems.get((method, False, primary.get((method, suite))), {})
                 if not all(d in variant and d in reference for d in datasets):
                     values.extend([[], []])
-                    continue
-                values.extend(seed_deltas(reference, variant, datasets, policy))
+                else:
+                    values.extend(seed_deltas(reference, variant, datasets, policy))
+                pending.extend([not values[-2] and planned_cell(variant, datasets)] * 2)
             token = recipe[len(backbone) + 1:] if recipe.startswith(backbone + '-') else recipe
-            variants.append(dict(backbone=name, name=ABLATION_NAMES.get(token, tables.escape(token)), values=values, token=token))
+            variants.append(dict(backbone=name, name=ABLATION_NAMES.get(token, tables.escape(token)), values=values, token=token,
+                                 pending=pending))
         order = list(ABLATION_NAMES)
         variants.sort(key=lambda row: (order.index(row['token']) if row['token'] in order else len(order), row['token']))
         if not variants and reports.template:
@@ -579,7 +600,10 @@ def ablation_table(reports: 'tables.Reports', policy: str) -> str:
     groups = [('UltraQuery (23)', 2), ('+H (3)', 2)]
     body = []
     for j, row in enumerate(rows):
-        values = [r'\textemdash{}' if v is None else cell(v, signed=i % 2 == 1) for i, v in enumerate(row['values'])]
+        pending = row.get('pending') or [False] * len(row['values'])
+        values = [r'\textemdash{}' if v is None else (DELTA_PLACEHOLDER if i % 2 else SEED_PLACEHOLDER if row['token'] is None
+                                                       else PLACEHOLDER) if pending[i]
+                  else cell(v, signed=i % 2 == 1) for i, v in enumerate(row['values'])]
         label = tables.escape(row['backbone']) if j == 0 or rows[j - 1]['backbone'] != row['backbone'] else ''
         body.append((row['backbone'], [label, row['name'], *values]))
     references = primary_description(primary)

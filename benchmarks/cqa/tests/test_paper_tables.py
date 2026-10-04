@@ -864,3 +864,19 @@ def test_main_table_captions_and_notes_take_the_table_width():
     for section in sections:
         assert section.index(r'\begin{threeparttable}') < section.index(r'\caption{') < section.index(r'\end{threeparttable}')
     assert r'\begin{tablenotes}' in sections[2] and r'\usepackage{booktabs,longtable,array,threeparttable}' in latex
+
+
+def test_preview_fills_planned_cells_with_placeholders_in_the_main_tables_only():
+    reports = tables.Reports()
+    reports.consume(suite_runs('ultra-product-intersections', 'ultra-adapter', .3))
+    latex = tables.render_tables(reports, preview=True)
+    rows = main_rows(latex, 0)
+    # QTO is planned on the three transductive datasets only: its other cells stay unavailable.
+    assert rows['QTO'] == ['xx.x', 'xx.x'] + ['-'] * 6
+    assert rows['UltraQuery'] == ['xx.x'] * 8
+    assert rows['ULTRA + adapter (ours)'] == [r'\textbf{30.0}'] * 8
+    assert rows['TRIX + adapter (ours)'] == [r'xx.x$_{\pm x.x}$'] * 8
+    variants = ablation_rows(latex)
+    assert variants['ULTRA 4g backbone$^\\dagger$'] == ['xx.x', '+x.x', 'xx.x', '+x.x']
+    assert all('xx.x' not in body and 'QTO' not in body for body in paper_bodies(latex))
+    assert 'xx.x' not in tables.render_tables(reports)

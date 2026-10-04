@@ -830,19 +830,30 @@ def shared_metadata_rows(reports):
             for (setting, value), members in sorted(groups.items())]
 
 
-def empty_reports():
-    """Plan the default test matrix using only the four checked-in manifests.
+# The paper's full plan, for --preview: the shipped recipes, their seeds and ablations, and every baseline of the
+# main tables (UltraQuery-LP with the published thresholds only).
+PREVIEW_PLAN = {'ultraquery': ('baselines.json', 'kgfm_adapters.json', 'kgfm_seeds.json', 'kgfm_ablations.json',
+                               'trained_baselines.json', 'comparisons.json'),
+                'plus_h': ('baselines.json', 'kgfm_adapters.json', 'kgfm_seeds.json', 'kgfm_ablations.json')}
+
+
+def empty_reports(plan=None, *, planned=False):
+    """Plan the test matrix of the checked-in manifests (default: the four default manifests).
 
     No predictions, counts, trace labels or training outcomes are invented.
     Only primary evaluations and adapter pairs are planned. Protocol effects
     are separate appendix rows; no Cartesian graph/filter/reduction grid exists.
+    With planned=True every run is marked as awaiting results (see preview_reports).
     """
+    plan = plan or {suite: ('baselines.json', 'kgfm_adapters.json') for suite in ('ultraquery', 'plus_h')}
     reports = Reports()
     reports.template = True
-    for suite in ('ultraquery', 'plus_h'):
-        for name in ('baselines.json', 'kgfm_adapters.json'):
+    for suite, names in plan.items():
+        for name in names:
             manifest = read_manifest(suite_directory(suite) / name)
             for entry in manifest['entries']:
+                if '-no-threshold' in entry['id']:
+                    continue
                 method = entry['method']
                 adapter = method.endswith('-adapter')
                 options = dict(entry.get('options', {}))
@@ -870,6 +881,8 @@ def empty_reports():
                                               calibration=('without-adapter' if identity else 'learned') if adapter else None,
                                               observed_facts='checkpoint-default' if adapter else None),
                                paired_with=learned_id if identity else None)
+                    if planned:
+                        raw['planned'] = True
                     reports.consume(raw)
                     if suite != 'plus_h':
                         continue
@@ -886,6 +899,14 @@ def empty_reports():
                                     label_reference_graph='train+valid' if grouping == 'released_reduction' else graph,
                                     complete_shape=True))
     return reports
+
+
+def preview_reports(reports, plan=PREVIEW_PLAN):
+    """The reports plus every planned run without results yet, for previewing the main tables at full size."""
+    planned = empty_reports(plan, planned=True)
+    preview = copy(reports)
+    preview.results = {**{entry: r for entry, r in planned.results.items() if entry not in reports.results}, **reports.results}
+    return preview
 
 
 def table(title, label, headers, widths, rows, note='', *, spanners=(), numeric_from=None,
@@ -1033,7 +1054,7 @@ def hardness_panels(reports, policy):
     return output
 
 
-def render_tables(reports, *, policy='sort', fragment=False):
+def render_tables(reports, *, policy='sort', fragment=False, preview=False):
     from . import summary
     if policy not in ('sort', 'expected'):
         raise ValueError('Tie policy must be sort or expected')
@@ -1054,15 +1075,19 @@ def render_tables(reports, *, policy='sort', fragment=False):
                       r'\setlength{\emergencystretch}{2em}', r'\begin{document}'])
     lines.append(r'\section*{Main paper}')
     # Settings shared by every table, stated once for the paper's setup section instead of in each caption.
-    lines.extend(['% BEGIN SHARED SETTINGS', r'{\normalsize ' + summary.shared_settings(reports, policy) + r'\par}',
+    # A preview adds the planned runs without results to the main tables only; the appendix keeps real runs.
+    main = preview_reports(reports) if preview else reports
+    lines.extend(['% BEGIN SHARED SETTINGS', r'{\normalsize ' + summary.shared_settings(main, policy) + r'\par}',
                   '% END SHARED SETTINGS'])
+    if preview:
+        lines.append(r'{\normalsize Preview: xx.x marks a planned result that is not available yet.\par}')
     if reports.template:
         lines.append(r'{\scriptsize No-data template: planned full test evaluation over all 23 UltraQuery and three +H datasets, '
                      r'using the default baselines and adapters. Identity and filter comparisons are separate tables. '
                      r'Dataset coverage is planned; no evaluation has been run. Scores, intervals and unavailable counts are "-". '
                      r'Hardness bins contain 1 to 4 missing positive links, as permitted by each parent type; further breakdowns appear only when supplied.\par}')
     for index, render in enumerate((summary.ultraquery_table, summary.plus_h_table, summary.ablation_table), 1):
-        lines.extend([f'% BEGIN MAIN TABLE {index}', render(reports, policy), f'% END MAIN TABLE {index}'])
+        lines.extend([f'% BEGIN MAIN TABLE {index}', render(main, policy), f'% END MAIN TABLE {index}'])
     adapter_headers, adapter_widths, adapter_values = main_adapter_matrix(reports, policy)
     primary = paper_records(reports)
     plus_h_records = main_plus_h_records(reports)
@@ -1230,6 +1255,8 @@ CIs and unavailable counts stay "-". Dataset coverage assumes full evaluation.
                              'default: the shipped recipe, else the recipe with the most seeds')
     parser.add_argument('--figures', nargs='?', const=Path('results/paper_figures'), type=Path, metavar='DIRECTORY',
                         help='Also export the paper figures as PDF/SVG/PNG plus figures.json and figures.tex (default directory: results/paper_figures)')
+    parser.add_argument('--preview', action='store_true',
+                        help='Add every planned run without results to the main tables; their cells read xx.x')
     parser.add_argument('--released-filters', action='store_true',
                         help='Also show the released-filter twins of +H runs (default: corrected filters wherever a run has them)')
     parser.add_argument('--hardness-composition', action='store_true',
@@ -1245,7 +1272,7 @@ CIs and unavailable counts stay "-". Dataset coverage assumes full evaluation.
             from . import summary
             reports = summary.corrected_filter_reports(reports)
         reports.primary_recipes = tuple(args.primary_recipe)
-        latex = render_tables(reports, policy=args.tie_policy, fragment=args.fragment)
+        latex = render_tables(reports, policy=args.tie_policy, fragment=args.fragment, preview=args.preview)
         if args.figures is not None:
             from .figures import figure_names, generate_figures
             targets = {(args.figures / (name + '.' + extension)).resolve()
