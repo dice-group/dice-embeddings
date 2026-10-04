@@ -222,7 +222,7 @@ python -m benchmarks.cqa.paper [REPORT.json ...] -o tables.tex [--figures DIR]
 ```
 
 renders the paper's three main tables (compact floats: UltraQuery benchmark,
-+H, ablations; best bold, second underlined) and eleven appendix tables from saved
++H, ablations; best bold, second underlined) and seven appendix tables from saved
 reports, using only the standard library; without reports it prints the planned
 layout with every score missing ("-"). Runs whose entry IDs differ only by a
 `-seedN` token are adapter-seed replicates, reported as mean and sample s.d.;

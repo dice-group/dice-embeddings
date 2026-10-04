@@ -22,7 +22,6 @@ from ..manifests import SUITES, catalog, read_manifest, suite_directory
 
 ULTRA_TYPES = catalog().ULTRAQUERY_SHAPES
 PLUS_H_TYPES = catalog().PLUS_H_SHAPES
-MAIN_HARDNESS_TYPES = ('2p', '3p', '4p', '2i', '3i', '4i', '3in', 'pin', 'inp')
 PLUS_H_DATASETS = catalog().PLUS_H_DATASETS
 GRAPH_INDEPENDENT_METHODS = catalog().GRAPH_INDEPENDENT_METHODS
 FAMILIES = {'transductive': ('Transductive', len(catalog().TRANSDUCTIVE)),
@@ -33,9 +32,6 @@ METRICS = ('mrr', 'hits1', 'hits3', 'hits10')
 MISSING = '-'
 # Positive-atom bounds from the answer-level classifier.
 POSITIVE_EDGES = dict(zip(PLUS_H_TYPES, (1, 2, 3, 2, 3, 3, 3, 1, 2, 1, 2, 2, 2, 1, 4, 4)))
-AUTHOR_REDUCTION_TYPES = ('1p', '2p', '3p', '4p', '2i', '3i', '4i', 'pi', 'ip', '2u', 'up')
-AUTHOR_QUERY_NAMES = {'pi': '1p2i', 'ip': '2i1p', 'up': '2u1p',
-                      'pin': '2pi1pn', 'pni': '2nu1p', 'inp': '2in1p'}
 METHOD_NAMES = {'cone': 'ConE', 'gnnqe': 'GNN-QE', 'ultraquery': 'UltraQuery',
                 'clmpt': 'CLMPT', 'cqd': 'CQD', 'cqd-hybrid': 'CQD-Hybrid', 'qto': 'QTO',
                 'ultra-adapter': 'ULTRA + adapter', 'trix-adapter': 'TRIX + adapter',
@@ -43,11 +39,9 @@ METHOD_NAMES = {'cone': 'ConE', 'gnnqe': 'GNN-QE', 'ultraquery': 'UltraQuery',
                 'inductive-gnnqe': 'Inductive GNN-QE'}
 # Appendix tables A1--A11; the main paper's compact tables are in summary.py.
 TABLE_TITLES = (
-    'UltraQuery Results by Dataset Family', 'UltraQuery Results by Freebase Derivation', 'Full UltraQuery Results',
-    '+H Per-Query-Type Performance', '+H Performance by Hardness',
-    'Full +H Hardness Breakdowns', '+H Performance by Author Query Reduction',
-    'Learned vs Identity Adapter', 'Adapter Training Seeds',
-    'Protocol Sensitivity', 'Data, Training, and Selection Details',
+    'UltraQuery Results by Freebase Derivation', 'Full UltraQuery Results', '+H Per-Query-Type Performance',
+    'Full +H Hardness Breakdowns', 'Learned vs Identity Adapter', 'Adapter Training Seeds',
+    'Data, Training, and Selection Details',
 )
 LATEX_ESCAPES = {'\\': r'\textbackslash{}', '&': r'\&', '%': r'\%', '$': r'\$',
                  '#': r'\#', '_': r'\_', '{': r'\{', '}': r'\}',
@@ -136,18 +130,6 @@ def execution_settings(record):
     settings['graph_recipe_sha256'] = record.get('detail', {}).get('graph_recipe_sha256',
                                       record.get('raw', {}).get('graph_recipe_sha256'))
     return {key: value for key, value in settings.items() if value is not None}
-
-
-def transfer_settings(record):
-    """Comparable recipe cohorts exclude dataset sizes, weights and plan hashes.
-
-    Dataset-normalized entry IDs declare the cohort. Dataset-trained checkpoints
-    may differ within it; A11 retains their identities and strict paired checks
-    still require matching supplied weights and candidate domains.
-    """
-    settings = execution_settings(record)
-    return {key: settings[key] for key in ('options', 'operators', 'selection_protocol', 'query_batch_size')
-            if key in settings}
 
 
 def result_record(report, *, row=None, comparison=False):
@@ -316,44 +298,6 @@ def load_reports(paths):
 
 def policy_values(record, policy):
     return record['metrics'].get(policy, {'per_shape': {}, 'averages': {}})
-
-
-def transfer_rows(reports, policy):
-    groups = defaultdict(dict)
-    for record in reports.results.values():
-        group = family(record['dataset'])
-        shapes = policy_values(record, policy)['per_shape']
-        if group is None or not record['complete'] or set(shapes) != set(ULTRA_TYPES):
-            continue
-        # Retain recipe names while removing only the dataset component.
-        recipe = record['id'].replace(record['dataset'], '*')
-        configuration = transfer_settings(record)
-        details = condition(record)
-        if configuration:
-            details += '; ' + '; '.join(key.replace('_', ' ') + ': ' + setting_value(value)
-                                        for key, value in sorted(configuration.items()))
-        key = (recipe, details, json.dumps(configuration, sort_keys=True))
-        if record['dataset'] in groups[key]:
-            raise ValueError(f'Duplicate dataset in transfer condition: {recipe}')
-        groups[key][record['dataset']] = record
-    rows = []
-    for (recipe, details, _), records in sorted(groups.items()):
-        for group, (label, total) in FAMILIES.items():
-            selected = [r for r in records.values() if group == 'all' or family(r['dataset']) == group]
-            if not selected:
-                continue
-            scores = []
-            for category in ('epfo', 'negation'):
-                values = [averages(policy_values(r, policy)['per_shape'])[category] for r in selected]
-                for metric in ('mrr', 'hits10'):
-                    scores.append(number(sum(v[metric] for v in values) / len(values))
-                                  if all(not is_missing(v.get(metric)) for v in values) else MISSING)
-            rows.append([escape(recipe), escape(details), escape(label), f'{len(selected)}/{total}', *scores])
-    return rows
-
-
-
-
 
 
 def validate_pair(left, right, *, kind):
@@ -548,19 +492,6 @@ def paper_records(reports, *, identities=False):
     return sorted(summary.primary_runs(reports, identities=identities), key=lambda r: (r['dataset'], method_name(r), r['id']))
 
 
-def subset_reports(reports, records):
-    subset = copy(reports)
-    subset.results = {r['id']: r for r in records}
-    return subset
-
-
-def main_transfer_rows(reports, policy):
-    selected = paper_records(reports)
-    names = {escape(r['id'].replace(r['dataset'], '*')): escape(method_name(r)) for r in selected}
-    rows = transfer_rows(subset_reports(reports, selected), policy)
-    return [[names.get(row[0], row[0]), row[1], row[2], row[3], *row[4:]] for row in rows]
-
-
 def main_plus_h_records(reports):
     """The +H tables compare one fact graph and answer-filter policy across methods."""
     records = [r for r in paper_records(reports) if r['dataset'] in PLUS_H_DATASETS]
@@ -644,78 +575,6 @@ def missing_link_count(row):
     if not 0 <= count <= POSITIVE_EDGES[row['shape']]:
         raise ValueError('Missing-positive-link count outside parent-type bounds')
     return count
-
-
-def selected_hardness(reports, main_types):
-    """Pick one whole run/filter condition per dataset and method before pivoting."""
-    primary = {r['id'] for r in paper_records(reports)}
-    candidates = [r for r in paper_hardness_rows(reports) if r['grouping'] == 'inferred_positive_edges'
-                  and r['shape'] in main_types and missing_link_count(r) > 0]
-    candidates = [r for r in candidates if not (hardness_record(reports, r).get('paired_with')
-                  or hardness_record(reports, r).get('calibration') == 'without-adapter'
-                  or '-without-adapter' in (r.get('entry') or ''))]
-    focused = [r for r in candidates if hardness_record(reports, r)['method'] in ('qto', 'ultra-adapter', 'trix-adapter')]
-    groups = defaultdict(lambda: defaultdict(list))
-    for row in focused or candidates:
-        record = hardness_record(reports, row)
-        method = record['method'] or method_name(record)
-        key = (row.get('entry'), row.get('comparison_graph'), row.get('answer_filter'))
-        groups[row.get('dataset'), method][key].append(row)
-    selected = []
-    for conditions in groups.values():
-        def priority(key):
-            entry, graph, filters = key
-            rows = conditions[key]
-            return (entry not in primary, graph != 'train+valid', filters != 'corrected',
-                    any(hardness_scope(reports, r)[0] is not True for r in rows), entry or '', graph or '', filters or '')
-        selected.extend(conditions[min(conditions, key=priority)])
-    return selected
-
-
-def main_hardness_notes(reports, main_types):
-    conditions, coverage = defaultdict(set), defaultdict(set)
-    for row in selected_hardness(reports, main_types):
-        name = dataset_name(row.get('dataset')) + ' / ' + display_method(reports, hardness_record(reports, row))
-        conditions[row.get('answer_filter') or MISSING].add(name)
-        complete, description = hardness_scope(reports, row)
-        if complete is not True:
-            coverage[description].add(name + ' / ' + row['shape'])
-    notes = ['Filters: ' + filters + ' (' +
-             ('all shown rows' if len(conditions) == 1 else ', '.join(sorted(names))) + ')'
-             for filters, names in sorted(conditions.items())]
-    notes.extend(description + ': ' + ', '.join(sorted(names)) for description, names in sorted(coverage.items()))
-    return '; '.join(notes)
-
-
-def main_hardness_matrix(reports, policy, main_types):
-    """One row per dataset/parent type; hardness levels are columns, never averaged."""
-    candidates = selected_hardness(reports, main_types)
-    methods = sorted({short_method(method_name(hardness_record(reports, r))) for r in candidates},
-                     key=lambda name: (0 if name == 'QTO' else 1 if name.startswith('ULTRA') else 2 if name.startswith('TRIX') else 3, name))
-    # Three method blocks fit a landscape page; other methods are fully retained in A6.
-    methods = methods[:3]
-    levels = range(1, max((POSITIVE_EDGES[s] for s in main_types), default=4) + 1)
-    cells = {}
-    for r in candidates:
-        name = short_method(method_name(hardness_record(reports, r)))
-        if name not in methods:
-            continue
-        key = (r.get('dataset'), r['shape'], name, missing_link_count(r))
-        value = hardness_score(reports, r, policy, 'mrr')
-        if key in cells and cells[key] != value:
-            raise ValueError('Conflicting main hardness scores for the same run, condition and bin')
-        cells[key] = value
-    keys = sorted({(r.get('dataset'), r['shape']) for r in candidates},
-                  key=lambda k: (k[0] or '', PLUS_H_TYPES.index(k[1])))
-    headers = ['Dataset', 'Type', *[escape(m.replace(' + adapter', '') + ' / ' + h)
-                                   for m in methods for h in map(str, levels)]]
-    rows = [[escape(dataset_name(dataset)), escape(shape),
-             *[cells.get((dataset, shape, m, h), MISSING) for m in methods for h in levels]]
-            for dataset, shape in keys]
-    if not methods:
-        headers += [escape(m + ' / ' + str(h)) for m in ('QTO', 'ULTRA', 'TRIX') for h in levels]
-    width = min(22, (248 - 44) // (len(headers) - 2))
-    return headers, [32, 12, *([width] * (len(headers) - 2))], rows
 
 
 def main_adapter_matrix(reports, policy):
@@ -840,151 +699,6 @@ def hardness_matrix_rows(reports, policy):
         name = 'Counts unavailable' if all(v == MISSING for v in values) else 'Shared counts' if len(names) > 1 else next(iter(names))
         rows.append([escape(dataset_name(dataset)), escape(name),
                      escape(graph), escape(filters), escape(labels.get(grouping, grouping) + ': ' + label), title, *values])
-    return rows
-
-
-def author_reduction_panels(reports, policy):
-    """Author categories as columns, with one whole run/condition per method.
-
-    Structural labels come from released partitions. Negation uses supplied
-    positive-tree partial/full scores; numeric-bin means are never combined.
-    """
-    records = {r['id']: r for r in paper_records(reports) if r['dataset'] in PLUS_H_DATASETS}
-    labels = shown_labels(reports, records.values())
-    groups = defaultdict(lambda: defaultdict(list))
-    for row in paper_hardness_rows(reports):
-        if row.get('dataset') not in PLUS_H_DATASETS:
-            continue
-        if row['grouping'] != 'released_reduction' and not (
-                row['grouping'] == 'difficulty' and row['shape'] in ('2in', '3in', 'inp', 'pin', 'pni')):
-            continue
-        record = hardness_record(reports, row)
-        if record.get('paired_with') or record.get('calibration') == 'without-adapter' or '-without-adapter' in record['id']:
-            continue
-        known = [r for r in records.values() if (r['dataset'], r['method']) == (row['dataset'], record.get('method'))]
-        if known and row.get('entry') not in records:
-            continue
-        reference = row.get('label_reference_graph') if row['grouping'] == 'released_reduction' else row.get('comparison_graph')
-        key = (row.get('entry'), row.get('comparison_graph'), row.get('answer_filter'), reference)
-        groups[row['dataset'], record.get('method') or record['id']][key].append(row)
-    selected = {}
-    for conditions in groups.values():
-        def priority(key):
-            entry, graph, filters, reference = key
-            record = records.get(entry)
-            target_graph = 'train+valid'
-            return (entry not in records, reference != 'train+valid', filters != (record['filter'] if record else 'corrected'),
-                    graph != target_graph, entry.endswith('-released-filters') if entry else False,
-                    any(hardness_scope(reports, row)[0] is not True for row in conditions[key]), str(key))
-        key = min(conditions, key=priority)
-        entry, graph, filters, reference = key
-        selected[entry] = (graph, filters, reference, conditions[key])
-        if entry not in records:
-            records[entry] = hardness_record(reports, conditions[key][0])
-    chosen, fact_graphs = {}, defaultdict(set)
-    for entry, record in records.items():
-        if entry in selected:
-            graph, filters, reference, supplied = selected[entry]
-        else:
-            graph = 'train+valid'
-            filters, reference, supplied = record['filter'], 'train+valid', []
-        inference_graph = None if record.get('method') in GRAPH_INDEPENDENT_METHODS else record.get('graph')
-        if inference_graph is None and record.get('method') not in GRAPH_INDEPENDENT_METHODS:
-            inference_graph = next((row['inference_graph'] for row in supplied if row.get('inference_graph')), graph)
-        chosen[entry] = (graph, filters, reference, supplied, inference_graph)
-        if inference_graph:
-            fact_graphs[record['dataset'], reference, filters].add(inference_graph)
-    panels, coverage = defaultdict(list), defaultdict(lambda: defaultdict(set))
-    for entry, record in records.items():
-        graph, filters, reference, supplied, inference_graph = chosen[entry]
-        if inference_graph is None:
-            available_graphs = fact_graphs[record['dataset'], reference, filters]
-            inference_graph = ('train+valid' if 'train+valid' in available_graphs else
-                               min(available_graphs) if available_graphs else 'not used')
-        by_shape = defaultdict(dict)
-        # Supplied author partitions take precedence over broad negation summaries.
-        for source in sorted(supplied, key=lambda row: row['grouping'] == 'released_reduction'):
-            label = source['label']
-            if source['grouping'] == 'difficulty':
-                label = {'partial': 'Partial', 'full': 'Full'}.get(label)
-            else:
-                label = {'pos-exist': 'Partial', 'pos-only-miss': 'Full'}.get(label, label)
-            if label not in (*AUTHOR_REDUCTION_TYPES, 'Partial', 'Full'):
-                continue
-            previous = by_shape[source['shape']].get(label)
-            if previous is not None and previous['grouping'] == source['grouping']:
-                a, b = (previous.get(policy) or {}).get('mrr'), (source.get(policy) or {}).get('mrr')
-                if not is_missing(a) and not is_missing(b) and not math.isclose(a, b, abs_tol=1e-11):
-                    raise ValueError('Conflicting author-reduction scores for the same run and category')
-            by_shape[source['shape']][label] = source
-        offline = {row['shape']: row for row in paper_hardness_rows(reports) if row.get('entry') == entry
-                   and row['grouping'] == 'overall' and row.get('comparison_graph') == graph
-                   and row.get('answer_filter') == filters}
-        context = (record['dataset'], reference or MISSING, filters or MISSING, inference_graph or MISSING)
-        name = labels.get(record['id'], method_name(record))
-        shapes = set(by_shape) | set(offline)
-        if entry in reports.results:
-            shapes |= set(policy_values(record, policy)['per_shape'])
-            if not record['complete']:
-                coverage[context][scope(record)].add(name)
-        for shape in PLUS_H_TYPES:
-            if shape not in shapes:
-                continue
-            sources = list(by_shape[shape].values())
-            overall = offline.get(shape)
-            if overall is not None:
-                overall_score = hardness_score(reports, overall, policy, 'mrr')
-                sources.append(overall)
-            elif (entry in reports.results and record['filter'] == filters
-                  and (record['method'] in GRAPH_INDEPENDENT_METHODS or record['graph'] == inference_graph)
-                  and all(hardness_scope(reports, row)[0] is True for row in sources)):
-                overall_score = number(policy_values(record, policy)['per_shape'].get(shape, {}).get('mrr'))
-            else:
-                overall_score = MISSING
-            values = {label: hardness_score(reports, source, policy, 'mrr') for label, source in by_shape[shape].items()}
-            # These types are already irreducible in the authors' taxonomy.
-            if shape in ('1p', '2u'):
-                values.setdefault(shape, overall_score)
-            elif shape in ('2in', 'pni'):
-                values.setdefault('Full', overall_score)
-            panels[context].append([shape, escape(name), overall_score,
-                                    *[values.get(label, MISSING) for label in AUTHOR_REDUCTION_TYPES],
-                                    values.get('Partial', MISSING), values.get('Full', MISSING)])
-            for source in sources:
-                complete, description = hardness_scope(reports, source)
-                if complete is not True:
-                    coverage[context][description].add(name + ' / ' + shape)
-    output = []
-    for (dataset, reference, filters, inference_graph), rows in sorted(panels.items()):
-        context = (escape(dataset_name(dataset)) + ' | inference facts: ' + escape(inference_graph)
-                   + '; filters: ' + escape(filters))
-        if coverage[dataset, reference, filters, inference_graph]:
-            context += '; ' + escape('; '.join(description + ': ' + ', '.join(sorted(names))
-                                              for description, names in sorted(coverage[dataset, reference, filters, inference_graph].items())))
-        rows.sort(key=lambda row: (PLUS_H_TYPES.index(row[0]), method_order(row[1])))
-        rows = [[AUTHOR_QUERY_NAMES.get(row[0], row[0]), *row[1:]] for row in rows]
-        output.append((context, rows))
-    return output
-
-
-def compact_protocol_rows(reports, policy):
-    rows = []
-    for r in sorted(reports.results.values(), key=lambda r: (r['dataset'], r['method'], r['id'])):
-        a = policy_values(r, 'sort')['averages'].get('all', {}).get('mrr')
-        b = policy_values(r, 'expected')['averages'].get('all', {}).get('mrr')
-        rows.append(['Ties', escape(dataset_name(r['dataset'])), escape(display_method(reports, r)), 'Sort', 'Expected random',
-                     number(a), number(b), number(b - a if not is_missing(a) and not is_missing(b) else None, signed=True), ci(r['tie_ci'])])
-    for kind, first, second, title, a_name, b_name in (
-            ('filter', 'released', 'corrected', 'Filters', 'Released', 'Corrected'),
-            ('graph', 'train', 'train_valid', 'Graph', 'Train', 'Train+valid')):
-        for effect in sorted(reports.effects[kind], key=lambda e: (e.get('dataset', ''), e[second])):
-            values = [reports.results.get(effect[key]) for key in (first, second)]
-            absolute = [policy_values(r, policy)['averages'].get('all', {}).get('mrr') if r else None for r in values]
-            r = values[1] or values[0] or entry_record(reports, effect[second], effect.get('dataset'))
-            delta = effect_metrics(effect, values[0], values[1], policy, kind=kind)
-            rows.append([escape(title), escape(dataset_name(effect.get('dataset') or r['dataset'])),
-                         escape(display_method(reports, r)), a_name, b_name, *[number(v) for v in absolute],
-                         number(delta.get('mrr'), signed=True), ci(delta.get('mrr_ci95'))])
     return rows
 
 
@@ -1319,12 +1033,10 @@ def hardness_panels(reports, policy):
     return output
 
 
-def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HARDNESS_TYPES):
+def render_tables(reports, *, policy='sort', fragment=False):
     from . import summary
     if policy not in ('sort', 'expected'):
         raise ValueError('Tie policy must be sort or expected')
-    if set(main_types) - set(PLUS_H_TYPES):
-        raise ValueError('Unknown main hardness query type')
     if not (reports.results or reports.difficulty or any(reports.effects.values())):
         reports = empty_reports()
     lines = ['% Generated by python -m benchmarks.cqa.paper.',
@@ -1335,7 +1047,7 @@ def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HAR
              '% Empty templates: python -m benchmarks.cqa.paper',
              '% Populate: python -m benchmarks.cqa.paper REPORT.json ... -o tables.tex',
              '% Use --fragment to omit the preamble; retain both section headers.',
-             '% Appendix table numbering is reset to A1--A11.']
+             '% Appendix table numbering is reset to A1--A7.']
     if not fragment:
         lines.extend([r'\documentclass[10pt]{article}', r'\usepackage[a4paper,landscape,margin=15mm]{geometry}',
                       r'\usepackage{booktabs,longtable,array}', r'\setlength{\LTcapwidth}{\textwidth}',
@@ -1351,32 +1063,12 @@ def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HAR
                      r'Hardness bins contain 1 to 4 missing positive links, as permitted by each parent type; further breakdowns appear only when supplied.\par}')
     for index, render in enumerate((summary.ultraquery_table, summary.plus_h_table, summary.ablation_table), 1):
         lines.extend([f'% BEGIN MAIN TABLE {index}', render(reports, policy), f'% END MAIN TABLE {index}'])
-    hardness_headers, hardness_widths, hardness_rows = main_hardness_matrix(reports, policy, main_types)
     adapter_headers, adapter_widths, adapter_values = main_adapter_matrix(reports, policy)
     primary = paper_records(reports)
     plus_h_records = main_plus_h_records(reports)
-    transfer = main_transfer_rows(reports, policy)
-    variations = defaultdict(set)
-    for row in transfer:
-        variations[row[0]].add(row[1])
-    markers, variation_notes = {}, []
-    for method, conditions in sorted(variations.items()):
-        if len(conditions) > 1:
-            for details in sorted(conditions):
-                marker = str(len(markers) + 1)
-                markers[method, details] = marker
-                variation_notes.append(marker + ': ' + method + ', ' + details)
-    transfer = [[short_method(row[0]) + (rf'\textsuperscript{{{markers[row[0], row[1]]}}}'
-                                         if (row[0], row[1]) in markers else ''), *row[2:]] for row in transfer]
-    family_order = {label: i for i, (label, _) in enumerate(FAMILIES.values())}
-    transfer.sort(key=lambda row: (method_order(row[0]), family_order[row[1]]))
     plus_h = [[row[0], row[1], *row[3:]]
               for row in main_plus_h_rows(reports, policy)]
     plus_h.sort(key=lambda row: (dataset_order(row[0]), method_order(row[1])))
-    hardness_levels = max((POSITIVE_EDGES[s] for s in main_types), default=4)
-    hardness_spanners = [('', 2), *[(hardness_headers[i].rsplit(' / ', 1)[0], hardness_levels)
-                                   for i in range(2, len(hardness_headers), hardness_levels)]]
-    hardness_headers = ['Dataset', 'Type', *([str(k) for k in range(1, hardness_levels + 1)] * (len(hardness_spanners) - 1))]
     adapter_spanners = [('', 1), *[(adapter_headers[i].rsplit(' / ', 1)[0], 4)
                                   for i in range(3, len(adapter_headers), 4)]]
     adapter_headers = ['Dataset', *(['Learned', 'Identity', r'$\Delta$', r'95\% CI'] * (len(adapter_spanners) - 1))]
@@ -1387,36 +1079,15 @@ def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HAR
     adapter_values.sort(key=lambda row: (dataset_order(row[0]), row[1]))
     adapter_values = [[row[0] + (' (' + row[1] + ')' if len(adapter_recipe_counts[row[0]]) > 1 else ''),
                        *row[3:]] for row in adapter_values]
-    # Tables that list every run show seed replicates once, at the lowest tag (A9 lists every tag).
+    # Tables that list every run show seed replicates once, at the lowest tag (A6 lists every tag).
     listed = summary.lowest_seed_reports(reports)
     ultra_panels = defaultdict(list)
     for row in ultra_matrix_rows(listed, policy):
         ultra_panels[row[2]].append([row[0], row[1], *row[3:]])
     for rows in ultra_panels.values():
         rows.sort(key=lambda row: (dataset_order(row[0]), method_order(row[1]), row[2] != 'MRR'))
-    protocol = defaultdict(list)
-    for row in compact_protocol_rows(listed, policy):
-        factor, dataset, method, a_name, b_name, *scores = row
-        protocol[factor, a_name, b_name].append([dataset, method, *scores])
-    protocol_panels_data = []
-    for (factor, a_name, b_name), rows in sorted(protocol.items(), key=lambda item: ('Ties', 'Filters', 'Graph').index(item[0][0])):
-        rows.sort(key=lambda row: (dataset_order(row[0]), method_order(row[1])))
-        protocol_panels_data.append((f'{factor}: {a_name} to {b_name}', rows,
-                                     ['Dataset', 'Method', a_name + ' MRR', b_name + ' MRR', r'$\Delta$', r'95\% CI']))
-    hardness_note = ('MRR by the minimum number of missing positive links in a valid witness for an answer (numbered columns). '
-                     'For paths, these are hops requiring inference; negated atoms are not counted. Counts differ from released structural reductions, particularly for unions. '
-                     'Within each bin, scores average answers per participating query, then participating queries; queries can occur in multiple bins. '
-                     'Impossible or unavailable bins are "-". Coarse partial/full scores cannot supply numeric bins. '
-                     'One run and filter condition is used per method/dataset. No cross-type hardness mean. '
-                     + main_hardness_notes(reports, main_types))
     seed_rows, seed_recipes = summary.seed_rows(reports, policy)
     specifications = [
-        dict(headers=['Method', 'Dataset family', 'Coverage', *(['MRR', 'H@10'] * 2)], widths=[42, 49, 18, 30, 30, 30, 30],
-             rows=transfer, options=dict(spanners=(('', 3), ('EPFO', 2), ('Negation', 2)), numeric_from=3,
-                                         row_group=lambda row: row[0], keep_group=True),
-             note='Equal dataset averages over full tests with all 14 query types. Coverage is evaluated/total datasets '
-                  '(planned in the empty template).'
-                  + (' Protocol variants: ' + '; '.join(variation_notes) if variation_notes else '')),
         dict(headers=['Method', 'EPFO MRR', 'Negation MRR', 'EPFO MRR', 'Negation MRR'], widths=[60, 34, 34, 34, 34],
              rows=summary.freebase_rows(reports, policy),
              options=dict(spanners=(('', 1), ('Freebase-derived (11)', 2), ('Other (12)', 2)), numeric_from=1),
@@ -1430,34 +1101,24 @@ def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HAR
                      for context, values in sorted(ultra_panels.items())],
              options=dict(numeric_from=3, group_by=lambda row: row[0]),
              note='MRR and H@10, including identity controls. Means weight query types equally; protocol and partial '
-                  'scopes are identified in panel headings. Adapter recipes are listed in A11.'),
+                  'scopes are identified in panel headings. Adapter recipes are listed in A7.'),
         dict(headers=['Dataset', 'Method', *[escape(s) for s in PLUS_H_TYPES]], widths=[30, 40, *([11] * 16)], rows=plus_h,
              options=dict(numeric_from=2, row_group=lambda row: row[0], keep_group=True),
-             note='MRR for all 16 query types, including five negation types. Adapter recipes are listed in A11. '
+             note='MRR for all 16 query types, including five negation types. Adapter recipes are listed in A7. '
                   + main_plus_h_protocol_notes(plus_h_records) + ' ' + scope_notes(plus_h_records)),
-        dict(headers=hardness_headers, widths=hardness_widths, rows=hardness_rows,
-             options=dict(spanners=hardness_spanners, numeric_from=2, row_group=lambda row: row[0], keep_group=True),
-             note='For +H test results, all hardness categories use training + validation facts as the fixed reference; '
-                  'valid witnesses are checked offline against training + validation + test facts. ' + hardness_note),
         dict(headers=['Dataset', 'Method / counts', 'Bin', 'Metric', *PLUS_H_TYPES], widths=[25, 38, 19, 13, *([9] * 16)],
              panels=hardness_panels(listed, policy), options=dict(numeric_from=4),
-             note='Overall panels identify the inference facts. Numbered bins count missing positive links, as in A5. '
-                  'Hardness scores average bin answers within participating queries, then participating queries; query counts '
-                  'can overlap across bins and cannot recombine these means. Parent-query coverage is described in panel '
-                  'headings. Identical count vectors are shown once. Additional bins appear only when supplied.'),
-        dict(headers=['Type', 'Method', 'Overall', *[AUTHOR_QUERY_NAMES.get(shape, shape) for shape in AUTHOR_REDUCTION_TYPES], 'Partial', 'Full'],
-             widths=[16, 38, *([11] * 12), 16, 16], panels=author_reduction_panels(reports, policy),
-             options=dict(numeric_from=3, group_by=lambda row: row[0],
-                          spanners=(('', 3), ('Structural reductions', 11), ('Negated queries', 2))),
-             note='MRR grouped by the +H authors\' structural query reductions. Columns describe the remaining query shape; '
-                  '2u denotes two union branches, for which one predicted link can suffice. For negated queries, Partial and '
-                  'Full refer to the positive reasoning tree. Query-type names follow the authors\' notation (for example, up '
-                  'is 2u1p). One run and filter condition is used per method/dataset. Scores average category answers within '
-                  'participating queries, then queries. Counts are in A6; unavailable or impossible categories are "-".'),
+             note='MRR by the minimum number of missing positive links in a valid witness for an answer (numbered bins): '
+                  'for paths, the hops that require inference; negated atoms are not counted. Hardness uses training + '
+                  'validation facts as the fixed reference; witnesses are checked offline against training + validation + test '
+                  'facts. Within a bin, scores average answers per participating query, then participating queries; queries can '
+                  'occur in several bins, so these means do not recombine. Overall panels identify the inference facts and panel '
+                  'headings the parent-query coverage. Identical count vectors are shown once; impossible or unavailable bins '
+                  'are "-".'),
         dict(headers=adapter_headers, widths=[39, *adapter_widths[3:]], rows=adapter_values,
              options=dict(spanners=adapter_spanners, numeric_from=1),
              note='Paired MRR; delta is learned minus identity. Supplied 95% confidence intervals are conditional on frozen '
-                  'weights. Adapter recipes are listed in A11. '
+                  'weights. Adapter recipes are listed in A7. '
                   + scope_notes([r for r in primary if r['method'].endswith('-adapter')])),
         dict(headers=['Method', 'Seed tag', 'UltraQuery MRR', '+H MRR'], widths=[50, 18, 34, 34],
              rows=seed_rows, options=dict(numeric_from=1, row_group=lambda row: row[0]),
@@ -1466,10 +1127,6 @@ def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HAR
                   'untagged runs are 0), not from training seeds. A tag without every dataset of a suite is "-". The main '
                   'tables report the mean and sample standard deviation over these tags; the other appendix tables use the '
                   'lowest tag.'),
-        dict(headers=['Dataset', 'Method', 'MRR A', 'MRR B', r'$\Delta$', r'95\% CI'], widths=[35, 60, 35, 35, 28, 46],
-             panels=protocol_panels_data, options=dict(numeric_from=2, group_by=lambda row: row[0]),
-             note='Delta is the second condition minus the first, in MRR points. Supplied intervals are paired 95% '
-                  'confidence intervals; unavailable values are "-".'),
         dict(headers=['Applies to', 'Setting', 'Value'], widths=[62, 49, 133], rows=shared_metadata_rows(listed),
              options=dict(row_group=lambda row: row[1]),
              note='Shared settings are listed once. Checkpoints are identified by filename and method/dataset; full paths '
@@ -1478,8 +1135,8 @@ def render_tables(reports, *, policy='sort', fragment=False, main_types=MAIN_HAR
     ]
     lines.extend([r'\clearpage', r'\section*{Appendix}', r'\setcounter{table}{0}', r'\renewcommand{\thetable}{A\arabic{table}}',
                   r'{\normalsize Appendix tables use each method\'s default recipe (adapters: the primary recipe) at its lowest '
-                  r'seed tag; A2 and A9 report every seed tag, and A3, A6, A10 and A11 list every supplied run at its lowest '
-                  r'seed tag. Settings shared by all runs are listed once in A11.\par}'])
+                  r'seed tag; A1 and A6 report every seed tag, and A2, A4 and A7 list every supplied run at its lowest seed '
+                  r'tag. Settings shared by all runs are listed once in A7.\par}'])
     for index, spec in enumerate(specifications, 1):
         if index > 1 and not fragment:
             # In the standalone preview, each logical table starts together.
@@ -1525,23 +1182,17 @@ Main paper (compact floats, one decimal, best bold and second underlined):
   3. Ablations: each other adapter recipe against the primary recipe.
   Adapter rows aggregate seed replicates (entry IDs differing only by -seedN):
   mean and sample s.d. over seeds; --primary-recipe picks the main recipe.
-Appendix (A1--A11, long tables, two decimals):
-  A1. UltraQuery results by family: MRR and H@10, coverage per family.
-  A2. UltraQuery results by Freebase derivation: the 11 Freebase-derived
+Appendix (A1--A7, long tables, two decimals):
+  A1. UltraQuery results by Freebase derivation: the 11 Freebase-derived
       datasets apart from the 12 others, seed means and s.d.
-  A3. Full UltraQuery results: query types as columns; MRR and H@10 rows.
-  A4. +H per-query-type performance: all 16 types; partial scopes labeled.
-  A5. +H performance by hardness: QTO/ULTRA/TRIX MRR by missing-positive-link
-      count (1-4); all methods remain in A6.
-  A6. Full +H hardness breakdowns: query types as columns; counts shared when
-      identical; additional bins appear only when supplied.
-  A7. +H performance by author query reduction: reduction columns and
-      negation partial/full categories.
-  A8. Learned vs identity adapter: dataset rows, backbone columns, paired CIs.
-  A9. Adapter training seeds: suite MRR of every seed tag of the primary recipes.
-  A10. Protocol sensitivity: ties, answer filters and inference graphs.
-  A11. Data, training, and selection details: shared settings printed once.
-  Appendix tables use the lowest seed tag of each primary recipe; A2 and A9
+  A2. Full UltraQuery results: query types as columns; MRR and H@10 rows.
+  A3. +H per-query-type performance: all 16 types; partial scopes labeled.
+  A4. Full +H hardness breakdowns: MRR by missing positive links per query
+      type; counts shared when identical; additional bins only when supplied.
+  A5. Learned vs identity adapter: dataset rows, backbone columns, paired CIs.
+  A6. Adapter training seeds: suite MRR of every seed tag of the primary recipes.
+  A7. Data, training, and selection details: shared settings printed once.
+  Appendix tables use the lowest seed tag of each primary recipe; A1 and A6
   report every seed.
 
 Optional figures (--figures [DIRECTORY]):
@@ -1574,8 +1225,6 @@ CIs and unavailable counts stay "-". Dataset coverage assumes full evaluation.
     parser.add_argument('--fragment', action='store_true', help='Emit tables and section headers without a document preamble')
     parser.add_argument('--tie-policy', choices=('sort', 'expected'), default='sort',
                         help='Scores to print: original sort ordering (default, the protocol\'s primary metric) or expected random ties; missing policy is shown as "-"')
-    parser.add_argument('--main-hardness-types', nargs='+', choices=PLUS_H_TYPES, metavar='TYPE', default=MAIN_HARDNESS_TYPES,
-                        help='Parent types of the hardness table A5 (default: %(default)s); A6 retains all types')
     parser.add_argument('--primary-recipe', action='append', default=[], metavar='RECIPE',
                         help='Main adapter recipe, with or without its backbone prefix (for example types2); '
                              'default: the shipped recipe, else the recipe with the most seeds')
@@ -1596,7 +1245,7 @@ CIs and unavailable counts stay "-". Dataset coverage assumes full evaluation.
             from . import summary
             reports = summary.corrected_filter_reports(reports)
         reports.primary_recipes = tuple(args.primary_recipe)
-        latex = render_tables(reports, policy=args.tie_policy, fragment=args.fragment, main_types=args.main_hardness_types)
+        latex = render_tables(reports, policy=args.tie_policy, fragment=args.fragment)
         if args.figures is not None:
             from .figures import figure_names, generate_figures
             targets = {(args.figures / (name + '.' + extension)).resolve()

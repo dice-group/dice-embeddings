@@ -62,19 +62,19 @@ def test_no_data_has_full_evaluation_rows_and_missing_scores_in_paper_order():
             # Reference rows of the ablation table have no change from themselves.
             assert all(cell in ('-', r'\textemdash{}') for cell in cells(row)[-count:])
     bodies = paper_bodies(latex)
-    assert len(bodies) == 11
-    score_columns = (4, 4, 5, 16, 4, 4, 14, 4, 2, 4)
+    assert len(bodies) == 7
+    score_columns = (4, 5, 16, 4, 4, 2)
     for body, count in zip(bodies, score_columns):
         for row in body.splitlines():
             assert cells(row)[-count:] == ['-'] * count
-    assert '0.00' not in ''.join(bodies[:10]) + ''.join(mains)
+    assert '0.00' not in ''.join(bodies[:6]) + ''.join(mains)
     assert all(len(body.splitlines()) > 1 for body in bodies)
     assert 'No-data template: planned full test' in latex
     assert 'a dash (-) marks unavailable data' in latex
     assert 'unless marked' not in latex and '* = ' not in latex
     assert all('*' not in cell for body in bodies for row in body.splitlines() for cell in cells(row))
     assert r'\renewcommand{\thetable}{A\arabic{table}}' in latex
-    assert latex.count('all hardness categories use training + validation facts as the fixed reference') == 1
+    assert latex.count('Hardness uses training + validation facts as the fixed reference') == 1
     assert 'hardness reference facts:' not in latex and 'author reference facts:' not in latex
 
 
@@ -98,8 +98,6 @@ def test_no_data_matrix_matches_default_manifests_and_generated_controls():
     assert len(tables.main_plus_h_rows(reports, 'expected')) == 27
     for dataset in tables.PLUS_H_DATASETS:
         assert sum(row[0] == tables.dataset_name(dataset) for row in tables.main_plus_h_rows(reports, 'expected')) == 9
-    assert len(tables.main_transfer_rows(reports, 'expected')) == 12
-    assert {row[3] for row in tables.main_transfer_rows(reports, 'expected')} == {'3/3', '9/9', '11/11', '23/23'}
     assert len(tables.main_adapter_matrix(reports, 'expected')[2]) == 26
     assert len(reports.effects['filter']) == 33
     assert reports.effects['graph'] == []
@@ -111,31 +109,12 @@ def test_no_data_matrix_matches_default_manifests_and_generated_controls():
             assert record['raw']['inference']['options']['atomic_negation']
 
 
-def test_empty_hardness_grid_has_only_possible_bins_and_respects_main_selection():
-    reports = tables.empty_reports()
-    headers, _, rows = tables.main_hardness_matrix(reports, 'expected', ('1p', '2p'))
-    assert {row[1] for row in rows} == {'1p', '2p'}
-    assert len(rows) == 6 and len(headers) == 8
-    assert {row['label'] for row in reports.difficulty if row['shape'] == '1p'} == {'1'}
-    assert {row['label'] for row in reports.difficulty if row['shape'] == '2p'} == {'1', '2'}
-    assert {row['label'] for row in reports.difficulty if row['shape'] == '3p'} == {'1', '2', '3'}
-    assert {row['label'] for row in reports.difficulty if row['shape'] == '4p'} == {'1', '2', '3', '4'}
-    for row in reports.difficulty:
-        assert row['grouping'] == 'inferred_positive_edges'
-        assert row['comparison_graph'] == 'train+valid'
-        assert 'sort' not in row and 'expected' not in row and 'queries' not in row
-    for record in reports.results.values():
-        assert all(not metrics for metrics in tables.policy_values(record, 'expected')['per_shape'].values())
-    assert tables.POSITIVE_EDGES['pni'] == tables.POSITIVE_EDGES['2u'] == 1
-
-
 def test_raw_result_scales_scores_and_marks_missing_shapes_with_dash():
     reports = tables.Reports()
     reports.consume(result(shapes=['1p', '2p']))
     rows = tables.main_plus_h_rows(reports, 'expected')
     assert rows[0][:5] == ['FB15k-237+H', 'QTO', 'test / partial', '19.00', '19.00']
     assert rows[0][5:] == ['-'] * 14
-    assert tables.transfer_rows(reports, 'expected') == []
 
 
 def test_table_two_requires_shared_graph_and_filters_but_accepts_graph_independent_methods():
@@ -210,29 +189,8 @@ def test_comparison_details_match_raw_results_without_double_scaling():
     summaries = tables.Reports()
     summaries.consume(dict(rows=[row], details=[]))
     assert tables.main_plus_h_rows(summaries, 'expected')[0][3:] == ['-'] * 16
-    assert tables.compact_protocol_rows(summaries, 'expected')[0][5:8] == ['20.00', '19.00', '-1.00']
     reports.consume(dict(rows=[row], details=[]))
     assert tables.main_plus_h_rows(reports, 'expected')[0][3:] == ['19.00'] * 16
-
-
-def test_transfer_averages_datasets_equally_and_separates_conditions():
-    reports = tables.Reports()
-    first = result('FB15k237LogicalQuery', 'ultraquery', .2)
-    second = result('NELL995LogicalQuery', 'ultraquery', .6)
-    for shape in second['per_shape']:
-        second['per_shape'][shape]['queries'] = 1000
-    reports.consume({'results': [first, second]})
-    rows = tables.transfer_rows(reports, 'sort')
-    assert len(rows) == 2
-    assert rows[0][2:6] == ['Transductive', '2/3', '40.00', '50.00']
-    sampled = result('FB15kLogicalQuery', 'ultraquery', .9, complete=False)
-    reports.consume(sampled)
-    assert tables.transfer_rows(reports, 'sort') == rows
-    variant = copy.deepcopy(second)
-    variant['benchmark_run']['entry'] += '-graph-train-valid'
-    variant['dataset_metadata']['inference_graph'] = 'train+valid'
-    reports.consume(variant)
-    assert len(tables.transfer_rows(reports, 'sort')) == 4
 
 
 def test_primary_tie_policy_and_unavailable_policy_are_respected():
@@ -243,7 +201,6 @@ def test_primary_tie_policy_and_unavailable_policy_are_respected():
     reports.consume(raw)
     assert tables.main_plus_h_rows(reports, 'expected')[0][3] == '20.00'
     assert tables.main_plus_h_rows(reports, 'sort')[0][3:] == ['-'] * 16
-    assert tables.compact_protocol_rows(reports, 'expected')[0][5:] == ['-', '20.00', '-', '-']
 
 
 def test_paper_hardness_uses_only_the_fixed_test_reference():
@@ -256,13 +213,9 @@ def test_paper_hardness_uses_only_the_fixed_test_reference():
                                     ('released_reduction', '1p', 'train+valid')]]
     reports = tables.Reports()
     reports.consume(dict(rows=rows, details=[], semantics='test'))
-    _, _, main = tables.main_hardness_matrix(reports, 'expected', ['3p'])
-    assert main == []
     appendix = tables.hardness_matrix_rows(reports, 'expected')
     assert appendix == []
     reports.consume([{**row, 'comparison_graph': 'train+valid', 'label_reference_graph': 'train+valid'} for row in rows])
-    _, _, main = tables.main_hardness_matrix(reports, 'expected', ['3p'])
-    assert main == [['FB15k-237+H', '3p', '24.00', '-', '-']]
     appendix = tables.hardness_matrix_rows(reports, 'expected')
     assert len(appendix) == 8
     released = next(r for r in appendix if r[4].startswith('Released reduction') and r[5] == 'MRR')
@@ -288,101 +241,6 @@ def author_result(shapes):
     return raw
 
 
-def test_author_table_preserves_union_reductions_and_prefers_author_negation_partitions():
-    reports = tables.Reports()
-    reports.consume(author_result(['up', '3in']))
-    reports.consume([
-        author_category('up', 'released_reduction', '1p', .2),
-        author_category('up', 'released_reduction', '2u', .3),
-        author_category('up', 'released_reduction', 'up', .4),
-        author_category('up', 'inferred_positive_edges', '1', .8),
-        author_category('3in', 'difficulty', 'partial', .12),
-        author_category('3in', 'difficulty', 'full', .34),
-        author_category('3in', 'released_reduction', 'pos-exist', .18),
-        author_category('3in', 'released_reduction', 'pos-only-miss', .36),
-    ])
-    panels = tables.author_reduction_panels(reports, 'expected')
-    assert len(panels) == 1
-    assert 'inference facts: train+valid; filters: corrected' in panels[0][0]
-    assert 'reference facts' not in panels[0][0]
-    rows = {row[0]: row for row in panels[0][1]}
-    union = rows['2u1p']
-    assert union[:4] == ['2u1p', 'QTO', '39.00', '20.00']
-    assert union[3 + tables.AUTHOR_REDUCTION_TYPES.index('2u')] == '30.00'
-    assert union[3 + tables.AUTHOR_REDUCTION_TYPES.index('up')] == '40.00'
-    assert '80.00' not in union
-    assert rows['3in'][-2:] == ['18.00', '36.00']
-    latex = tables.render_tables(reports, policy='expected', main_types=['up'])
-    assert '80.00' in paper_bodies(latex)[4]
-    assert '80.00' not in paper_bodies(latex)[6]
-    assert 'Structural reductions' in latex and 'Negated queries' in latex
-
-
-def test_author_table_never_splices_categories_across_comparison_graphs():
-    reports = tables.Reports()
-    reports.consume(author_result(['3p']))
-    reports.consume([author_category('3p', 'released_reduction', '1p', .2),
-                     author_category('3p', 'released_reduction', '2p', .7, graph='train')])
-    row = tables.author_reduction_panels(reports, 'expected')[0][1][0]
-    assert row[:5] == ['3p', 'QTO', '39.00', '20.00', '-']
-    assert '70.00' not in row
-
-
-def test_author_table_never_borrows_overall_scores_from_a_different_filter_condition():
-    reports = tables.Reports()
-    reports.consume(author_result(['3p']))
-    row = author_category('3p', 'released_reduction', '1p', .2)
-    row['answer_filter'] = 'released'
-    reports.consume(row)
-    context, rows = tables.author_reduction_panels(reports, 'expected')[0]
-    assert 'filters: released' in context
-    assert rows[0][:4] == ['3p', 'QTO', '-', '20.00']
-
-
-def test_author_table_separates_inference_graphs_even_with_the_same_author_labels():
-    reports = tables.Reports()
-    first = author_category('3p', 'released_reduction', '1p', .2)
-    second = author_category('3p', 'released_reduction', '1p', .7)
-    second['inference_graph'] = 'train'
-    second['entry'] = 'ultraquery-FB15k237+H'
-    reports.consume([first, second])
-    panels = tables.author_reduction_panels(reports, 'expected')
-    assert len(panels) == 2
-    assert all('reference facts' not in context for context, _ in panels)
-    assert {rows[0][1] for _, rows in panels} == {'QTO', 'UltraQuery'}
-    assert any('inference facts: train;' in context for context, _ in panels)
-    assert any('inference facts: train+valid;' in context for context, _ in panels)
-
-
-def test_author_table_does_not_reconstruct_negation_categories_from_numeric_means():
-    reports = tables.Reports()
-    reports.consume(author_result(['3in']))
-    reports.consume([author_category('3in', 'inferred_positive_edges', '1', .3),
-                     author_category('3in', 'inferred_positive_edges', '2', .6)])
-    row = tables.author_reduction_panels(reports, 'expected')[0][1][0]
-    assert row[:3] == ['3in', 'QTO', '39.00']
-    assert row[3:] == ['-'] * 13
-
-
-def test_author_table_partial_coverage_keeps_overall_cohort_separate():
-    reports = tables.Reports()
-    reports.consume(author_result(['3p']))
-    reports.consume(author_category('3p', 'released_reduction', '1p', .2, complete=False))
-    context, rows = tables.author_reduction_panels(reports, 'expected')[0]
-    assert 'partial parent-type test (10/100 parent queries)' in context
-    assert rows[0][:4] == ['3p', 'QTO', '-', '20.00']
-    assert '*' not in ''.join(rows[0]) and '?' not in ''.join(rows[0])
-
-
-def test_author_table_irreducible_types_use_their_overall_score():
-    reports = tables.Reports()
-    reports.consume(author_result(['1p', '2u', '2in', 'pni']))
-    rows = {row[0]: row for row in tables.author_reduction_panels(reports, 'expected')[0][1]}
-    assert rows['1p'][3] == rows['1p'][2] == '39.00'
-    assert rows['2u'][3 + tables.AUTHOR_REDUCTION_TYPES.index('2u')] == rows['2u'][2] == '39.00'
-    assert rows['2in'][-2:] == rows['2nu1p'][-2:] == ['-', '39.00']
-
-
 def test_adapter_deltas_and_supplied_intervals_are_scaled_once():
     learned = result(method='ultra-adapter', score=.3)
     control = result(method='ultra-adapter', score=.2)
@@ -398,15 +256,6 @@ def test_adapter_deltas_and_supplied_intervals_are_scaled_once():
     reports.results[control['benchmark_run']['entry']]['counts']['1p']['queries'] = 9
     with pytest.raises(ValueError, match='query/answer counts'):
         tables.adapter_rows(reports, 'expected')
-
-
-def test_effect_only_inputs_do_not_invent_absolute_scores():
-    reports = tables.Reports()
-    reports.consume({'filter_effects': [dict(dataset='FB15k237+H', corrected='corrected', released='released',
-                                           macro={'expected': {'mrr': -.01, 'mrr_ci95': [-.02, 0.]}})]})
-    rows = tables.compact_protocol_rows(reports, 'expected')
-    assert len(rows) == 1
-    assert rows[0][5:] == ['-', '-', '-1.00', '[-2.00, +0.00]']
 
 
 def test_conflicting_results_and_unrecognized_data_fail():
@@ -500,7 +349,7 @@ def test_cli_empty_input_needs_no_dicee_imports_or_model_dependencies(tmp_path):
     assert run.stdout.count(r'\caption{') == 3 + len(tables.TABLE_TITLES)
 
 
-def test_combined_report_populates_all_nine_tables(tmp_path):
+def test_combined_report_populates_every_table(tmp_path):
     learned = result(method='ultra-adapter', score=.3)
     identity = result(method='ultra-adapter', score=.2)
     identity['benchmark_run']['entry'] += '-without-adapter'
@@ -519,7 +368,7 @@ def test_combined_report_populates_all_nine_tables(tmp_path):
     reports = tables.load_reports([source])
     latex = tables.render_tables(reports, policy='expected')
     bodies = paper_bodies(latex)
-    assert len(bodies) == 11
+    assert len(bodies) == 7
     assert all(body.replace('&', '').replace('\\', '').strip() for body in bodies + main_bodies(latex))
     assert 'uniformly random tie orders' in latex and '+10.00' in latex
 
@@ -528,10 +377,10 @@ def test_empty_presentation_is_bounded_and_every_table_fits_the_page():
     latex = tables.render_tables(tables.Reports())
     bodies = paper_bodies(latex)
     counts = [len(body.splitlines()) for body in bodies]
-    assert counts[:10] == [12, 5, 230, 27, 27, 366, 432, 26, 2, 181]
-    assert counts[10] < 120
+    assert counts[:6] == [5, 230, 27, 366, 26, 2]
+    assert counts[6] < 120
     assert sum(counts) < 1500 and len(latex.encode()) < 300_000
-    assert 'released-filters' not in bodies[3] and 'identity' not in bodies[3]
+    assert 'released-filters' not in bodies[2] and 'identity' not in bodies[2]
     assert r'\multicolumn{4}{c}{ULTRA}' in latex and r'\multicolumn{4}{c}{TRIX}' in latex
     for columns in re.findall(r'\\begin\{longtable\}\{([^\n]+)\}', latex):
         widths = [int(width) for width in re.findall(r'p\{(\d+)mm\}', columns)]
@@ -597,8 +446,7 @@ def test_presentation_removes_redundant_columns_without_losing_paired_scores():
     headers = '\n'.join(re.findall(r'\\toprule\n(.*?)\\midrule', latex, re.DOTALL))
     assert not any(column in headers for column in ('Condition A', 'Condition B', ' & Scope & ', ' & Recipe & '))
     assert r'\multicolumn{4}{c}{ULTRA}' in latex
-    assert cells(paper_bodies(latex)[7].splitlines()[0])[-4:] == ['29.00', '19.00', '+10.00', '[+8.00, +12.00]']
-    assert 'Sort MRR' in headers and 'Expected random MRR' in headers
+    assert cells(paper_bodies(latex)[4].splitlines()[0])[-4:] == ['29.00', '19.00', '+10.00', '[+8.00, +12.00]']
 
 
 def test_panel_context_preserves_graph_filter_scope_and_latex_escaping():
@@ -616,7 +464,7 @@ def test_panel_context_preserves_graph_filter_scope_and_latex_escaping():
     assert 'FB15k-237+H | filters: corrected' in latex
     assert 'hardness reference facts:' not in latex
     assert 'Scope: test /' in latex and r'train\_\allowbreak{}custom\&other' in latex
-    rows = [cells(row) for row in paper_bodies(latex)[5].splitlines()]
+    rows = [cells(row) for row in paper_bodies(latex)[3].splitlines()]
     assert {row[6] for row in rows if row[3] == 'MRR'} == {'25.00', '50.00'}
     assert latex.count(r'\caption{Full +H Hardness Breakdowns}') == 1
     assert r'\addtocounter{table}{-1}' in latex
@@ -652,12 +500,8 @@ def test_main_hardness_never_splices_bins_across_runs_or_conditions():
     reports = tables.Reports()
     reports.consume([difficulty('qto-preferred', '1', .8), difficulty('qto-preferred', '3', .4),
                      difficulty('qto-other', '2', .2, graph='train', filters='released')])
-    assert tables.main_hardness_matrix(reports, 'expected', ['3p'])[2] == [
-        ['FB15k-237+H', '3p', '80.00', '-', '40.00']]
     bodies = paper_bodies(tables.render_tables(reports, policy='expected'))
-    assert '80.00' in bodies[4] and '20.00' not in bodies[4] and '20.00' not in bodies[5]
-    notes = tables.main_hardness_notes(reports, ['3p'])
-    assert 'Filters: corrected' in notes and 'reference facts' not in notes
+    assert '80.00' in bodies[3] and '20.00' not in bodies[3]
 
 
 def test_hardness_scope_reports_parent_coverage_without_score_markers():
@@ -665,10 +509,10 @@ def test_hardness_scope_reports_parent_coverage_without_score_markers():
     reports.consume(difficulty('qto-sampled', '3', .24, complete=False))
     latex = tables.render_tables(reports, policy='expected')
     bodies = paper_bodies(latex)
-    assert '24.00' in bodies[4] and '24.00' in bodies[5]
+    assert '24.00' in bodies[3]
     assert '24.00*' not in latex and '24.00?' not in latex
     assert '10/\\allowbreak{}1000 parent queries' in latex
-    assert 'partial parent-type test' in latex and 'queries can occur in multiple bins' in latex
+    assert 'partial parent-type test' in latex and 'queries can occur in several bins' in latex
     reports.difficulty[0]['complete_shape'] = True
     with pytest.raises(ValueError, match='complete coverage'):
         tables.render_tables(reports)
@@ -678,12 +522,9 @@ def test_three_hop_bins_keep_distinct_scores_and_zero_is_only_a_diagnostic():
     reports = tables.Reports()
     reports.consume([difficulty('qto', 0, .9), difficulty('qto', 1, .4),
                      difficulty('qto', 2, .3), difficulty('qto', 3, .2)])
-    headers, _, rows = tables.main_hardness_matrix(reports, 'expected', ['3p'])
-    assert headers == ['Dataset', 'Type', 'QTO / 1', 'QTO / 2', 'QTO / 3']
-    assert rows == [['FB15k-237+H', '3p', '40.00', '30.00', '20.00']]
-    latex = tables.render_tables(reports, policy='expected', main_types=['3p'])
-    assert '40.00' in paper_bodies(latex)[4] and '90.00' not in paper_bodies(latex)[4]
-    assert 'Diagnostic: 0' in paper_bodies(latex)[5]
+    latex = tables.render_tables(reports, policy='expected')
+    assert all(score in paper_bodies(latex)[3] for score in ('40.00', '30.00', '20.00'))
+    assert 'Diagnostic: 0' in paper_bodies(latex)[3]
     assert 'Observed' not in latex and 'Obs.' not in latex
     assert 'Zero-cost answers are excluded' not in latex
     assert 'label graph' not in latex.lower()
@@ -695,11 +536,9 @@ def test_coarse_and_released_reductions_cannot_be_invented_as_numeric_scores():
         row = difficulty('qto', 1, .4)
         row.update(grouping=grouping, label=label)
         reports.consume(row)
-    assert tables.main_hardness_matrix(reports, 'expected', ['3p'])[2] == []
-    latex = tables.render_tables(reports, policy='expected', main_types=['3p'])
-    assert '40.00' not in paper_bodies(latex)[4]
-    assert 'Coarse: partial' in paper_bodies(latex)[5]
-    assert 'Released reduction: 2p' in paper_bodies(latex)[5]
+    latex = tables.render_tables(reports, policy='expected')
+    assert 'Coarse: partial' in paper_bodies(latex)[3]
+    assert 'Released reduction: 2p' in paper_bodies(latex)[3]
 
 
 @pytest.mark.parametrize('label', ['-1', '4', 'partial', True])
@@ -720,7 +559,7 @@ def test_appendix_preserves_alternate_recipes_and_settings_applicability():
     reports = tables.Reports()
     reports.consume([a, b])
     latex = tables.render_tables(reports, policy='expected')
-    rows = [cells(row) for row in paper_bodies(latex)[2].splitlines() if cells(row)[2] == 'MRR']
+    rows = [cells(row) for row in paper_bodies(latex)[1].splitlines() if cells(row)[2] == 'MRR']
     assert {row[1].replace(r'\allowbreak{}', '') for row in rows} == {
         'ULTRA + adapter (2i/3i)', 'ULTRA + adapter (14-type)'}
     assert {row[3] for row in rows} == {'19.00', '49.00'}
@@ -741,20 +580,7 @@ def test_same_recipe_runs_get_consistent_distinct_labels_in_all_appendices():
     labels = set(tables.run_labels(reports).values())
     assert labels == {'UltraQuery (default)', 'UltraQuery (alternative)'}
     bodies = paper_bodies(tables.render_tables(reports))
-    assert all(label in bodies[2] and label in bodies[10] for label in labels)
-    assert {row[2] for row in tables.compact_protocol_rows(reports, 'expected')} == labels
-
-
-def test_transfer_option_groups_have_distinct_labels_and_explanatory_notes():
-    a = result('FB15k237LogicalQuery', 'ultraquery', .2)
-    b = result('NELL995LogicalQuery', 'ultraquery', .5)
-    a['inference']['options'], b['inference']['options'] = {'beam_size': 64}, {'beam_size': 128}
-    reports = tables.Reports()
-    reports.consume([a, b])
-    latex = tables.render_tables(reports)
-    methods = {cells(row)[0] for row in paper_bodies(latex)[0].splitlines()}
-    assert len(methods) == 2 and all('textsuperscript' in name for name in methods)
-    assert 'beam size: 64' in latex and 'beam size: 128' in latex
+    assert all(label in bodies[1] and label in bodies[6] for label in labels)
 
 
 @pytest.mark.parametrize('field,left,right', [('options', {'beam_size': 64}, {'beam_size': 128}),
@@ -787,19 +613,6 @@ def test_effect_delta_is_checked_against_scores_and_ci_only_effect_retains_diffe
         tables.render_tables(reports, policy='expected')
 
 
-def test_supplied_paired_tie_interval_survives_comparison_merge_and_scales_once():
-    raw = result()
-    detail = dict(id=raw['benchmark_run']['entry'], dataset=raw['dataset'], delta_macro_mrr_ci95=[-.015, -.005],
-                  per_shape={s: {'sort': metrics(.2), 'expected': metrics(.19), 'queries': 10, 'hard_answers': 12}
-                             for s in tables.PLUS_H_TYPES})
-    row = dict(id=detail['id'], dataset=raw['dataset'], method='qto', phase='test', complete_test=True)
-    for inputs in ([raw, dict(rows=[row], details=[detail])], [dict(rows=[row], details=[detail]), raw]):
-        reports = tables.Reports()
-        reports.consume(inputs)
-        assert tables.compact_protocol_rows(reports, 'expected')[0][-2:] == ['-1.00', '[-1.50, -0.50]']
-        assert '[-1.50, -0.50]' in paper_bodies(tables.render_tables(reports))[9]
-
-
 def test_conflicting_run_recipes_and_inconsistent_saved_averages_are_rejected():
     a = result()
     a['inference']['options'] = {'beam_size': 64}
@@ -812,26 +625,6 @@ def test_conflicting_run_recipes_and_inconsistent_saved_averages_are_rejected():
     a['averages']['all']['mrr'] = .8
     with pytest.raises(ValueError, match='Inconsistent sort all mrr average'):
         tables.Reports().consume(a)
-
-
-def test_transfer_cohorts_ignore_dataset_sizes_weights_and_query_plan_hashes():
-    a = result('FB15k237LogicalQuery', 'qto', .2)
-    b = result('NELL995LogicalQuery', 'qto', .6)
-    for raw, candidates, digest in ((a, 14505, 'a' * 64), (b, 63361, 'b' * 64)):
-        raw['num_candidates'] = candidates
-        raw['graph_recipe_sha256'] = digest
-        raw['inference']['checkpoint'] = '/checkpoints/' + raw['dataset'] + '/checkpoint'
-        raw['inference']['checkpoint_sha256'] = digest
-        raw['inference']['manifest'] = {'options': {'beam_size': 64}, 'query_batch_size': 1}
-    reports = tables.Reports()
-    reports.consume([a, b])
-    rows = tables.transfer_rows(reports, 'sort')
-    assert len(rows) == 2
-    assert {tuple(row[2:5]) for row in rows} == {('Transductive', '2/3', '40.00'), ('All datasets', '2/23', '40.00')}
-    settings = tables.shared_metadata_rows(reports)
-    assert {row[2] for row in settings if row[1] == 'candidates'} == {'14505', '63361'}
-    # Per-run recipe hashes stay in the run records, not in the paper's settings table.
-    assert not any(row[1] == 'graph recipe SHA256' for row in settings)
 
 
 def test_manifest_executor_settings_and_root_overrides_are_reported_and_validated():
@@ -1041,11 +834,9 @@ def test_tables_listing_every_run_show_each_seed_replicate_once():
     assert set(listed.results) == {'ultra-r-WikiTopicsQuery:art', 'ultra-r-WikiTopicsQuery:art-without-adapter'}
     assert len(reports.results) == 3 and summary.lowest_seed_reports(listed) is listed
     bodies = paper_bodies(tables.render_tables(reports))
-    full = [cells(row) for row in bodies[2].splitlines()]
+    full = [cells(row) for row in bodies[1].splitlines()]
     assert sorted(row[3] for row in full if row[2] == 'MRR') == ['20.00', '30.00']
-    ties = [cells(row) for row in bodies[9].splitlines()]
-    assert len(ties) == 2
-    assert [cells(row)[1] for row in bodies[8].splitlines()] == ['0', '1']
+    assert [cells(row)[1] for row in bodies[5].splitlines()] == ['0', '1']
 
 
 def test_freebase_split_averages_each_group_separately():
@@ -1061,6 +852,6 @@ def test_two_backbones_with_custom_recipe_names_share_adapter_rows():
     for backbone in ('ultra', 'trix'):
         reports.consume(suite_runs(f'{backbone}-r', f'{backbone}-adapter', .3)
                         + suite_runs(f'{backbone}-r', f'{backbone}-adapter', .2, identity_of=f'{backbone}-r'))
-    rows = [cells(row) for row in paper_bodies(tables.render_tables(reports))[7].splitlines()]
+    rows = [cells(row) for row in paper_bodies(tables.render_tables(reports))[4].splitlines()]
     assert len(rows) == 23 and all('(' not in row[0] for row in rows)
     assert all(row[1:4] == ['30.00', '20.00', '+10.00'] and row[5:8] == ['30.00', '20.00', '+10.00'] for row in rows)
