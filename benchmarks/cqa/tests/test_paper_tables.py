@@ -830,7 +830,8 @@ def test_transfer_cohorts_ignore_dataset_sizes_weights_and_query_plan_hashes():
     assert {tuple(row[2:5]) for row in rows} == {('Transductive', '2/3', '40.00'), ('All datasets', '2/23', '40.00')}
     settings = tables.shared_metadata_rows(reports)
     assert {row[2] for row in settings if row[1] == 'candidates'} == {'14505', '63361'}
-    assert {row[2] for row in settings if row[1] == 'graph recipe SHA256'} == {'a' * 64, 'b' * 64}
+    # Per-run recipe hashes stay in the run records, not in the paper's settings table.
+    assert not any(row[1] == 'graph recipe SHA256' for row in settings)
 
 
 def test_manifest_executor_settings_and_root_overrides_are_reported_and_validated():
@@ -1010,6 +1011,20 @@ def test_public_seed_and_ablation_recipes_are_read_as_planned(suite):
     tokens = {(method.split('-')[0], recipe.split('-', 1)[1]) for (method, _, recipe), _ in systems if recipe != shipped[suite, method]}
     assert tokens == set(summary.PLANNED_ABLATIONS) - {('ultra', 'beam256'), ('trix', 'beam256')}
     assert all(not e['adapter_ablation'] for e in entries)
+
+
+def test_filter_companions_are_labeled_by_condition_and_captions_describe_the_recipe():
+    corrected = suite_runs('ultra-product-intersections', 'ultra-adapter', .3, datasets=['FB15k237+H'])
+    released = suite_runs('ultra-product-intersections', 'ultra-adapter', .2, datasets=['FB15k237+H'])
+    corrected[0]['protocol']['answer_filter'] = 'corrected'
+    released[0]['benchmark_run']['entry'] += '-released-filters'
+    reports = tables.Reports()
+    reports.consume(corrected + released)
+    labels = set(tables.run_labels(reports).values())
+    assert labels == {'ULTRA + adapter (2i/3i) (corrected filters)', 'ULTRA + adapter (2i/3i) (released filters)'}
+    latex = tables.render_tables(reports)
+    assert 'from the primary recipe of the same backbone (ULTRA: adapter trained on 2i/3i queries)' in latex
+    assert 'No method is trained on target queries, but FB15k-237+H shares its graph with backbone pretraining' in latex
 
 
 def test_tables_listing_every_run_show_each_seed_replicate_once():

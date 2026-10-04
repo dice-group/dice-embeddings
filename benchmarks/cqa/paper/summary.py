@@ -2,7 +2,8 @@
 
 A system is one method with one recipe. Entry IDs that differ only by their
 dataset and an optional ``-seedN`` tag are seed replicates of one system;
-``-graph-*`` suffixes name evaluation conditions, not recipes. One selection
+``-graph-*`` and ``-released-filters`` suffixes name evaluation conditions,
+not recipes. One selection
 serves the main tables, the appendix and the figures: adapters use their
 primary recipe per suite (requested, else shipped, else the one with most
 seeds), other methods their default recipe, and every run its primary
@@ -29,7 +30,7 @@ System = tuple[str, bool, str]
 Runs = dict[str, dict[int, Record]]
 
 SEED = re.compile(r'-seed(\d+)(?=-|$)')
-CONDITION_SUFFIXES = ('-graph-train-valid', '-graph-train')
+CONDITION_SUFFIXES = ('-graph-train-valid', '-graph-train', '-released-filters')
 BACKBONES = ('ultra', 'trix')
 FAMILY_COLUMNS = (('transductive', 'Transductive'), ('inductive-e', r'Inductive ($e$)'),
                   ('inductive-er', r'Inductive ($e,r$)'), ('all', 'All'))
@@ -45,6 +46,8 @@ ABLATION_NAMES = {'no-fb': 'Adapter fit without FB15k-237', 'types14': 'Adapter 
                   'balanced': 'Hardness-balanced training', 'target-fit': 'Adapter fit on the target graph',
                   'routed': 'Adapters routed by query type', 'beam128': 'Beam 128', 'beam256': 'Beam 256',
                   'ultra_4g': r'ULTRA 4g backbone$^\dagger$', 'ultra_50g': r'ULTRA 50g backbone$^\ddagger$'}
+RECIPE_DESCRIPTIONS = {'product-intersections': 'adapter trained on 2i/3i queries',
+                       'product-14types': 'adapter trained on 14 query types', 'product-14type': 'adapter trained on 14 query types'}
 ABLATION_NOTES = {'ultra_4g': r'$^\dagger$Pretraining adds NELL995, a target dataset.',
                   'ultra_50g': r'$^\ddagger$Pretraining on 50 graphs, which may include target graphs.'}
 
@@ -424,11 +427,15 @@ def plus_h_table(reports: 'tables.Reports', policy: str) -> str:
                                                            for i, key in enumerate(keys)]])
             for j, row in enumerate(rows)]
     records = [r for row in rows for r in row['records']]
+    shared = [*(['UltraQuery training'] if any(row['method'] == 'ultraquery' for row in rows) else []),
+              'backbone pretraining', 'the source queries of the adapters']
+    shared_text = ', '.join(shared[:-1]) + ' and ' + shared[-1]
+    groups_text = ('The first group is trained on each target graph; the second is not trained on target queries, but '
+                   if any(row['group'] == 'trained' for row in rows) else 'No method is trained on target queries, but ')
     caption = (r'Complex query answering on +H, whose hard answers are balanced across the number of links that must '
                r'be predicted to reach them. MRR ($\times 100$) on the 11 positive (EPFO) and 5 negated query types, '
-               r'averaged over query types. The first group is trained on each target graph; the second is not trained '
-               r'on target queries, but FB15k-237+H shares its graph with UltraQuery training, backbone pretraining and '
-               r'the source queries of the adapters. Best in bold, second best underlined.'
+               r'averaged over query types. ' + groups_text + 'FB15k-237+H shares its graph with ' + shared_text
+               + '. Best in bold, second best underlined.'
                + seed_sentence(adapter_seed_counts(rows)) + SELECTION_SENTENCE + ' '
                + tables.escape(tables.main_plus_h_protocol_notes(records)) + ' ' + scope_sentence(records))
     header = [grouped_header(groups, 1), (['Method', *(['EPFO', 'Neg.'] * len(groups))], [])]
@@ -512,19 +519,24 @@ def ablation_table(reports: 'tables.Reports', policy: str) -> str:
                          body or [('', [tables.MISSING] * (2 + 2 * len(groups)))], star=False, notes=notes)
 
 
+def recipe_description(method: str, recipe: str) -> str:
+    """A recipe in words when known ('adapter trained on 2i/3i queries'), else its escaped name without the backbone."""
+    backbone = method.split('-')[0]
+    token = recipe[len(backbone) + 1:] if recipe.startswith(backbone + '-') else recipe
+    return RECIPE_DESCRIPTIONS.get(token, tables.escape(token))
+
+
 def primary_description(primary: dict[tuple[str, str], str]) -> str:
-    """'ULTRA: <recipe>; TRIX: UltraQuery <recipe>, +H <recipe>' for captions and notes."""
+    """'ULTRA and TRIX: <recipe>' or 'ULTRA: <recipe>; TRIX: UltraQuery <recipe>, +H <recipe>' for captions and notes."""
     names: dict[str, dict[str, str]] = defaultdict(dict)
     for (method, suite), recipe in sorted(primary.items(), key=lambda item: (system_order(item[0][0], False), item[0][1] != 'ultraquery')):
-        names[tables.METHOD_NAMES.get(method, method).replace(' + adapter', '')][suite] = recipe
-    parts = []
+        names[tables.METHOD_NAMES.get(method, method).replace(' + adapter', '')][suite] = recipe_description(method, recipe)
+    described: dict[str, list[str]] = defaultdict(list)
     for name, recipes in names.items():
-        if len(set(recipes.values())) == 1:
-            parts.append(name + ': ' + tables.escape(next(iter(recipes.values()))))
-        else:
-            parts.append(name + ': ' + ', '.join(('UltraQuery' if s == 'ultraquery' else '+H') + ' ' + tables.escape(r)
-                                                for s, r in recipes.items()))
-    return '; '.join(parts)
+        text = (next(iter(recipes.values())) if len(set(recipes.values())) == 1 else
+                ', '.join(('UltraQuery' if s == 'ultraquery' else '+H') + ' ' + r for s, r in recipes.items()))
+        described[text].append(name)
+    return '; '.join(' and '.join(backbones) + ': ' + text for text, backbones in described.items())
 
 
 def seed_rows(reports: 'tables.Reports', policy: str) -> tuple[list[list[str]], str]:

@@ -494,16 +494,20 @@ def run_labels(reports):
         full_names = [method_name(records[entry]) for entry in entries]
         systems = {entry: summary.system_of(records[entry]) if records[entry].get('dataset') else ((entry,), 0)
                    for entry in entries}
-        # Several runs: name the recipe (without the backbone) and, for replicates, the seed tag.
+        # Several runs: name the recipe (without the backbone), for replicates the seed tag, and the
+        # evaluation condition (answer filters, inference graph) where the runs differ in it.
         recipes = defaultdict(set)
         for entry in entries:
             recipes[systems[entry][0]].add(systems[entry][1])
+        varying = [field for field in ('filter', 'graph') if len({records[entry].get(field) for entry in entries}) > 1]
         tags = {}
         for entry in entries:
             system, seed = systems[entry]
             parts = [] if len(recipes) == 1 else [summary.recipe_token(records[entry])] if records[entry].get('dataset') else []
             if len(recipes[system]) > 1:
                 parts.append(f'seed tag {seed}')
+            parts.extend(f'{records[entry][field]} {"filters" if field == "filter" else "graph"}'
+                         for field in varying if records[entry].get(field))
             tags[entry] = ', '.join(p for p in parts if p)
         # Colliding names get recipe/seed labels when those name every run uniquely, else numbers.
         named = all(tags.values()) and len(set(tags.values())) == len(tags)
@@ -1060,8 +1064,6 @@ def shared_metadata_rows(reports):
                   'seed': inference.get('seed'), 'device': inference.get('device'), 'PyTorch': inference.get('torch')}
         if 'query_batch_size' in recipe:
             values['query batch size'] = recipe['query_batch_size']
-        if 'graph_recipe_sha256' in recipe:
-            values['graph recipe SHA256'] = recipe['graph_recipe_sha256']
         for key, value in training.items():
             values['training: ' + key.replace('_', ' ')] = value
         if not training:
