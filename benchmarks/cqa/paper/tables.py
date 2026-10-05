@@ -632,10 +632,41 @@ def paper_hardness_rows(reports):
              and row.get('label_reference_graph', 'train+valid') == 'train+valid')]
 
 
+def hardness_detail_entries(reports, policy):
+    """Runs whose answer-difficulty bins the appendix shows; None shows every run's bins.
+
+    As in the hardness figure: every main-table +H system with an adapter (learned and no-adapter control) and,
+    per dataset, the baseline with the highest EPFO MRR. Other runs keep their overall rows. Without main-table
+    EPFO scores to rank the baselines, nothing is left out.
+    """
+    from . import summary
+    from .figures import strongest_baselines
+    strongest = strongest_baselines(reports, policy)
+    if not strongest:
+        return None
+    entries = set()
+    for (method, _, _), runs in summary.selected_systems(reports, 'plus_h').items():
+        for dataset, seeds in runs.items():
+            if method.endswith('-adapter') or strongest.get(dataset) == method:
+                entries.update(record['id'] for record in seeds.values())
+    return entries
+
+
+def condition_base(entry):
+    """The run an evaluation-condition twin (graph or released-filter variant) belongs to."""
+    from . import summary
+    for suffix in summary.CONDITION_SUFFIXES:
+        if entry.endswith(suffix):
+            return entry[:-len(suffix)]
+    return entry
+
+
 def hardness_matrix_rows(reports, policy):
     """Pivot query types; merge identical count vectors, never scores or conditions."""
     groups = defaultdict(dict)
-    inputs = paper_hardness_rows(reports)
+    detail = hardness_detail_entries(reports, policy)
+    inputs = [r for r in paper_hardness_rows(reports)
+              if detail is None or r['grouping'] == 'overall' or condition_base(r.get('entry') or '') in detail]
     for record in reports.results.values():
         if record['dataset'] not in PLUS_H_DATASETS:
             continue

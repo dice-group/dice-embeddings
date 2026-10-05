@@ -750,6 +750,21 @@ def test_main_ultraquery_table_merges_the_per_graph_baselines_into_one_row():
     assert {'QTO', 'Inductive GNN-QE'} <= set(main_rows(latex, 0)) and 'per-graph' not in latex
 
 
+def test_hardness_appendix_shows_bins_of_the_adapters_and_the_best_baseline_only():
+    scores = (('clmpt', .3), ('qto', .2), ('ultra-adapter', .25))
+    reports = tables.Reports()
+    reports.consume([result('FB15k237+H', method, score) for method, score in scores])
+    reports.consume([dict(dataset='FB15k237+H', method=method, entry=f'{method}-FB15k237+H', shape='3p',
+                          grouping='inferred_positive_edges', label=str(k), comparison_graph='train+valid',
+                          answer_filter='released', sort=dict(mrr=score / k))
+                     for method, score in scores for k in (1, 2, 3)])
+    rows = tables.hardness_matrix_rows(reports, 'sort')
+    binned = {row[1] for row in rows if row[4].startswith('Missing links') and row[5] == 'MRR'}
+    overall = {row[1] for row in rows if row[4].startswith('Overall') and row[5] == 'MRR'}
+    # QTO trails CLMPT on the main table's EPFO MRR: it keeps its overall rows but not its bins.
+    assert binned == {'CLMPT', 'ULTRA + adapter'} and {'CLMPT', 'QTO'} <= overall
+
+
 def test_requested_primary_recipe_drives_main_and_seed_matched_ablations():
     reports = tables.Reports()
     reports.consume(suite_runs('ultra-a', 'ultra-adapter', .3) + suite_runs('ultra-a-seed1', 'ultra-adapter', .4)
