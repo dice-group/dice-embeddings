@@ -18,6 +18,7 @@ METHOD_STYLES = {'ULTRA + adapter': ('#0072B2', 'o', 1.6), 'TRIX + adapter': ('#
                  'QTO': ('#009E73', 's', 1.0), 'CQD-Hybrid': ('#CC79A7', 'v', 1.0), 'GNN-QE': ('#E69F00', '^', 1.0),
                  'UltraQuery': ('#56B4E9', 'P', 1.0), 'CQD': ('#999999', 'X', .9), 'CLMPT': ('#666666', '<', .9),
                  'ConE': ('#BBBBBB', '>', .9)}
+BASELINE_COLOR = '#7A7A7A'  # the dashed best-baseline line of the hardness profiles, in both themes
 BACKBONES = ('ULTRA', 'TRIX')
 ADAPTERS = ('ultra-adapter', 'trix-adapter')
 PROFILE_TYPES = ('3p', '4p', '3i', '4i')
@@ -535,12 +536,19 @@ def hardness_profile_data(reports: 'tables.Reports', policy: str, types: tuple[s
             and r['shape'] in types and tables.missing_link_count(r) > 0]
     rows = [r for r in rows if not summary.identity_run(tables.hardness_record(reports, r) | {'id': r.get('entry') or ''})]
     conditions = defaultdict(lambda: defaultdict(list))
+    methods = {}
     for row in rows:
         record = tables.hardness_record(reports, row)
         name = tables.short_method(tables.method_name(record))
+        methods[name] = record.get('method')
         conditions[row.get('dataset'), name][row.get('entry'), row.get('comparison_graph'), row.get('answer_filter')].append(row)
+    # Baselines: only the one with the highest EPFO MRR in the main +H table, per dataset that table covers.
+    strongest = strongest_baselines(reports, policy)
     series = []
     for (dataset, name), options in sorted(conditions.items(), key=lambda item: str(item[0])):
+        baseline = not (methods[name] or '').endswith('-adapter')
+        if baseline and dataset in strongest and strongest[dataset] != methods[name]:
+            continue
         def priority(key):
             entry, graph, filters = key
             return (entry not in primary, graph != 'train+valid', filters != 'corrected',
@@ -555,6 +563,7 @@ def hardness_profile_data(reports: 'tables.Reports', policy: str, types: tuple[s
                     bins[tables.missing_link_count(row)] = None if tables.is_missing(value) else value
             if bins:
                 series.append(dict(dataset=dataset, shape=shape, method=name, entry=chosen[0].get('entry'),
+                                   strongest_baseline=baseline and dataset in strongest,
                                    points=[dict(links=k, value=bins.get(k)) for k in range(1, tables.POSITIVE_EDGES[shape] + 1)]))
     if not series:
         for dataset in tables.PLUS_H_DATASETS:
@@ -564,6 +573,29 @@ def hardness_profile_data(reports: 'tables.Reports', policy: str, types: tuple[s
     return series
 
 
+def strongest_baselines(reports: 'tables.Reports', policy: str) -> dict[str, str]:
+    """{+H dataset: method} of the main +H table's baseline with the highest EPFO MRR; first listed wins ties."""
+    best = {}
+    for row in summary.plus_h_rows(reports, policy):
+        if row['method'].endswith('-adapter'):
+            continue
+        for dataset in tables.PLUS_H_DATASETS:
+            values = row['values'].get((dataset, 'epfo'))
+            if values and (dataset not in best or sum(values) / len(values) > best[dataset][0]):
+                best[dataset] = sum(values) / len(values), row['method']
+    return {dataset: method for dataset, (_, method) in best.items()}
+
+
+def hardness_caption(series: list[dict]) -> str:
+    """Caption of the hardness profiles; it names the dashed line only when the figure has one."""
+    caption = ('MRR on +H by the minimum number of links that must be predicted to reach an answer (x-axis), for the longest path '
+               '(3p, 4p) and intersection (3i, 4i) query types. Missing bins are not drawn; all query types and counts are in the '
+               'appendix.')
+    if any(item.get('strongest_baseline') for item in series):
+        caption += ' Dashed: the baseline with the highest EPFO MRR on each dataset, named in its row.'
+    return caption
+
+
 def hardness_profile_plot(plt, series: list[dict]):
     """Small multiples, datasets by query type; lines break at missing bins instead of bridging them."""
     from matplotlib.lines import Line2D
@@ -571,9 +603,10 @@ def hardness_profile_plot(plt, series: list[dict]):
     types = [t for t in PROFILE_TYPES if any(s['shape'] == t for s in series)] or list(PROFILE_TYPES)
     fig, axes = plt.subplots(len(datasets), len(types), figsize=(TEXT_WIDTH, 1.25 * len(datasets) + .55),
                              sharex='col', sharey='row', squeeze=False, layout='constrained')
-    methods = sorted({s['method'] for s in series if s['method']},
+    methods = sorted({s['method'] for s in series if s['method'] and not s.get('strongest_baseline')},
                      key=lambda m: (list(METHOD_STYLES).index(m) if m in METHOD_STYLES else len(METHOD_STYLES), m))
     for i, dataset in enumerate(datasets):
+        strongest = sorted({s['method'] for s in series if s['dataset'] == dataset and s.get('strongest_baseline')})
         for j, shape in enumerate(types):
             ax = axes[i][j]
             bound = tables.POSITIVE_EDGES[shape]
@@ -582,12 +615,18 @@ def hardness_profile_plot(plt, series: list[dict]):
                 if item['dataset'] != dataset or item['shape'] != shape or not item['method']:
                     continue
                 color, marker, width = METHOD_STYLES.get(item['method'], ('#444444', '.', .9))
+                style = dict(color=color, linewidth=width)
+                if item.get('strongest_baseline'):
+                    # One grey dashed line per dataset; the row names the method.
+                    style = dict(color=BASELINE_COLOR, linestyle='--', linewidth=.9)
                 xs = [p['links'] for p in item['points']]
                 ys = [math.nan if p['value'] is None else 100 * p['value'] for p in item['points']]
                 if any(not math.isnan(y) for y in ys):
-                    ax.plot(xs, ys, color=color, marker=marker, markersize=3.2, linewidth=width,
-                            zorder=3 if 'adapter' in item['method'] else 2)
+                    ax.plot(xs, ys, marker=marker, markersize=3.2, zorder=3 if 'adapter' in item['method'] else 2, **style)
                     drawn = True
+            if j == 0 and strongest:
+                ax.text(.97, .95, 'dashed: ' + ', '.join(strongest), transform=ax.transAxes, ha='right', va='top',
+                        fontsize=6, color=BASELINE_COLOR)
             if not drawn:
                 ax.text(.5, .5, '-', transform=ax.transAxes, ha='center', va='center', color='#666666')
             ax.set_xticks(range(1, bound + 1))
@@ -603,10 +642,12 @@ def hardness_profile_plot(plt, series: list[dict]):
     # Only once every panel is drawn: the shared row limits must cover all of its panels.
     for row in axes:
         row[0].set_ylim(bottom=0)
-    if methods:
-        handles = [Line2D([], [], color=METHOD_STYLES.get(m, ('#444444', '.', .9))[0],
-                          marker=METHOD_STYLES.get(m, ('#444444', '.', .9))[1], markersize=3.5,
-                          linewidth=METHOD_STYLES.get(m, ('#444444', '.', .9))[2], label=m) for m in methods]
+    handles = [Line2D([], [], color=METHOD_STYLES.get(m, ('#444444', '.', .9))[0],
+                      marker=METHOD_STYLES.get(m, ('#444444', '.', .9))[1], markersize=3.5,
+                      linewidth=METHOD_STYLES.get(m, ('#444444', '.', .9))[2], label=m) for m in methods]
+    if any(s.get('strongest_baseline') for s in series):
+        handles.append(Line2D([], [], color=BASELINE_COLOR, linestyle='--', linewidth=.9, label='Best baseline (per dataset)'))
+    if handles:
         fig.legend(handles=handles, loc='outside upper center', ncol=min(len(handles), 5), frameon=False, fontsize=7)
     return fig
 
@@ -644,9 +685,7 @@ def generate_figures(reports, output, *, policy='sort', hardness_composition=Fal
          'Small dots: single datasets (mean over adapter seeds); large markers: family means. Per-dataset paired 95% '
          'confidence intervals are in the appendix.'),
         ('main-02-hardness-profiles', 'Main paper', lambda r: hardness_profile_data(r, policy), hardness_profile_plot,
-         'MRR on +H by the minimum number of links that must be predicted to reach an answer (x-axis), for the longest path '
-         '(3p, 4p) and intersection (3i, 4i) query types. Missing bins are not drawn; all query types and counts are in the '
-         'appendix.'),
+         hardness_caption),
         ('appendix-01-transfer-gains', 'Appendix', lambda r: transfer_data(r, policy), transfer_plot,
          'MRR of the adapter minus UltraQuery per dataset (points), for EPFO and negation query types. Circles: ULTRA; '
          'diamonds: TRIX.'),
@@ -658,8 +697,8 @@ def generate_figures(reports, output, *, policy='sort', hardness_composition=Fal
         specifications += ((COMPOSITION_NAME, 'Appendix', composition_data, composition_plot,
                             'Optional benchmark-composition diagnostic: proportions of evaluated hard QA pairs by minimum missing positive links, relative to the selected label graph and answer filters. These numeric bins differ from the benchmark authors\' structural reduction groups, especially for unions. Fixed sampling alone is not a model result. QA-pair proportions do not give aggregate MRR weights because MRR averages answers within queries, then queries. Identical fully measured distributions share one panel. Missing counts are shown as dashes; hatched bars indicate partial or unknown parent-query coverage. Counts from different models are never pooled.'),)
     # Validate every chart's numerical data before writing any output.
-    prepared = [(name, placement, build(reports), plot, caption)
-                for name, placement, build, plot, caption in specifications]
+    prepared = [(name, placement, data, plot, caption(data) if callable(caption) else caption)
+                for name, placement, build, plot, caption in specifications for data in (build(reports),)]
     output = Path(output)
     output.mkdir(parents=True, exist_ok=True)
     style = {'font.family': 'DejaVu Sans', 'font.size': 8, 'axes.labelsize': 8, 'xtick.labelsize': 7,

@@ -361,6 +361,28 @@ def test_hardness_profiles_use_numeric_bins_of_one_condition_only():
     assert [p['value'] for p in series[0]['points']] == [.4, .3, .2]
 
 
+def test_hardness_profiles_keep_the_best_baseline_of_each_dataset_dashed():
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    scores = (('clmpt', .3), ('qto', .2), ('ultra-adapter', .25))
+    reports = tables.Reports()
+    reports.consume([result('FB15k237+H', method, score) for method, score in scores])
+    reports.consume([dict(dataset='FB15k237+H', method=method, entry=f'{method}-FB15k237+H', shape='3p',
+                          grouping='inferred_positive_edges', label=str(k), comparison_graph='train+valid',
+                          answer_filter='corrected', expected=dict(mrr=score / k))
+                     for method, score in scores for k in (1, 2, 3)])
+    series = figures.hardness_profile_data(reports, 'expected')
+    # QTO trails CLMPT on the main table's EPFO MRR, so only CLMPT's profile is drawn.
+    assert {(s['method'], s['strongest_baseline']) for s in series} == {('CLMPT', True), ('ULTRA + adapter', False)}
+    assert figures.hardness_caption(series).endswith('Dashed: the baseline with the highest EPFO MRR on each dataset, named in its row.')
+    assert 'Dashed' not in figures.hardness_caption([s for s in series if not s['strongest_baseline']])
+    fig = figures.hardness_profile_plot(plt, series)
+    dashed = [line for ax in fig.axes for line in ax.get_lines() if line.get_linestyle() == '--']
+    assert len(dashed) == 1 and [t.get_text() for ax in fig.axes for t in ax.texts] == ['dashed: CLMPT']
+    plt.close(fig)
+
+
 def test_family_gains_accept_seed_recipe_hashes_but_reject_other_changes():
     reports = tables.Reports()
     for entry, score, digest in (('ultra-r', .3, 'a'), ('ultra-r-seed1', .4, 'b')):
