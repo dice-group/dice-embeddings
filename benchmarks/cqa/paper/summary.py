@@ -50,6 +50,12 @@ RECIPE_DESCRIPTIONS = {'product-intersections': 'adapter trained on 2i/3i querie
                        'product-14types': 'adapter trained on 14 query types', 'product-14type': 'adapter trained on 14 query types'}
 ABLATION_NOTES = {'ultra_4g': r'$^\dagger$Pretraining adds NELL995, a target dataset.',
                   'ultra_50g': r'$^\ddagger$Pretraining on 50 graphs, which may include target graphs.'}
+# The baseline specific to each target graph per UltraQuery family. When all three are present, the main table
+# shows them as one row, as Galkin et al. (2024) do; the appendix keeps each method's own rows.
+PER_GRAPH_BASELINES = (('transductive', 'qto'), ('inductive-e', 'inductive-gnnqe'), ('inductive-er', 'incoming-relation'))
+PER_GRAPH_NOTE = (r'$^\dagger$QTO on the transductive datasets, GNN-QE on the inductive ($e$) splits and the untrained '
+                  r'incoming-relation heuristic on the inductive ($e,r$) graphs. All averages them over the 23 datasets, '
+                  r'as in {cite}. Per-method results are in the appendix.')
 
 
 def freebase_derived(dataset: str) -> bool:
@@ -501,23 +507,43 @@ def adapter_seed_counts(rows: Sequence[dict]) -> list[int]:
     return [len(v) for row in rows if row['method'].endswith('-adapter') and not row['identity'] for v in row['values'].values()]
 
 
+def per_graph_row(reports: 'tables.Reports', policy: str) -> dict | None:
+    """PER_GRAPH_BASELINES as one main-table row, each family scored by its own baseline; None unless all are present."""
+    systems = {method: runs for (method, identity, _), runs in selected_systems(reports, 'ultraquery').items() if not identity}
+    if any(method not in systems for _, method in PER_GRAPH_BASELINES):
+        return None
+    runs = {d: systems[method][d] for family, method in PER_GRAPH_BASELINES for d in family_datasets(family) if d in systems[method]}
+    values = {(f, c): seed_means(runs, family_datasets(f), policy, c) for f, _ in FAMILY_COLUMNS for c in ('epfo', 'negation')}
+    pending = {(f, c): not values[f, c] and planned_cell(runs, family_datasets(f)) for f, c in values}
+    return dict(method='per-graph', identity=False, name='Best per-graph baseline', values=values, pending=pending,
+                label=tables.escape('Best per-graph baseline') + r'$^\dagger$', group='trained')
+
+
 def ultraquery_table(reports: 'tables.Reports', policy: str, *, layout: str = 'paper') -> str:
     """Main table 1: MRR per method and dataset family, EPFO and negation."""
     rows = ultraquery_rows(reports, policy)
+    merged = per_graph_row(reports, policy)
+    if merged is not None:
+        replaced = {method for _, method in PER_GRAPH_BASELINES}
+        rows = [merged, *(row for row in rows if row['method'] not in replaced)]
     keys = [(f, c) for f, _ in FAMILY_COLUMNS for c in ('epfo', 'negation')]
     marks = [ranks([row['values'][key] for row in rows]) for key in keys]
     groups = [(f'{name} ({len(family_datasets(f))})', 2) for f, name in FAMILY_COLUMNS]
-    body = [('adapter' if row['method'].endswith('-adapter') else 'trained' if row['method'] in TRAINED_ON_TARGET else 'transferred',
-             [tables.escape(row['name']), *[placeholder(row) if row['pending'][key] else cell(row['values'][key], rank=marks[i][j])
-                                            for i, key in enumerate(keys)]])
+    body = [(row.get('group') or ('adapter' if row['method'].endswith('-adapter') else 'trained' if row['method'] in TRAINED_ON_TARGET
+                                  else 'transferred'),
+             [row.get('label') or tables.escape(row['name']),
+              *[placeholder(row) if row['pending'][key] else cell(row['values'][key], rank=marks[i][j]) for i, key in enumerate(keys)]])
             for j, row in enumerate(rows)]
+    first = (' The first row combines baselines specific to each target graph.' if merged is not None
+             else ' The first group is trained on each target graph.' if any(row['method'] in TRAINED_ON_TARGET for row in rows) else '')
     caption = (r'Complex query answering on the 23 UltraQuery datasets: MRR on the 9 positive (EPFO) and 5 negated '
                r'query types, averaged over query types and then over the datasets of each family.'
-               + (' The first group is trained on each target graph.' if any(row['method'] in TRAINED_ON_TARGET for row in rows) else '')
-               + ' Best in bold, second best underlined.' + seed_legend(adapter_seed_counts(rows)))
+               + first + ' Best in bold, second best underlined.' + seed_legend(adapter_seed_counts(rows)))
+    notes = PER_GRAPH_NOTE.format(cite=r'\citet{galkin2024foundation}' if layout == 'thesis' else r'Galkin et al.\ (2024)')
     header = [grouped_header(groups, 1), (['Method', *(['EPFO', 'Neg.'] * len(groups))], [])]
     return compact_table(caption, 'tab:main-ultraquery', 'l' + 'c' * 2 * len(groups), header,
-                         body or [('', [tables.MISSING] * (1 + 2 * len(groups)))], layout=layout)
+                         body or [('', [tables.MISSING] * (1 + 2 * len(groups)))], notes=notes if merged is not None else '',
+                         layout=layout)
 
 
 def plus_h_rows(reports: 'tables.Reports', policy: str) -> list[dict]:

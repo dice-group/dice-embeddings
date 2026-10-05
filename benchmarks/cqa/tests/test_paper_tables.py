@@ -727,6 +727,29 @@ def test_main_table_cells_use_only_seeds_with_every_dataset():
                 assert cell_value == r'\textbf{35.0}$_{\pm 7.1}$'
 
 
+def test_main_ultraquery_table_merges_the_per_graph_baselines_into_one_row():
+    scores = {'transductive': ('qto', .4), 'inductive-e': ('inductive-gnnqe', .3), 'inductive-er': ('incoming-relation', .01)}
+    runs = [result(d, *scores[tables.family(d)]) for d in ULTRAQUERY_DATASETS]
+    reports = tables.Reports()
+    reports.consume(runs + suite_runs('ultraquery', 'ultraquery', .2))
+    latex = tables.render_tables(reports)
+    rows = main_rows(latex, 0)
+    assert not {'QTO', 'Inductive GNN-QE', 'Incoming relation'} & set(rows)
+    # Each family takes its own baseline; All averages the mix over the 23 datasets: (3 * 40 + 9 * 30 + 11 * 1) / 23.
+    assert rows[r'Best per-graph baseline$^\dagger$'] == [r'\textbf{40.0}'] * 2 + [r'\textbf{30.0}'] * 2 + [r'\underline{1.0}'] * 2 \
+        + [r'\underline{17.4}'] * 2
+    assert 'The first row combines baselines specific to each target graph.' in latex
+    assert r'$^\dagger$QTO on the transductive datasets' in latex and r'as in Galkin et al.\ (2024)' in latex
+    appendix = latex[latex.index(r'\section*{Appendix}'):]
+    assert ' & QTO & ' in appendix and ' & Incoming relation & ' in appendix
+    assert r'as in \citet{galkin2024foundation}' in tables.render_thesis(reports)['main-ultraquery.tex']
+    # Without a baseline for every family, each method keeps its own row and no note is added.
+    partial = tables.Reports()
+    partial.consume([run for run in runs if run['inference']['method'] != 'incoming-relation'])
+    latex = tables.render_tables(partial)
+    assert {'QTO', 'Inductive GNN-QE'} <= set(main_rows(latex, 0)) and 'per-graph' not in latex
+
+
 def test_requested_primary_recipe_drives_main_and_seed_matched_ablations():
     reports = tables.Reports()
     reports.consume(suite_runs('ultra-a', 'ultra-adapter', .3) + suite_runs('ultra-a-seed1', 'ultra-adapter', .4)
@@ -871,8 +894,8 @@ def test_preview_fills_planned_cells_with_placeholders_in_the_main_tables_only()
     reports.consume(suite_runs('ultra-product-intersections', 'ultra-adapter', .3))
     latex = tables.render_tables(reports, preview=True)
     rows = main_rows(latex, 0)
-    # QTO is planned on the three transductive datasets only: its other cells stay unavailable.
-    assert rows['QTO'] == ['xx.x', 'xx.x'] + ['-'] * 6
+    # The per-graph baselines are planned for their own families, so their merged row covers every column.
+    assert rows[r'Best per-graph baseline$^\dagger$'] == ['xx.x'] * 8 and 'QTO' not in rows
     assert rows['UltraQuery'] == ['xx.x'] * 8
     assert rows['ULTRA + adapter (ours)'] == [r'\textbf{30.0}'] * 8
     assert rows['TRIX + adapter (ours)'] == [r'xx.x$_{\pm x.x}$'] * 8
