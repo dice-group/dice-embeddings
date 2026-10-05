@@ -45,6 +45,9 @@ class TrainingRows:
                         deterministic=torch.are_deterministic_algorithms_enabled(),
                         autocast=torch.is_autocast_enabled(next(model.parameters()).device.type),
                         device=str(next(model.parameters()).device))
+        if hasattr(model, 'prompt_identity'):
+            # KG-ICL rows depend on its prompt sampling; other backbones keep their identities.
+            settings['prompts'] = model.prompt_identity()
         self.identity = fingerprint(settings)
         path = ':memory:'
         if cache_dir is not None:

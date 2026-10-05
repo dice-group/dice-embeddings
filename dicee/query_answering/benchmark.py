@@ -564,7 +564,7 @@ def add_benchmark_parser(commands):
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument('--experiment', help='Saved DICE experiment')
     source.add_argument('--checkpoint', type=Path, help='Pretrained graph-model checkpoint')
-    parser.add_argument('--model', choices=['ULTRA', 'TRIX', 'Flock'], default='ULTRA')
+    parser.add_argument('--model', choices=['ULTRA', 'TRIX', 'Flock', 'KGICL'], default='ULTRA')
     parser.add_argument('--model-config', type=Path, help='Optional model constructor arguments as JSON')
     parser.add_argument('--adapter', type=Path, help='Fitted DICE adapter JSON')
     parser.add_argument('--observed-mix', type=float)
@@ -590,7 +590,7 @@ def add_benchmark_parser(commands):
 
 
 def run_benchmark_cli(args):
-    from ..models import TRIX, ULTRA, Flock
+    from ..models import KGICL, TRIX, ULTRA, Flock
     from ..models._inference import float32_precision_backends
     from ..models.graph_model import GraphKGE
     if args.threads < 1:
@@ -616,7 +616,7 @@ def run_benchmark_cli(args):
         model = kge.model
     else:
         configuration = json.loads(args.model_config.read_text()) if args.model_config else {}
-        model = {'ULTRA': ULTRA, 'TRIX': TRIX, 'Flock': Flock}[args.model](dict(configuration, num_entities=1, num_relations=1))
+        model = {'ULTRA': ULTRA, 'TRIX': TRIX, 'Flock': Flock, 'KGICL': KGICL}[args.model](dict(configuration, num_entities=1, num_relations=1))
         model.load_pretrained(args.checkpoint)
     model.to(args.device)
     adapter = QueryScoreAdapter.load(args.adapter, model=model) if args.adapter else None

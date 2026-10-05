@@ -15,7 +15,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from ._deferred import require
-from .context import state_fingerprint, state_token
+from .context import checkpoint_state, state_fingerprint, state_token
 
 FEATURE_COUNTS = {'global': 1, 'context': 4, 'context_scores': 8}
 
@@ -228,9 +228,7 @@ class QueryScoreAdapter(nn.Module):
                 checksum = hashlib.file_digest(stream, 'sha256').hexdigest()
             if checksum != metadata['backbone_checkpoint_sha256']:
                 raise ValueError('Adapter checkpoint checksum mismatch')
-            state = torch.load(checkpoint, map_location='cpu', weights_only=True)
-            state = state.get('model', state)
-            metadata['backbone_state_sha256'] = state_fingerprint(state)
+            metadata['backbone_state_sha256'] = state_fingerprint(checkpoint_state(checkpoint))
         adapter = cls(payload.get('feature_mode', 'context'), payload.get('observed_mix', 0.),
                       weights=payload['weights'], metadata=metadata, bias_bound=payload.get('bias_bound', 4.),
                       scale_bound=payload.get('scale_bound', 2.),
