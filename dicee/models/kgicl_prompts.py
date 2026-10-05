@@ -114,7 +114,7 @@ class PromptSampler:
         pairs = torch.cat((direct[:, [0, 2]], direct[:, [2, 0]]))
         pairs = pairs[pairs[:, 0] != pairs[:, 1]].unique(dim=0)
         self.adjacency_offsets, self.adjacency = _csr(pairs[:, 0], pairs[:, 1], num_entities)
-        self._examples = {}
+        self._examples: dict[int, list[PromptExample]] = {}
 
     def distances(self, source: int) -> torch.Tensor:
         """Undirected hop distances from ``source`` up to ``hops``; farther entities are ``UNREACHED``."""
@@ -122,8 +122,9 @@ class PromptSampler:
         distance[source] = 0
         frontier = torch.tensor([source])
         for step in range(1, self.hops + 1):
-            neighbors = _gather(self.adjacency_offsets, self.adjacency, frontier).unique()
-            frontier = neighbors[distance[neighbors] == UNREACHED]
+            reached = torch.zeros(self.num_entities, dtype=torch.bool)
+            reached[_gather(self.adjacency_offsets, self.adjacency, frontier)] = True
+            frontier = (reached & (distance == UNREACHED)).nonzero().flatten()
             if not len(frontier):
                 break
             distance[frontier] = step

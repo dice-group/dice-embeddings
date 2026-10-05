@@ -8,14 +8,15 @@ the released ``model_best.tar`` state dictionaries. Prompt graphs are runtime
 context derived from the attached graph (see kgicl_prompts.py), never part of
 the transferable state. docs/kgicl.md documents the corrected upstream defects.
 """
+import hashlib
 from collections import OrderedDict
-from typing import Optional, Sequence
+from typing import Optional, Sequence, cast
 
 import torch
 from torch import nn
 from torch.nn import functional as F
 
-from ._fused_kgicl import attention_width, fused_reasoning_supported, fused_scores, layer_tables
+from ._fused_kgicl import ATTENTION, fused_reasoning_supported, fused_scores, layer_tables
 from ._inference import candidate_features, candidate_slice, host_ids, inference_only
 from .graph_model import GraphKGE
 from .kgicl_prompts import PromptGraph, PromptSampler
@@ -23,6 +24,18 @@ from .kgicl_prompts import PromptGraph, PromptSampler
 UPSTREAM_COMMIT = "6a3166e347ae468acdfb30a70a2cf3608b66b8f1"
 # nn.RReLU's default bounds; in evaluation its negative slope is their mean.
 RRELU_LOWER, RRELU_UPPER = 1. / 8, 1. / 3
+
+
+def _split_linear(linear, *parts: tuple[torch.Tensor, torch.Tensor]) -> torch.Tensor:
+    """``linear(cat([table[index] for table, index in parts], -1))`` without the concatenation.
+
+    Each table is projected by its block of the weight before the per-edge gather.
+    """
+    dim = parts[0][0].shape[-1]
+    value = F.linear(parts[0][0], linear.weight[:, :dim])[parts[0][1]]
+    for k, (table, index) in enumerate(parts[1:], 1):
+        value = value.add_(F.linear(table, linear.weight[:, k * dim:(k + 1) * dim])[index])
+    return value.add_(linear.bias)
 
 
 class PromptEncoder(nn.Module):
@@ -91,15 +104,27 @@ class PromptEncoder(nn.Module):
         norm = (inverse_sqrt[target] * inverse_sqrt[source])[:, None]
         layers = []
         for i in range(self.num_layers):
-            r, q = rel[edge_type], rel[edge_query]
-            h = node[source]
-            message = self.act(self.W_message[i](torch.cat((h, r, q), -1)))
-            alpha = torch.sigmoid(self.alpha[i](self.act(torch.cat((r, q), -1))))
-            message = message * alpha * norm * norm
+            if self.training:
+                # RReLU samples a slope per element, so training keeps upstream's per-edge inputs.
+                r, q = rel[edge_type], rel[edge_query]
+                message = self.act(self.W_message[i](torch.cat((node[source], r, q), -1)))
+                alpha = torch.sigmoid(self.alpha[i](self.act(torch.cat((r, q), -1))))
+                message = message * alpha * norm * norm
+            else:
+                # Project entity and relation tables before gathering them per edge; this
+                # avoids [edges, 3 * dim] inputs for the hub-sized prompt graphs of large KGs.
+                message = self.act(_split_linear(self.W_message[i], (node, source), (rel, edge_type), (rel, edge_query)))
+                active = self.act(rel)
+                alpha = torch.sigmoid(_split_linear(self.alpha[i], (active, edge_type), (active, edge_query)))
+                message = message.mul_(alpha).mul_(norm).mul_(norm)
             node = self.act(self.ent_transfer[i](self._max(message, target, num_nodes)))
             node = self.layer_norm_ents[i](node)
-            message = self.act(self.W_ht2r[i](torch.cat((node[source], node[target], q), -1)))
-            message = message * torch.sigmoid(self.beta[i](torch.cat((r, q), -1)))
+            if self.training:
+                message = self.act(self.W_ht2r[i](torch.cat((node[source], node[target], q), -1)))
+                message = message * torch.sigmoid(self.beta[i](torch.cat((r, q), -1)))
+            else:
+                message = self.act(_split_linear(self.W_ht2r[i], (node, source), (node, target), (rel, edge_query)))
+                message = message.mul_(torch.sigmoid(_split_linear(self.beta[i], (rel, edge_type), (rel, edge_query))))
             rel = self.act(self.rel_transfer[i](self._max(message, edge_type, len(rel)))) + rel
             rel = self.layer_norm_rels[i](rel)
             layers.append(rel)
@@ -192,11 +217,12 @@ class KGICL(GraphKGE):
         self.dropout = nn.Dropout(args.get('kgicl_dropout', 0.0))
         self.W_final = nn.Linear(self.dim, 1, bias=False)
         self.gate = nn.GRU(self.dim, self.dim)
-        self.prompt_cache_mb = args.get('graph_relation_cache_mb', 64)
-        self.table_cache_mb = args.get('graph_projection_cache_mb', 64)
-        if min(self.prompt_cache_mb, self.table_cache_mb) < 0:
+        # Prompt encodings and the fused path's per-layer relation tables, like ULTRA's caches.
+        self.relation_cache_mb = args.get('graph_relation_cache_mb', 64)
+        self.projection_cache_mb = args.get('graph_projection_cache_mb', 64)
+        if min(self.relation_cache_mb, self.projection_cache_mb) < 0:
             raise ValueError('Graph cache limits must be nonnegative')
-        self._prompt_overrides = {}
+        self._prompt_overrides: dict[int, list[PromptGraph]] = {}
         self._sampler: Optional[PromptSampler] = None
         self.set_inference_backend(args.get('graph_inference_backend', 'auto'))
 
@@ -220,7 +246,7 @@ class KGICL(GraphKGE):
         self._table_cache = OrderedDict()
         self._table_cache_token = None
         self._layout = None
-        self._destination_edges = None
+        self._destination_layout = None
 
     def _build_relation_graph(self):
         # KG-ICL samples prompt graphs lazily; no relation graph is constructed.
@@ -237,6 +263,28 @@ class KGICL(GraphKGE):
         token = super().inference_token()
         return None if token is None else (*token, self.prompt_settings())
 
+    def prompt_identity(self) -> dict:
+        """Stable description of prompt sampling for persistent score caches.
+
+        Replayed prompts are identified by a digest of their tensors.
+        """
+        digest = None
+        if self._prompt_overrides:
+            content = hashlib.sha256()
+            for relation in sorted(self._prompt_overrides):
+                for graph in self._prompt_overrides[relation]:
+                    content.update(repr((relation, graph.head, graph.tail)).encode())
+                    for tensor in (graph.edge_index, graph.edge_type, graph.labels):
+                        content.update(tensor.detach().cpu().contiguous().numpy().tobytes())
+            digest = content.hexdigest()
+        return dict(sampler='kgicl-prompt-v1', shots=self.shots, hops=self.prompt_hops, open_nodes=self.open_nodes,
+                    seed=self.prompt_seed, masked_distances=list(self.masked_distances), replayed=digest)
+
+    @property
+    def _entities(self) -> int:
+        """Entity count of the attached graph; scoring and sampling run only after ``set_graph``."""
+        return cast(int, self.num_entities)
+
     @property
     def sampler(self) -> PromptSampler:
         """Prompt sampler of the attached graph, created on first use."""
@@ -244,7 +292,7 @@ class KGICL(GraphKGE):
         if self._sampler is None:
             mapping = self.relation_id_map.detach().cpu().tolist()
             public = {internal: external for external, internal in enumerate(mapping)}
-            self._sampler = PromptSampler(self.graph_triples, self.num_entities, self.num_direct_relations,
+            self._sampler = PromptSampler(self.graph_triples, self._entities, self.num_direct_relations,
                                           [public[r] for r in range(self.num_direct_relations)], shots=self.shots,
                                           hops=self.prompt_hops, open_nodes=self.open_nodes, seed=self.prompt_seed)
         return self._sampler
@@ -278,19 +326,20 @@ class KGICL(GraphKGE):
         """Prompt representation ``[2R + 1, dim]`` of an internal query relation."""
         self._require_graph()
         graphs = self.prompt_graphs(relation) if graphs is None else graphs
-        return self.relation_encoder(graphs, relation, 2 * self.num_direct_relations)
+        encoded: torch.Tensor = self.relation_encoder(graphs, relation, 2 * self.num_direct_relations)
+        return encoded
 
     def _prompts(self, relations):
         """Per-query prompt representations, cached by relation during inference."""
         ids = host_ids(relations)
-        token = self.inference_token() if inference_only(self) and self.prompt_cache_mb else None
+        token = self.inference_token() if inference_only(self) and self.relation_cache_mb else None
         if token is None:
             values = {q: self.encode_prompts(q) for q in dict.fromkeys(ids)}
             return values, ids
         if token != self._prompt_cache_token:
             self._prompt_cache.clear()
             self._prompt_cache_token = token
-        capacity = int(self.prompt_cache_mb * 2**20) // ((2 * self.num_direct_relations + 1) * self.dim
+        capacity = int(self.relation_cache_mb * 2**20) // ((2 * self.num_direct_relations + 1) * self.dim
                                                          * next(self.parameters()).element_size())
         values = {}
         for q in dict.fromkeys(ids):
@@ -306,9 +355,9 @@ class KGICL(GraphKGE):
     def _layer_tables(self, relations, prompts):
         """Stacked per-layer relation tables of the fused path, cached per relation like prompts."""
         token = self._prompt_cache_token
-        size = (self.num_layers * (2 * self.num_direct_relations + 1) * (self.dim + attention_width(self))
+        size = (self.num_layers * (2 * self.num_direct_relations + 1) * (self.dim + ATTENTION)
                 * next(self.parameters()).element_size())
-        capacity = int(self.table_cache_mb * 2**20) // size
+        capacity = int(self.projection_cache_mb * 2**20) // size
         if token is None or not capacity:
             values = {q: layer_tables(self, q, prompts[q]) for q in relations}
         else:
@@ -335,7 +384,7 @@ class KGICL(GraphKGE):
             return cached[2]
         edge_index, edge_type = edges
         order = edge_index[0].argsort(stable=True)
-        counts = torch.bincount(edge_index[0], minlength=self.num_entities)
+        counts = torch.bincount(edge_index[0], minlength=self._entities)
         layout = (torch.cat((counts.new_zeros(1), counts.cumsum(0))), edge_index[1, order], edge_type[order])
         if not self.training:
             self._layout = (edge_index, edge_type, layout)
@@ -343,7 +392,7 @@ class KGICL(GraphKGE):
 
     def _expand_scores(self, heads, relations, prompts, edges):
         """Upstream's hop-by-hop reasoning for a batch; returns ``[B, N]`` scores and first-reach depths."""
-        n, dim = self.num_entities, self.dim
+        n, dim = self._entities, self.dim
         offsets, targets, types = self._out_edges(edges)
         self_loop = 2 * self.num_direct_relations
         batch = torch.arange(len(heads), device=heads.device)
