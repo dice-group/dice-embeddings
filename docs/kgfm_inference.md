@@ -82,6 +82,72 @@ YAGO3-10 Flock had higher timing variance: official native repeats ranged
 394–583 ms/query (DICE 65–67), and replay repeats ranged 76–170 ms/query
 (DICE 47–54). Treat its reported median speedups as approximate.
 
+## KG-ICL
+
+Measured on 2026-10-05 against the [pinned official KG-ICL](https://github.com/nju-websoft/KG-ICL/tree/6a3166e347ae468acdfb30a70a2cf3608b66b8f1)
+with the [bug-fix patch](../tests/fixtures/kgicl/upstream-fixes.patch) applied (see the [KG-ICL guide](kgicl.md)),
+on different hardware than the table above: an RTX 5070 Laptop GPU (8 GiB) and
+an Intel Core i7-14700HX.
+
+| Dataset | Query batch | Official ms/query | DICE ms/query | Speedup | CUDA MiB |
+|---|---:|---:|---:|---:|---:|
+| FB15k-237 | 8 | 68.25 | 1.37 | 49.76× | 3096 → 177 |
+| WN18RR | 16 | 3.63 | 0.82 | 4.43× | 924 → 326 |
+| YAGO3-10† | 2 | 277.71 | 7.80 | 35.58× | 3382 → 373 |
+
+† Validated against the official model in float64, see below.
+
+The workload matches the table above: 128 test triples (seed 42), head and
+tail prediction, and the complete training graph plus inverse edges. Both
+implementations read the same prompt graphs, DICE's seeded samples written in
+the official case format, and apply the official answer-distance mask. The
+official code runs in its own environment (Python 3.9, PyTorch 2.7.1 with CUDA
+12.8, torch-scatter 2.1.2); DICE uses PyTorch 2.9.1 with CUDA 12.8 and Triton
+3.5.1. Both use float32 with TF32 disabled and four CPU threads, with two
+warmups and five timed repetitions (medians), one process at a time. The
+driver's GPU process listing was unavailable on this machine
+(`--allow-unchecked-gpu`); no other compute job ran. Query batches are the
+largest the official code fits in 8 GiB; it ran out of GPU memory on YAGO3-10
+with four queries.
+
+Prompt graph extraction is preprocessing for both implementations. The
+official code assembles and encodes the prompt graphs of every batch, while
+DICE encodes each relation's prompts once and caches them, as ULTRA caches
+relation representations. Without that cache, DICE takes 8.97 ms/query on
+FB15k-237. DICE gains from larger batches: with 16 queries per pass it takes
+1.19 ms/query on FB15k-237 and 4.82 ms/query on YAGO3-10, with scores
+bitwise identical to the table's runs.
+
+Scores agree within `atol=2e-4, rtol=2e-4` on FB15k-237 (maximum absolute error
+`1.84e-4`) and WN18RR (`7.25e-5`), and filtered MRR and hit rates match (MRR
+within `5e-8`). On YAGO3-10, float32 scores differ by up to `2.7e-3`: one entity
+has 61,044 incoming edges, and long float32 sums depend on their order.
+Against the official model in float64, run with one query per batch because two
+do not fit in float64, DICE's maximum error is `2.65e-5` (mean `6.9e-7`) and
+the official float32 code's is `2.73e-3` (mean `9.7e-5`). DICE's MRR equals the
+float64 value; hit rates match.
+
+### Query answering rows
+
+Warm atomic rows in the query evaluator under deterministic algorithms, as in
+complex query answering: batches of 8 random head–relation pairs scored against
+all entities, on the same laptop GPU, with the KG-ICL recipes' 512 MiB cache of
+per-layer relation tables (`projection_cache_mb`):
+
+| Inference graph | Entities | Relations with inverses | Edges | ms/row | First pass over all relations |
+|---|---:|---:|---:|---:|---:|
+| FB15k237+H | 14,505 | 474 | 544,230 | 1.01 | 16.9 s |
+| NELL995+H | 63,361 | 400 | 228,426 | 1.71 | 8.4 s |
+| ICEWS18+H | 20,840 | 500 | 426,608 | 1.04 | 20.0 s |
+| UltraQuery FB15k237 | 14,505 | 474 | 544,230 | 0.98 | 14.1 s |
+| UltraQuery NELL995 | 63,361 | 400 | 228,426 | 1.68 | 7.9 s |
+| UltraQuery inductive FB15k237 (550) | 13,438 | 312 | 136,560 | 0.54 | 5.7 s |
+| UltraQuery WikiTopics art | 10,000 | 129 | 54,524 | 0.55 | 2.7 s |
+
+The first pass samples and encodes the prompt graphs of every relation. With the
+default 64 MiB table cache, graphs with hundreds of relations recompute tables:
+FB15k237+H then takes 2.55 ms/row.
+
 ## Reproduce
 
 Use the pinned official checkout with PyTorch 2.5.1/CUDA 12.4, PyG 2.4.0,
@@ -101,3 +167,18 @@ python benchmarks/kgfm_upstream.py --model ULTRA \
 Use the table’s batch sizes for the other pairs. For Flock, use `--queries 32
 --query-batch-size 1 --walk-num 128 --replay-queries 8`. All generated JSON,
 score tensors, and walk records land in the `Experiments/` directories.
+
+KG-ICL's official worker runs in its own environment, passed with
+`--upstream-python`: Python 3.9 with PyTorch, a matching torch-scatter build,
+NumPy, SciPy and NetworkX. The runner applies the bug-fix patch to a temporary
+copy of the pinned checkout; `--upstream-variant unpatched` times the released
+code. Where `nvidia-smi` cannot list GPU processes, `--allow-unchecked-gpu`
+records that instead of aborting; make sure no other GPU work runs.
+
+```bash
+python benchmarks/kgfm_upstream.py --model KGICL \
+  --upstream-root /path/to/KG-ICL --upstream-python /path/to/kgicl-env/bin/python \
+  --indexed-data Experiments/kgfm-kgicl-20261005/FB15k-237/KGICL \
+  --queries 128 --query-batch-size 8 --repeats 5 --warmups 2 \
+  --output Experiments/official-comparison/FB15k-237/KGICL
+```
