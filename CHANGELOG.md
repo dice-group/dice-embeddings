@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sharded checkpoint save/resume for the `torchFSDP` trainer
 - Adaptive Momentum Weight Averaging and soft-label support
 - `--log_level` CLI flag; TriX model
+- KG-ICL (`KGICL`): official checkpoints in pure PyTorch with seeded, batch-independent prompt graphs, deterministic fused Triton inference, parity fixtures against the pinned official code with five upstream defects corrected, zero-shot benchmarks, and provisional (not finalized) +H and UltraQuery adapter recipes
 - Complex query answering (`dicee.query_answering`): CQD beam search over KGEs and KGFMs with learned score adapters, negated query types, native UltraQuery, GNN-QE, QTO, CQD, CQD-Hybrid, ConE and CLMPT checked against their upstream implementations, and resumable filtered evaluation with exact expected ranks under ties
 - Reproducible UltraQuery and +H benchmarks (`python -m benchmarks.cqa`): frozen studies verified against the pinned upstream implementations, a pinned Docker runtime, paired adapter, answer-filter and inference-graph ablations, and paper tables
 
