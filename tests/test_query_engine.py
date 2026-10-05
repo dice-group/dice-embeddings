@@ -514,3 +514,31 @@ def test_cache_separates_raw_logits_and_bypasses_autocast(raw):
         for _ in range(2):
             engine.predict(query)
             assert engine.last_info['raw_rows'] == 1
+
+
+def test_membership_threshold_zeroes_low_memberships_like_ultraquery_lp(tmp_path):
+    model = TableModel(np.zeros((4, 1, 4)))
+    adapter = QueryScoreAdapter('global', 1., membership_threshold=.5, metadata={'backbone_state_sha256': state_fingerprint(model)})
+    raw = torch.tensor([[-2., 0., .1, 3.]], dtype=torch.float64)
+    observed, base = QueryContext([(0, 0, 0)], 4, 1).features([(0, 0)], device='cpu')
+    scores = adapter(raw, observed, base)
+    # Memberships .12, .5, .52, .95: those at or below .5 become zero, unless observed (entity 0 is an observed fact).
+    assert scores[0, 0] == 0 and scores[0, 1] == -torch.inf
+    torch.testing.assert_close(scores[0, 2:], torch.nn.functional.logsigmoid(raw[0, 2:]), rtol=0, atol=0)
+    adapter.save(tmp_path / 'adapter.json')
+    loaded = QueryScoreAdapter.load(tmp_path / 'adapter.json', model=model)
+    assert loaded.configuration == adapter.configuration and loaded.configuration['membership_threshold'] == .5
+    # Adapters without a threshold keep their configuration, so existing artifacts and cache keys do not change.
+    assert 'membership_threshold' not in QueryScoreAdapter('global').configuration
+    with pytest.raises(ValueError, match='membership_threshold'):
+        QueryScoreAdapter('global', membership_threshold=1.)
+
+
+def test_membership_threshold_runs_in_the_executor_and_keys_its_cache():
+    adapter = QueryScoreAdapter('global')
+    engine = QueryAnswerer(TableModel(np.random.default_rng(3).normal(size=(5, 2, 5))).eval(), adapter=adapter)
+    before = engine.predict(((0, (0,)), (1, (1, -2))))
+    adapter.membership_threshold = .6
+    after = engine.predict(((0, (0,)), (1, (1, -2))))
+    # Zero memberships are ordinary values for the executor, also under negation.
+    assert torch.isfinite(after).all() and (after == 0).any() and (after > 0).any() and not torch.equal(before, after)

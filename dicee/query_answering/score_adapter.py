@@ -62,10 +62,13 @@ class QueryScoreAdapter(nn.Module):
     ``global`` learns only two parameters. ``context`` and ``context_scores``
     learn eight and sixteen with a linear head. Context observations can override or
     interpolate memberships. Newly fitted adapters bind to a backbone state hash.
+    ``membership_threshold`` zeroes memberships at or below a fixed value, the hand-set
+    calibration of UltraQuery LP; it is not trained.
     """
 
     def __init__(self, feature_mode='context_scores', observed_mix=0., *, weights=None, metadata=None,
-                 bias_bound=4., scale_bound=2., normalization='none', hidden_dim=0, hidden_weights=None, seed=0):
+                 bias_bound=4., scale_bound=2., normalization='none', hidden_dim=0, hidden_weights=None, seed=0,
+                 membership_threshold=0.):
         super().__init__()
         feature_mode = canonical_feature_mode(feature_mode)
         if not math.isfinite(observed_mix) or not 0 <= observed_mix <= 1:
@@ -76,11 +79,14 @@ class QueryScoreAdapter(nn.Module):
             raise ValueError('scale_bound must exceed one, or be None for unrestricted scaling')
         if normalization not in ('none', 'standard'):
             raise ValueError('Choose none or standard row normalization')
+        if not math.isfinite(membership_threshold) or not 0 <= membership_threshold < 1:
+            raise ValueError('membership_threshold must be in [0, 1)')
         if type(hidden_dim) is not int or hidden_dim < 0:
             raise ValueError('hidden_dim must be a nonnegative integer')
         self.feature_mode, self.observed_mix = feature_mode, float(observed_mix)
         self.bias_bound, self.normalization, self.hidden_dim = float(bias_bound), normalization, hidden_dim
         self.scale_bound = None if scale_bound is None else float(scale_bound)
+        self.membership_threshold = float(membership_threshold)
         features = FEATURE_COUNTS[feature_mode]
         size = (2, hidden_dim or features)
         value = torch.zeros(size, dtype=torch.float64) if weights is None else torch.as_tensor(weights, dtype=torch.float64)
@@ -102,8 +108,11 @@ class QueryScoreAdapter(nn.Module):
 
     @property
     def configuration(self):
-        return dict(feature_mode=self.feature_mode, observed_mix=self.observed_mix, bias_bound=self.bias_bound,
-                    scale_bound=self.scale_bound, normalization=self.normalization, hidden_dim=self.hidden_dim)
+        configuration = dict(feature_mode=self.feature_mode, observed_mix=self.observed_mix, bias_bound=self.bias_bound,
+                             scale_bound=self.scale_bound, normalization=self.normalization, hidden_dim=self.hidden_dim)
+        if self.membership_threshold:
+            configuration['membership_threshold'] = self.membership_threshold
+        return configuration
 
     def prepare(self, raw, observed=None, base=None):
         """Prepare parameter-independent inputs once for frozen training banks."""
@@ -146,6 +155,9 @@ class QueryScoreAdapter(nn.Module):
         require(torch.isfinite(scale).all() & ~(scale <= 0).any(), FloatingPointError('Nonfinite or zero adapter scale'))
         logits = scale[:, None] * raw + self.bias_bound * v.tanh()[:, None]
         logs = F.logsigmoid(logits)
+        if self.membership_threshold:
+            # UltraQuery LP's fixed calibration: memberships at or below the threshold become exactly zero.
+            logs = logs.masked_fill(logs <= math.log(self.membership_threshold), -math.inf)
         if self.observed_mix == 1:
             logs = logs.masked_fill(observed, 0.)
         elif self.observed_mix:
@@ -205,7 +217,8 @@ class QueryScoreAdapter(nn.Module):
             raise ValueError('Select a catalog entry with key=...')
         if payload.get('version', 1) not in (1, 2, 3):
             raise ValueError('Unsupported adapter artifact version')
-        fields = ('weights', 'feature_mode', 'observed_mix', 'version', 'bias_bound', 'scale_bound', 'normalization', 'hidden_dim', 'hidden_weights')
+        fields = ('weights', 'feature_mode', 'observed_mix', 'version', 'bias_bound', 'scale_bound', 'normalization', 'hidden_dim',
+                  'hidden_weights', 'membership_threshold')
         metadata = {k: v for k, v in payload.items() if k not in fields}
         if 'backbone_state_sha256' not in metadata:
             if checkpoint is None or 'backbone_checkpoint_sha256' not in metadata:
@@ -222,6 +235,6 @@ class QueryScoreAdapter(nn.Module):
                       weights=payload['weights'], metadata=metadata, bias_bound=payload.get('bias_bound', 4.),
                       scale_bound=payload.get('scale_bound', 2.),
                       normalization=payload.get('normalization', 'none'), hidden_dim=payload.get('hidden_dim', 0),
-                      hidden_weights=payload.get('hidden_weights'))
+                      hidden_weights=payload.get('hidden_weights'), membership_threshold=payload.get('membership_threshold', 0.))
         adapter.verify_model(model)
         return adapter
