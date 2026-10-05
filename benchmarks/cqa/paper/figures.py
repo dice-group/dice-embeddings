@@ -122,10 +122,14 @@ class thesis_palette:
 
 
 def thesis_figure_environment(name: str, caption: str) -> str:
-    """A single-column float for the thesis: full-grid figures sit in a wideblock; natural size, no scaling."""
+    """A single-column float for the thesis: full-grid figures sit in a wideblock; natural size, no scaling.
+
+    Main-text figures stay where the results text discusses them ([H], package float); appendix ones float.
+    """
     graphic = rf'\includegraphics{{{THESIS_FIGURES}/{name}.pdf}}'
     body = [r'\begin{wideblock}', graphic, r'\end{wideblock}'] if name in THESIS_WIDE else [graphic]
-    return '\n'.join([r'\begin{figure}[tbp]', *body, rf'\caption{{{tables.escape(caption)}}}\label{{fig:{name}}}',
+    placement = 'H' if name.startswith('main-') else 'tbp'
+    return '\n'.join([rf'\begin{{figure}}[{placement}]', *body, rf'\caption{{{tables.escape(caption)}}}\label{{fig:{name}}}',
                       r'\end{figure}'])
 
 

@@ -49,7 +49,7 @@ ABLATION_NAMES = {'no-fb': 'Adapter fit without FB15k-237', 'types14': 'Adapter 
 RECIPE_DESCRIPTIONS = {'product-intersections': 'adapter trained on 2i/3i queries',
                        'product-14types': 'adapter trained on 14 query types', 'product-14type': 'adapter trained on 14 query types'}
 ABLATION_NOTES = {'ultra_4g': r'$^\dagger$Pretraining adds NELL995, a target dataset.',
-                  'ultra_50g': r'$^\ddagger$Pretraining on 50 graphs, which may include target graphs.'}
+                  'ultra_50g': r'$^\ddagger$Pretraining adds NELL995 and WikiTopics graphs of six target topics.'}
 # The baseline specific to each target graph per UltraQuery family. When all three are present, the main table
 # shows them as one row, as Galkin et al. (2024) do; the appendix keeps each method's own rows.
 PER_GRAPH_BASELINES = (('transductive', 'qto'), ('inductive-e', 'inductive-gnnqe'), ('inductive-er', 'incoming-relation'))
@@ -362,7 +362,8 @@ def compact_table(caption: str, label: str, columns: str, header_rows: Sequence[
     caption keeps the page's caption column. Notes explain preview placeholders when cells have them.
     """
     if layout == 'thesis':
-        lines = [r'\begin{table}[tbp]', rf'\caption{{{caption}}}\label{{{label}}}', r'\begin{fitblock}',
+        # The thesis keeps its main tables where the results text discusses them ([H], package float).
+        lines = [r'\begin{table}[H]', rf'\caption{{{caption}}}\label{{{label}}}', r'\begin{fitblock}',
                  r'\begin{threeparttable}', rf'\begin{{tabular}}{{{columns}}}', r'\toprule']
         if any(PLACEHOLDER in cell or DELTA_PLACEHOLDER in cell for _, cells in rows for cell in cells):
             notes = (notes + ' ' + PREVIEW_NOTE).strip()

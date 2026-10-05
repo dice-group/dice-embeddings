@@ -927,7 +927,7 @@ def test_thesis_tables_are_single_column_floats_that_leave_typesetting_to_the_th
     assert set(files) == {name + '.tex' for name in tables.THESIS_MAIN_TABLES} | {'settings.tex', 'appendix.tex'}
     for name in tables.THESIS_MAIN_TABLES:
         latex = files[name + '.tex']
-        assert latex.count(r'\begin{table}[tbp]') == 1 and 'table*' not in latex
+        assert latex.count(r'\begin{table}[H]') == 1 and 'table*' not in latex
         # The caption keeps the page's caption column; the thesis fits the body to its reading column.
         assert latex.index(r'\caption{') < latex.index(r'\begin{fitblock}') < latex.index(r'\begin{tabular}')
         assert r'\footnotesize' not in latex and r'\tabcolsep' not in latex and r'\scriptsize' not in latex

@@ -437,7 +437,7 @@ def test_thesis_theme_writes_grid_sized_pdfs_and_float_files_and_restores_the_pa
     assert sorted(p.name for p in tmp_path.iterdir()) == sorted(n + e for n in names for e in ('.pdf', '.tex'))
     for name in names:
         latex = (tmp_path / f'{name}.tex').read_text()
-        assert rf'\includegraphics{{{figures.THESIS_FIGURES}/{name}.pdf}}' in latex and r'\begin{figure}[tbp]' in latex
+        assert rf'\includegraphics{{{figures.THESIS_FIGURES}/{name}.pdf}}' in latex and (r'\begin{figure}[H]' if name.startswith('main-') else r'\begin{figure}[tbp]') in latex
         assert (r'\begin{wideblock}' in latex) == (name in figures.THESIS_WIDE)
         # Figures are drawn at their width in the thesis grid, so the thesis includes them unscaled.
         width = float(re.search(rb'/MediaBox \[ ?0 0 ([\d.]+)', (tmp_path / f'{name}.pdf').read_bytes()).group(1))
