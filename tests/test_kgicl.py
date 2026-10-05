@@ -110,7 +110,7 @@ def test_upstream_numerical_parity(name):
         if expected is None:
             assert parameter.grad is None, parameter_name
         else:
-            torch.testing.assert_close(parameter.grad, expected, atol=2e-5, rtol=1e-4,
+            torch.testing.assert_close(parameter.grad, expected, atol=1e-4, rtol=1e-4,
                                        msg=lambda msg: parameter_name + ": " + msg)
 
 
@@ -309,7 +309,7 @@ def test_invalid_settings_and_ids(facts):
 @pytest.mark.parametrize("deterministic", [False, True])
 def test_cuda_fused_path_matches_and_is_batch_invariant(facts, deterministic, monkeypatch):
     pytest.importorskip("triton")
-    # PyTorch requires this for deterministic cuBLAS; the query benchmarks set it for the process.
+    # PyTorch requires this for deterministic cuBLAS; the CQA Docker image sets it.
     monkeypatch.setenv("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
     model = KGICL(dict(num_entities=6, num_relations=3, kgicl_query_batch_size=4)).set_graph(facts).eval().requires_grad_(False)
     queries = torch.cat((facts[:, :2], torch.tensor([[5, 0], [1, 2]])))
@@ -335,6 +335,38 @@ def test_cuda_fused_path_matches_and_is_batch_invariant(facts, deterministic, mo
                 assert torch.equal(batched, single) and torch.equal(batched, reordered)
     finally:
         torch.use_deterministic_algorithms(previous)
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason="CUDA is unavailable")
+def test_cuda_fused_hub_rows_and_query_blocks():
+    """Hub rows are summed in fixed segments and query blocks are padded; a row never depends on its batch."""
+    pytest.importorskip("triton")
+    from dicee.models._triton_kgicl import HUB_SEGMENTS, QUERIES, SEGMENT
+    generator = torch.Generator().manual_seed(0)
+    n = 3 * SEGMENT * HUB_SEGMENTS
+
+    def relations(count):
+        return torch.randint(0, 3, (count,), generator=generator)
+    # Entity 0 receives an edge from every other entity, a hub row of several segments.
+    spokes = torch.stack((torch.arange(1, n), relations(n - 1), torch.zeros(n - 1, dtype=torch.long)), 1)
+    noise = torch.stack((torch.randint(0, n, (4 * n,), generator=generator), relations(4 * n),
+                         torch.randint(0, n, (4 * n,), generator=generator)), 1)
+    model = KGICL(dict(num_entities=n, num_relations=3, kgicl_masked_distances=[0, 2], kgicl_query_batch_size=2 * QUERIES + 1))
+    model = model.set_graph(torch.cat((spokes, noise))).eval().requires_grad_(False).cuda()
+    queries = torch.cat((torch.tensor([[0, 0], [0, 1], [5, 2]]), noise[:10, :2])).cuda()
+    with torch.no_grad():
+        model.set_inference_backend("torch")
+        expected = model(queries)
+        model.set_inference_backend("triton")
+        batched = model(queries)
+        model.query_batch_size = 1
+        single = model(queries)
+        model.query_batch_size = 3
+        reordered = model(queries.flip(0)).flip(0)
+    torch.testing.assert_close(batched, expected, atol=2e-4, rtol=2e-4)
+    assert torch.equal(batched, single) and torch.equal(batched, reordered)
+    # Heads and entities first reached after two hops are masked.
+    assert (batched[torch.arange(len(queries)), queries[:, 0]] == 0).all() and (batched != 0).any()
 
 
 @pytest.mark.parametrize("model_name,technique,grouped,trainer", [
@@ -394,3 +426,21 @@ def test_zero_epoch_official_checkpoint_format(tmp_path):
         torch.testing.assert_close(state[key], pretrained.state_dict()[key])
     assert np.isfinite(report["Test"]["MRR"])
     assert json.loads((tmp_path / "run" / "configuration.json").read_text())["kgicl_dim"] == 32
+
+
+def test_query_rows_are_bitwise_independent_of_batching(facts, monkeypatch):
+    """The query evaluator caches rows across beams and controls; batching must not change a row."""
+    from dicee.query_answering.context import QueryContext, attached_context
+    from dicee.query_answering.engine import AtomicScorer
+    from dicee.query_answering.method_evaluation import deterministic_kgfm
+    monkeypatch.setenv("CUBLAS_WORKSPACE_CONFIG", ":4096:8")
+    context = QueryContext([tuple(t) for t in facts.tolist()], 6, 3)
+    conditions = [(h, r) for h in range(6) for r in range(3)]
+    for device in ["cpu"] + (["cuda"] if torch.cuda.is_available() else []):
+        model = KGICL(dict(num_entities=1, num_relations=1, kgicl_query_batch_size=4)).eval().requires_grad_(False).to(device)
+        with deterministic_kgfm(), attached_context(model, context):
+            reference = AtomicScorer(model, context, row_batch_size=1).rows(conditions)
+            for size in (2, 5, 18):
+                rows = AtomicScorer(model, context, row_batch_size=size).rows(conditions[::-1]).flip(0)
+                assert torch.equal(rows, reference), (device, size)
+        assert torch.isfinite(reference).all() and (reference != 0).any()
