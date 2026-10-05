@@ -9,7 +9,8 @@ import torch
 class ReferenceKGFM:
     def __init__(self, triples, n, nr, adapter, *, beam_size, device, restore_observed=True):
         if (adapter['feature_mode'] not in ('context_scores', 'context_scores_v1', 'global') or adapter['hidden_dim']
-                or adapter['normalization'] != 'none' or adapter['observed_mix'] not in (0, 1)):
+                or adapter['normalization'] != 'none' or adapter['observed_mix'] not in (0, 1)
+                or not 0 <= adapter.get('membership_threshold', 0.) < 1):
             raise ValueError('This reference covers the frozen linear observed-fact recipe')
         self.n, self.nr, self.adapter = n, nr, adapter
         self.k, self.device = beam_size, device
@@ -52,6 +53,9 @@ class ReferenceKGFM:
         alpha = (bound * (u * (math.log(2) / bound)).tanh()).exp()
         logits = alpha[:, None] * raw + self.adapter['bias_bound'] * v.tanh()[:, None]
         calibrated = torch.nn.functional.logsigmoid(logits)
+        if self.adapter.get('membership_threshold'):
+            # A fixed threshold makes memberships at or below it exactly zero; observed facts still override.
+            calibrated = calibrated.masked_fill(calibrated <= math.log(self.adapter['membership_threshold']), -math.inf)
         if self.adapter['observed_mix'] == 1:
             calibrated = calibrated.masked_fill(observed, 0.)
         self.rows.update((tuple(condition), row.cpu()) for condition, row in zip(conditions, calibrated))
