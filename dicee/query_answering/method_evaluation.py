@@ -260,11 +260,13 @@ def deterministic_kgfm():
 def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_prediction=None, reference_batches=None,
                    on_control_prediction=None, *, limit=None, seed=0, query_order='relation', rank_trace_path=None,
                    filter_corrections=None):
-    from ..models import TRIX, ULTRA
+    from ..models import KGICL, TRIX, ULTRA
     backbone = entry['method'].split('-')[0]
     options = entry['options']
     allowed = {'beam_size', 'row_batch_size', 'backend_batch_size', 'cache_bytes', 'raw_cache_bytes', 'observed_facts',
                'raw_cache_device', 'raw_cache_granularity', 'relation_cache_mb', 'projection_cache_mb'}
+    if backbone == 'kgicl':
+        allowed |= {'prompt_seed'}
     if options.keys() - allowed:
         raise ValueError('Unknown KGFM execution option')
     if options.get('raw_cache_device', 'cpu') not in ('cpu', 'model'):
@@ -272,11 +274,14 @@ def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_predict
     granularity = options.get('raw_cache_granularity', 'batch')
     if granularity not in ('batch', 'row'):
         raise ValueError('Atomic cache granularity must be batch or row')
-    model = {'ultra': ULTRA, 'trix': TRIX}[backbone](dict(
+    # KG-ICL samples prompt graphs from the attached context with a fixed seed (default 0);
+    # options without a default here keep each backbone's construction unchanged.
+    extra = {'kgicl_prompt_seed': options['prompt_seed']} if 'prompt_seed' in options else {}
+    model = {'ultra': ULTRA, 'trix': TRIX, 'kgicl': KGICL}[backbone](dict(
         num_entities=1, num_relations=1, graph_inference_backend='auto',
         graph_relation_cache_mb=options.get('relation_cache_mb', 64),
         graph_projection_cache_mb=options.get('projection_cache_mb', 64),
-        **{f'{backbone}_query_batch_size': options.get('backend_batch_size', 1)})).load_pretrained(
+        **{f'{backbone}_query_batch_size': options.get('backend_batch_size', 1)}, **extra)).load_pretrained(
             entry['checkpoint']).to(device).eval().requires_grad_(False)
     adapters = {name: QueryScoreAdapter.load(path, model=model) for name, path in entry['adapters'].items()}
     for operator, adapter in adapters.items():

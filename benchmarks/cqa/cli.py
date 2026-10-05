@@ -206,10 +206,13 @@ def resolve(args):
 
 
 def ensure_inputs(args, manifest):
+    # Validation-only evaluation never reads the +H test reduction labels.
+    test_labels = getattr(args, 'split', 'test') != 'valid'
     if not args.no_setup:
-        inputs.ensure_inputs(manifest, args.input_root, suite=args.suite, models_archive=args.models_archive)
+        inputs.ensure_inputs(manifest, args.input_root, suite=args.suite, models_archive=args.models_archive,
+                             test_labels=test_labels)
     else:
-        inputs.ensure_inputs(manifest, args.input_root, suite=args.suite, download_missing=False)
+        inputs.ensure_inputs(manifest, args.input_root, suite=args.suite, download_missing=False, test_labels=test_labels)
 
 
 def in_container(parser, args):

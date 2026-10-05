@@ -43,13 +43,15 @@ WEIGHT_HASHES = {
     'checkpoints/ultra_3g.pth': 'fdedc01b0045fc089d2ad5da08569466b7b221691fe978a18e91082bbb133c18',
     'checkpoints/ultra_4g.pth': '48a046e708adf5632d87c30eacae01f5f51466b2301effdc2cb42358d22854e0',
     'checkpoints/ultra_50g.pth': 'f1c5377b2cf547aaa67520ffb6fce27b75b6eb3417b86dc9cf9dba89964ed10f',
+    'checkpoints/kgicl/KG-ICL-6L/model_best.tar': '80f885ffa2c0175cd6ed829af99ae45177fdb5f77302c7648591bbdf62bc1c81',
 }
 
 
 def weight_urls():
-    ultra, trix = (f'https://raw.githubusercontent.com/{repository}/{commit}'
-                   for repository, commit in (catalog().ULTRA, catalog().TRIX))
+    ultra, trix, kgicl = (f'https://raw.githubusercontent.com/{repository}/{commit}'
+                          for repository, commit in (catalog().ULTRA, catalog().TRIX, catalog().KG_ICL))
     return {'Experiments/query-baselines/upstream/ultra/ckpts/ultraquery.pth': f'{ultra}/ckpts/ultraquery.pth',
+            'checkpoints/kgicl/KG-ICL-6L/model_best.tar': f'{kgicl}/checkpoint/KG-ICL-6L/model_best.tar',
             'checkpoints/ultra_3g.pth': f'{ultra}/ckpts/ultra_3g.pth',
             'checkpoints/ultra_4g.pth': f'{ultra}/ckpts/ultra_4g.pth',
             'checkpoints/ultra_50g.pth': f'{ultra}/ckpts/ultra_50g.pth',
@@ -168,9 +170,11 @@ def plan(manifest, suite):
     return jobs, weights
 
 
-def missing_files(root, job):
+def missing_files(root, job, test_labels=True):
+    """Required files of a dataset job that are absent; ``test_labels=False`` skips +H test reduction labels."""
     return [f"{job['root']}/{folder}/{name}" for folder, names in job['folders'].items()
-            for name in sorted(names) if not target(root, f"{job['root']}/{folder}/{name}").is_file()]
+            for name in sorted(names) if (test_labels or not name.startswith('test-query-reduction/'))
+            and not target(root, f"{job['root']}/{folder}/{name}").is_file()]
 
 
 def extract(archive, root, select):
@@ -267,8 +271,12 @@ def fetch_weights(root, weights, models_archive=None):
     print(f'Checkpoint inputs present: {len(weights)}; released files checked by SHA-256', flush=True)
 
 
-def ensure_inputs(manifest, input_root, *, suite, models_archive=None, download_missing=True):
-    """Set up only requested public inputs; custom data/checkpoints stay explicit."""
+def ensure_inputs(manifest, input_root, *, suite, models_archive=None, download_missing=True, test_labels=True):
+    """Set up only requested public inputs; custom data/checkpoints stay explicit.
+
+    ``test_labels=False`` (validation-only evaluation) neither requires nor downloads
+    the +H test reduction labels, which only test-split difficulty reports read.
+    """
     root = Path(input_root).expanduser().resolve()
     root.mkdir(parents=True, exist_ok=True)
     jobs, weights = plan(manifest, suite)
@@ -276,7 +284,7 @@ def ensure_inputs(manifest, input_root, *, suite, models_archive=None, download_
     public = json.loads((REPO / 'benchmarks' / suite / 'baselines.json').read_text())
     official = manifest.get('archives', {}).get('datasets') == public['archives']['datasets']
     if official:
-        missing += [p for job in jobs for p in missing_files(root, job)]
+        missing += [p for job in jobs for p in missing_files(root, job, test_labels)]
     extras = {p for e in manifest['entries'] for p in e.get('adapters', {}).values()}
     extras |= {e['checkpoint'] for e in manifest['entries'] if e['checkpoint'].endswith('.json')}
     for name in sorted(extras):
@@ -299,7 +307,7 @@ def ensure_inputs(manifest, input_root, *, suite, models_archive=None, download_
         fetch_weights(root, weights, models_archive)
     if official:
         for job in jobs:
-            if missing_files(root, job):
+            if missing_files(root, job, test_labels):
                 fetch_dataset(root, job)
 
 

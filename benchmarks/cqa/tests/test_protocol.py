@@ -548,12 +548,13 @@ def test_independent_exporter_parity_and_full_run(tmp_path):
     assert report['split'] == 'test'
 
 
-@pytest.mark.parametrize('backbone', ['ultra', 'trix'])
+@pytest.mark.parametrize('backbone', ['ultra', 'trix', 'kgicl'])
 def test_provisional_kgfm_pipeline_and_finalization_guard(tmp_path, backbone):
-    from dicee.models import TRIX, ULTRA
+    from dicee.models import KGICL, TRIX, ULTRA
     manifest = paper_fixture(tmp_path)
-    model = {'ultra': ULTRA, 'trix': TRIX}[backbone](dict(num_entities=1, num_relations=1))
-    torch.save({'model': model.state_dict()}, tmp_path / 'kgfm.pt')
+    model = {'ultra': ULTRA, 'trix': TRIX, 'kgicl': KGICL}[backbone](dict(num_entities=1, num_relations=1))
+    # KG-ICL checkpoints keep their weights under 'state_dict'.
+    torch.save({'state_dict' if backbone == 'kgicl' else 'model': model.state_dict()}, tmp_path / 'kgfm.pt')
     for operator in ('product', 'min'):
         adapter = QueryScoreAdapter('global', observed_mix=1, metadata=dict(
             backbone_state_sha256=state_fingerprint(model), training={} if operator == 'product' else {'tnorm': 'min'}))

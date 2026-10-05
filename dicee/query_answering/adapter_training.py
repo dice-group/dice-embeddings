@@ -324,6 +324,8 @@ def _bank(model, data, *, cache_dir, row_batch_size, seed, samples, device='cpu'
                     autocast=torch.is_autocast_enabled(next(model.parameters()).device.type),
                     scoring_code=scoring_fingerprint(), architecture=str(model),
                     configuration={k: str(v) for k, v in getattr(model, 'args', {}).items()})
+    if hasattr(model, 'prompt_identity'):
+        identity['prompts'] = model.prompt_identity()
     key = fingerprint(identity)
     path = Path(cache_dir) / f'{key}.pt' if cache_dir is not None else None
     if path is not None and path.exists():

@@ -27,6 +27,14 @@ def state_fingerprint(model_or_state):
     return digest.hexdigest()
 
 
+def checkpoint_state(path):
+    """Tensor state of a backbone checkpoint: bare, under 'model' (ULTRA, TRIX, Flock) or 'state_dict' (KG-ICL)."""
+    state = torch.load(path, map_location='cpu', weights_only=True)
+    if isinstance(state.get('state_dict'), dict):
+        return state['state_dict']
+    return state.get('model', state)
+
+
 def state_token(model):
     """Cheap mutation token; inference tensors cannot safely be retained in caches.
 

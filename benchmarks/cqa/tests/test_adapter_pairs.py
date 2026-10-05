@@ -120,17 +120,18 @@ def test_paired_resume_replays_both_variants_and_preserves_metrics(tmp_path):
     assert adapter_effects(left, left, bootstrap_samples=0)['macro']['sort']['mrr'] == 0
 
 
-@pytest.mark.parametrize('backbone', ['ultra', 'trix'])
+@pytest.mark.parametrize('backbone', ['ultra', 'trix', 'kgicl'])
 @pytest.mark.parametrize('facts,ultraquery', [(None, False), ('none', False), ('atomic', False), ('both', False), ('both', True)])
 def test_paired_kgfm_verification_full_run_and_reports(tmp_path, backbone, facts, ultraquery):
-    from dicee.models import TRIX, ULTRA
+    from dicee.models import KGICL, TRIX, ULTRA
     from dicee.query_answering.score_adapter import QueryScoreAdapter
     manifest = paper_fixture(tmp_path)
     if ultraquery:
         use_ultraquery_fixture(manifest, tmp_path)
     count = len(manifest['entries'][0]['query_types'])
-    model = {'ultra': ULTRA, 'trix': TRIX}[backbone](dict(num_entities=1, num_relations=1))
-    torch.save({'model': model.state_dict()}, tmp_path / 'kgfm.pt')
+    model = {'ultra': ULTRA, 'trix': TRIX, 'kgicl': KGICL}[backbone](dict(num_entities=1, num_relations=1))
+    # KG-ICL checkpoints keep their weights under 'state_dict'.
+    torch.save({'state_dict' if backbone == 'kgicl' else 'model': model.state_dict()}, tmp_path / 'kgfm.pt')
     QueryScoreAdapter('context_scores', 1., bias_bound=8.,
                       weights=torch.randn(2, 8, generator=torch.Generator().manual_seed(4)).double() / 5,
                       metadata={'backbone_state_sha256': state_fingerprint(model)}).save(tmp_path / 'adapter.json')
@@ -327,14 +328,15 @@ def test_filter_controls_share_predictions_and_resume_all_traces(tmp_path, monke
         evaluate_benchmark(data, predict, **options)
 
 
-@pytest.mark.parametrize('backbone', ['ultra', 'trix'])
+@pytest.mark.parametrize('backbone', ['ultra', 'trix', 'kgicl'])
 def test_row_granular_raw_cache_reaches_the_engine_and_keeps_scores(tmp_path, backbone):
-    from dicee.models import TRIX, ULTRA
+    from dicee.models import KGICL, TRIX, ULTRA
     from dicee.query_answering.score_adapter import QueryScoreAdapter
     manifest = paper_fixture(tmp_path)
     use_ultraquery_fixture(manifest, tmp_path)
-    model = {'ultra': ULTRA, 'trix': TRIX}[backbone](dict(num_entities=1, num_relations=1))
-    torch.save({'model': model.state_dict()}, tmp_path / 'kgfm.pt')
+    model = {'ultra': ULTRA, 'trix': TRIX, 'kgicl': KGICL}[backbone](dict(num_entities=1, num_relations=1))
+    # KG-ICL checkpoints keep their weights under 'state_dict'.
+    torch.save({'state_dict' if backbone == 'kgicl' else 'model': model.state_dict()}, tmp_path / 'kgfm.pt')
     QueryScoreAdapter('context_scores', 1., bias_bound=8.,
                       weights=torch.randn(2, 8, generator=torch.Generator().manual_seed(4)).double() / 5,
                       metadata={'backbone_state_sha256': state_fingerprint(model)}).save(tmp_path / 'adapter.json')
