@@ -56,6 +56,18 @@ def get_default_arguments(description=None):
     parser.add_argument('--flock_compact_state', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--flock_compile_sampler', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--flock_pack_walks', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--kgicl_checkpoint", default=None, help="Official KG-ICL model_best.tar path")
+    parser.add_argument("--kgicl_dim", type=int, default=32)
+    parser.add_argument("--kgicl_attn_dim", type=int, default=5)
+    parser.add_argument("--kgicl_num_layers", type=int, default=6)
+    parser.add_argument("--kgicl_prompt_layers", type=int, default=3)
+    parser.add_argument("--kgicl_prompt_hops", type=int, default=3)
+    parser.add_argument("--kgicl_shots", type=int, default=5)
+    parser.add_argument("--kgicl_prompt_open_nodes", type=int, default=50)
+    parser.add_argument("--kgicl_prompt_seed", type=int, default=0)
+    parser.add_argument("--kgicl_masked_distances", type=int, nargs="*", default=None,
+                        help="Zero the scores of entities first reached at these hop distances (upstream's optional answer-distance mask)")
+    parser.add_argument("--kgicl_query_batch_size", type=int, default=8)
     parser.add_argument('--graph_inference_backend', choices=['auto', 'torch', 'triton'], default='auto')
     parser.add_argument('--graph_relation_cache_mb', type=int, default=64)
     parser.add_argument('--graph_projection_cache_mb', type=int, default=64)
@@ -66,7 +78,7 @@ def get_default_arguments(description=None):
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",
-                        choices=["ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation", "ComplEx", "Keci", "KeciTransformer", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
+                        choices=["ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation", "KGICL", "ComplEx", "Keci", "KeciTransformer", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "MuRE", "TransH", "RotatE", "DualE",
                                  "BytE", "CoKE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",
