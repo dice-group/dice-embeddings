@@ -34,7 +34,8 @@ def verify(bundle_dir, entry_id, root, output, *, device='cuda', probes=2):
         original_init(engine, *args, **kwargs)
         scorer = engine.scorer
         variant = 'without-adapter' if engine.adapter.metadata.get('calibration') == 'identity' else 'learned'
-        expected_adapter = adapter if variant == 'learned' else dict(adapter, feature_mode='global', weights=[[0.], [0.]])
+        expected_adapter = adapter if variant == 'learned' else dict(adapter, feature_mode='global', weights=[[0.], [0.]],
+                                                                     membership_threshold=0.)
         reference = ReferenceKGFM(scorer.context.triples, scorer.n, scorer.nr, expected_adapter,
                                   beam_size=entry['options']['beam_size'], device=scorer.device,
                                   restore_observed=observed_facts in (None, 'both'))

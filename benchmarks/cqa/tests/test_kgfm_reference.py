@@ -113,6 +113,45 @@ def test_independent_reference_covers_all_shapes(operator, cache_bytes, facts):
 
 
 @pytest.mark.parametrize('operator', ['product', 'min'])
+@pytest.mark.parametrize('facts', ['none', 'both'])
+@pytest.mark.parametrize('mode', ['global', 'context_scores'])
+def test_reference_applies_a_fixed_membership_threshold(operator, facts, mode):
+    model = Rows().eval()
+    context = QueryContext([(0, 0, 1), (0, 0, 2), (2, 1, 6), (1, 1, 3), (3, 2, 4), (4, 3, 5)], 7, 4)
+    weights = None if mode == 'global' else torch.randn(2, 8, generator=torch.Generator().manual_seed(9)).double() / 5
+    conditions = [(h, r) for h in range(7) for r in range(4)]
+    with torch.no_grad():
+        # Threshold at the median unobserved membership, so it zeroes about half of them.
+        memberships = QueryScoreAdapter(mode, 0., bias_bound=8., weights=weights)(
+            model.forward_k_vs_all(torch.tensor(conditions)), *context.features(conditions, device='cpu')).exp()
+    adapter = QueryScoreAdapter(mode, float(facts != 'none'), bias_bound=8., weights=weights,
+                                membership_threshold=memberships.median().item())
+    reference = reference_module.ReferenceKGFM(context.triples, 7, 4, adapter.to_dict(), beam_size=3, device='cpu',
+                                               restore_observed=facts == 'both')
+    with torch.no_grad():
+        for start in range(0, len(conditions), 2):
+            batch = conditions[start:start + 2]
+            reference.capture(batch, model.forward_k_vs_all(torch.tensor(batch)))
+    # The threshold zeroes part of some rows, so ties at zero membership reach the beams.
+    assert any(torch.isneginf(row).any() and torch.isfinite(row).any() for row in reference.rows.values())
+    engine = QueryAnswerer(model, context=context, adapter=adapter, row_batch_size=2, restore_observed=facts == 'both')
+    queries = [instantiate(shape) for shape in QUERY_SHAPES.values()]
+    engine.prefetch(queries)
+    for query in queries:
+        expected = reference.predict(query, operator)
+        actual = engine.predict(query, beam_size=3, tnorm='prod' if operator == 'product' else 'min', return_log_scores=True)
+        torch.testing.assert_close(actual, expected, atol=1e-14, rtol=1e-14)
+        assert torch.equal(actual.argsort(descending=True), expected.argsort(descending=True))
+    unthresholded = reference_module.ReferenceKGFM(context.triples, 7, 4, dict(adapter.to_dict(), membership_threshold=0.),
+                                                   beam_size=3, device='cpu')
+    unthresholded.capture([(0, 0)], model.forward_k_vs_all(torch.tensor([[0, 0]])))
+    assert not torch.equal(unthresholded.rows[0, 0], reference.rows[0, 0])
+    with pytest.raises(ValueError):
+        reference_module.ReferenceKGFM(context.triples, 7, 4, dict(adapter.to_dict(), membership_threshold=1.),
+                                       beam_size=3, device='cpu')
+
+
+@pytest.mark.parametrize('operator', ['product', 'min'])
 def test_reference_needs_no_rows_for_zero_prefix_but_requires_live_rows(operator):
     adapter = QueryScoreAdapter('context_scores', 1.)
     reference = reference_module.ReferenceKGFM([(0, 0, t) for t in range(7)], 7, 4,
