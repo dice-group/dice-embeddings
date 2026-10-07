@@ -462,3 +462,30 @@ def test_thesis_design_follows_the_thesis_grid_and_accent(tmp_path):
     assert abs(widths['measure'] * 25.4 - 120) < 1e-9 and abs(widths['full'] * 25.4 - 155) < 1e-9
     (tmp_path / 'main.tex').write_text('\\usepackage[accent=2e6b4f,showgrid]{researchreport}\n')
     assert figures.thesis_design(tmp_path)[1] == '#2E6B4F'
+
+
+def test_a_further_backbone_gets_its_own_lane_only_where_it_has_runs():
+    reports = tables.Reports()
+    pair(reports)
+    learned = result('FB15k237+H', 'kgicl-adapter', .35)
+    control = result('FB15k237+H', 'kgicl-adapter', .1)
+    control['benchmark_run']['entry'] += '-without-adapter'
+    control['paired_with'] = learned['benchmark_run']['entry']
+    control['inference']['calibration'] = 'without-adapter'
+    reports.consume([learned, control])
+    points = figures.family_gain_data(reports, 'expected')
+    kgicl = next(p for p in points if p['dataset'] == 'FB15k237+H' and p['method'] == 'KG-ICL')
+    assert abs(kgicl['value'] - .25) < 1e-12
+    assert figures.shown_backbones(points) == ['ULTRA', 'KG-ICL']
+    assert figures.marker_legend(['ULTRA', 'TRIX', 'KG-ICL']) == 'Circles: ULTRA; diamonds: TRIX; squares: KG-ICL.'
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    figure = figures.family_gain_plot(plt, points)
+    assert [text.get_text() for text in figure.axes[0].get_legend().get_texts()] == ['ULTRA', 'KG-ICL', 'single dataset']
+    plt.close(figure)
+    # Without KG-ICL runs, no KG-ICL point is made and the layout keeps the ULTRA and TRIX lanes.
+    plain = tables.Reports()
+    pair(plain)
+    assert {p['method'] for p in figures.family_gain_data(plain, 'expected')} == {'ULTRA', 'TRIX'}
+    assert figures.shown_backbones([]) == ['ULTRA', 'TRIX']

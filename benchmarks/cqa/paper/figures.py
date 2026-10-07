@@ -12,15 +12,18 @@ from pathlib import Path
 
 from . import summary, tables
 
-# Okabe-Ito colours; the first two mark the two adapter backbones in every figure.
+# Okabe-Ito colours; the first three mark the adapter backbones (BACKBONES order) in every figure.
 COLORS = ('#0072B2', '#D55E00', '#009E73', '#CC79A7')
 METHOD_STYLES = {'ULTRA + adapter': ('#0072B2', 'o', 1.6), 'TRIX + adapter': ('#D55E00', 'D', 1.6),
+                 'KG-ICL + adapter': ('#009E73', 's', 1.6),
                  'QTO': ('#009E73', 's', 1.0), 'CQD-Hybrid': ('#CC79A7', 'v', 1.0), 'GNN-QE': ('#E69F00', '^', 1.0),
                  'UltraQuery': ('#56B4E9', 'P', 1.0), 'CQD': ('#999999', 'X', .9), 'CLMPT': ('#666666', '<', .9),
                  'ConE': ('#BBBBBB', '>', .9)}
 BASELINE_COLOR = '#7A7A7A'  # the dashed best-baseline line of the hardness profiles, in both themes
-BACKBONES = ('ULTRA', 'TRIX')
-ADAPTERS = ('ultra-adapter', 'trix-adapter')
+BACKBONES = ('ULTRA', 'TRIX', 'KG-ICL')
+ADAPTERS = ('ultra-adapter', 'trix-adapter', 'kgicl-adapter')
+MARKERS = ('o', 'D', 's')  # per backbone, in BACKBONES order
+SHAPE_NAMES = {'o': 'circles', 'D': 'diamonds', 's': 'squares'}
 PROFILE_TYPES = ('3p', '4p', '3i', '4i')
 FAMILY_ROWS = (('transductive', 'Transductive'), ('inductive-e', 'Inductive (e)'), ('inductive-er', 'Inductive (e,r)'),
                ('plus_h', '+H'))
@@ -35,6 +38,7 @@ TEXT_WIDTH = 5.5  # inches: one text column of NeurIPS/ICLR; two-column venues u
 THESIS_FIGURES = 'figures/cqa'  # relative to the thesis project, as main.tex includes them
 THESIS_COLORS = ('#B5462A', '#1A1A1A', '#8C8C8C', '#C8C8C8')
 THESIS_METHOD_STYLES = {'ULTRA + adapter': ('#B5462A', 'o', 1.4), 'TRIX + adapter': ('#1A1A1A', 'D', 1.4),
+                        'KG-ICL + adapter': ('#8C8C8C', 's', 1.4),
                         'UltraQuery': ('#555555', 'P', .9), 'QTO': ('#7A7A7A', 's', .9), 'CQD-Hybrid': ('#7A7A7A', 'v', .9),
                         'GNN-QE': ('#999999', '^', .9), 'CQD': ('#AAAAAA', 'X', .8), 'CLMPT': ('#AAAAAA', '<', .8),
                         'ConE': ('#C2C2C2', '>', .8)}
@@ -137,6 +141,23 @@ def default_datasets():
     defaults = tables.empty_reports()
     return sorted({r['dataset'] for r in defaults.results.values() if tables.family(r['dataset'])},
                   key=lambda d: tables.dataset_order(tables.dataset_name(d)))
+
+
+def shown_backbones(points) -> list[str]:
+    """Backbones with at least one value, in BACKBONES order; ULTRA and TRIX when none has one (templates)."""
+    present = [name for name in BACKBONES if any(p.get('method') == name and p.get('value') is not None for p in points)]
+    return present or list(BACKBONES[:2])
+
+
+def lane(position: int, count: int, spacing: float) -> float:
+    """Vertical offset of lane `position` of `count` lanes around a row's centre."""
+    return (position - (count - 1) / 2) * spacing
+
+
+def marker_legend(names) -> str:
+    """'Circles: ULTRA; diamonds: TRIX.' for the backbones shown."""
+    text = '; '.join(f'{SHAPE_NAMES[MARKERS[BACKBONES.index(n)]]}: {n}' for n in names)
+    return text[:1].upper() + text[1:] + '.'
 
 
 def integer(value, name):
@@ -265,7 +286,7 @@ def adapter_data(reports, policy):
                            status='missing paired MRR' if value is None else 'available'))
     if not points:
         for dataset in (*tables.PLUS_H_DATASETS, *default_datasets()):
-            for method in BACKBONES:
+            for method in BACKBONES[:2]:
                 points.append(dict(dataset=dataset, method=method, value=None, ci=None, complete=None,
                                    status='missing paired MRR', scope='coverage unavailable'))
     return points
@@ -276,10 +297,12 @@ def transfer_data(reports, policy):
                 if tables.family(r['dataset'])}
     datasets = default_datasets() if reports.template else sorted({d for d, _ in selected},
                 key=lambda d: tables.dataset_order(tables.dataset_name(d))) or default_datasets()
+    present = {method for _, method in selected}
+    adapters = [(m, n) for m, n in zip(ADAPTERS, BACKBONES) if m in present or n in BACKBONES[:2]]
     points = []
     for dataset in datasets:
         baseline = selected.get((dataset, 'ultraquery'))
-        for method, name in zip(ADAPTERS, BACKBONES):
+        for method, name in adapters:
             model = selected.get((dataset, method))
             status = 'available'
             if not baseline or not model:
@@ -381,13 +404,15 @@ def composition_plot(plt, data):
 def forest_axes(ax, points, datasets, limits, *, legend=False):
     from matplotlib.lines import Line2D
     lookup = {(p['dataset'], p['method']): p for p in points}
+    names = shown_backbones(points)
     for i, dataset in enumerate(datasets):
         if i % 2 == 0:
             ax.axhspan(i - .48, i + .48, color='#F7F7F7', zorder=0)
-        for j, method in enumerate(BACKBONES):
+        for position, method in enumerate(names):
+            j = BACKBONES.index(method)
             point = lookup.get((dataset, method), {})
             value = point.get('value')
-            y = i + (j - .5) * .26
+            y = i + lane(position, len(names), .26 if len(names) < 3 else .22)
             if value is None:
                 ax.text(.97, y, '-', transform=ax.get_yaxis_transform(), ha='center', va='center',
                         color=COLORS[j], fontsize=8)
@@ -396,7 +421,7 @@ def forest_axes(ax, points, datasets, limits, *, legend=False):
             if interval is not None:
                 ax.hlines(y, 100 * interval[0], 100 * interval[1], color=COLORS[j], linewidth=1.2)
                 ax.vlines([100 * v for v in interval], y - .06, y + .06, color=COLORS[j], linewidth=.7)
-            ax.plot(100 * value, y, marker='o' if j == 0 else 'D', markersize=4,
+            ax.plot(100 * value, y, marker=MARKERS[j], markersize=4,
                     markerfacecolor=COLORS[j] if point.get('complete', True) is True and point.get('identity_verified', True) else 'white',
                     markeredgecolor=COLORS[j], linestyle='none', zorder=3)
     ax.set_yticks(range(len(datasets)), [tables.dataset_name(d) for d in datasets])
@@ -405,9 +430,9 @@ def forest_axes(ax, points, datasets, limits, *, legend=False):
     ax.axvline(0, color='#777777', linewidth=.7)
     style_axes(ax)
     if legend:
-        ax.figure.legend(handles=[Line2D([], [], color=COLORS[j], marker='o' if j == 0 else 'D', linestyle='none',
-                                         markersize=4, label=name) for j, name in enumerate(BACKBONES)],
-                         loc='outside upper right', ncol=2, frameon=False, fontsize=7)
+        ax.figure.legend(handles=[Line2D([], [], color=COLORS[BACKBONES.index(name)], marker=MARKERS[BACKBONES.index(name)],
+                                         linestyle='none', markersize=4, label=name) for name in names],
+                         loc='outside upper right', ncol=len(names), frameon=False, fontsize=7)
 
 
 def effect_limits(points):
@@ -473,7 +498,10 @@ def family_gain_data(reports: 'tables.Reports', policy: str) -> list[dict]:
     points = []
     for suite in ('ultraquery', 'plus_h'):
         selected = summary.selected_systems(reports, suite)
+        present = {m for m, _, _ in selected}
         for name, method in zip(BACKBONES, ADAPTERS):
+            if method not in present and name not in BACKBONES[:2]:
+                continue
             learned = next((runs for (m, identity, _), runs in selected.items() if m == method and not identity), {})
             control = next((runs for (m, identity, _), runs in selected.items() if m == method and identity), {})
             for dataset in summary.suite_datasets(suite):
@@ -502,18 +530,20 @@ def family_gain_plot(plt, points: list[dict]):
     from matplotlib.lines import Line2D
     fig, ax = plt.subplots(figsize=(TEXT_WIDTH, 2.3), layout='constrained')
     rows = [(key, label) for key, label in FAMILY_ROWS]
+    names = shown_backbones(points)
     for i, (key, label) in enumerate(rows):
         if i % 2 == 0:
             ax.axhspan(i - .5, i + .5, color='#F7F7F7', zorder=0)
-        for j, name in enumerate(BACKBONES):
-            y = i + (j - .5) * .34
+        for position, name in enumerate(names):
+            j = BACKBONES.index(name)
+            y = i + lane(position, len(names), .34 if len(names) < 3 else .28)
             selected = [100 * p['value'] for p in points if p['family'] == key and p['method'] == name and p['value'] is not None]
             if not selected:
                 ax.text(.97, y, '-', transform=ax.get_yaxis_transform(), ha='center', va='center', color=COLORS[j], fontsize=8)
                 continue
             jitter = [(k % 5 - 2) * .025 for k in range(len(selected))]
             ax.scatter(selected, [y + d for d in jitter], s=9, color=COLORS[j], alpha=.45, linewidths=0, zorder=2)
-            ax.plot(sum(selected) / len(selected), y, marker='o' if j == 0 else 'D', markersize=6.5, color=COLORS[j],
+            ax.plot(sum(selected) / len(selected), y, marker=MARKERS[j], markersize=6.5, color=COLORS[j],
                     markeredgecolor='black', markeredgewidth=.6, linestyle='none', zorder=3)
     counts = {key: len({p['dataset'] for p in points if p['family'] == key}) for key, _ in rows}
     ax.set_yticks(range(len(rows)), [f'{label} ({counts[key]})' for key, label in rows])
@@ -522,10 +552,10 @@ def family_gain_plot(plt, points: list[dict]):
     ax.axvline(0, color='#777777', linewidth=.7)
     ax.set_xlabel('MRR gain from the adapter (points)')
     style_axes(ax)
-    handles = [Line2D([], [], color=COLORS[j], marker='o' if j == 0 else 'D', linestyle='none', markersize=5,
-                      markeredgecolor='black', markeredgewidth=.5, label=name) for j, name in enumerate(BACKBONES)]
+    handles = [Line2D([], [], color=COLORS[BACKBONES.index(name)], marker=MARKERS[BACKBONES.index(name)], linestyle='none',
+                      markersize=5, markeredgecolor='black', markeredgewidth=.5, label=name) for name in names]
     handles.append(Line2D([], [], color='#777777', marker='o', linestyle='none', markersize=3, alpha=.6, label='single dataset'))
-    ax.legend(handles=handles, loc='lower right', bbox_to_anchor=(1, 1.01), ncol=3, frameon=False, fontsize=7)
+    ax.legend(handles=handles, loc='lower right', bbox_to_anchor=(1, 1.01), ncol=len(handles), frameon=False, fontsize=7)
     return fig
 
 
@@ -691,8 +721,8 @@ def generate_figures(reports, output, *, policy='sort', hardness_composition=Fal
         ('main-02-hardness-profiles', 'Main paper', lambda r: hardness_profile_data(r, policy), hardness_profile_plot,
          hardness_caption),
         ('appendix-01-transfer-gains', 'Appendix', lambda r: transfer_data(r, policy), transfer_plot,
-         'MRR of the adapter minus UltraQuery per dataset (points), for EPFO and negation query types. Circles: ULTRA; '
-         'diamonds: TRIX.'),
+         lambda data: 'MRR of the adapter minus UltraQuery per dataset (points), for EPFO and negation query types. '
+         + marker_legend(shown_backbones(data))),
         ('appendix-02-adapter-gains-by-dataset', 'Appendix', lambda r: adapter_data(r, policy), adapter_plot,
          'MRR of the adapter minus the same backbone without it per dataset (points), with paired 95% confidence '
          'intervals over queries. Open markers: partial coverage.'),

@@ -31,7 +31,7 @@ Runs = dict[str, dict[int, Record]]
 
 SEED = re.compile(r'-seed(\d+)(?=-|$)')
 CONDITION_SUFFIXES = ('-graph-train-valid', '-graph-train', '-released-filters')
-BACKBONES = ('ultra', 'trix')
+BACKBONES = ('ultra', 'trix', 'kgicl')
 FAMILY_COLUMNS = (('transductive', 'Transductive'), ('inductive-e', r'Inductive ($e$)'),
                   ('inductive-er', r'Inductive ($e,r$)'), ('all', 'All'))
 TRAINED_ON_TARGET = ('cone', 'clmpt', 'cqd', 'cqd-hybrid', 'gnnqe', 'qto', 'inductive-gnnqe', 'incoming-relation')
@@ -41,11 +41,25 @@ FREEBASE_DERIVED = ('FB15kLogicalQuery', 'FB15k237LogicalQuery', 'FB15k237+H')
 # Registered ablations, planned in empty templates; supplied runs replace them.
 PLANNED_ABLATIONS = (('ultra', 'no-fb'), ('ultra', 'ultra_4g'), ('ultra', 'ultra_50g'), ('ultra', 'beam256'),
                      ('trix', 'no-fb'), ('trix', 'beam256'))
-# Known recipe tokens in reading order: training data, adapter form, search, backbone.
+# Known recipe tokens in reading order: training data, adapter form, inference, search, backbone.
 ABLATION_NAMES = {'no-fb': 'Adapter fit without FB15k-237', 'types14': 'Adapter trained on 14 query types',
-                  'balanced': 'Hardness-balanced training', 'target-fit': 'Adapter fit on the target graph',
-                  'routed': 'Adapters routed by query type', 'beam128': 'Beam 128', 'beam256': 'Beam 256',
+                  'balanced': 'Hardness-balanced training', 'routed': 'Adapters routed by query type',
+                  'product-intersections-facts-none': 'Observed facts off', 'beam128': 'Beam 128', 'beam256': 'Beam 256',
                   'ultra_4g': r'ULTRA 4g backbone$^\dagger$', 'ultra_50g': r'ULTRA 50g backbone$^\ddagger$'}
+# The adapter between fixed calibrations and adapters fitted on each target graph, per backbone: (kind, row label).
+# 'identity' and 'primary' are the main tables' no-adapter control and adapter; the others are recipe tokens, which
+# the bracket table shows instead of the ablation table.
+BRACKETS = (('identity', 'No adapter (raw scores)'), ('uqlp', 'UltraQuery-LP thresholds'),
+            ('global', 'Global scale and shift'), ('primary', 'Adapter (ours)'),
+            ('target-fit', 'Adapter fitted on each target graph'))
+BRACKET_TOKENS = tuple(kind for kind, _ in BRACKETS if kind not in ('identity', 'primary'))
+BRACKET_NOTES = {
+    'identity': 'No adapter: the sigmoid of the backbone scores, with the same observed facts.',
+    'uqlp': 'UltraQuery-LP thresholds: memberships at or below 0.8 (0.97 on NELL995) are set to zero, as in UltraQuery LP; '
+            'they exist for the UltraQuery datasets only.',
+    'global': 'Global scale and shift: one scale and one shift for every atom (2 parameters), fitted like the adapter.',
+    'target-fit': 'Fitted on each target graph: one adapter per dataset, trained on queries sampled from its test '
+                  r'inference graph with 30\% of the facts masked; no target query or answer is used.'}
 RECIPE_DESCRIPTIONS = {'product-intersections': 'adapter trained on 2i/3i queries',
                        'product-14types': 'adapter trained on 14 query types', 'product-14type': 'adapter trained on 14 query types'}
 ABLATION_NOTES = {'ultra_4g': r'$^\dagger$Pretraining adds NELL995, a target dataset.',
@@ -220,6 +234,36 @@ def lowest_seed_reports(reports: 'tables.Reports') -> 'tables.Reports':
         key = SEED.sub('', entry)
         kept[key] = min(kept.get(key, candidate), candidate)
     dropped = entries - {entry for _, entry in kept.values()}
+    if not dropped:
+        return reports
+    subset = copy.copy(reports)
+    subset.results = {entry: record for entry, record in reports.results.items() if entry not in dropped}
+    subset.difficulty = [row for row in reports.difficulty if row.get('entry') not in dropped]
+    subset.effects = {kind: [effect for effect in effects if not dropped & {v for v in effect.values() if isinstance(v, str)}]
+                      for kind, effects in reports.effects.items()}
+    return subset
+
+
+OBSERVED_FACT_MODES = re.compile(r'facts-(none|atomic|both)$')
+
+
+def reference_point(record: Record) -> bool:
+    """A bracket run or an observed-fact ablation: an adapter recipe whose token BRACKET_TOKENS or a facts mode names."""
+    (method, _, recipe), _ = system_of(record)
+    if not method.endswith('-adapter'):
+        return False
+    backbone = method.split('-')[0]
+    token = recipe[len(backbone) + 1:] if recipe.startswith(backbone + '-') else recipe
+    return token in BRACKET_TOKENS or bool(OBSERVED_FACT_MODES.search(token))
+
+
+def appendix_reports(reports: 'tables.Reports') -> 'tables.Reports':
+    """The reports without bracket runs and observed-fact ablations, whose main tables summarize them.
+
+    Appendix tables that list every run would otherwise repeat each of these reference points per dataset and
+    query type; alternate training recipes stay, as do their difficulty rows and effects.
+    """
+    dropped = {entry for entry, record in reports.results.items() if reference_point(record)}
     if not dropped:
         return reports
     subset = copy.copy(reports)
@@ -455,9 +499,13 @@ def shared_settings(reports: 'tables.Reports', policy: str) -> str:
             'backbone pretraining', 'the source queries of the adapters']
     shared = ', '.join(uses[:-1]) + ' and ' + uses[-1]
     if any(row['method'] == 'ultraquery' for row in rows):
+        frozen = 'the ULTRA and TRIX backbones (3g pretraining)'
+        if any(row['method'] == 'kgicl-adapter' for row in rows):
+            frozen += (" and KG-ICL (the authors' 6-layer checkpoint, pretrained on inductive splits of FB15k-237 and "
+                       'NELL995 and on CoDEx-S)')
         sentences.append('UltraQuery is trained on FB15k-237 queries from an ULTRA 4g initialisation, whose pretraining '
-                         'includes NELL995; the ULTRA and TRIX backbones (3g pretraining) stay frozen, and the no-adapter rows '
-                         'rank their scores without calibration.')
+                         f'includes NELL995; {frozen} stay frozen, and the no-adapter rows rank their scores without '
+                         'calibration.')
     if ultraquery:
         sentences.append(f'FB15k, FB15k-237 and the nine inductive splits derive from Freebase, which {shared} also use; '
                          'the appendix reports them separately.')
@@ -611,6 +659,8 @@ def ablation_rows(reports: 'tables.Reports', policy: str) -> tuple[list[dict], d
         mains = {r for (m, _), r in primary.items() if m == method}
         variants = []
         for recipe in sorted(r for (m, identity, r) in systems if m == method and not identity and r not in mains):
+            if (recipe[len(backbone) + 1:] if recipe.startswith(backbone + '-') else recipe) in BRACKET_TOKENS:
+                continue  # shown by the bracket table
             variant = systems[method, False, recipe]
             values, pending = [], []
             for suite in ('ultraquery', 'plus_h'):
@@ -663,6 +713,52 @@ def ablation_table(reports: 'tables.Reports', policy: str, *, layout: str = 'pap
                          layout=layout)
 
 
+def bracket_rows(reports: 'tables.Reports', policy: str) -> list[dict]:
+    """Per backbone, the rows of BRACKETS with seed values per (suite, category): EPFO and negation of UltraQuery, then +H.
+
+    The no-adapter control and the adapter use the primary recipe, as in the main tables; the other calibrations get a
+    row only for backbones that have runs of them.
+    """
+    systems = collect(reports)
+    primary = primary_recipes(reports, systems)
+    rows = []
+    for method in sorted({m for m, _ in primary}, key=lambda m: system_order(m, False)):
+        backbone = method.split('-')[0]
+        name = tables.METHOD_NAMES.get(method, method).replace(' + adapter', '')
+        for kind, label in BRACKETS:
+            values = []
+            for suite in ('ultraquery', 'plus_h'):
+                if kind in ('identity', 'primary'):
+                    runs = systems.get((method, kind == 'identity', primary.get((method, suite))), {})
+                    if kind == 'identity':  # identity calibration takes nothing from the adapter's seed
+                        runs = {d: {min(seeds): seeds[min(seeds)]} for d, seeds in runs.items()}
+                else:
+                    runs = systems.get((method, False, f'{backbone}-{kind}'), {})
+                values.extend(seed_means(runs, suite_datasets(suite), policy, category) for category in ('epfo', 'negation'))
+            if kind in ('identity', 'primary') or any(values):
+                rows.append(dict(backbone=name, name=label, kind=kind, values=values))
+    return rows
+
+
+def bracket_table(reports: 'tables.Reports', policy: str, *, layout: str = 'paper') -> str:
+    """Main table: the adapter between fixed calibrations (below) and adapters fitted on each target graph (above)."""
+    rows = bracket_rows(reports, policy)
+    groups = [('UltraQuery (23)', 2), ('+H (3)', 2)]
+    body = []
+    for j, row in enumerate(rows):
+        label = tables.escape(row['backbone']) if j == 0 or rows[j - 1]['backbone'] != row['backbone'] else ''
+        body.append((row['backbone'], [label, tables.escape(row['name']), *[cell(v) for v in row['values']]]))
+    kinds = {row['kind'] for row in rows}
+    caption = ('The adapter between fixed calibrations and adapters fitted on each target graph: MRR on the positive (EPFO) '
+               'and negated query types, averaged over query types and then datasets.'
+               + seed_legend(len(v) for row in rows if row['kind'] == 'primary' for v in row['values']))
+    notes = ' '.join(note for kind, note in BRACKET_NOTES.items() if kind in kinds)
+    header = [grouped_header(groups, 2), (['Backbone', 'Calibration', *(['EPFO', 'Neg.'] * len(groups))], [])]
+    return compact_table(caption, 'tab:main-brackets', 'll' + 'c' * 2 * len(groups), header,
+                         body or [('', [tables.MISSING] * (2 + 2 * len(groups)))], star=False, notes=notes,
+                         layout=layout)
+
+
 def recipe_description(method: str, recipe: str) -> str:
     """A recipe in words when known ('adapter trained on 2i/3i queries'), else its escaped name without the backbone."""
     backbone = method.split('-')[0]
@@ -680,7 +776,12 @@ def primary_description(primary: dict[tuple[str, str], str]) -> str:
         text = (next(iter(recipes.values())) if len(set(recipes.values())) == 1 else
                 ', '.join(('UltraQuery' if s == 'ultraquery' else '+H') + ' ' + r for s, r in recipes.items()))
         described[text].append(name)
-    return '; '.join(' and '.join(backbones) + ': ' + text for text, backbones in described.items())
+    return '; '.join(series(backbones) + ': ' + text for text, backbones in described.items())
+
+
+def series(names: Sequence[str]) -> str:
+    """'A', 'A and B', 'A, B and C'."""
+    return ', '.join(names[:-1]) + ' and ' + names[-1] if len(names) > 1 else ''.join(names)
 
 
 def seed_rows(reports: 'tables.Reports', policy: str) -> tuple[list[list[str]], str]:

@@ -56,8 +56,9 @@ def test_no_data_has_full_evaluation_rows_and_missing_scores_in_paper_order():
     captions = re.findall(r'\\caption\{([^}]*)\}', appendix)
     assert captions == list(tables.TABLE_TITLES)
     mains = main_bodies(latex)
-    assert [len(body.splitlines()) for body in mains] == [5, 11, 8]
-    for body, count in zip(mains, (8, 8, 4)):
+    # UltraQuery, +H, the brackets (control and adapter of each planned backbone) and the ablations.
+    assert [len(body.splitlines()) for body in mains] == [5, 11, 4, 8]
+    for body, count in zip(mains, (8, 8, 4, 4)):
         for row in body.splitlines():
             # Reference rows of the ablation table have no change from themselves.
             assert all(cell in ('-', r'\textemdash{}') for cell in cells(row)[-count:])
@@ -346,7 +347,7 @@ def test_cli_empty_input_needs_no_dicee_imports_or_model_dependencies(tmp_path):
     run = subprocess.run([sys.executable, '-S', '-m', 'benchmarks.cqa.paper', '-o', str(destination)],
                          capture_output=True, text=True, check=True, cwd=REPO)
     assert run.stdout == destination.read_text()
-    assert run.stdout.count(r'\caption{') == 3 + len(tables.TABLE_TITLES)
+    assert run.stdout.count(r'\caption{') == 4 + len(tables.TABLE_TITLES)
 
 
 def test_combined_report_populates_every_table(tmp_path):
@@ -687,9 +688,16 @@ def suite_runs(entry, method, score, *, datasets=ULTRAQUERY_DATASETS, identity_o
     return runs
 
 
+def main_table(latex, label):
+    """Data rows of the main float with this label."""
+    sections = re.findall(r'% BEGIN MAIN TABLE \d+\n(.*?)\n% END MAIN TABLE \d+', latex, re.DOTALL)
+    section = next(s for s in sections if rf'\label{{{label}}}' in s)
+    return '\n'.join(line for line in section.split('\\midrule', 1)[1].splitlines() if ' & ' in line)
+
+
 def ablation_rows(latex):
     """Ablation cells keyed by variant name (the backbone is named in its first row only)."""
-    return {cells(row)[1]: cells(row)[2:] for row in main_bodies(latex)[2].splitlines()}
+    return {cells(row)[1]: cells(row)[2:] for row in main_table(latex, 'tab:main-ablations').splitlines()}
 
 
 def main_rows(latex, index):
@@ -898,10 +906,11 @@ def test_two_backbones_with_custom_recipe_names_share_adapter_rows():
 def test_main_table_captions_and_notes_take_the_table_width():
     latex = tables.render_tables(tables.Reports())
     sections = re.findall(r'% BEGIN MAIN TABLE \d+\n(.*?)\n% END MAIN TABLE \d+', latex, re.DOTALL)
-    assert len(sections) == 3
+    assert len(sections) == 4
     for section in sections:
         assert section.index(r'\begin{threeparttable}') < section.index(r'\caption{') < section.index(r'\end{threeparttable}')
-    assert r'\begin{tablenotes}' in sections[2] and r'\usepackage{booktabs,longtable,array,threeparttable}' in latex
+    assert all(r'\begin{tablenotes}' in sections[i] for i in (2, 3))
+    assert r'\usepackage{booktabs,longtable,array,threeparttable}' in latex
 
 
 def test_preview_fills_planned_cells_with_placeholders_in_the_main_tables_only():
@@ -951,3 +960,58 @@ def test_thesis_option_writes_tables_and_figures_into_the_thesis_project(tmp_pat
     with pytest.raises(subprocess.CalledProcessError):
         subprocess.run([*CLI, '--thesis', str(tmp_path / 'missing'), '-o', str(tmp_path / 'tables.tex')],
                        cwd=REPO, check=True, capture_output=True)
+
+
+def test_bracket_table_places_the_adapter_between_fixed_calibrations_and_target_fits():
+    both = ULTRAQUERY_DATASETS + list(tables.PLUS_H_DATASETS)
+    reports = tables.Reports()
+    reports.consume(suite_runs('ultra-product-intersections', 'ultra-adapter', .3, datasets=both)
+                    + suite_runs('ultra-product-intersections-seed1', 'ultra-adapter', .4, datasets=both)
+                    + suite_runs('ultra-product-intersections', 'ultra-adapter', .2, datasets=both,
+                                 identity_of='ultra-product-intersections')
+                    + suite_runs('ultra-uqlp', 'ultra-adapter', .1)
+                    + suite_runs('ultra-global', 'ultra-adapter', .25, datasets=both)
+                    + suite_runs('ultra-target-fit', 'ultra-adapter', .36, datasets=both))
+    latex = tables.render_tables(reports)
+    rows = {cells(row)[1]: cells(row)[2:] for row in main_table(latex, 'tab:main-brackets').splitlines()}
+    # Below the adapter: no calibration, a hand-set threshold, one global scale and shift; above: target-fitted adapters.
+    assert list(rows) == ['No adapter (raw scores)', 'UltraQuery-LP thresholds', 'Global scale and shift', 'Adapter (ours)',
+                          'Adapter fitted on each target graph']
+    assert rows['No adapter (raw scores)'] == ['20.0'] * 4 and rows['Global scale and shift'] == ['25.0'] * 4
+    # The thresholds exist for the UltraQuery suite only.
+    assert rows['UltraQuery-LP thresholds'] == ['10.0', '10.0', '-', '-']
+    assert rows['Adapter (ours)'] == [r'35.0$_{\pm 7.1}$'] * 4 and rows['Adapter fitted on each target graph'] == ['36.0'] * 4
+    assert 'as in UltraQuery LP' in latex and 'no target query or answer is used' in latex
+    # Notes are LaTeX: a bare % would comment out the end of the table.
+    section = next(s for s in re.findall(r'% BEGIN MAIN TABLE \d+\n(.*?)\n% END MAIN TABLE \d+', latex, re.DOTALL)
+                   if r'\label{tab:main-brackets}' in s)
+    assert not re.search(r'(?<!\\)%', section)
+    assert r'30\% of the facts' in latex
+    # The bracket runs are not ablations of the recipe.
+    assert set(ablation_rows(latex)) == {'Primary recipe'}
+    assert 'main-brackets.tex' in tables.render_thesis(reports)
+    # The appendix tables that list every run leave the bracket runs to the bracket table.
+    appendix = latex[latex.index(r'\section*{Appendix}'):]
+    assert not any(token in appendix for token in ('ultra-global', 'ultra-uqlp', 'ultra-target-fit'))
+    listed = [cells(row)[1].replace(r'\allowbreak{}', '') for row in paper_bodies(latex)[1].splitlines() if cells(row)[2] == 'MRR']
+    assert listed.count('ULTRA + adapter') == len(ULTRAQUERY_DATASETS)  # the primary recipe only
+
+
+def test_kgicl_follows_trix_in_the_main_tables_and_observed_facts_off_is_an_ablation():
+    facts_off = suite_runs('kgicl-product-intersections', 'kgicl-adapter', .29)
+    for raw in facts_off:
+        raw['benchmark_run']['entry'] += '-facts-none'
+    reports = tables.Reports()
+    reports.consume(suite_runs('ultraquery', 'ultraquery', .2) + suite_runs('ultra-product-intersections', 'ultra-adapter', .3)
+                    + suite_runs('trix-product-intersections', 'trix-adapter', .32)
+                    + suite_runs('kgicl-product-intersections', 'kgicl-adapter', .31)
+                    + suite_runs('kgicl-product-intersections', 'kgicl-adapter', .05,
+                                 identity_of='kgicl-product-intersections') + facts_off)
+    latex = tables.render_tables(reports)
+    names = list(main_rows(latex, 0))
+    assert names.index('TRIX + adapter (ours)') < names.index('KG-ICL (no adapter)') < names.index('KG-ICL + adapter (ours)')
+    assert main_rows(latex, 0)['KG-ICL + adapter (ours)'][-1] == r'\underline{31.0}'
+    # Observed facts off is an ablation of KG-ICL's recipe: seed 0 against seed 0 of the primary recipe.
+    assert ablation_rows(latex)['Observed facts off'][:2] == ['29.0', '-2.0']
+    assert "KG-ICL (the authors' 6-layer checkpoint" in latex
+    assert 'facts-none' not in latex[latex.index(r'\section*{Appendix}'):]

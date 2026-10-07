@@ -1,4 +1,4 @@
-"""Render saved +H/UltraQuery JSON reports as LaTeX paper tables: three main floats and appendix A1--A11.
+"""Render saved +H/UltraQuery JSON reports as LaTeX paper tables: four main floats and appendix A1--A11.
 
 Table generation uses only the standard library; --figures uses matplotlib.
 It never loads models, datasets,
@@ -34,7 +34,7 @@ MISSING = '-'
 POSITIVE_EDGES = dict(zip(PLUS_H_TYPES, (1, 2, 3, 2, 3, 3, 3, 1, 2, 1, 2, 2, 2, 1, 4, 4)))
 METHOD_NAMES = {'cone': 'ConE', 'gnnqe': 'GNN-QE', 'ultraquery': 'UltraQuery',
                 'clmpt': 'CLMPT', 'cqd': 'CQD', 'cqd-hybrid': 'CQD-Hybrid', 'qto': 'QTO',
-                'ultra-adapter': 'ULTRA + adapter', 'trix-adapter': 'TRIX + adapter',
+                'ultra-adapter': 'ULTRA + adapter', 'trix-adapter': 'TRIX + adapter', 'kgicl-adapter': 'KG-ICL + adapter',
                 'ultraquery-lp': 'UltraQuery-LP', 'incoming-relation': 'Incoming relation',
                 'inductive-gnnqe': 'Inductive GNN-QE'}
 # Appendix tables A1--A11; the main paper's compact tables are in summary.py.
@@ -1044,7 +1044,7 @@ def protocol_panels(title, label, headers, widths, panels, note='', *, numeric_f
 
 def method_order(name):
     names = ('ConE', 'GNN-QE', 'UltraQuery', 'CLMPT', 'CQD', 'CQD-Hybrid', 'QTO',
-             'ULTRA + adapter', 'ULTRA identity', 'TRIX + adapter', 'TRIX identity')
+             'ULTRA + adapter', 'ULTRA identity', 'TRIX + adapter', 'TRIX identity', 'KG-ICL + adapter', 'KG-ICL identity')
     base = short_method(name)
     return (names.index(base) if base in names else len(names), name)
 
@@ -1145,7 +1145,8 @@ def render_tables(reports, *, policy='sort', fragment=False, preview=False):
                      r'using the default baselines and adapters. Identity and filter comparisons are separate tables. '
                      r'Dataset coverage is planned; no evaluation has been run. Scores, intervals and unavailable counts are "-". '
                      r'Hardness bins contain 1 to 4 missing positive links, as permitted by each parent type; further breakdowns appear only when supplied.\par}')
-    for index, render in enumerate((summary.ultraquery_table, summary.plus_h_table, summary.ablation_table), 1):
+    for index, render in enumerate((summary.ultraquery_table, summary.plus_h_table, summary.bracket_table,
+                                    summary.ablation_table), 1):
         lines.extend([f'% BEGIN MAIN TABLE {index}', render(main, policy), f'% END MAIN TABLE {index}'])
     lines.extend([r'\clearpage', r'\section*{Appendix}', r'\setcounter{table}{0}', r'\renewcommand{\thetable}{A\arabic{table}}',
                   r'{\normalsize ' + APPENDIX_INTRO + r'\par}'])
@@ -1160,7 +1161,8 @@ def render_tables(reports, *, policy='sort', fragment=False, preview=False):
 
 
 APPENDIX_INTRO = ("Appendix tables use each method's default recipe (adapters: the primary recipe) at its lowest seed tag; "
-                  'A1 and A6 report every seed tag, and A2, A4 and A7 list every supplied run at its lowest seed tag. '
+                  'A1 and A6 report every seed tag, and A2, A4 and A7 list every supplied run at its lowest seed tag, '
+                  'except the calibration brackets and observed-fact ablations, which appear in their main tables only. '
                   'Settings shared by all runs are listed once in A7.')
 
 
@@ -1193,8 +1195,9 @@ def appendix_specifications(reports, policy):
     adapter_values.sort(key=lambda row: (dataset_order(row[0]), row[1]))
     adapter_values = [[row[0] + (' (' + row[1] + ')' if len(adapter_recipe_counts[row[0]]) > 1 else ''),
                        *row[3:]] for row in adapter_values]
-    # Tables that list every run show seed replicates once, at the lowest tag (A6 lists every tag).
-    listed = summary.lowest_seed_reports(reports)
+    # Tables that list every run show seed replicates once, at the lowest tag (A6 lists every tag), and leave out the
+    # bracket runs and observed-fact ablations, which their main tables summarize.
+    listed = summary.lowest_seed_reports(summary.appendix_reports(reports))
     ultra_panels = defaultdict(list)
     for row in ultra_matrix_rows(listed, policy):
         ultra_panels[row[2]].append([row[0], row[1], *row[3:]])
@@ -1252,13 +1255,13 @@ def appendix_specifications(reports, policy):
 
 # Thesis files (--thesis), relative to the thesis project; main.tex inputs them by these names.
 THESIS_TABLES = 'tables/cqa'
-THESIS_MAIN_TABLES = ('main-ultraquery', 'main-plus-h', 'main-ablations')
+THESIS_MAIN_TABLES = ('main-ultraquery', 'main-plus-h', 'main-brackets', 'main-ablations')
 
 
 def render_thesis(reports, *, policy='sort', preview=False):
     """Thesis-ready LaTeX files for the research-report design of the thesis (researchreport.sty).
 
-    Returns {file name: LaTeX}: the three main tables as single-column floats whose bodies the thesis fits
+    Returns {file name: LaTeX}: the four main tables as single-column floats whose bodies the thesis fits
     to its reading column (fitblock), the shared settings as a paragraph, and the appendix long tables with
     column widths in shares of the line width, for landscape pages. The thesis design sets type sizes,
     spacing and captions; appendix tables are numbered by the thesis and referenced by label.
@@ -1271,7 +1274,7 @@ def render_thesis(reports, *, policy='sort', preview=False):
     main = preview_reports(reports) if preview else reports
     header = (f'% Generated by python -m benchmarks.cqa.paper --thesis (tie policy: {policy}'
               + ('; preview' if preview else '') + '). Regenerate instead of editing.')
-    renders = (summary.ultraquery_table, summary.plus_h_table, summary.ablation_table)
+    renders = (summary.ultraquery_table, summary.plus_h_table, summary.bracket_table, summary.ablation_table)
     files = {f'{name}.tex': header + '\n' + render(main, policy, layout='thesis') + '\n'
              for name, render in zip(THESIS_MAIN_TABLES, renders)}
     settings = summary.shared_settings(main, policy) + (' ' + summary.PREVIEW_NOTE if preview else '')
@@ -1329,7 +1332,10 @@ Main paper (compact floats, one decimal, best bold and second underlined):
      family (transductive, inductive (e), inductive (e,r), all).
   2. +H: methods trained on each target graph vs transferred models; EPFO and
      negation MRR per dataset and their average.
-  3. Ablations: each other adapter recipe against the primary recipe.
+  3. Brackets: per backbone, the adapter between fixed calibrations (no
+     adapter, UltraQuery-LP thresholds, one global scale and shift) and
+     adapters fitted on each target graph.
+  4. Ablations: each other adapter recipe against the primary recipe.
   Adapter rows aggregate seed replicates (entry IDs differing only by -seedN):
   mean and sample s.d. over seeds; --primary-recipe picks the main recipe.
 Appendix (A1--A7, long tables, two decimals):
