@@ -85,14 +85,14 @@ execution options. Each suite directory holds its public recipes:
 | `plus_h/kgfm_seeds.json` | Adapter training seeds 1-4 of the same recipes (24 entries) |
 | `plus_h/kgfm_14types.json` | The same backbones with 14-type adapters |
 | `plus_h/kgfm_ablations.json` | Adapter fit without FB15k237 (both backbones) and the ULTRA 4g and 50g backbones with refitted adapters (12 entries) |
-| `plus_h/kgfm_kgicl.json` | **Not finalized.** KG-ICL with a product adapter (3 entries, each with an identity control); the adapter is not fitted yet |
+| `plus_h/kgfm_kgicl.json` | KG-ICL with the product adapter (3 entries, each with an identity control) and four further adapter training seeds |
 | `plus_h/published_results.json` | Scores reported by the +H authors, for `report` |
 | `ultraquery/baselines.json` | Native UltraQuery on all 23 datasets |
 | `ultraquery/kgfm_adapters.json` | ULTRA and TRIX with `2i`/`3i`-trained adapters on all 23 datasets |
 | `ultraquery/kgfm_seeds.json` | Adapter training seeds 1-4 of the same recipes (184 entries) |
 | `ultraquery/kgfm_14types.json` | The same backbones with 14-type adapters |
 | `ultraquery/kgfm_ablations.json` | Adapter fit without FB15k237 (both backbones) and the ULTRA 4g and 50g backbones with refitted adapters (92 entries) |
-| `ultraquery/kgfm_kgicl.json` | **Not finalized.** KG-ICL with a product adapter on all 23 datasets; the adapter is not fitted yet |
+| `ultraquery/kgfm_kgicl.json` | KG-ICL with the product adapter on all 23 datasets (each with an identity control) and four further adapter training seeds |
 | `ultraquery/comparisons.json` | ULTRA link-prediction weights, an incoming-relation heuristic and QTO |
 | `ultraquery/trained_baselines.json` | QTO on FB15k and inductive GNN-QE, after `train` |
 

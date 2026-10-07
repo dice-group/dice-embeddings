@@ -345,10 +345,13 @@ evaluator caches atomic rows across beams and controls; KG-ICL rows are
 bitwise identical whatever the batching or call order, which the tests check
 under deterministic algorithms on CPU and CUDA.
 
-The provisional recipes `benchmarks/plus_h/kgfm_kgicl.json` and
-`benchmarks/ultraquery/kgfm_kgicl.json` are **not finalized**: their adapter
-`benchmarks/adapters/kgicl_product_intersections.json` still has to be fitted
-with the shared source recipe and pinned. They cache the per-layer relation
+The recipes `benchmarks/plus_h/kgfm_kgicl.json` and
+`benchmarks/ultraquery/kgfm_kgicl.json` use the adapter
+`benchmarks/adapters/kgicl_product_intersections.json`, fitted with the shared
+source recipe of ULTRA and TRIX (training seed 2026090851) and paired with an
+identity control, and four further training seeds
+(`benchmarks/adapters/seeds/kgicl_product_intersections_seed{1,2,3,4}.json`).
+They cache the per-layer relation
 tables of every query relation (`projection_cache_mb` 512, about 260 MiB on
 FB15k237); the default 64 MiB recomputes them on graphs with hundreds of
 relations, about 2.5 times slower. Outside the benchmark's Docker image, set
