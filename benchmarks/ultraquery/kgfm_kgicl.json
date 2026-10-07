@@ -48,7 +48,7 @@
           "pni": "product"
         },
         "selection_protocol": "target-validation",
-        "finalized": false,
+        "finalized": true,
         "query_types": [
           "1p",
           "2p",
@@ -68,17 +68,14 @@
         "query_batch_size": 16,
         "query_order": "relation",
         "reference": {
-          "status": "provisional KG-ICL recipe; adapter not fitted; not finalized",
+          "status": "KG-ICL adapter recipe, fitted and pinned; additional backbone",
           "notes": [
-            "Provisional, not finalized: the KG-ICL product adapter is not fitted yet. Fit it with the shared ULTRA/TRIX recipe (linear score-aware adapter, observed facts, bias bound 8, scale bound 2, 2i/3i source queries of FB15k237, WN18RR and CoDExMedium, source-validation checkpoint selection) and pin its bytes before any test run.",
+            "Adapter fitted with the shared ULTRA/TRIX recipe (linear score-aware adapter, observed facts, bias bound 8, scale bound 2, 2i/3i source queries of FB15k237, WN18RR and CoDExMedium, source-validation checkpoint selection; training seed 2026090851) and pinned before any test run.",
             "Backbone: DICE KG-ICL with the official KG-ICL-6L weights (nju-websoft/KG-ICL 6a3166e3), verified against the pinned code plus tests/fixtures/kgicl/upstream-fixes.patch; see docs/kgicl.md.",
             "Prompt graphs: five examples per relation, sampled from the attached inference graph with prompt seed 0, identical for every query batch and call order; no answer-distance mask. CQD beam 64, product t-norm, paired identity control. The per-layer relation tables of every query relation are cached (projection_cache_mb 512, about 260 MiB for FB15k237); with the default 64 MiB they are recomputed on graphs with many relations, about 2.5 times slower."
           ]
         },
-        "blockers": [
-          "Fit and pin benchmarks/adapters/kgicl_product_intersections.json; it does not exist yet.",
-          "Run KG-ICL backbone checks on the benchmark graphs and the KGFM integration verification."
-        ],
+        "blockers": [],
         "adapter_ablation": true
       },
       "entries": [

@@ -82,11 +82,11 @@ execution options. Each suite directory holds its public recipes:
 |---|---|
 | `plus_h/baselines.json` | The seven published methods on the three +H datasets (21 entries) |
 | `plus_h/kgfm_adapters.json` | ULTRA and TRIX with `2i`/`3i`-trained adapters (6 entries, each with an identity control) |
-| `plus_h/kgfm_kgicl.json` | **Not finalized.** KG-ICL with a product adapter (3 entries, each with an identity control); the adapter is not fitted yet |
+| `plus_h/kgfm_kgicl.json` | KG-ICL with the product adapter (3 entries, each with an identity control) |
 | `plus_h/published_results.json` | Scores reported by the +H authors, for `report` |
 | `ultraquery/baselines.json` | Native UltraQuery on all 23 datasets |
 | `ultraquery/kgfm_adapters.json` | ULTRA and TRIX with `2i`/`3i`-trained adapters on all 23 datasets |
-| `ultraquery/kgfm_kgicl.json` | **Not finalized.** KG-ICL with a product adapter on all 23 datasets; the adapter is not fitted yet |
+| `ultraquery/kgfm_kgicl.json` | KG-ICL with the product adapter on all 23 datasets (each with an identity control) |
 | `ultraquery/comparisons.json` | ULTRA link-prediction weights, an incoming-relation heuristic and QTO |
 | `ultraquery/trained_baselines.json` | QTO on FB15k and inductive GNN-QE, after `train` |
 
