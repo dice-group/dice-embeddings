@@ -56,7 +56,7 @@ BRACKET_TOKENS = tuple(kind for kind, _ in BRACKETS if kind not in ('identity', 
 BRACKET_NOTES = {
     'identity': 'No adapter: the sigmoid of the backbone scores, with the same observed facts.',
     'uqlp': 'UltraQuery-LP thresholds: memberships at or below 0.8 (0.97 on NELL995) are set to zero, as in UltraQuery LP; '
-            'they exist for the UltraQuery datasets only.',
+            'they exist for UQ-23 only.',
     'global': 'Global scale and shift: one scale and one shift for every atom (2 parameters), fitted like the adapter.',
     'target-fit': 'Fitted on each target graph: one adapter per dataset, trained on queries sampled from its test '
                   r'inference graph with 30\% of the facts masked; no target query or answer is used.'}
@@ -67,8 +67,13 @@ ABLATION_NOTES = {'ultra_4g': r'$^\dagger$Pretraining adds NELL995, a target dat
 # The baseline specific to each target graph per UltraQuery family. When all three are present, the main table
 # shows them as one row, as Galkin et al. (2024) do; the appendix keeps each method's own rows.
 PER_GRAPH_BASELINES = (('transductive', 'qto'), ('inductive-e', 'inductive-gnnqe'), ('inductive-er', 'incoming-relation'))
+# Targets that share data with the backbones' pretraining graphs (ULTRA 3g and TRIX: FB15k-237, WN18RR and CoDEx-M;
+# KG-ICL: inductive splits of FB15k-237 and NELL995, and CoDEx-S); Table A1 reports the Freebase-derived ones apart.
+ZERO_SHOT_NOTE = (r'FB15k237, FB15k and the nine inductive ($e$) splits share their Freebase data with the pretraining graphs '
+                  r'of the backbones, so they are not zero-shot targets (Table~\ref{tab:benchmark-paper-1}).')
+KGICL_OVERLAP_NOTE = 'NELL995 is not a zero-shot target for KG-ICL either, whose pretraining includes a split of it.'
 PER_GRAPH_NOTE = (r'$^\dagger$QTO on the transductive datasets, GNN-QE on the inductive ($e$) splits and the untrained '
-                  r'incoming-relation heuristic on the inductive ($e,r$) graphs. All averages them over the 23 datasets, '
+                  r'incoming-relation heuristic on the inductive ($e,r$) graphs. The All columns average them over the 23 datasets, '
                   r'as in {cite}. Per-method results are in the appendix.')
 
 
@@ -503,7 +508,7 @@ def shared_settings(reports: 'tables.Reports', policy: str) -> str:
         if any(row['method'] == 'kgicl-adapter' for row in rows):
             frozen += (" and KG-ICL (the authors' 6-layer checkpoint, pretrained on inductive splits of FB15k-237 and "
                        'NELL995 and on CoDEx-S)')
-        sentences.append('UltraQuery is trained on FB15k-237 queries from an ULTRA 4g initialisation, whose pretraining '
+        sentences.append('UltraQuery is trained on FB15k-237 queries from an ULTRA 4g initialization, whose pretraining '
                          f'includes NELL995; {frozen} stay frozen, and the no-adapter rows rank their scores without '
                          'calibration.')
     if ultraquery:
@@ -511,6 +516,10 @@ def shared_settings(reports: 'tables.Reports', policy: str) -> str:
                          'the appendix reports them separately.')
     if plus_h:
         sentences.append(f'FB15k-237+H shares its graph with {shared}.')
+    if any(row['method'] == 'kgicl-adapter' for row in rows):
+        targets = [name for name, suite in (('NELL995', ultraquery), ('NELL995+H', plus_h)) if suite]
+        sentences.append(' and '.join(targets) + (' share' if len(targets) > 1 else ' shares')
+                         + ' data with the pretraining of KG-ICL.')
     return ' '.join(s for s in sentences if s)
 
 
@@ -585,13 +594,18 @@ def ultraquery_table(reports: 'tables.Reports', policy: str, *, layout: str = 'p
             for j, row in enumerate(rows)]
     first = (' The first row combines baselines specific to each target graph.' if merged is not None
              else ' The first group is trained on each target graph.' if any(row['method'] in TRAINED_ON_TARGET for row in rows) else '')
-    caption = (r'Complex query answering on the 23 UltraQuery datasets: MRR on the 9 positive (EPFO) and 5 negated '
+    caption = (r'Complex query answering on the 23 UQ-23 datasets: MRR on the 9 positive (EPFO) and 5 negated '
                r'query types, averaged over query types and then over the datasets of each family.'
                + first + ' Best in bold, second best underlined.' + seed_legend(adapter_seed_counts(rows)))
-    notes = PER_GRAPH_NOTE.format(cite=r'\citet{galkin2024foundation}' if layout == 'thesis' else r'Galkin et al.\ (2024)')
+    notes = ([PER_GRAPH_NOTE.format(cite=r'\citet{galkin2024foundation}' if layout == 'thesis' else r'Galkin et al.\ (2024)')]
+             if merged is not None else [])
+    if rows:
+        notes.append(ZERO_SHOT_NOTE)
+        if any(row['method'] == 'kgicl-adapter' for row in rows):
+            notes.append(KGICL_OVERLAP_NOTE)
     header = [grouped_header(groups, 1), (['Method', *(['EPFO', 'Neg.'] * len(groups))], [])]
     return compact_table(caption, 'tab:main-ultraquery', 'l' + 'c' * 2 * len(groups), header,
-                         body or [('', [tables.MISSING] * (1 + 2 * len(groups)))], notes=notes if merged is not None else '',
+                         body or [('', [tables.MISSING] * (1 + 2 * len(groups)))], notes=' '.join(notes),
                          layout=layout)
 
 
@@ -692,7 +706,7 @@ def ablation_rows(reports: 'tables.Reports', policy: str) -> tuple[list[dict], d
 def ablation_table(reports: 'tables.Reports', policy: str, *, layout: str = 'paper') -> str:
     """Main table 3: each recipe variant's MRR and its change from the primary recipe."""
     rows, primary = ablation_rows(reports, policy)
-    groups = [('UltraQuery (23)', 2), ('+H (3)', 2)]
+    groups = [('UQ-23', 2), ('+H', 2)]
     body = []
     for j, row in enumerate(rows):
         pending = row.get('pending') or [False] * len(row['values'])
@@ -714,7 +728,7 @@ def ablation_table(reports: 'tables.Reports', policy: str, *, layout: str = 'pap
 
 
 def bracket_rows(reports: 'tables.Reports', policy: str) -> list[dict]:
-    """Per backbone, the rows of BRACKETS with seed values per (suite, category): EPFO and negation of UltraQuery, then +H.
+    """Per backbone, the rows of BRACKETS with seed values per (suite, category): EPFO and negation of UQ-23, then +H.
 
     The no-adapter control and the adapter use the primary recipe, as in the main tables; the other calibrations get a
     row only for backbones that have runs of them.
@@ -743,7 +757,7 @@ def bracket_rows(reports: 'tables.Reports', policy: str) -> list[dict]:
 def bracket_table(reports: 'tables.Reports', policy: str, *, layout: str = 'paper') -> str:
     """Main table: the adapter between fixed calibrations (below) and adapters fitted on each target graph (above)."""
     rows = bracket_rows(reports, policy)
-    groups = [('UltraQuery (23)', 2), ('+H (3)', 2)]
+    groups = [('UQ-23', 2), ('+H', 2)]
     body = []
     for j, row in enumerate(rows):
         label = tables.escape(row['backbone']) if j == 0 or rows[j - 1]['backbone'] != row['backbone'] else ''
@@ -767,14 +781,14 @@ def recipe_description(method: str, recipe: str) -> str:
 
 
 def primary_description(primary: dict[tuple[str, str], str]) -> str:
-    """'ULTRA and TRIX: <recipe>' or 'ULTRA: <recipe>; TRIX: UltraQuery <recipe>, +H <recipe>' for captions and notes."""
+    """'ULTRA and TRIX: <recipe>' or 'ULTRA: <recipe>; TRIX: UQ-23 <recipe>, +H <recipe>' for captions and notes."""
     names: dict[str, dict[str, str]] = defaultdict(dict)
     for (method, suite), recipe in sorted(primary.items(), key=lambda item: (system_order(item[0][0], False), item[0][1] != 'ultraquery')):
         names[tables.METHOD_NAMES.get(method, method).replace(' + adapter', '')][suite] = recipe_description(method, recipe)
     described: dict[str, list[str]] = defaultdict(list)
     for name, recipes in names.items():
         text = (next(iter(recipes.values())) if len(set(recipes.values())) == 1 else
-                ', '.join(('UltraQuery' if s == 'ultraquery' else '+H') + ' ' + r for s, r in recipes.items()))
+                ', '.join(('UQ-23' if s == 'ultraquery' else '+H') + ' ' + r for s, r in recipes.items()))
         described[text].append(name)
     return '; '.join(series(backbones) + ': ' + text for text, backbones in described.items())
 

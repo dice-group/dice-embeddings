@@ -447,7 +447,7 @@ def adapter_plot(plt, points):
     datasets = sorted({p['dataset'] for p in points}, key=lambda d: tables.dataset_order(tables.dataset_name(d)))
     groups = [(name, ds) for name, ds in (
         ('+H', [d for d in datasets if d in tables.PLUS_H_DATASETS]),
-        ('UltraQuery benchmark', [d for d in datasets if d not in tables.PLUS_H_DATASETS])) if ds]
+        ('UQ-23', [d for d in datasets if d not in tables.PLUS_H_DATASETS])) if ds]
     height = .9 * len(groups) + .17 * len(datasets) + .4
     fig, axes = plt.subplots(len(groups), 1, figsize=(TEXT_WIDTH, height), squeeze=False,
                              gridspec_kw={'height_ratios': [max(3, len(ds)) for _, ds in groups]}, layout='constrained')

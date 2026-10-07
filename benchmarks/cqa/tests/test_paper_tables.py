@@ -748,6 +748,7 @@ def test_main_ultraquery_table_merges_the_per_graph_baselines_into_one_row():
         + [r'\underline{17.4}'] * 2
     assert 'The first row combines baselines specific to each target graph.' in latex
     assert r'$^\dagger$QTO on the transductive datasets' in latex and r'as in Galkin et al.\ (2024)' in latex
+    assert 'The All columns average them over the 23 datasets' in latex
     appendix = latex[latex.index(r'\section*{Appendix}'):]
     assert ' & QTO & ' in appendix and ' & Incoming relation & ' in appendix
     assert r'as in \citet{galkin2024foundation}' in tables.render_thesis(reports)['main-ultraquery.tex']
@@ -978,7 +979,7 @@ def test_bracket_table_places_the_adapter_between_fixed_calibrations_and_target_
     assert list(rows) == ['No adapter (raw scores)', 'UltraQuery-LP thresholds', 'Global scale and shift', 'Adapter (ours)',
                           'Adapter fitted on each target graph']
     assert rows['No adapter (raw scores)'] == ['20.0'] * 4 and rows['Global scale and shift'] == ['25.0'] * 4
-    # The thresholds exist for the UltraQuery suite only.
+    # The thresholds exist for UQ-23 only.
     assert rows['UltraQuery-LP thresholds'] == ['10.0', '10.0', '-', '-']
     assert rows['Adapter (ours)'] == [r'35.0$_{\pm 7.1}$'] * 4 and rows['Adapter fitted on each target graph'] == ['36.0'] * 4
     assert 'as in UltraQuery LP' in latex and 'no target query or answer is used' in latex
@@ -1015,3 +1016,7 @@ def test_kgicl_follows_trix_in_the_main_tables_and_observed_facts_off_is_an_abla
     assert ablation_rows(latex)['Observed facts off'][:2] == ['29.0', '-2.0']
     assert "KG-ICL (the authors' 6-layer checkpoint" in latex
     assert 'facts-none' not in latex[latex.index(r'\section*{Appendix}'):]
+    # The main UQ-23 table names the targets that are not zero-shot, for KG-ICL also NELL995.
+    assert summary.ZERO_SHOT_NOTE in latex and summary.KGICL_OVERLAP_NOTE in latex
+    assert 'Complex query answering on the 23 UQ-23 datasets' in latex and 'UltraQuery (23)' not in latex
+    assert 'NELL995 shares data with the pretraining of KG-ICL.' in latex  # UQ-23 runs only

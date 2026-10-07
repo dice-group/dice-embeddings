@@ -39,7 +39,7 @@ METHOD_NAMES = {'cone': 'ConE', 'gnnqe': 'GNN-QE', 'ultraquery': 'UltraQuery',
                 'inductive-gnnqe': 'Inductive GNN-QE'}
 # Appendix tables A1--A11; the main paper's compact tables are in summary.py.
 TABLE_TITLES = (
-    'UltraQuery Results by Freebase Derivation', 'Full UltraQuery Results', '+H Per-Query-Type Performance',
+    'UQ-23 Results by Freebase Derivation', 'Full UQ-23 Results', '+H Per-Query-Type Performance',
     'Full +H Hardness Breakdowns', 'Learned vs Identity Adapter', 'Adapter Training Seeds',
     'Data, Training, and Selection Details',
 )
@@ -743,7 +743,7 @@ def applicability(members, all_members):
     selections = (
         ('All configurations', all_members),
         ('+H suite', {m for m in all_members if m[0] in PLUS_H_DATASETS}),
-        ('UltraQuery suite', {m for m in all_members if family(m[0])}),
+        ('UQ-23 suite', {m for m in all_members if family(m[0])}),
         ('Learned adapters', {m for m in all_members if ' + adapter' in m[1]}),
         ('Identity controls', {m for m in all_members if ' identity' in m[1]}),
         ('All adapters', {m for m in all_members if ' + adapter' in m[1] or ' identity' in m[1]}),
@@ -771,7 +771,7 @@ def applicability(members, all_members):
         elif datasets == {d for d in method_universe if d in PLUS_H_DATASETS}:
             parts.append(method + ' (+H)')
         elif datasets == {d for d in method_universe if family(d)}:
-            parts.append(method + ' (UltraQuery)')
+            parts.append(method + ' (UQ-23)')
         else:
             parts.append(method + ' (' + ', '.join(dataset_name(d) for d in sorted(datasets)) + ')')
     return '; '.join(parts)
@@ -1141,7 +1141,7 @@ def render_tables(reports, *, policy='sort', fragment=False, preview=False):
     if preview:
         lines.append(r'{\normalsize Preview: xx.x marks a planned result that is not available yet.\par}')
     if reports.template:
-        lines.append(r'{\scriptsize No-data template: planned full test evaluation over all 23 UltraQuery and three +H datasets, '
+        lines.append(r'{\scriptsize No-data template: planned full test evaluation over all 23 UQ-23 and three +H datasets, '
                      r'using the default baselines and adapters. Identity and filter comparisons are separate tables. '
                      r'Dataset coverage is planned; no evaluation has been run. Scores, intervals and unavailable counts are "-". '
                      r'Hardness bins contain 1 to 4 missing positive links, as permitted by each parent type; further breakdowns appear only when supplied.\par}')
@@ -1204,14 +1204,16 @@ def appendix_specifications(reports, policy):
     for rows in ultra_panels.values():
         rows.sort(key=lambda row: (dataset_order(row[0]), method_order(row[1]), row[2] != 'MRR'))
     seed_rows, seed_recipes = summary.seed_rows(reports, policy)
+    kgicl = any(r['method'] == 'kgicl-adapter' for r in primary)
     specifications = [
         dict(headers=['Method', 'EPFO MRR', 'Negation MRR', 'EPFO MRR', 'Negation MRR'], widths=[60, 34, 34, 34, 34],
              rows=summary.freebase_rows(reports, policy),
              options=dict(spanners=(('', 1), ('Freebase-derived (11)', 2), ('Other (12)', 2)), numeric_from=1),
              note='FB15k, FB15k-237 and the nine inductive FB15k-237 splits derive from Freebase, which UltraQuery '
-                  'training queries, the pretraining of the ULTRA and TRIX backbones and the source queries of the adapters '
+                  'training queries, the pretraining of the backbones and the source queries of the adapters '
                   'also use. NELL995 and the eleven WikiTopics datasets do not derive from Freebase, but UltraQuery is '
-                  'initialised from ULTRA 4g, whose pretraining includes NELL995. Equal query-type means per dataset, then '
+                  'initialized from ULTRA 4g, whose pretraining includes NELL995'
+                  + (', and KG-ICL pretrains on a split of NELL995' if kgicl else '') + '. Equal query-type means per dataset, then '
                   'dataset means; adapter rows give the mean and sample standard deviation over seed tags, as in the main tables.'),
         dict(headers=['Dataset', 'Method', 'Metric', 'All', 'EPFO', 'Neg.', *ULTRA_TYPES], widths=[29, 40, 13, *([9] * 17)],
              panels=[(('Scope: ' + context) if context != 'full test' else '', values)
@@ -1237,7 +1239,7 @@ def appendix_specifications(reports, policy):
              note='Paired MRR; delta is learned minus identity. Supplied 95% confidence intervals are conditional on frozen '
                   'weights. Adapter recipes are listed in A7. '
                   + scope_notes([r for r in primary if r['method'].endswith('-adapter')])),
-        dict(headers=['Method', 'Seed tag', 'UltraQuery MRR', '+H MRR'], widths=[50, 18, 34, 34],
+        dict(headers=['Method', 'Seed tag', 'UQ-23 MRR', '+H MRR'], widths=[50, 18, 34, 34],
              rows=seed_rows, options=dict(numeric_from=1, row_group=lambda row: row[0]),
              note='Every seed tag of the primary adapter recipes (' + seed_recipes + '): MRR over all query types, '
                   'averaged over query types and then all datasets of the suite. Seed tags come from entry IDs (-seedN; '
@@ -1328,7 +1330,7 @@ def main(argv=None):
       Also export the optional +H composition diagnostic for the appendix.
 
 Main paper (compact floats, one decimal, best bold and second underlined):
-  1. UltraQuery benchmark: methods as rows; EPFO/negation MRR per dataset
+  1. UQ-23 benchmark: methods as rows; EPFO/negation MRR per dataset
      family (transductive, inductive (e), inductive (e,r), all).
   2. +H: methods trained on each target graph vs transferred models; EPFO and
      negation MRR per dataset and their average.
@@ -1339,9 +1341,9 @@ Main paper (compact floats, one decimal, best bold and second underlined):
   Adapter rows aggregate seed replicates (entry IDs differing only by -seedN):
   mean and sample s.d. over seeds; --primary-recipe picks the main recipe.
 Appendix (A1--A7, long tables, two decimals):
-  A1. UltraQuery results by Freebase derivation: the 11 Freebase-derived
+  A1. UQ-23 results by Freebase derivation: the 11 Freebase-derived
       datasets apart from the 12 others, seed means and s.d.
-  A2. Full UltraQuery results: query types as columns; MRR and H@10 rows.
+  A2. Full UQ-23 results: query types as columns; MRR and H@10 rows.
   A3. +H per-query-type performance: all 16 types; partial scopes labeled.
   A4. Full +H hardness breakdowns: MRR by missing positive links per query
       type; counts shared when identical; additional bins only when supplied.
@@ -1371,7 +1373,7 @@ unscaled. Confidence intervals are copied, never estimated. Graphs, filters
 and execution recipes remain separate. Hardness cannot be recovered from an
 overall score. Large tables span pages and repeat headers.
 With no data, the four default baselines.json/kgfm_adapters.json manifests
-provide all 23 UltraQuery and three +H datasets, primary methods and adapter
+provide all 23 UQ-23 and three +H datasets, primary methods and adapter
 pairs. Hardness plans positive missing-link counts within each parent type; no Cartesian grid of protocol
 or reduction variants is created. Known labels/settings are filled; scores,
 CIs and unavailable counts stay "-". Dataset coverage assumes full evaluation.
