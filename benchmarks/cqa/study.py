@@ -35,11 +35,12 @@ def code_identity():
     """Source that can change frozen-study results.
 
     The dicee package without its command-line scripts, and this harness without
-    tests or paper tooling, so local scripts never break verification elsewhere.
+    tests, paper tooling or the reproduction driver (whose manifests and adapters
+    are pinned by the bundle itself), so local scripts never break verification elsewhere.
     """
     package, harness = SOURCE_ROOT / 'dicee', Path(__file__).resolve().parent
     paths = [path for path in package.rglob('*.py') if path.relative_to(package).parts[0] != 'scripts']
-    paths += [path for path in harness.rglob('*.py') if path.relative_to(harness).parts[0] not in ('tests', 'paper')]
+    paths += [path for path in harness.rglob('*.py') if path.relative_to(harness).parts[0] not in ('tests', 'paper', 'reproduction')]
     return source_fingerprint(paths, SOURCE_ROOT)
 
 

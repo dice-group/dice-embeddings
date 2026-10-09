@@ -30,6 +30,11 @@
     "trix-product-intersections-NELL995+H": "69cb115effd0ee6d9c14c06f8d4866e3ff2148260174b36722d0a7b68e8dab3c",
     "trix-product-intersections-ICEWS18+H": "6f84bbe2e79bb47b5c8a788db48dd51079f52ad1274a839043fe472d36f66b37"
   },
+  "plus_h/kgfm_kgicl.json": {
+    "kgicl-product-intersections-FB15k237+H": "3e0c3f327646759f60036d9f5f09be48bc1693d483d38fe2fae8fca625cf6781",
+    "kgicl-product-intersections-NELL995+H": "9ac42998bb1d26ba9c06da2ff84f467274c5bfe7817d4aa6c6d77c5d69cfb8e4",
+    "kgicl-product-intersections-ICEWS18+H": "5977665fc7a15759ee0c2a40a1b71b757bdd222a52ff551175c13d7fc65fc146"
+  },
   "ultraquery/baselines.json": {
     "ultraquery-FB15k237LogicalQuery": "529aa658841bff87867a50b626cae7e9c01dc8a7b38b5177eda2af712988e66d",
     "ultraquery-FB15kLogicalQuery": "01ae98208647999c884181ef7308944ffc47555d260b4f27d7bdf2bc0dea5f7f",
@@ -163,6 +168,31 @@
     "trix-product-intersections-WikiTopicsQuery:sci": "64a1ed5aadb56eac0a836cf421fb0f3ecb3db6580e2f6d2e0117a2e199449fbf",
     "trix-product-intersections-WikiTopicsQuery:sport": "789c3e69c42d240f41d9b14cc72dee70f887a0498b14de7b92e50b89975b0c69",
     "trix-product-intersections-WikiTopicsQuery:tax": "ca14cbcb7938c80e89c121d75f71c9163c26cc6dc622efabb7e35ebc3457dd40"
+  },
+  "ultraquery/kgfm_kgicl.json": {
+    "kgicl-product-intersections-FB15k237LogicalQuery": "cff9eea715c7a4a4768486e720d7c0ecbb7d5a35354d0845f30b918bd3adc65c",
+    "kgicl-product-intersections-FB15kLogicalQuery": "a3c9e24991f977f0b94f058b9c526d2a019bbed8024487d12adf880a88fef751",
+    "kgicl-product-intersections-NELL995LogicalQuery": "b19316ac77ca1e865c9a309bd3f2be16df59763e150eaa77059091c16d2a90ea",
+    "kgicl-product-intersections-InductiveFB15k237Query:106": "e61fb816352242fc91e7dfc64e0bdc025aff3cffc722c522d5e347660b61b557",
+    "kgicl-product-intersections-InductiveFB15k237Query:113": "2d57a3d39d734335db012f43d436bcae09adb54b0710a2c70dc6f874566ad41d",
+    "kgicl-product-intersections-InductiveFB15k237Query:122": "d4abc1950f6d50f5a556a40244ed2ee360f9a255cca68cb1abbf8f8d0297d205",
+    "kgicl-product-intersections-InductiveFB15k237Query:134": "0c889ef74caa71112580914fcdda71bd238579fa8925d0ceb84e71d37727d76d",
+    "kgicl-product-intersections-InductiveFB15k237Query:150": "5de5b5c6a3ad1613cab2f3354a54a6cfa1887f1059d4ee39a3d50de43e6447bc",
+    "kgicl-product-intersections-InductiveFB15k237Query:175": "ad5f2c720057f394097d108506139d736ad8b416e569e04d11c2e0e17b6b66ee",
+    "kgicl-product-intersections-InductiveFB15k237Query:217": "e28d1b34573eaee7d94993e96ce9430a9e2386f1f5d538501d498048bfed3d07",
+    "kgicl-product-intersections-InductiveFB15k237Query:300": "86fffdd3c4358c56533596fb9a2b478f57582d84f70943c8b024fd77f2b6fed9",
+    "kgicl-product-intersections-InductiveFB15k237Query:550": "ac49339a01fee731825b09d78472150552470507adcb716e43995cb98372125a",
+    "kgicl-product-intersections-WikiTopicsQuery:art": "d4b346dad1f3e596d48d126c7791cb5194d1a0b3e4ae776c5df612633d276532",
+    "kgicl-product-intersections-WikiTopicsQuery:award": "3900bfe021dc7c9dc7db621eb913e505fdcd7a8a1a153da305bbecc1132c1fba",
+    "kgicl-product-intersections-WikiTopicsQuery:edu": "a81509b725b885d475a9b613969a16142aa69e9af8d62da310c7139944b028a2",
+    "kgicl-product-intersections-WikiTopicsQuery:health": "892b8215293c912e5de38089ea4f3ec0e6f6d41a3f512e67221d0e8b202217c0",
+    "kgicl-product-intersections-WikiTopicsQuery:infra": "43c4a124071b007bd0a63bbfb473273c824fc395a9955cf6792c1a8fe41209be",
+    "kgicl-product-intersections-WikiTopicsQuery:loc": "87095e5bd34466c4a457233bb95ea552c4059a9de22d2596b9837ea2f9cfb2eb",
+    "kgicl-product-intersections-WikiTopicsQuery:org": "06382ab313032eab6443a8bf6a8ca7d714454dbd3768a221cd3d55c8503fd78e",
+    "kgicl-product-intersections-WikiTopicsQuery:people": "185d92a96b7679d19fd8388e20e5790f20ba5fee09d02dcdf8d954d66413a69e",
+    "kgicl-product-intersections-WikiTopicsQuery:sci": "8f26bbc1b3a2fe0fd764a0fb6958e4bff8566907751d253728f4e380836ad288",
+    "kgicl-product-intersections-WikiTopicsQuery:sport": "7a8d96f2a063eb4d2ee0b68ddcf8d2aac1f15870bf662413eb834ec0a423997c",
+    "kgicl-product-intersections-WikiTopicsQuery:tax": "dd2b9ccb6fe96f624635c3d1693204bfe939942d41b50413635a30657873c6bb"
   },
   "ultraquery/trained_baselines.json": {
     "qto-FB15kLogicalQuery": "fbfdca9fe1cbcf143a8d8e2db1f3df8e341454b21b5325e7abe6b92de9be8b48",

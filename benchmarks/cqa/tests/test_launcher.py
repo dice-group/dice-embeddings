@@ -383,12 +383,14 @@ def test_parallel_run_uses_fresh_workers_and_resumes_like_sequential_runs(tmp_pa
         cli.main(args[:-2] + ['--device', 'cpu', '--gpus', '0'])
 
 
-def test_container_forwards_parallel_gpus_only_for_evaluate_and_run(tmp_path, capsys):
+def test_container_forwards_parallel_gpus_only_for_evaluate_verify_and_run(tmp_path, capsys):
     common = ['--input-root', str(tmp_path), '--output', str(tmp_path / 'out'), *IMAGE]
     cli.main(['plus_h', 'run', *common, '--gpus', '0', '1', 'GPU-2c', '--workers-per-gpu', '2'])
     assert '--gpus 0 1 GPU-2c --workers-per-gpu 2' in capsys.readouterr().out
     cli.main(['plus_h', 'evaluate', *common, '--split', 'test', '--gpus', '1'])
     assert '--gpus 1' in capsys.readouterr().out
+    cli.main(['plus_h', 'verify', *common, '--gpus', '0', '1'])
+    assert '--gpus 0 1' in capsys.readouterr().out
     for command, extra in [('prepare', ['--gpus', '0']), ('run', ['--workers-per-gpu', '2']), ('run', ['--gpus'])]:
         with pytest.raises(SystemExit):
             cli.main(['plus_h', command, *common, *extra])
