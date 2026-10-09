@@ -261,12 +261,17 @@ def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_predict
                    on_control_prediction=None, *, limit=None, seed=0, query_order='relation', rank_trace_path=None,
                    filter_corrections=None):
     from ..models import KGICL, TRIX, ULTRA
+    from ..models.flock import Flock
     backbone = entry['method'].split('-')[0]
     options = entry['options']
-    allowed = {'beam_size', 'row_batch_size', 'backend_batch_size', 'cache_bytes', 'raw_cache_bytes', 'observed_facts',
-               'raw_cache_device', 'raw_cache_granularity', 'relation_cache_mb', 'projection_cache_mb'}
+    allowed = {'beam_size', 'row_batch_size', 'backend_batch_size', 'cache_bytes', 'raw_cache_bytes', 'observed_facts', 'observed_ties',
+               'raw_cache_device', 'raw_cache_granularity', 'relation_cache_mb', 'projection_cache_mb', 'negation'}
     if backbone == 'kgicl':
         allowed |= {'prompt_seed'}
+    if backbone == 'ultra':
+        allowed |= {'relation_conditioning'}
+    if backbone == 'flock':
+        allowed |= {'test_samples', 'walk_num'}
     if options.keys() - allowed:
         raise ValueError('Unknown KGFM execution option')
     if options.get('raw_cache_device', 'cpu') not in ('cpu', 'model'):
@@ -277,7 +282,12 @@ def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_predict
     # KG-ICL samples prompt graphs from the attached context with a fixed seed (default 0);
     # options without a default here keep each backbone's construction unchanged.
     extra = {'kgicl_prompt_seed': options['prompt_seed']} if 'prompt_seed' in options else {}
-    model = {'ultra': ULTRA, 'trix': TRIX, 'kgicl': KGICL}[backbone](dict(
+    if 'relation_conditioning' in options:
+        extra['ultra_relation_conditioning'] = options['relation_conditioning']
+    if backbone == 'flock':
+        # Flock samples walks; each atom row has its own seed (AtomicScorer), so scores do not depend on batching.
+        extra.update(flock_test_samples=options.get('test_samples', 1), flock_walk_num=options.get('walk_num', 128))
+    model = {'ultra': ULTRA, 'trix': TRIX, 'kgicl': KGICL, 'flock': Flock}[backbone](dict(
         num_entities=1, num_relations=1, graph_inference_backend='auto',
         graph_relation_cache_mb=options.get('relation_cache_mb', 64),
         graph_projection_cache_mb=options.get('projection_cache_mb', 64),
@@ -293,6 +303,16 @@ def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_predict
         for adapter in adapters.values():
             adapter.observed_mix = float(observed_facts != 'none')
     restore_observed = observed_facts in (None, 'both')
+    # Ties among known facts in a beam: lowest entity IDs (the default, as in every final study) or the backbone's order.
+    ties = options.get('observed_ties', 'entity')
+    if ties not in ('entity', 'model'):
+        raise ValueError('Observed ties must be entity or model')
+    for adapter in adapters.values():
+        adapter.observed_tie_break = ties == 'model'
+    # Negated branches: 1 - membership (the default) or the known facts alone (review control, 2026-10-08).
+    negation = options.get('negation', 'model')
+    if negation not in ('model', 'observed'):
+        raise ValueError('Negation must be model or observed')
     shape_by_query = {query.query: query.shape for query in data.queries}
     stats = Counter()
     paired = entry.get('adapter_ablation', False)
@@ -307,6 +327,8 @@ def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_predict
         if paired:
             recipes['without-adapter'] = {name: QueryScoreAdapter('global', adapter.observed_mix,
                 normalization=adapter.normalization, metadata={'calibration': 'identity'}) for name, adapter in adapters.items()}
+            for control in recipes['without-adapter'].values():
+                control.observed_tie_break = ties == 'model'
         engines = {variant: {name: QueryAnswerer(model, context=data.context, adapter=adapter,
                                       restore_observed=restore_observed,
                                       row_batch_size=options.get('row_batch_size', 1),
@@ -341,7 +363,8 @@ def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_predict
             operator = entry['operators'][shape_by_query[query]]
             engine = engines[variant][operator]
             result = engine.predict(query, beam_size=options.get('beam_size', 64),
-                                    tnorm='prod' if operator.partition(':')[0] == 'product' else 'min', return_log_scores=True)
+                                    tnorm='prod' if operator.partition(':')[0] == 'product' else 'min', return_log_scores=True,
+                                    negation=negation)
             record(engine.last_info)
             callback = on_prediction if variant == 'learned' else on_control_prediction
             if callback:

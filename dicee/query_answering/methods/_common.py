@@ -10,6 +10,7 @@ from torch import nn
 from ...models._inference import float32_precision_token
 from .._query import compile_query, validate_tree
 from ..context import evaluation_mode, state_token
+from ..score_adapter import SOFTMAX_DEGREE_CEILING
 
 
 class QueryMethod(nn.Module):
@@ -106,10 +107,29 @@ def fuzzy_combine(values, op, logic):
 
 
 class FuzzyGNN(QueryMethod):
-    def __init__(self, context, logic='product'):
+    """Fuzzy-set execution with a learned projection.
+
+    ``observed_traversal`` (off by default, and not part of any upstream method) also traverses the observed facts
+    exactly at every projection: a tail receives at least the highest membership of a head linked to it by the
+    projected relation, as with symbolic traversal (max over heads of a product with one).
+
+    ``calibration='softmax-degree'`` (off by default, not part of any upstream method) replaces the sigmoid of every
+    projection by QTO's calibration, generalized to fuzzy head sets: the softmax of the projection logits over all
+    entities times d, the membership mass of the observed tails that the traversal reaches (at least one), capped at
+    0.9999. For a single anchor head, d is the number of its observed tails, as in the beam executor's calibration.
+    """
+
+    def __init__(self, context, logic='product', observed_traversal=False, calibration=None):
         super().__init__(context)
         fuzzy_combine([torch.tensor(0.)], 'and', logic)
+        if type(observed_traversal) is not bool:
+            raise ValueError('observed_traversal must be a boolean')
+        if calibration not in (None, 'softmax-degree'):
+            raise ValueError('calibration must be None or softmax-degree')
         self.logic = logic
+        self.observed_traversal = observed_traversal
+        self.calibration = calibration
+        self._relation_edges = None
 
     def membership(self, tree):
         return self.membership_batch([tree])[0]
@@ -128,10 +148,40 @@ class FuzzyGNN(QueryMethod):
         if op == 'project':
             relation_ids = tuple(tree[1] for tree in trees)
             relations = torch.tensor(relation_ids, device=self.device)
-            return self.project_batch(self.membership_batch([tree[2] for tree in trees]), relations, relation_ids=relation_ids)
+            source = self.membership_batch([tree[2] for tree in trees])
+            if self.calibration is None:
+                projected = self.project_batch(source, relations, relation_ids=relation_ids)
+                return torch.maximum(projected, self.traverse(source, relations)) if self.observed_traversal else projected
+            known = self.traverse(source, relations)
+            logits = self.project_batch(source, relations, relation_ids=relation_ids, logits=True)
+            degree = known.sum(1, keepdim=True).clamp_min(1)
+            projected = (logits.log_softmax(1) + degree.log()).exp().clamp_max(SOFTMAX_DEGREE_CEILING)
+            return torch.maximum(projected, known) if self.observed_traversal else projected
         if op == 'not':
             return 1 - self.membership_batch([tree[1] for tree in trees])
         return fuzzy_combine([self.membership_batch(children) for children in zip(*(tree[1:] for tree in trees))], op, self.logic)
+
+    def traverse(self, membership, relations):
+        """Exact traversal of observed facts: each tail's highest membership among heads with (head, relation, tail)."""
+        device = membership.device
+        if self._relation_edges is None or self._relation_edges[0].device != device:
+            triples = torch.tensor(self.context.triples, dtype=torch.long).reshape(-1, 3)
+            triples = triples[torch.argsort(triples[:, 1], stable=True)]
+            counts = torch.bincount(triples[:, 1], minlength=self.context.num_relations)
+            offsets = torch.cat((counts.new_zeros(1), counts.cumsum(0)))
+            self._relation_edges = tuple(t.contiguous().to(device) for t in (offsets, triples[:, 0], triples[:, 2]))
+        offsets, heads, tails = self._relation_edges
+        starts = offsets[relations]
+        lengths = offsets[relations + 1] - starts
+        result = torch.zeros_like(membership)
+        total = int(lengths.sum())
+        if total:
+            rows = torch.repeat_interleave(torch.arange(len(relations), device=device), lengths, output_size=total)
+            positions = torch.arange(total, device=device) - (lengths.cumsum(0) - lengths)[rows] + starts[rows]
+            values = membership[rows, heads[positions]]
+            # A maximum does not depend on the reduction order, so this is deterministic on every device.
+            result.view(-1).scatter_reduce_(0, rows * membership.shape[1] + tails[positions], values, 'amax')
+        return result
 
     @torch.no_grad()
     def predict_batch(self, queries):

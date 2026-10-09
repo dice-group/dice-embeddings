@@ -333,8 +333,7 @@ class QueryAnswerer:
                     transformed = raw
                 else:
                     context = self.scorer.context
-                    needs_context = self.adapter.feature_mode != 'global' or self.adapter.observed_mix
-                    obs, base = context.features(missing, device=raw.device) if context and needs_context else (None, None)
+                    obs, base = context.features(missing, device=raw.device) if context and self.adapter.needs_context else (None, None)
                     transformed = self.adapter(raw, obs, base)
                 for key, value in zip(missing, transformed):
                     # Copies keep evicted batches from being retained by one row.
@@ -389,10 +388,18 @@ class QueryAnswerer:
 
     @torch.no_grad()
     def predict(self, query, *, beam_size=64, tnorm='prod', neg_norm='standard', lambda_=0.,
-                use_logits=False, return_log_scores=False, executor='cqd'):
-        """QTO evaluates every potentially improving head without a beam limit."""
+                use_logits=False, return_log_scores=False, executor='cqd', negation='model'):
+        """QTO evaluates every potentially improving head without a beam limit.
+
+        ``negation='observed'`` negates from the known facts alone: a negated branch removes its exact answers over the
+        context graph and keeps every other entity at membership one (a review control; ``'model'`` is the default).
+        """
         if executor not in ('cqd', 'qto'):
             raise ValueError('Choose cqd or qto executor')
+        if negation not in ('model', 'observed'):
+            raise ValueError('Negation must be model or observed')
+        if negation == 'observed' and (use_logits or self.scorer.context is None):
+            raise ValueError('Negation from known facts needs memberships and a context graph')
         if executor == 'qto' and use_logits:
             raise ValueError('QTO requires bounded memberships, not raw logits')
         if type(beam_size) is not int or beam_size < 1:
@@ -407,7 +414,7 @@ class QueryAnswerer:
         self.adapter.verify_model(self.scorer.model)
         n, nr = self.scorer.n, self.scorer.nr
         context = self.scorer.context
-        if context is None and (self.adapter.feature_mode != 'global' or self.adapter.observed_mix):
+        if context is None and self.adapter.needs_context:
             raise ValueError('Adapter features and observed overrides require a context graph')
         tree = compile_query(query)
         validate_tree(tree, n, nr)
@@ -422,6 +429,7 @@ class QueryAnswerer:
                 tree, lambda heads, relation: self._row_batches(heads, relation, use_logits, stats),
                 n=n, device=self.scorer.device, row_batch_size=self.scorer.row_batch_size,
                 beam_size=beam_size, tnorm=tnorm, neg_norm=neg_norm, lambda_=lambda_,
+                negation_answers=context.answers if negation == 'observed' else None,
                 use_logits=use_logits, executor=executor, stats=stats, skip_zero_prefix=skip_zero_prefix)
             if self.restore_observed and not use_logits and self.adapter.observed_mix == 1 and positive(tree):
                 result = result.clone()
