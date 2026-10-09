@@ -169,6 +169,13 @@ def test_paired_kgfm_verification_full_run_and_reports(tmp_path, backbone, facts
     assert len(rows) == 2 and all(row['complete_test'] for row in rows)
     assert all(row['complete_16_type_test'] == (not ultraquery) for row in rows)
     assert all(row['observed_facts'] == settings for row in rows)
+    # Combined reports carry no result files, so the details keep the candidate and context identity.
+    details = {d['id']: d for d in read(tmp_path / 'reports/comparison.json')['details']}
+    for raw in (result, control):
+        detail = details[raw.get('benchmark_run', raw.get('paper_run'))['entry']]
+        assert detail['candidate_sha256'] and detail['context_sha256']
+        assert {k: detail[k] for k in ('num_candidates', 'candidate_sha256', 'context_sha256')} == \
+            {k: raw[k] for k in ('num_candidates', 'candidate_sha256', 'context_sha256')}
     assert len(read(tmp_path / 'reports/adapter-effects.json')) == 1
     if ultraquery:
         write_json(tmp_path / 'manifest.json', manifest)

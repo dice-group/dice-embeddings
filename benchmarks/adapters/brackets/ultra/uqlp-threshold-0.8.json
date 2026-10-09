@@ -1,0 +1,22 @@
+{
+  "backbone_state_sha256": "5524f131f909918c40daa0c6169eaf8ebb7ca344ccf9e96e1d81154cd5097e5b",
+  "calibration": "ultraquery-lp-threshold",
+  "source": "UltraQuery arXiv v2, Appendix B (benchmarks/ultraquery/comparisons.json)",
+  "version": 3,
+  "feature_mode": "global",
+  "observed_mix": 1.0,
+  "bias_bound": 8.0,
+  "scale_bound": 2.0,
+  "normalization": "none",
+  "hidden_dim": 0,
+  "membership_threshold": 0.8,
+  "weights": [
+    [
+      0.0
+    ],
+    [
+      0.0
+    ]
+  ],
+  "hidden_weights": null
+}

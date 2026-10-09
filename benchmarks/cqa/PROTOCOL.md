@@ -103,6 +103,17 @@ backbone logits; backbone checkpoint parity is tested separately.
 The bounded CQD profile is verified against an equally bounded reference and
 can differ numerically from dense upstream execution.
 
+Two opt-in variants of the review experiments (2026-10-08) are not upstream
+methods. UltraQuery with `observed_traversal` also takes, at every projection,
+the maximum with an exact traversal of the observed facts from the same fuzzy
+set; its oracles come from the pinned upstream code with that maximum added
+through upstream's own `SymbolicTraversal`. UltraQuery's released weights used
+as a frozen ULTRA backbone (`relation_conditioning: query`) condition relation
+reasoning on the queried relation, as UltraQuery's projection does; ULTRA's link
+prediction conditions an inverse tail query on its direct relation instead.
+With that setting the frozen backbone equals UltraQuery's single-source
+projection for every relation (tests/test_query_baselines.py).
+
 ## Reproducibility
 
 Inference is float32 with IEEE matrix products, no autocast and deterministic

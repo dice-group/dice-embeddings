@@ -1,0 +1,99 @@
+{
+  "backbone_state_sha256": "4a2e050130570df0964fc84cf14e6fcaec8672e30afb44f2b0aaf358864d95f7",
+  "training": {
+    "objective": "filtered_softmax_v1",
+    "epochs": 500,
+    "batch_size": 8,
+    "learning_rate": 0.02,
+    "identity_penalty": 0.001,
+    "gradient_clip": 1.0,
+    "seed": 2026090851,
+    "weighting": "equal_source_shape",
+    "selection": "source_validation_mrr",
+    "shapes": [
+      "2i",
+      "3i"
+    ],
+    "validation_sources": [
+      "WikiTopicsQuery:loc"
+    ],
+    "validation_every": 5,
+    "training_sources": [
+      "WikiTopicsQuery:loc"
+    ],
+    "train_per_shape": 280,
+    "early_stopping_patience": 100,
+    "beam_size": 64,
+    "tnorm": "prod",
+    "validation_shapes": [
+      "1p",
+      "2p",
+      "3p",
+      "2i",
+      "3i",
+      "2in",
+      "3in",
+      "inp",
+      "pin",
+      "pni"
+    ],
+    "device": "cuda",
+    "validation_device": "cuda",
+    "cpu_threads": 4,
+    "training_cache_bytes": 2147483648,
+    "device_cache_bytes": 536870912,
+    "selected_epoch": 80,
+    "selected_validation_mrr": 0.2733875866316064,
+    "epochs_completed": 180,
+    "stopped_early": true,
+    "stop_reason": "validation_patience",
+    "training_queries": 560,
+    "optimizer_steps": 12600,
+    "row_cache": {
+      "WikiTopicsQuery:loc": {
+        "host_hits": 135857,
+        "device_hits": 342540,
+        "disk_rows": 0,
+        "scored_rows": 5731,
+        "feature_preparations": 5731,
+        "seconds": 1493.1417887173593
+      }
+    }
+  },
+  "score_banks": [
+    "0e2884d0cab9d82147e422814fc0d7c074aad6bbdd75e335b1de8eb7df7f045a"
+  ],
+  "sources": {
+    "WikiTopicsQuery:loc": "e00d85e668bec9272f4dadc708063fc382ed415da670bc4a4cbdf75c647567d7"
+  },
+  "version": 3,
+  "feature_mode": "context_scores",
+  "observed_mix": 1.0,
+  "bias_bound": 8.0,
+  "scale_bound": 2.0,
+  "normalization": "none",
+  "hidden_dim": 0,
+  "weights": [
+    [
+      1.252249792888517,
+      4.8198455985428605,
+      2.62158703493561,
+      -1.4556669059070648,
+      -0.6702715270259716,
+      -1.0793285889465467,
+      -0.9947989494668941,
+      0.09002924124937811
+    ],
+    [
+      -1.126703384856303,
+      1.0108385656963186,
+      1.7099446879763902,
+      0.053807850249814604,
+      -0.9497556911191921,
+      -0.8349014467059496,
+      -0.49621280031200216,
+      -0.39643708171754877
+    ]
+  ],
+  "hidden_weights": null
+}

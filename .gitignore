@@ -184,6 +184,7 @@ Experiments/
 # Benchmark reports are local artifacts; recipes, adapters and published scores are tracked.
 /benchmarks/**/*.json
 !/benchmarks/adapters/*.json
+!/benchmarks/adapters/**/*.json
 !/benchmarks/plus_h/*.json
 !/benchmarks/ultraquery/*.json
 !/benchmarks/cqa/tests/*.json

@@ -152,6 +152,93 @@ def test_reference_applies_a_fixed_membership_threshold(operator, facts, mode):
 
 
 @pytest.mark.parametrize('operator', ['product', 'min'])
+@pytest.mark.parametrize('facts', ['none', 'atomic', 'both'])
+@pytest.mark.parametrize('calibration', ['minmax', 'softmax-degree', 'softmax', 'softmax-degree-ties', 'softmax-degree-ties-masked'])
+def test_reference_applies_training_free_calibrations(operator, facts, calibration):
+    model = Rows().eval()
+    context = QueryContext([(0, 0, 1), (0, 0, 2), (2, 1, 6), (1, 1, 3), (3, 2, 4), (4, 3, 5)], 7, 4)
+    masked = calibration.endswith('-masked')
+    adapter = QueryScoreAdapter('global', float(facts != 'none'), bias_bound=8., fixed_calibration=calibration.removesuffix('-masked'),
+                                mask_known_logits=masked)
+    reference = reference_module.ReferenceKGFM(context.triples, 7, 4, adapter.to_dict(), beam_size=2, device='cpu',
+                                               restore_observed=facts == 'both')
+    conditions = [(h, r) for h in range(7) for r in range(4)]
+    with torch.no_grad():
+        for start in range(0, len(conditions), 2):
+            batch = conditions[start:start + 2]
+            reference.capture(batch, model.forward_k_vs_all(torch.tensor(batch)))
+    engine = QueryAnswerer(model, context=context, adapter=adapter, row_batch_size=2, restore_observed=facts == 'both')
+    queries = [instantiate(shape) for shape in QUERY_SHAPES.values()]
+    engine.prefetch(queries)
+    for query in queries:
+        expected = reference.predict(query, operator)
+        actual = engine.predict(query, beam_size=2, tnorm='prod' if operator == 'product' else 'min', return_log_scores=True)
+        torch.testing.assert_close(actual, expected, atol=1e-14, rtol=1e-14)
+        assert torch.equal(actual.argsort(descending=True), expected.argsort(descending=True))
+    with pytest.raises(ValueError):
+        reference_module.ReferenceKGFM(context.triples, 7, 4, dict(adapter.to_dict(), weights=[[1.], [0.]]),
+                                       beam_size=2, device='cpu')
+
+
+@pytest.mark.parametrize('operator', ['product', 'min'])
+@pytest.mark.parametrize('calibration', [None, 'softmax-degree'])
+def test_reference_orders_known_tails_by_the_backbone_when_asked(operator, calibration):
+    model = Rows().eval()
+    # (0, 0) has three known tails, more than the beam of two holds.
+    context = QueryContext([(0, 0, 1), (0, 0, 2), (0, 0, 5), (2, 1, 6), (1, 1, 3), (5, 1, 4), (3, 2, 4), (4, 3, 5)], 7, 4)
+    adapter = QueryScoreAdapter('global', 1., bias_bound=8., fixed_calibration=calibration)
+    adapter.observed_tie_break = True
+    reference = reference_module.ReferenceKGFM(context.triples, 7, 4, adapter.to_dict(), beam_size=2, device='cpu',
+                                               observed_ties='model')
+    conditions = [(h, r) for h in range(7) for r in range(4)]
+    with torch.no_grad():
+        for start in range(0, len(conditions), 2):
+            batch = conditions[start:start + 2]
+            reference.capture(batch, model.forward_k_vs_all(torch.tensor(batch)))
+    engine = QueryAnswerer(model, context=context, adapter=adapter, row_batch_size=2)
+    plain = QueryAnswerer(model, context=context, adapter=QueryScoreAdapter('global', 1., bias_bound=8., fixed_calibration=calibration),
+                          row_batch_size=2)
+    queries = [instantiate(shape) for shape in QUERY_SHAPES.values()]
+    engine.prefetch(queries)
+    plain.prefetch(queries)
+    changed = False
+    for query in queries:
+        expected = reference.predict(query, operator)
+        tnorm = 'prod' if operator == 'product' else 'min'
+        actual = engine.predict(query, beam_size=2, tnorm=tnorm, return_log_scores=True)
+        torch.testing.assert_close(actual, expected, atol=1e-14, rtol=1e-14)
+        assert torch.equal(actual.argsort(descending=True), expected.argsort(descending=True))
+        changed |= not torch.equal(actual, plain.predict(query, beam_size=2, tnorm=tnorm, return_log_scores=True))
+    assert changed
+
+
+@pytest.mark.parametrize('operator', ['product', 'min'])
+@pytest.mark.parametrize('calibration', [None, 'softmax-degree'])
+def test_reference_negates_from_known_facts_when_asked(operator, calibration):
+    model = Rows().eval()
+    context = QueryContext([(0, 0, 1), (0, 0, 2), (0, 0, 5), (2, 1, 6), (1, 1, 3), (5, 1, 4), (3, 2, 4), (4, 3, 5)], 7, 4)
+    adapter = QueryScoreAdapter('global', 1., bias_bound=8., fixed_calibration=calibration)
+    reference = reference_module.ReferenceKGFM(context.triples, 7, 4, adapter.to_dict(), beam_size=2, device='cpu', negation='observed')
+    conditions = [(h, r) for h in range(7) for r in range(4)]
+    with torch.no_grad():
+        for start in range(0, len(conditions), 2):
+            batch = conditions[start:start + 2]
+            reference.capture(batch, model.forward_k_vs_all(torch.tensor(batch)))
+    engine = QueryAnswerer(model, context=context, adapter=adapter, row_batch_size=2)
+    queries = [instantiate(shape) for shape in QUERY_SHAPES.values()]
+    engine.prefetch(queries)
+    tnorm = 'prod' if operator == 'product' else 'min'
+    changed = False
+    for query in queries:
+        expected = reference.predict(query, operator)
+        actual = engine.predict(query, beam_size=2, tnorm=tnorm, return_log_scores=True, negation='observed')
+        torch.testing.assert_close(actual, expected, atol=1e-14, rtol=1e-14)
+        assert torch.equal(actual.argsort(descending=True), expected.argsort(descending=True))
+        changed |= not torch.equal(actual, engine.predict(query, beam_size=2, tnorm=tnorm, return_log_scores=True))
+    assert changed
+
+
+@pytest.mark.parametrize('operator', ['product', 'min'])
 def test_reference_needs_no_rows_for_zero_prefix_but_requires_live_rows(operator):
     adapter = QueryScoreAdapter('context_scores', 1.)
     reference = reference_module.ReferenceKGFM([(0, 0, t) for t in range(7)], 7, 4,
@@ -161,3 +248,16 @@ def test_reference_needs_no_rows_for_zero_prefix_but_requires_live_rows(operator
     assert torch.isneginf(reference.predict(contradiction, operator)).all()
     with pytest.raises(KeyError):
         reference.predict((0, (0, 1)), operator)
+
+
+def test_recipe_rules_of_the_review_backbone_options():
+    from dicee.query_answering.catalog import KGFM_ADAPTERS, KGFM_BACKBONES, check_recipe
+    shapes = ['1p', '2i']
+    base = dict(operators={'1p': 'product', '2i': 'product'}, adapters={'product': 'a.json'}, selection_protocol='source-validation')
+    assert 'flock-adapter' in KGFM_ADAPTERS and KGFM_BACKBONES['flock-adapter'][0] == 'jw9730/flock'
+    check_recipe(dict(base, method='flock-adapter', options=dict(test_samples=1, walk_num=128)), shapes)
+    check_recipe(dict(base, method='ultra-adapter', options=dict(relation_conditioning='query')), shapes)
+    for method, options in (('ultra-adapter', dict(test_samples=1)), ('flock-adapter', dict(walk_num=0)),
+                            ('trix-adapter', dict(relation_conditioning='query')), ('ultra-adapter', dict(relation_conditioning='inverse'))):
+        with pytest.raises(ValueError):
+            check_recipe(dict(base, method=method, options=options), shapes)

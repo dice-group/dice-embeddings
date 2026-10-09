@@ -1,5 +1,8 @@
 # Complex query answering benchmarks
 
+> To reproduce the final results of the paper and thesis, one study or all of them with one command,
+> see [REPRODUCE.md](REPRODUCE.md).
+
 Reproducible evaluation of complex query answering (CQA) on two suites:
 
 | Suite | Datasets | Query types | Answer filters |
@@ -188,10 +191,11 @@ so they are frozen with the study and verified on the target GPU.
 
 `run` and `evaluate` accept `--gpus 0 1 2 3`: each entry runs in a fresh worker
 that sees one GPU, longest methods first, with results identical to a
-sequential run. `--workers-per-gpu 2` overlaps one worker's host work with
-another's GPU work, for about 1.5 times the throughput of one worker; with the
-H100 profile each KGFM worker stays below 12 GiB of GPU memory and holds up to
-24 GiB of host memory. Keep one worker per GPU on GPUs shared with other jobs.
+sequential run; `verify` runs its checks the same way. `--workers-per-gpu 2`
+overlaps one worker's host work with another's GPU work, for about 1.5 times
+the throughput of one worker; with the H100 profile each KGFM worker stays
+below 12 GiB of GPU memory and holds up to 24 GiB of host memory. Keep one
+worker per GPU on GPUs shared with other jobs.
 
 The QTO recipes build each relation's thresholded calibrated matrix once, from
 the released canonical 100-head blocks, and keep it in CSR form: up to 6 GiB

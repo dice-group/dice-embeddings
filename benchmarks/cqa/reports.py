@@ -184,6 +184,9 @@ def _export_reports(results, published, output, *, bootstrap_samples, seed, titl
         details.append(dict(id=run['entry'], dataset=report['dataset'], **summary,
                             inference_graph=graph, graph_ablation=report.get('graph_ablation') if run['phase'] == 'test' else None,
                             graph_recipe_sha256=report.get('graph_recipe_sha256'),
+                            # Candidate and context identity, so comparisons across runs stay verifiable from this file.
+                            num_candidates=report.get('num_candidates'), candidate_sha256=report.get('candidate_sha256'),
+                            context_sha256=report.get('context_sha256'),
                             calibration=report['inference'].get('calibration'), answer_filter=answer_filter,
                             filter_paired_with=report.get('filter_paired_with'),
                             paired_with=report.get('paired_with'), published_per_shape=scores if coverage else {}, result=str(path)))

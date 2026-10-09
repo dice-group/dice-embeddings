@@ -7,14 +7,19 @@ import torch
 
 
 class ReferenceKGFM:
-    def __init__(self, triples, n, nr, adapter, *, beam_size, device, restore_observed=True):
+    def __init__(self, triples, n, nr, adapter, *, beam_size, device, restore_observed=True, observed_ties='entity', negation='model'):
         if (adapter['feature_mode'] not in ('context_scores', 'context_scores_v1', 'global') or adapter['hidden_dim']
                 or adapter['normalization'] != 'none' or adapter['observed_mix'] not in (0, 1)
-                or not 0 <= adapter.get('membership_threshold', 0.) < 1):
+                or not 0 <= adapter.get('membership_threshold', 0.) < 1
+                or adapter.get('fixed_calibration') not in (None, 'minmax', 'softmax-degree', 'softmax', 'softmax-degree-ties')
+                or (adapter.get('fixed_calibration')
+                    and (adapter['feature_mode'] != 'global' or any(w for row in adapter['weights'] for w in row)))):
             raise ValueError('This reference covers the frozen linear observed-fact recipe')
         self.n, self.nr, self.adapter = n, nr, adapter
         self.k, self.device = beam_size, device
         self.restore_observed = restore_observed
+        self.observed_ties = observed_ties
+        self.negation = negation
         self.edges = defaultdict(set)
         triples = set(map(tuple, triples))
         self.degree = Counter(h for h, _, _ in triples)
@@ -48,16 +53,41 @@ class ReferenceKGFM:
                               torch.stack(((mean / 4).tanh(), entropy, gap, contrast), dim=1)), 1)
         if self.adapter['feature_mode'] == 'global':
             features = raw.new_ones((len(raw), 1))
-        u, v = (features @ raw.new_tensor(self.adapter['weights']).T).unbind(1)
-        bound = math.log(self.adapter['scale_bound'])
-        alpha = (bound * (u * (math.log(2) / bound)).tanh()).exp()
-        logits = alpha[:, None] * raw + self.adapter['bias_bound'] * v.tanh()[:, None]
-        calibrated = torch.nn.functional.logsigmoid(logits)
+        calibration = self.adapter.get('fixed_calibration')
+        if calibration == 'minmax':
+            # CQD-Hybrid: 0.9 (s - min) / (max - min) per row; a constant row gets membership zero everywhere.
+            low, high = raw.min(1, keepdim=True).values, raw.max(1, keepdim=True).values
+            spread = high - low
+            calibrated = torch.where(spread > 0, 0.9 * (raw - low) / torch.where(spread > 0, spread, 1.), 0.).log()
+        elif calibration in ('softmax-degree', 'softmax', 'softmax-degree-ties'):
+            # QTO: softmax over tails times the observed tail count (at least one), capped at 0.9999 below one; 'softmax'
+            # drops the count, '-ties' orders capped tails by the raw score. Masked known tails leave the softmax.
+            scores = raw
+            if self.adapter.get('mask_known_logits'):
+                keep = ~observed | observed.all(1, keepdim=True)
+                scores = torch.where(keep, raw, raw.new_tensor(-math.inf))
+            level = torch.log_softmax(scores, 1)
+            if calibration != 'softmax':
+                level = level + count.clamp_min(1).double().log()[:, None]
+            calibrated = torch.minimum(level, raw.new_tensor(math.log(0.9999)))
+            if calibration == 'softmax-degree-ties':
+                calibrated = calibrated - torch.where(level >= math.log(0.9999), 1e-6 * torch.atan2(torch.ones_like(raw), raw) / math.pi,
+                                                      raw.new_zeros(()))
+        else:
+            u, v = (features @ raw.new_tensor(self.adapter['weights']).T).unbind(1)
+            bound = math.log(self.adapter['scale_bound'])
+            alpha = (bound * (u * (math.log(2) / bound)).tanh()).exp()
+            logits = alpha[:, None] * raw + self.adapter['bias_bound'] * v.tanh()[:, None]
+            calibrated = torch.nn.functional.logsigmoid(logits)
         if self.adapter.get('membership_threshold'):
             # A fixed threshold makes memberships at or below it exactly zero; observed facts still override.
             calibrated = calibrated.masked_fill(calibrated <= math.log(self.adapter['membership_threshold']), -math.inf)
         if self.adapter['observed_mix'] == 1:
-            calibrated = calibrated.masked_fill(observed, 0.)
+            if self.observed_ties == 'model':
+                # Known facts a billionth below one, in the order of their calibrated membership.
+                calibrated = torch.where(observed, -1e-9 * (1 - calibrated.exp()), calibrated)
+            else:
+                calibrated = calibrated.masked_fill(observed, 0.)
         self.rows.update((tuple(condition), row.cpu()) for condition, row in zip(conditions, calibrated))
         self.raw_rows += len(conditions)
 
@@ -81,7 +111,13 @@ class ReferenceKGFM:
                 scores, answers, positive = visit(value[0])
                 for position, relation in enumerate(value[1]):
                     if relation == -2:
-                        scores, positive = self.complement(scores), False
+                        if self.negation == 'observed':
+                            # Known facts alone: exclude the branch's exact answers, keep every other entity at one.
+                            scores = torch.zeros(self.n, dtype=torch.float64, device=self.device)
+                            scores[sorted(answers)] = -torch.inf
+                        else:
+                            scores = self.complement(scores)
+                        positive = False
                         answers = set(range(self.n)) - answers
                         continue
                     if isinstance(value[0], int) and position == 0:

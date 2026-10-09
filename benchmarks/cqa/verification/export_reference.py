@@ -290,6 +290,31 @@ def predictor(entry, upstream, checkpoint, n, nr, triples, queries, device, prob
         model = UltraQuery(backbone, threshold=options['threshold'], logic=options['logic'])
         backbone.load_state_dict(state, strict=True)
         model.to(device).eval()
+        if options.get('calibration') == 'softmax-degree':
+            # DICE's opt-in calibrated variant, built from upstream parts: upstream's relation and entity models give the
+            # projection logits; the softmax over entities times the observed-tail mass that upstream's SymbolicTraversal
+            # reaches from the fuzzy set (at least one), capped at 0.9999, replaces the sigmoid; with observed_traversal
+            # the result also takes the maximum with that traversal.
+            from ultra.ultraquery import SymbolicTraversal
+            if options['threshold']:
+                raise ValueError('A calibrated projection takes no membership threshold')
+            projection, symbolic, traverse = model.model, SymbolicTraversal(), bool(options.get('observed_traversal'))
+
+            def calibrated(graph, h_prob, r_index):
+                rel_reprs = projection.model.relation_model(graph.relation_graph, query=r_index)
+                query = rel_reprs[torch.arange(r_index.shape[0], device=r_index.device), r_index]
+                output = projection.model.entity_model(graph, torch.einsum('bn, bd -> bnd', h_prob, query), rel_reprs, query)
+                known = symbolic(graph, h_prob, r_index)
+                result = (output.log_softmax(1) + known.sum(1, keepdim=True).clamp(min=1).log()).exp().clamp(max=.9999)
+                return torch.maximum(result, known) if traverse else result
+            model.model.forward = calibrated
+        elif options.get('observed_traversal'):
+            # DICE's opt-in variant, built from upstream parts: each projection also takes the maximum with upstream's
+            # own symbolic traversal of the same fuzzy set, so observed facts keep their source's membership.
+            from ultra.ultraquery import SymbolicTraversal
+            neural, symbolic = model.model.forward, SymbolicTraversal()
+            model.model.forward = lambda graph, h_prob, r_index: torch.maximum(neural(graph, h_prob, r_index),
+                                                                               symbolic(graph, h_prob, r_index))
         return lambda shape, batch: model(graph, torch.stack([Query.from_nested(q) for q in batch]).to(device), symbolic_traversal=False)
     if method in ('gnnqe', 'inductive-gnnqe', 'incoming-relation'):
         collections.Sequence = collections.abc.Sequence
@@ -431,6 +456,13 @@ def main():
         oracle['runtime_adjustments'] = ['Partition independent attention heads; preserve complete query sequences and batches.']
     if entry['method'] == 'incoming-relation':
         oracle['runtime_adjustments'] = ['Seed each query independently before upstream random tie shuffling; preserve Boolean classes.']
+    if entry['method'] in ('ultraquery', 'ultraquery-lp') and entry['options'].get('observed_traversal'):
+        oracle['runtime_adjustments'] = ['Opt-in observed traversal (not an upstream option): every projection takes the maximum '
+                                         "with upstream's SymbolicTraversal of the same fuzzy set."]
+    if entry['method'] in ('ultraquery', 'ultraquery-lp') and entry['options'].get('calibration'):
+        oracle.setdefault('runtime_adjustments', []).append(
+            'Opt-in softmax-times-degree calibration (not an upstream option): every projection applies the softmax of '
+            "upstream's projection logits times the observed-tail mass of upstream's SymbolicTraversal, capped at 0.9999.")
     if entry['method'] in ('gnnqe', 'inductive-gnnqe', 'incoming-relation'):
         oracle['runtime_adjustments'].append('Configure TorchDrug size-to-index helper and Python/RDKit imports.')
     if entry['method'] in ('cqd', 'cqd-hybrid') and entry['options'].get('reference_batching') is False:

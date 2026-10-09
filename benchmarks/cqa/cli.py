@@ -1,9 +1,13 @@
 """Prepare, verify, run and report the reproducible complex-query benchmarks.
 
     python -m benchmarks.cqa {plus_h,ultraquery} COMMAND [options]
+    python -m benchmarks.cqa {reproduce,fit,analysis,render} [options]
 
 Commands run in this process, which needs dicee and PyTorch, or with ``--image``
 inside the pinned Docker runtime; the host then needs only Python 3 and Docker.
+``reproduce`` drives these commands for the final studies of the paper and thesis
+(benchmarks/cqa/REPRODUCE.md); ``fit``, ``analysis`` and ``render`` regenerate
+their adapters, analyses and tables.
 """
 
 import argparse
@@ -114,6 +118,7 @@ def build_parser():
     p.add_argument('--comparison-references', type=Path, help='Optional dense CQD oracles for comparison reporting')
     p.add_argument('--device', default='cuda')
     p.add_argument('--study-path', help=argparse.SUPPRESS)
+    parallel(p)
     container(p)
 
     p = command('run', 'Run frozen entries: a validation pilot, or the test after verification')
@@ -359,7 +364,9 @@ def verify(parser, args):
 
     Passing evidence of an unchanged entry (a KGFM integration check, or a
     parity check against the same oracles) is reused, so an interrupted
-    verification resumes and checks can run as separate jobs.
+    verification resumes and checks can run as separate jobs. With ``--gpus``
+    the checks run concurrently, one GPU per worker, logged to
+    ``verification/ENTRY.log``; the evidence does not depend on the order.
     """
     from .study import freeze, integration_passed, parity_passed, verify_bundle
     study, root = args.output.resolve(), args.input_root.resolve()
@@ -381,7 +388,7 @@ def verify(parser, args):
                 continue
             if (target / 'pilot').exists():
                 raise ValueError(f'KGFM verification requires a fresh directory: {target}')
-            jobs.append((entry['id'], [*common, 'integration', *options, '--output', str(target)]))
+            jobs.append((entry['id'], entry['method'], [*common, 'integration', *options, '--output', str(target)]))
             continue
         reference = args.references / f'{entry["id"]}.pt' if args.references else None
         if reference is None or not reference.is_file():
@@ -395,11 +402,19 @@ def verify(parser, args):
                 raise ValueError(f'Missing comparison oracle: {comparison}')
             command += ['--comparison-reference', str(comparison)]
         if not parity_passed(evidence, bundle, entry, reference, comparison):
-            jobs.append((entry['id'], command))
-    for entry, command in jobs:
-        print(json.dumps(dict(entry=entry, state='verifying')), flush=True)
-        if subprocess.run(command).returncode:
-            raise SystemExit(f'Verification of {entry} failed; see its output above')
+            jobs.append((entry['id'], entry['method'], command))
+    if args.gpus and jobs:
+        logs = study / 'verification'
+        logs.mkdir(parents=True, exist_ok=True)
+        failed = run_workers([(entry, method, command, logs / f'{entry}.log') for entry, method, command in jobs],
+                             status=logs / 'status.json', gpus=args.gpus, workers_per_gpu=args.workers_per_gpu)
+        if failed:
+            raise SystemExit('Verification failed (see verification/ENTRY.log): ' + ', '.join(entry for entry, _ in failed))
+    else:
+        for entry, _, command in jobs:
+            print(json.dumps(dict(entry=entry, state='verifying')), flush=True)
+            if subprocess.run(command).returncode:
+                raise SystemExit(f'Verification of {entry} failed; see its output above')
     for entry in manifest['entries']:
         evidence = study / 'evidence' / f'{entry["id"]}.json'
         if entry['method'].endswith('-adapter'):
@@ -483,6 +498,10 @@ HANDLERS = {'setup': setup, 'evaluate': evaluate, 'prepare': prepare, 'verify': 
 
 
 def main(argv=None):
+    argv = sys.argv[1:] if argv is None else list(argv)
+    if argv and argv[0] in ('reproduce', 'fit', 'analysis', 'render'):
+        from .reproduction.cli import main as reproduction
+        return reproduction(argv)
     parser, commands = build_parser()
     args = parser.parse_args(argv)
     command = commands[args.command]
