@@ -26,7 +26,9 @@ _core_deps = [
 
 # Optional dependencies for various features
 _optional_deps = [
-    "pyarrow>=11.0.0",
+    # pyarrow 26 requires NumPy 2, which the NumPy pin above excludes before Python 3.13.
+    "pyarrow>=11.0.0,<26; python_version < '3.13'",
+    "pyarrow>=11.0.0; python_version >= '3.13'",
     "rdflib>=7.0.0",
     "tiktoken>=0.5.1",
     "pykeen>=1.10.2",
