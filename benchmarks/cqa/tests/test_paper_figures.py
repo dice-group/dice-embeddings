@@ -234,23 +234,58 @@ def test_missing_candidate_context_identity_is_not_a_verified_transfer_point():
     assert all(p['value'] is None for p in figures.transfer_data(reports, 'expected'))
 
 
+def comparison(raw):
+    """The combined-report form of a result: a summary row and its detail, without the result file."""
+    entry = raw['benchmark_run']['entry']
+    metrics = {s: dict(mrr=v['mrr'], hits1=v['mrr'] / 2, hits3=v['mrr'], hits10=v['hits10']) for s, v in raw['per_shape'].items()}
+    detail = dict(id=entry, dataset=raw['dataset'],
+                  per_shape={s: {'sort': m, 'expected': m, 'queries': raw['per_shape'][s]['queries'],
+                                 'hard_answers': raw['per_shape'][s]['hard_answers']} for s, m in metrics.items()},
+                  averages={p: tables.averages(metrics) for p in ('sort', 'expected')},
+                  inference_graph='train+valid', answer_filter=raw['protocol']['answer_filter'],
+                  calibration=raw['inference']['calibration'],
+                  **{k: raw[k] for k in ('num_candidates', 'candidate_sha256', 'context_sha256') if k in raw})
+    row = dict(id=entry, dataset=raw['dataset'], method=raw['inference']['method'], inference_graph='train+valid',
+               answer_filter=raw['protocol']['answer_filter'], calibration=raw['inference']['calibration'],
+               phase='test', complete_test=True)
+    return dict(rows=[row], details=[detail])
+
+
+@pytest.mark.parametrize('identity', [True, False])
+def test_transfer_points_come_from_combined_comparison_reports(identity):
+    dataset = 'FB15k237LogicalQuery'
+    baseline, model = result(dataset, 'ultraquery', .2), result(dataset, score=.3)
+    if not identity:
+        model.pop('context_sha256')
+    reports = tables.Reports()
+    for raw in (baseline, model):
+        reports.consume(comparison(raw))
+    values = {p['category']: p['value'] for p in figures.transfer_data(reports, 'expected') if p['method'] == 'ULTRA'}
+    assert values == (pytest.approx({'epfo': .1, 'negation': .1}) if identity else {'epfo': None, 'negation': None})
+
+
 def test_empty_figures_have_full_layouts_and_no_fabricated_values(tmp_path):
     payload = figures.generate_figures(tables.Reports(), tmp_path)
-    assert [f['placement'] for f in payload['figures']] == ['Main paper', 'Main paper', 'Appendix', 'Appendix']
+    assert [f['placement'] for f in payload['figures']] == ['Main paper'] * 3 + ['Appendix'] * 3
     assert not any('composition' in f['name'] for f in payload['figures'])
-    family, hardness, transfer, adapter = [f['data'] for f in payload['figures']]
-    assert len(family) == 26 * 2 and all(p['value'] is None for p in family)
+    calibration, hardness, mechanism, transfer, adapter, agreement = [f['data'] for f in payload['figures']]
+    # Gains over raw scores of the adapter and the rule for each planned backbone; no contrast without the review bundle.
+    assert len(calibration['gains']) == 26 * 2 * 2 and all(p['value'] is None for p in calibration['gains'])
+    assert calibration['equivalence'] == [] and mechanism == [] and agreement == []
+    # The rule-centred hardness profiles draw the rule and the raw-score controls (neither is planned here) and the
+    # baselines; the adapters' own curves are left out.
     planned = {r['method'] for r in tables.empty_reports().results.values() if r['dataset'] in tables.PLUS_H_DATASETS
-               and not r['paired_with']}
+               and not r['paired_with'] and not r['method'].endswith('-adapter')}
+    assert not any(s['method'] and s['method'].endswith(' + adapter') for s in hardness)
     assert len(hardness) == 3 * len(planned) * len(figures.PROFILE_TYPES)
     assert all(p['value'] is None for s in hardness for p in s['points'])
     assert len(adapter) == 26 * 2 and all(p['value'] is None and p['ci'] is None for p in adapter)
     assert len(transfer) == 23 * 2 * 2 and all(p['value'] is None for p in transfer)
-    assert len(list(tmp_path.glob('*.pdf'))) == 4
-    assert len(list(tmp_path.glob('*.svg'))) == len(list(tmp_path.glob('*.png'))) == 4
+    assert len(list(tmp_path.glob('*.pdf'))) == 6
+    assert len(list(tmp_path.glob('*.svg'))) == len(list(tmp_path.glob('*.png'))) == 6
     assert json.loads((tmp_path / 'figures.json').read_text()) == payload
     latex = (tmp_path / 'figures.tex').read_text()
-    assert latex.count(r'\begin{figure}') == 4 and r'\includegraphics[width=\linewidth]{main-01-adapter-gains.pdf}' in latex
+    assert latex.count(r'\begin{figure}') == 6 and r'\includegraphics[width=\linewidth]{main-01-calibration.pdf}' in latex
     assert '95%' not in latex and r'95\%' in latex
 
 
@@ -271,7 +306,7 @@ def test_optional_composition_is_appendix_and_keeps_missing_counts(tmp_path):
     assert composition['placement'] == 'Appendix'
     assert len(composition['data']) == 3
     assert all(b['fractions'] is None for c in composition['data'] for b in c['bins'])
-    assert len(list(tmp_path.glob('*.pdf'))) == 5
+    assert len(list(tmp_path.glob("*.pdf"))) == len(figures.FIGURE_NAMES) + 1
 
 
 def test_only_identical_complete_compositions_share_a_panel():
@@ -356,9 +391,27 @@ def test_hardness_profiles_use_numeric_bins_of_one_condition_only():
     rows.append(dict(dataset='FB15k237+H', method='qto', entry='qto-FB15k237+H', shape='3p', grouping='difficulty',
                      label='partial', comparison_graph='train+valid', answer_filter='corrected', sort=dict(mrr=.7)))
     reports.consume(rows)
-    series = figures.hardness_profile_data(reports, 'sort')
+    series = figures.hardness_profile_data(reports, 'sort', main='adapter')
     assert len(series) == 1 and series[0]['method'] == 'QTO'
     assert [p['value'] for p in series[0]['points']] == [.4, .3, .2]
+
+
+def test_hardness_profiles_draw_the_strongest_target_trained_baseline_with_difficulty_data():
+    scores = (('clmpt', .3), ('ultra-adapter', .25))
+    reports = tables.Reports()
+    # UltraQuery-LP leads the main table but is zero-shot, so it never competes; QTO is trained on the target and stronger
+    # than CLMPT but has no answer-level difficulty rows, so CLMPT is drawn and QTO named.
+    reports.consume([result('FB15k237+H', method, score) for method, score in (*scores, ('ultraquery-lp', .4), ('qto', .35))])
+    reports.consume([dict(dataset='FB15k237+H', method=method, entry=f'{method}-FB15k237+H', shape='3p',
+                          grouping='inferred_positive_edges', label=str(k), comparison_graph='train+valid',
+                          answer_filter='corrected', expected=dict(mrr=score / k))
+                     for method, score in scores for k in (1, 2, 3)])
+    series = figures.hardness_profile_data(reports, 'expected', main='adapter')
+    assert {(s['method'], s['strongest_baseline']) for s in series} == {('CLMPT', True), ('ULTRA + adapter', False)}
+    assert next(s for s in series if s['strongest_baseline'])['stronger_undrawn'] == 'QTO'
+    assert figures.hardness_caption(series).endswith(
+        'the baseline trained on that target graph with the highest EPFO MRR, named in its row; QTO scores higher on '
+        'FB15k-237+H but has no difficulty data.')
 
 
 def test_hardness_profiles_keep_the_best_baseline_of_each_dataset_dashed():
@@ -372,10 +425,11 @@ def test_hardness_profiles_keep_the_best_baseline_of_each_dataset_dashed():
                           grouping='inferred_positive_edges', label=str(k), comparison_graph='train+valid',
                           answer_filter='corrected', expected=dict(mrr=score / k))
                      for method, score in scores for k in (1, 2, 3)])
-    series = figures.hardness_profile_data(reports, 'expected')
+    series = figures.hardness_profile_data(reports, 'expected', main='adapter')
     # QTO trails CLMPT on the main table's EPFO MRR, so only CLMPT's profile is drawn.
     assert {(s['method'], s['strongest_baseline']) for s in series} == {('CLMPT', True), ('ULTRA + adapter', False)}
-    assert figures.hardness_caption(series).endswith('Dashed: the baseline with the highest EPFO MRR on each dataset, named in its row.')
+    assert figures.hardness_caption(series).endswith(
+        'Dashed: per dataset, the baseline trained on that target graph with the highest EPFO MRR, named in its row.')
     assert 'Dashed' not in figures.hardness_caption([s for s in series if not s['strongest_baseline']])
     fig = figures.hardness_profile_plot(plt, series)
     dashed = [line for ax in fig.axes for line in ax.get_lines() if line.get_linestyle() == '--']
@@ -426,7 +480,25 @@ def test_hardness_profile_rows_share_limits_that_cover_every_panel():
     fig = figures.hardness_profile_plot(plt, series)
     for ax in fig.axes:
         bottom, top = ax.get_ylim()
-        assert bottom == 0 and top >= 45
+        # A logarithmic axis per row: it covers the smallest (2) and largest (45) MRR of every panel.
+        assert ax.get_yscale() == 'log' and bottom <= 2 and top >= 45
+    plt.close(fig)
+
+
+def test_hardness_profiles_draw_identity_controls_dotted_in_their_adapters_colour():
+    import matplotlib
+    matplotlib.use('Agg')
+    import matplotlib.pyplot as plt
+    series = [dict(dataset='NELL995+H', shape='3p', method=name, entry=name, identity=name.endswith(' identity'),
+                   points=[dict(links=k + 1, value=v) for k, v in enumerate(values)])
+              for name, values in (('ULTRA + adapter', [.3, .05, .02]), ('ULTRA identity', [.25, .06, 0.]))]
+    fig = figures.hardness_profile_plot(plt, series)
+    lines = [line for line in fig.axes[0].get_lines() if len(line.get_xdata()) == 3]
+    adapter, identity = sorted(lines, key=lambda line: line.get_linestyle() != '-')
+    assert identity.get_color() == adapter.get_color() and identity.get_linestyle() != '-' and identity.get_markerfacecolor() == 'none'
+    # A zero MRR cannot be drawn on the logarithmic axis and is left out.
+    assert str(identity.get_ydata()[2]) == 'nan'
+    assert 'Dotted, open markers' in figures.hardness_caption(series)
     plt.close(fig)
 
 

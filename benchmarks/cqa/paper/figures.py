@@ -27,8 +27,8 @@ SHAPE_NAMES = {'o': 'circles', 'D': 'diamonds', 's': 'squares'}
 PROFILE_TYPES = ('3p', '4p', '3i', '4i')
 FAMILY_ROWS = (('transductive', 'Transductive'), ('inductive-e', 'Inductive (e)'), ('inductive-er', 'Inductive (e,r)'),
                ('plus_h', '+H'))
-FIGURE_NAMES = ('main-01-adapter-gains', 'main-02-hardness-profiles', 'appendix-01-transfer-gains',
-                'appendix-02-adapter-gains-by-dataset')
+FIGURE_NAMES = ('main-01-calibration', 'main-02-hardness-profiles', 'main-03-facts-mechanism', 'appendix-01-transfer-gains',
+                'appendix-02-adapter-gains-by-dataset', 'appendix-04-calibration-agreement')
 COMPOSITION_NAME = 'appendix-03-hardness-composition'
 TEXT_WIDTH = 5.5  # inches: one text column of NeurIPS/ICLR; two-column venues use figure*
 
@@ -559,16 +559,35 @@ def family_gain_plot(plt, points: list[dict]):
     return fig
 
 
-def hardness_profile_data(reports: 'tables.Reports', policy: str, types: tuple[str, ...] = PROFILE_TYPES) -> list[dict]:
+def hardness_profile_data(reports: 'tables.Reports', policy: str, types: tuple[str, ...] = PROFILE_TYPES, *,
+                          main: str = 'rule') -> list[dict]:
     """MRR by missing positive links for every method, one run and condition per dataset/method.
 
     Bins come only from supplied answer-level difficulty rows; zero-cost diagnostics
-    and coarse or released groupings are excluded, and no bin is interpolated.
+    and coarse or released groupings are excluded, and no bin is interpolated. main='rule' (the rule-centred
+    presentation) draws each backbone's training-free rule as its main curve, 'adapter' its shipped adapter; both keep
+    the raw-score control.
     """
-    primary = {r['id'] for r in tables.paper_records(reports)}
+    primary = {r['id'] for r in tables.paper_records(reports, identities=True)}
     rows = [r for r in tables.paper_hardness_rows(reports) if r['grouping'] == 'inferred_positive_edges'
             and r['shape'] in types and tables.missing_link_count(r) > 0]
-    rows = [r for r in rows if not summary.identity_run(tables.hardness_record(reports, r) | {'id': r.get('entry') or ''})]
+    # Identity controls stay only for the adapters (no baseline has one), so each backbone shows what its adapter changes.
+    rows = [r for r in rows if not summary.identity_run(tables.hardness_record(reports, r) | {'id': r.get('entry') or ''})
+            or (r.get('method') or '').endswith('-adapter')]
+    # The shipped recipes (and the rule) only: ablations, calibration brackets and review variants have their own tables.
+    def rule_entry(entry):
+        return '-softmax-degree-' in entry and not entry.endswith('-without-adapter')
+
+    rows = [r for r in rows if not any(token in (r.get('entry') or '') for token, _ in tables.VARIANT_TOKENS
+                                       if not (token == '-softmax-degree-' and main == 'rule'))
+            and not any((r.get('entry') or '').startswith(prefix) for prefix, _ in tables.BASELINE_VARIANTS)
+            and not summary.OBSERVED_FACT_MODES.search(tables.condition_base(r.get('entry') or '').replace('-without-adapter', ''))]
+    if main == 'rule':  # the adapter's own curves give way to the rule's
+        def keep(row):
+            record = tables.hardness_record(reports, row)
+            return (not (record.get('method') or '').endswith('-adapter') or rule_entry(row.get('entry') or '')
+                    or summary.identity_run(record | {'id': row.get('entry') or ''}))
+        rows = [r for r in rows if keep(r)]
     conditions = defaultdict(lambda: defaultdict(list))
     methods = {}
     for row in rows:
@@ -576,8 +595,11 @@ def hardness_profile_data(reports: 'tables.Reports', policy: str, types: tuple[s
         name = tables.short_method(tables.method_name(record))
         methods[name] = record.get('method')
         conditions[row.get('dataset'), name][row.get('entry'), row.get('comparison_graph'), row.get('answer_filter')].append(row)
-    # Baselines: only the one with the highest EPFO MRR in the main +H table, per dataset that table covers.
-    strongest = strongest_baselines(reports, policy)
+    # Baselines: per dataset, the one trained on the target graph (the main +H table's first group) with the highest EPFO
+    # MRR, among those with answer-level difficulty rows; a stronger one without them is named in the caption instead.
+    drawable = {(dataset, methods[name]) for dataset, name in conditions}
+    strongest = strongest_baselines(reports, policy, drawable)
+    undrawn = {dataset: method for dataset, method in strongest_baselines(reports, policy).items() if strongest.get(dataset) != method}
     series = []
     for (dataset, name), options in sorted(conditions.items(), key=lambda item: str(item[0])):
         baseline = not (methods[name] or '').endswith('-adapter')
@@ -597,7 +619,9 @@ def hardness_profile_data(reports: 'tables.Reports', policy: str, types: tuple[s
                     bins[tables.missing_link_count(row)] = None if tables.is_missing(value) else value
             if bins:
                 series.append(dict(dataset=dataset, shape=shape, method=name, entry=chosen[0].get('entry'),
-                                   strongest_baseline=baseline and dataset in strongest,
+                                   identity=name.endswith(' identity'), strongest_baseline=baseline and dataset in strongest,
+                                   stronger_undrawn=(tables.METHOD_NAMES.get(undrawn[dataset], undrawn[dataset])
+                                                     if baseline and dataset in undrawn else None),
                                    points=[dict(links=k, value=bins.get(k)) for k in range(1, tables.POSITIVE_EDGES[shape] + 1)]))
     if not series:
         for dataset in tables.PLUS_H_DATASETS:
@@ -607,26 +631,44 @@ def hardness_profile_data(reports: 'tables.Reports', policy: str, types: tuple[s
     return series
 
 
-def strongest_baselines(reports: 'tables.Reports', policy: str) -> dict[str, str]:
-    """{+H dataset: method} of the main +H table's baseline with the highest EPFO MRR; first listed wins ties."""
+def strongest_baselines(reports: 'tables.Reports', policy: str, drawable: set | None = None) -> dict[str, str]:
+    """{+H dataset: method} of the main +H table's baseline trained on the target graph with the highest EPFO MRR; first
+    listed wins ties. Zero-shot baselines (UltraQuery, UltraQuery-LP) never compete. With drawable, only (dataset, method)
+    pairs in it compete."""
     best = {}
     for row in summary.plus_h_rows(reports, policy):
-        if row['method'].endswith('-adapter'):
+        if row['method'] not in summary.TRAINED_ON_TARGET:
             continue
         for dataset in tables.PLUS_H_DATASETS:
+            if drawable is not None and (dataset, row['method']) not in drawable:
+                continue
             values = row['values'].get((dataset, 'epfo'))
             if values and (dataset not in best or sum(values) / len(values) > best[dataset][0]):
                 best[dataset] = sum(values) / len(values), row['method']
     return {dataset: method for dataset, (_, method) in best.items()}
 
 
+def series_style(name: str) -> tuple[str, str, float]:
+    """Colour, marker and width of a series; an identity control and the rule take their adapter's colour and marker."""
+    return METHOD_STYLES.get(name.replace(' identity', ' + adapter').replace(' + softmax × degree', ' + adapter'), ('#444444', '.', .9))
+
+
 def hardness_caption(series: list[dict]) -> str:
     """Caption of the hardness profiles; it names the dashed line only when the figure has one."""
     caption = ('MRR on +H by the minimum number of links that must be predicted to reach an answer (x-axis), for the longest path '
-               '(3p, 4p) and intersection (3i, 4i) query types. Missing bins are not drawn; all query types and counts are in the '
-               'appendix.')
+               '(3p, 4p) and intersection (3i, 4i) query types, on a logarithmic scale. Missing bins and bins with zero MRR are '
+               'not drawn; all query types and counts are in the appendix.')
+    if any((item.get('method') or '').endswith(' + softmax × degree') for item in series):
+        caption += ' Solid: each backbone with the training-free rule (softmax × degree).'
+    if any(item.get('identity') for item in series):
+        caption += ' Dotted, open markers: raw scores of the same backbone.'
     if any(item.get('strongest_baseline') for item in series):
-        caption += ' Dashed: the baseline with the highest EPFO MRR on each dataset, named in its row.'
+        undrawn = sorted({(item['dataset'], item['stronger_undrawn']) for item in series if item.get('stronger_undrawn')},
+                         key=lambda pair: tables.PLUS_H_DATASETS.index(pair[0]) if pair[0] in tables.PLUS_H_DATASETS else 99)
+        caption += (' Dashed: per dataset, the baseline trained on that target graph with the highest EPFO MRR, named in its '
+                    'row')
+        caption += ('; ' + '; '.join(f'{method} scores higher on {tables.dataset_name(dataset)} but has no difficulty data'
+                                     for dataset, method in undrawn) + '.') if undrawn else '.'
     return caption
 
 
@@ -637,7 +679,7 @@ def hardness_profile_plot(plt, series: list[dict]):
     types = [t for t in PROFILE_TYPES if any(s['shape'] == t for s in series)] or list(PROFILE_TYPES)
     fig, axes = plt.subplots(len(datasets), len(types), figsize=(TEXT_WIDTH, 1.25 * len(datasets) + .55),
                              sharex='col', sharey='row', squeeze=False, layout='constrained')
-    methods = sorted({s['method'] for s in series if s['method'] and not s.get('strongest_baseline')},
+    methods = sorted({s['method'] for s in series if s['method'] and not s.get('strongest_baseline') and not s.get('identity')},
                      key=lambda m: (list(METHOD_STYLES).index(m) if m in METHOD_STYLES else len(METHOD_STYLES), m))
     for i, dataset in enumerate(datasets):
         strongest = sorted({s['method'] for s in series if s['dataset'] == dataset and s.get('strongest_baseline')})
@@ -648,13 +690,16 @@ def hardness_profile_plot(plt, series: list[dict]):
             for item in series:
                 if item['dataset'] != dataset or item['shape'] != shape or not item['method']:
                     continue
-                color, marker, width = METHOD_STYLES.get(item['method'], ('#444444', '.', .9))
+                color, marker, width = series_style(item['method'])
                 style = dict(color=color, linewidth=width)
+                if item.get('identity'):
+                    style = dict(color=color, linewidth=.9 * width, linestyle=(0, (1, 1.5)), markerfacecolor='none')
                 if item.get('strongest_baseline'):
                     # One grey dashed line per dataset; the row names the method.
                     style = dict(color=BASELINE_COLOR, linestyle='--', linewidth=.9)
                 xs = [p['links'] for p in item['points']]
-                ys = [math.nan if p['value'] is None else 100 * p['value'] for p in item['points']]
+                # A zero MRR has no place on the logarithmic axis; it is drawn as missing.
+                ys = [math.nan if p['value'] is None or p['value'] <= 0 else 100 * p['value'] for p in item['points']]
                 if any(not math.isnan(y) for y in ys):
                     ax.plot(xs, ys, marker=marker, markersize=3.2, zorder=3 if 'adapter' in item['method'] else 2, **style)
                     drawn = True
@@ -673,16 +718,23 @@ def hardness_profile_plot(plt, series: list[dict]):
                 ax.set_ylabel(tables.dataset_name(dataset) + '\nMRR', fontsize=7)
             if i == len(datasets) - 1:
                 ax.set_xlabel('missing links', fontsize=7)
-    # Only once every panel is drawn: the shared row limits must cover all of its panels.
+    # Only once every panel is drawn: the shared row scale must cover all of its panels. MRR spans orders of magnitude
+    # between one and four missing links, so a logarithmic axis keeps the hardest bins readable.
+    from matplotlib.ticker import FuncFormatter, LogLocator
     for row in axes:
-        row[0].set_ylim(bottom=0)
-    handles = [Line2D([], [], color=METHOD_STYLES.get(m, ('#444444', '.', .9))[0],
-                      marker=METHOD_STYLES.get(m, ('#444444', '.', .9))[1], markersize=3.5,
-                      linewidth=METHOD_STYLES.get(m, ('#444444', '.', .9))[2], label=m) for m in methods]
+        row[0].set_yscale('log')
+        row[0].yaxis.set_major_locator(LogLocator(base=10, subs=(1., 2., 5.)))
+        row[0].yaxis.set_major_formatter(FuncFormatter(lambda value, _: f'{value:g}'))
+        row[0].yaxis.set_minor_formatter(FuncFormatter(lambda value, _: ''))
+    handles = [Line2D([], [], color=series_style(m)[0], marker=series_style(m)[1], markersize=3.5,
+                      linewidth=series_style(m)[2], label=m) for m in methods]
+    if any(s.get('identity') for s in series):
+        handles.append(Line2D([], [], color='#444444', marker='o', markersize=3.5, markerfacecolor='none', linewidth=.9,
+                              linestyle=(0, (1, 1.5)), label='Raw scores'))
     if any(s.get('strongest_baseline') for s in series):
         handles.append(Line2D([], [], color=BASELINE_COLOR, linestyle='--', linewidth=.9, label='Best baseline (per dataset)'))
     if handles:
-        fig.legend(handles=handles, loc='outside upper center', ncol=min(len(handles), 5), frameon=False, fontsize=7)
+        fig.legend(handles=handles, loc='outside upper center', ncol=min(len(handles), 3), frameon=False, fontsize=7)
     return fig
 
 
@@ -713,19 +765,22 @@ def generate_figures(reports, output, *, policy='sort', hardness_composition=Fal
         raise ValueError('--figures requires matplotlib (already listed in project dependencies)') from error
     payload = dict(tie_policy=policy, score_units='fraction; displayed MRR differences x100',
                    template=reports.template, figures=[])
+    from . import review
     specifications = (
-        ('main-01-adapter-gains', 'Main paper', lambda r: family_gain_data(r, policy), family_gain_plot,
-         'MRR gain (points) from the learned adapter over the same frozen backbone without it, over all query types. '
-         'Small dots: single datasets (mean over adapter seeds); large markers: family means. Per-dataset paired 95% '
-         'confidence intervals are in the appendix.'),
+        (review.FIGURE_CALIBRATION, 'Main paper', lambda r: review.calibration_data(r, policy), review.calibration_plot,
+         review.calibration_caption),
         ('main-02-hardness-profiles', 'Main paper', lambda r: hardness_profile_data(r, policy), hardness_profile_plot,
          hardness_caption),
+        (review.FIGURE_MECHANISM, 'Main paper', lambda r: review.mechanism_data(r, policy), review.mechanism_plot,
+         lambda data: review.mechanism_caption(data, reports)),
         ('appendix-01-transfer-gains', 'Appendix', lambda r: transfer_data(r, policy), transfer_plot,
          lambda data: 'MRR of the adapter minus UltraQuery per dataset (points), for EPFO and negation query types. '
          + marker_legend(shown_backbones(data))),
         ('appendix-02-adapter-gains-by-dataset', 'Appendix', lambda r: adapter_data(r, policy), adapter_plot,
          'MRR of the adapter minus the same backbone without it per dataset (points), with paired 95% confidence '
          'intervals over queries. Open markers: partial coverage.'),
+        (review.FIGURE_AGREEMENT, 'Appendix', lambda r: review.agreement_data(r, policy), review.agreement_plot,
+         review.agreement_caption),
     )
     if hardness_composition:
         specifications += ((COMPOSITION_NAME, 'Appendix', composition_data, composition_plot,

@@ -120,7 +120,7 @@ def execution_settings(record):
     if options:
         settings['options'] = options
     settings['query_batch_size'] = inference.get('query_batch_size', manifest.get('query_batch_size'))
-    settings['candidates'] = record.get('raw', {}).get('num_candidates')
+    settings['candidates'] = record.get('raw', {}).get('num_candidates', record.get('detail', {}).get('num_candidates'))
     for key in ('candidate_sha256', 'context_sha256'):
         value = record.get('raw', {}).get(key, record.get('detail', {}).get(key))
         settings[key] = None if is_missing(value) else value
@@ -203,6 +203,8 @@ class Reports:
         self.effects = {'adapter': [], 'filter': [], 'graph': []}
         self.template = False
         self.primary_recipes = ()
+        # Review analyses (review.py): named paired contrasts and mechanism diagnostics, copied, never recomputed.
+        self.review = {}
 
     def add_result(self, record):
         key = record['id']
@@ -253,6 +255,20 @@ class Reports:
             return
         if not isinstance(payload, dict):
             raise ValueError('Reports must be JSON objects or lists of report objects')
+        if 'review_analyses' in payload:
+            bundle = payload['review_analyses']
+            if not isinstance(bundle, dict) or not isinstance(bundle.get('contrasts', []), list):
+                raise ValueError('Review analyses must be an object with a list of contrasts')
+            for key, value in bundle.items():
+                if key == 'contrasts':
+                    known = {(c['name'], c['suite'], c.get('policy'), c.get('backbone')) for c in self.review.get('contrasts', [])}
+                    self.review.setdefault('contrasts', []).extend(
+                        c for c in value if (c['name'], c['suite'], c.get('policy'), c.get('backbone')) not in known)
+                elif self.review.get(key) not in (None, value):
+                    raise ValueError(f'Conflicting review analyses: {key}')
+                else:
+                    self.review[key] = value
+            return
         if 'macro' in payload:
             kind = ('adapter' if 'learned' in payload and 'control' in payload else
                     'filter' if 'corrected' in payload and 'released' in payload else
@@ -391,17 +407,36 @@ def dataset_name(name):
             'NELL995LogicalQuery': 'NELL995', 'FB15k237+H': 'FB15k-237+H'}.get(name, name)
 
 
+# Entry-ID tokens of adapter runs other than the shipped recipe, and their labels: tables that list every run must
+# never show such a run under the shipped recipe's name.
+VARIANT_TOKENS = (('-no-fb-', 'fit without FB15k-237'), ('-ultra_4g-', 'ULTRA 4g'), ('-ultra_50g-', 'ULTRA 50g'),
+                  ('-global-', 'global calibration'), ('-uqlp-', 'UltraQuery-LP thresholds'), ('-target-fit-', 'target fit'),
+                  ('-target-valid-', 'target-validation fit'), ('-minmax-', 'min-max'), ('-softmax-degree-', 'softmax × degree'),
+                  ('-gamma0-', 'refit without facts'), ('-wide-', 'wide bounds'), ('-uqweights-', 'UltraQuery weights'))
+BASELINE_VARIANTS = (('ultraquery-traversal-', ' + observed facts'), ('ultraquery-lp-4g-', ' (ULTRA 4g)'),
+                     ('ultraquery-calibrated-', ' + observed facts + softmax × degree'),
+                     ('ultraquery-lp-calibrated-', ' + observed facts + softmax × degree'),
+                     # +H full-test arms of the review subsets driver (UltraQuery LP has no +H recipes of its own).
+                     ('uqlp-calibrated-', ' + observed facts + softmax × degree'))
+
+
 def method_name(record):
     method = record.get('method')
     name = METHOD_NAMES.get(method, method or MISSING)
     entry = record.get('id', record.get('entry', ''))
-    if method and method.endswith('-adapter'):
+    if method and method.endswith('-adapter') and '-softmax-degree-' in entry and '-uqweights' not in entry:
+        # The training-free rule of the main tables is a system of its own, not an adapter variant.
+        name = name.replace(' + adapter', ' + softmax × degree')
+    elif method and method.endswith('-adapter'):
         if 'intersections' in entry:
             name += ' (2i/3i)'
         elif '14type' in entry:
             name += ' (14-type)'
+        name += next((f' ({label})' for token, label in VARIANT_TOKENS if token in entry), '')
         if record.get('paired_with') or record.get('calibration') == 'without-adapter' or '-without-adapter' in entry:
             name = name.replace(' + adapter', ' identity')
+    else:
+        name += next((label for prefix, label in BASELINE_VARIANTS if (entry or '').startswith(prefix)), '')
     options = (record.get('raw', {}).get('inference') or {}).get('options') or {}
     if options.get('observed_facts') in ('none', 'atomic', 'both'):
         name += ' (facts ' + options['observed_facts'] + ')'
@@ -505,6 +540,12 @@ def main_plus_h_records(reports):
     return records
 
 
+# UltraQuery LP on +H is our own setting, not a published one: the review's full-test arms run frozen ULTRA 3g in
+# UltraQuery's executor with the UQ-23 thresholds carried over.
+PLUS_H_LP_NOTE = ('UltraQuery-LP on +H: frozen ULTRA 3g in UltraQuery\'s executor; UltraQuery LP publishes no +H thresholds, '
+                  'so the matching UQ-23 values are carried over (0.97 on NELL995+H, 0.8 elsewhere).')
+
+
 def main_plus_h_protocol_notes(records):
     graphs = {r['graph'] for r in records if r['method'] not in GRAPH_INDEPENDENT_METHODS}
     filters = {r['filter'] for r in records}
@@ -517,6 +558,8 @@ def main_plus_h_protocol_notes(records):
         notes.append('ConE, CLMPT and plain CQD do not consume graph facts at inference.')
     if filters:
         notes.append('All methods use ' + next(iter(filters)) + ' answer filters.')
+    if any(r['method'] == 'ultraquery-lp' for r in records):
+        notes.append(PLUS_H_LP_NOTE)
     return ' '.join(notes)
 
 
@@ -1032,8 +1075,13 @@ def protocol_panels(title, label, headers, widths, panels, note='', *, numeric_f
                       banner=context, row_group=group_by, keep_group=max(group_sizes.values(), default=0) <= 20,
                       spanners=spanners, layout=layout)
         if index:
-            # Longtable increments the table counter even without a caption.
-            panel = r'\addtocounter{table}{-1}' + '\n' + panel
+            # Longtable increments the table counter even without a caption; with hyperref, each continuation panel needs
+            # an anchor name of its own, or links to the table can land on another float.
+            # The thesis's own anchor scheme is kept and extended, then restored after the panel.
+            panel = (r'\addtocounter{table}{-1}' + '\n' + r'\providecommand{\theHtable}{\arabic{table}}'
+                     + r'\let\cqaSavedTheHtable\theHtable'
+                     + rf'\renewcommand{{\theHtable}}{{\cqaSavedTheHtable.panel{index}}}' + '\n' + panel
+                     + '\n' + r'\let\theHtable\cqaSavedTheHtable')
             panel = panel.replace(rf'\caption{{{escape(title)}}}\label{{{label}}}\\',
                                   '')
         parts.append(panel)
@@ -1145,8 +1193,9 @@ def render_tables(reports, *, policy='sort', fragment=False, preview=False):
                      r'using the default baselines and adapters. Identity and filter comparisons are separate tables. '
                      r'Dataset coverage is planned; no evaluation has been run. Scores, intervals and unavailable counts are "-". '
                      r'Hardness bins contain 1 to 4 missing positive links, as permitted by each parent type; further breakdowns appear only when supplied.\par}')
+    from . import review
     for index, render in enumerate((summary.ultraquery_table, summary.plus_h_table, summary.bracket_table,
-                                    summary.ablation_table), 1):
+                                    summary.ablation_table, review.gains_table), 1):
         lines.extend([f'% BEGIN MAIN TABLE {index}', render(main, policy), f'% END MAIN TABLE {index}'])
     lines.extend([r'\clearpage', r'\section*{Appendix}', r'\setcounter{table}{0}', r'\renewcommand{\thetable}{A\arabic{table}}',
                   r'{\normalsize ' + APPENDIX_INTRO + r'\par}'])
@@ -1155,6 +1204,10 @@ def render_tables(reports, *, policy='sort', fragment=False, preview=False):
             # In the standalone preview, each logical table starts together.
             lines.append(r'\clearpage')
         lines.extend([f'% BEGIN PAPER TABLE {index}', appendix_table(index, spec), f'% END PAPER TABLE {index}'])
+    for name, render in review.APPENDIX_TABLES:
+        if not fragment:
+            lines.append(r'\clearpage')
+        lines.extend([f'% BEGIN REVIEW TABLE {name}', render(reports, policy), f'% END REVIEW TABLE {name}'])
     if not fragment:
         lines.append(r'\end{document}')
     return '\n\n'.join(lines) + '\n'
@@ -1233,7 +1286,7 @@ def appendix_specifications(reports, policy):
                   'facts. Within a bin, scores average answers per participating query, then participating queries; queries can '
                   'occur in several bins, so these means do not recombine. Overall panels identify the inference facts and panel '
                   'headings the parent-query coverage. Identical count vectors are shown once; impossible or unavailable bins '
-                  'are "-".'),
+                  'are "-".' + (' ' + PLUS_H_LP_NOTE if any(r['method'] == 'ultraquery-lp' for r in plus_h_records) else '')),
         dict(headers=adapter_headers, widths=[39, *adapter_widths[3:]], rows=adapter_values,
              options=dict(spanners=adapter_spanners, numeric_from=1),
              note='Paired MRR; delta is learned minus identity. Supplied 95% confidence intervals are conditional on frozen '
@@ -1257,7 +1310,7 @@ def appendix_specifications(reports, policy):
 
 # Thesis files (--thesis), relative to the thesis project; main.tex inputs them by these names.
 THESIS_TABLES = 'tables/cqa'
-THESIS_MAIN_TABLES = ('main-ultraquery', 'main-plus-h', 'main-brackets', 'main-ablations')
+THESIS_MAIN_TABLES = ('main-ultraquery', 'main-plus-h', 'main-brackets', 'main-gains')
 
 
 def render_thesis(reports, *, policy='sort', preview=False):
@@ -1276,15 +1329,20 @@ def render_thesis(reports, *, policy='sort', preview=False):
     main = preview_reports(reports) if preview else reports
     header = (f'% Generated by python -m benchmarks.cqa.paper --thesis (tie policy: {policy}'
               + ('; preview' if preview else '') + '). Regenerate instead of editing.')
-    renders = (summary.ultraquery_table, summary.plus_h_table, summary.bracket_table, summary.ablation_table)
+    from . import review
+    renders = (summary.ultraquery_table, summary.plus_h_table, summary.bracket_table, review.gains_table)
     files = {f'{name}.tex': header + '\n' + render(main, policy, layout='thesis') + '\n'
              for name, render in zip(THESIS_MAIN_TABLES, renders)}
+    # The rule-centred presentation moves the recipe ablations to the appendix, where they float.
+    files['appendix-ablations.tex'] = header + '\n' + summary.ablation_table(main, policy, layout='thesis', placement='tbp') + '\n'
     settings = summary.shared_settings(main, policy) + (' ' + summary.PREVIEW_NOTE if preview else '')
     files['settings.tex'] = header + '\n' + settings + '\n'
     # The introduction opens the appendix chapter; the long tables follow on landscape pages.
     appendix = [header, thesis_note(APPENDIX_INTRO) + r'\par', r'\begin{landscapepages}']
     appendix.extend(appendix_table(index, spec, layout='thesis')
                     for index, spec in enumerate(appendix_specifications(reports, policy), 1))
+    # The review's appendix tables follow the benchmark tables on the same landscape pages.
+    appendix.extend(render(reports, policy, layout='thesis') for _, render in review.APPENDIX_TABLES)
     appendix.append(r'\end{landscapepages}')
     files['appendix.tex'] = '\n\n'.join(appendix) + '\n'
     return files
@@ -1295,6 +1353,12 @@ def write_thesis(reports, directory, *, policy='sort', preview=False, hardness_c
     directory = Path(directory)
     if not directory.is_dir():
         raise ValueError(f'Thesis directory {directory} does not exist')
+    # Every thesis table and figure reports full test splits: an interrupted, partial or non-test run must not enter one.
+    incomplete = sorted(entry for entry, record in reports.results.items() if not record['complete']
+                        and not ((record.get('raw') or {}).get('protocol') or {}).get('max_queries_per_shape'))
+    if incomplete and not reports.template:
+        raise ValueError(f'Thesis tables need complete test runs; incomplete: {", ".join(incomplete[:5])}'
+                         + (f' and {len(incomplete) - 5} more' if len(incomplete) > 5 else ''))
     written = []
     tables_directory = directory / THESIS_TABLES
     tables_directory.mkdir(parents=True, exist_ok=True)
@@ -1307,7 +1371,28 @@ def write_thesis(reports, directory, *, policy='sort', preview=False, hardness_c
                                hardness_composition=hardness_composition, theme='thesis',
                                design=thesis_design(directory))
     written.extend(directory / THESIS_FIGURES / file for figure in payload['figures'] for file in figure['files'])
+    remove_stale(directory, written)
     return written
+
+
+GENERATED_HEADER = '% Generated by python -m benchmarks.cqa.paper'
+
+
+def remove_stale(directory, written):
+    """Delete generated thesis files this run no longer writes (a .tex with the generator's header, and its PDF), so a
+    float the presentation dropped cannot compile on silently; returns the removed paths."""
+    from .figures import THESIS_FIGURES
+    written = {Path(path).resolve() for path in written}
+    removed = []
+    for folder in (THESIS_TABLES, THESIS_FIGURES):
+        for path in sorted((Path(directory) / folder).glob('*.tex')):
+            if path.resolve() in written or not path.read_text(encoding='utf-8').startswith(GENERATED_HEADER):
+                continue
+            for stale in (path, path.with_suffix('.pdf')):
+                if stale.is_file() and stale.resolve() not in written:
+                    stale.unlink()
+                    removed.append(stale)
+    return removed
 
 
 def main(argv=None):

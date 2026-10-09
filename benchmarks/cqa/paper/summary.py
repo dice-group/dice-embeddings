@@ -44,22 +44,35 @@ PLANNED_ABLATIONS = (('ultra', 'no-fb'), ('ultra', 'ultra_4g'), ('ultra', 'ultra
 # Known recipe tokens in reading order: training data, adapter form, inference, search, backbone.
 ABLATION_NAMES = {'no-fb': 'Adapter fit without FB15k-237', 'types14': 'Adapter trained on 14 query types',
                   'balanced': 'Hardness-balanced training', 'routed': 'Adapters routed by query type',
-                  'product-intersections-facts-none': 'Observed facts off', 'beam128': 'Beam 128', 'beam256': 'Beam 256',
+                  'product-intersections-facts-none': 'Observed facts off',
+                  'gamma0-facts-none': 'Adapter refitted without observed facts, facts off',
+                  'wide': 'Wider scale and shift bounds', 'uqweights': 'UltraQuery weights as the backbone',
+                  'product-14types': 'Adapter trained on 14 query types', 'product-14type': 'Adapter trained on 14 query types',
+                  'beam128': 'Beam 128', 'beam256': 'Beam 256',
                   'ultra_4g': r'ULTRA 4g backbone$^\dagger$', 'ultra_50g': r'ULTRA 50g backbone$^\ddagger$'}
 # The adapter between fixed calibrations and adapters fitted on each target graph, per backbone: (kind, row label).
 # 'identity' and 'primary' are the main tables' no-adapter control and adapter; the others are recipe tokens, which
 # the bracket table shows instead of the ablation table.
-BRACKETS = (('identity', 'No adapter (raw scores)'), ('uqlp', 'UltraQuery-LP thresholds'),
+BRACKETS = (('identity', 'No adapter (raw scores)'), ('minmax', 'Min-max normalization'),
+            ('softmax-degree', 'Softmax times observed degree'), ('uqlp', 'UltraQuery-LP thresholds'),
             ('global', 'Global scale and shift'), ('primary', 'Adapter (ours)'),
-            ('target-fit', 'Adapter fitted on each target graph'))
+            ('target-fit', 'Adapter fitted on each target graph'), ('target-valid', 'Adapter fitted on target validation queries'))
 BRACKET_TOKENS = tuple(kind for kind, _ in BRACKETS if kind not in ('identity', 'primary'))
+# The rule is a main-table system in the rule-centred presentation, so the appendix lists its runs like the adapter's.
+APPENDIX_HIDDEN_TOKENS = tuple(kind for kind in BRACKET_TOKENS if kind != 'softmax-degree')
 BRACKET_NOTES = {
-    'identity': 'No adapter: the sigmoid of the backbone scores, with the same observed facts.',
-    'uqlp': 'UltraQuery-LP thresholds: memberships at or below 0.8 (0.97 on NELL995) are set to zero, as in UltraQuery LP; '
-            'they exist for UQ-23 only.',
+    'identity': 'Raw scores: the sigmoid of the backbone scores, with the same observed facts.',
+    'uqlp': ('UltraQuery-LP threshold t: the published per-dataset values of UltraQuery LP (0.8; 0.97 on NELL995) applied in '
+             'our beam executor, not chosen by us; memberships at or below t become zero, so 1p depends on the tie policy. '
+             'They exist for UQ-23 only.'),
     'global': 'Global scale and shift: one scale and one shift for every atom (2 parameters), fitted like the adapter.',
-    'target-fit': 'Fitted on each target graph: one adapter per dataset, trained on queries sampled from its test '
-                  r'inference graph with 30\% of the facts masked; no target query or answer is used.'}
+    'target-fit': 'Adapter per target graph: one adapter per dataset, trained on queries sampled from its test '
+                  r'inference graph with 30\% of the facts masked; no target query or answer is used.',
+    'minmax': 'Min-max normalization: 0.9 times the min-max normalized scores of each atom, as in CQD-Hybrid; no fitted parameter.',
+    'target-valid': 'Adapter per target, validation queries: one adapter per dataset, trained on 2i and 3i queries of its '
+                    'validation split; no test query or answer is used.',
+    'oracle': ('Oracle: per target and query type the best of the zero-shot rows that cover every target, selected on the '
+               'test results it is scored on; an optimistic ceiling, not a method.')}
 RECIPE_DESCRIPTIONS = {'product-intersections': 'adapter trained on 2i/3i queries',
                        'product-14types': 'adapter trained on 14 query types', 'product-14type': 'adapter trained on 14 query types'}
 ABLATION_NOTES = {'ultra_4g': r'$^\dagger$Pretraining adds NELL995, a target dataset.',
@@ -130,6 +143,8 @@ def collect(reports: 'tables.Reports') -> dict[System, Runs]:
     for record in reports.results.values():
         if record['id'].endswith('-released-filters'):
             continue
+        if ((record.get('raw') or {}).get('protocol') or {}).get('max_queries_per_shape'):
+            continue  # a query sample (review subset arm) never enters the full-test tables
         system, seed = system_of(record)
         previous = systems[system][record['dataset']].get(seed)
         if previous is None or condition_priority(record) < condition_priority(previous):
@@ -157,8 +172,11 @@ def primary_recipes(reports: 'tables.Reports', systems: dict[System, Runs]) -> d
         backbone = method.split('-')[0]
         for suite in ('ultraquery', 'plus_h'):
             datasets = set(suite_datasets(suite))
+            # Calibration rows (the rule, brackets) and observed-fact variants are never an adapter's primary recipe.
             recipes = [r for (m, identity, r), runs in systems.items()
-                       if m == method and not identity and datasets & set(runs)]
+                       if m == method and not identity and datasets & set(runs)
+                       and (r[len(backbone) + 1:] if r.startswith(backbone + '-') else r) not in BRACKET_TOKENS
+                       and not OBSERVED_FACT_MODES.search(r)]
             if not recipes:
                 continue
             named = [r for r in recipes if any(r in (name, f'{backbone}-{name}') for name in requested)]
@@ -259,7 +277,7 @@ def reference_point(record: Record) -> bool:
         return False
     backbone = method.split('-')[0]
     token = recipe[len(backbone) + 1:] if recipe.startswith(backbone + '-') else recipe
-    return token in BRACKET_TOKENS or bool(OBSERVED_FACT_MODES.search(token))
+    return token in APPENDIX_HIDDEN_TOKENS or bool(OBSERVED_FACT_MODES.search(token))
 
 
 def appendix_reports(reports: 'tables.Reports') -> 'tables.Reports':
@@ -302,20 +320,67 @@ def corrected_filter_reports(reports: 'tables.Reports') -> 'tables.Reports':
     return subset
 
 
-def system_order(method: str, identity: bool) -> tuple:
-    """Baselines trained on the target first, then transferred baselines, then ULTRA and TRIX."""
+def system_order(method: str, identity: bool, rule: bool = False) -> tuple:
+    """Baselines trained on the target first, then transferred baselines, then the backbones: raw scores, the
+    training-free rule, then the adapter (fewest fitted parameters first)."""
     if method.endswith('-adapter'):
         backbone = method.split('-')[0]
-        return (2, BACKBONES.index(backbone) if backbone in BACKBONES else len(BACKBONES), backbone, not identity)
+        return (2, BACKBONES.index(backbone) if backbone in BACKBONES else len(BACKBONES), backbone,
+                0 if identity else 1 if rule else 2)
     return (0 if method in TRAINED_ON_TARGET else 1, tables.method_order(tables.METHOD_NAMES.get(method, method)), method, False)
 
 
-def display_name(method: str, identity: bool) -> str:
+def display_name(method: str, identity: bool, rule: bool = False) -> str:
     """Row label of a system in the main tables."""
     name = tables.METHOD_NAMES.get(method, method)
     if method.endswith('-adapter'):
-        return name.replace(' + adapter', '') + (' (no adapter)' if identity else ' + adapter (ours)')
+        return name.replace(' + adapter', '') + (' (raw scores)' if identity else f' + {RULE_NAME}' if rule else ' + adapter (ours)')
     return name
+
+
+# The training-free rule of the rule-centred presentation (figure and table plan agreed 2026-10-08): QTO's calibration,
+# softmax over all entities times the observed degree, run in our beam executor.
+RULE_TOKEN = 'softmax-degree'
+RULE_NAME = 'softmax × degree'
+RULE_NOTE = ('Softmax × degree: QTO\'s calibration ({cite}) in our beam executor, the softmax over all entities times the '
+             'number of observed answers of the atom (at least one), capped below one. It has no fitted parameter and no '
+             'training seed, and QTO\'s sparsification threshold is not used.')
+TESTED_NOTE = ('Bold marks the highest mean and underline the second; neither implies a tested difference.')
+
+
+def rule_rows(reports: 'tables.Reports', suite: str, datasets_of, keys, policy: str) -> list[dict]:
+    """One row per backbone with runs of the rule on the suite: values per key (column, category)."""
+    systems = collect(reports)
+    rows = []
+    for (method, identity, recipe), runs in systems.items():
+        backbone = method.split('-')[0]
+        if identity or not method.endswith('-adapter') or recipe != f'{backbone}-{RULE_TOKEN}':
+            continue
+        if not set(suite_datasets(suite)) & set(runs):
+            continue
+        values = {(f, c): seed_means(runs, datasets_of(f), policy, c) for f, c in keys}
+        pending = {(f, c): not values[f, c] and planned_cell(runs, datasets_of(f)) for f, c in keys}
+        rows.append(dict(method=method, identity=False, rule=True, name=display_name(method, False, rule=True), values=values,
+                         pending=pending, records=[r for d, seeds in runs.items() if d in suite_datasets(suite) for r in seeds.values()]))
+    return rows
+
+
+def tie_cap_drops(reports: 'tables.Reports', method: str, suite: str = 'ultraquery') -> tuple[int, int]:
+    """(graphs whose 1p MRR under the rule is below the raw scores', graphs compared) on the suite, seed-0 identity control."""
+    systems = collect(reports)
+    backbone = method.split('-')[0]
+    rule = systems.get((method, False, f'{backbone}-{RULE_TOKEN}'), {})
+    primary = primary_recipes(reports, systems).get((method, suite))
+    control = systems.get((method, True, primary), {})
+    drops = compared = 0
+    for dataset in suite_datasets(suite):
+        if dataset in rule and dataset in control:
+            a = tables.policy_values(next(iter(rule[dataset].values())), 'sort')['per_shape'].get('1p', {}).get('mrr')
+            b = tables.policy_values(control[dataset][min(control[dataset])], 'sort')['per_shape'].get('1p', {}).get('mrr')
+            if not tables.is_missing(a) and not tables.is_missing(b):
+                compared += 1
+                drops += a < b - 5e-5
+    return drops, compared
 
 
 def category_types(dataset: str, category: str) -> list[str]:
@@ -402,7 +467,7 @@ PREVIEW_NOTE = 'Preview: xx.x marks a planned result that is not available yet.'
 
 def compact_table(caption: str, label: str, columns: str, header_rows: Sequence[tuple[list[str], list[tuple[int, int]]]],
                   rows: Sequence[tuple[str, list[str]]], *, star: bool = True, notes: str = '',
-                  layout: str = 'paper') -> str:
+                  layout: str = 'paper', separator=None, placement: str = 'H') -> str:
     """A booktabs float; header rows are (cells, rules); row groups get space.
 
     Paper layout: the caption and notes take the table's own width (threeparttable), not the page's.
@@ -412,7 +477,7 @@ def compact_table(caption: str, label: str, columns: str, header_rows: Sequence[
     """
     if layout == 'thesis':
         # The thesis keeps its main tables where the results text discusses them ([H], package float).
-        lines = [r'\begin{table}[H]', rf'\caption{{{caption}}}\label{{{label}}}', r'\begin{fitblock}',
+        lines = [rf'\begin{{table}}[{placement}]', rf'\caption{{{caption}}}\label{{{label}}}', r'\begin{fitblock}',
                  r'\begin{threeparttable}', rf'\begin{{tabular}}{{{columns}}}', r'\toprule']
         if any(PLACEHOLDER in cell or DELTA_PLACEHOLDER in cell for _, cells in rows for cell in cells):
             notes = (notes + ' ' + PREVIEW_NOTE).strip()
@@ -431,10 +496,14 @@ def compact_table(caption: str, label: str, columns: str, header_rows: Sequence[
         if len(cells) != len(columns):
             raise ValueError(f'Wrong number of cells in {label}')
         if previous is not None and group != previous:
-            lines.append(r'\addlinespace[3pt]')
+            line = separator(previous, group) if separator else r'\addlinespace[3pt]'
+            if line:
+                lines.append(line)
         previous = group
         lines.append(' & '.join(cells) + r' \\')
     lines.extend([r'\bottomrule', r'\end{tabular}'])
+    if any(line.startswith(r'\cqaDashedRule') for line in lines):
+        lines.insert(next(i for i, line in enumerate(lines) if line.startswith(r'\begin{tabular}')), DASHED_RULE)
     if layout == 'thesis':
         if notes:
             lines.append(r'\begin{tablenotes}\item[] ' + notes + r'\end{tablenotes}')
@@ -444,6 +513,13 @@ def compact_table(caption: str, label: str, columns: str, header_rows: Sequence[
         lines.append(r'\begin{tablenotes}\scriptsize\item[] ' + notes + r'\end{tablenotes}')
     lines.extend([r'\end{threeparttable}', rf'\end{{{environment}}}'])
     return '\n'.join(lines)
+
+
+# A dashed \cmidrule(lr) from the second column to the last: booktabs' spacing and trims, no extra package. The leaders
+# need \multispan (no cell template), as booktabs' own rules do; \multicolumn would box them at zero width.
+DASHED_RULE = (r'\providecommand{\cqaDashedRule}[1]{\noalign{\vskip\aboverulesep}\omit&\multispan{#1}\hskip\cmidrulekern'
+               r'\leaders\hbox to 3pt{\hss\vrule height 0.25pt depth 0.25pt width 1.8pt\hss}\hfill\hskip\cmidrulekern\cr'
+               r'\noalign{\vskip\belowrulesep}}')
 
 
 def grouped_header(groups: Sequence[tuple[str, int]], first: int) -> tuple[list[str], list[tuple[int, int]]]:
@@ -558,7 +634,9 @@ def ultraquery_rows(reports: 'tables.Reports', policy: str, columns=FAMILY_COLUM
         pending = {(f, c): not values[f, c] and planned_cell(runs, datasets_of(f)) for f, c in values}
         rows.append(dict(method=method, identity=identity, name=display_name(method, identity), values=values, pending=pending,
                          records=[r for d, seeds in runs.items() if tables.family(d) for r in seeds.values()]))
-    return sorted(rows, key=lambda row: system_order(row['method'], row['identity']))
+    keys = [(f, c) for f, _ in columns for c in ('epfo', 'negation')]
+    rows.extend(rule_rows(reports, 'ultraquery', datasets_of, keys, policy))
+    return sorted(rows, key=lambda row: system_order(row['method'], row['identity'], row.get('rule', False)))
 
 
 def adapter_seed_counts(rows: Sequence[dict]) -> list[int]:
@@ -577,9 +655,43 @@ def per_graph_row(reports: 'tables.Reports', policy: str) -> dict | None:
                 label=tables.escape('Best per-graph baseline') + r'$^\dagger$', group='trained')
 
 
+def rule_labels_and_notes(reports: 'tables.Reports', rows: list[dict], layout: str, *, suite: str = 'ultraquery') -> list[str]:
+    """The rule's notes; KG-ICL's rule row is marked when the cap ties lower its 1p MRR on the suite."""
+    notes = []
+    if not any(row.get('rule') for row in rows):
+        return notes
+    cite = r'\citealp{bai2022answering}' if layout == 'thesis' else 'Bai et al., 2023'
+    notes.append(RULE_NOTE.format(cite=cite))
+    for row in rows:
+        if row.get('rule') and row['method'] == 'kgicl-adapter':
+            drops, compared = tie_cap_drops(reports, row['method'], suite)
+            if drops:
+                row['label'] = tables.escape(row['name']) + r'$^{*}$'
+                # The tie counts are in the mechanism table; the subset table holds the tie-repair contrast.
+                counts = r'Table~\ref{tab:mechanism}' if layout == 'thesis' else 'the mechanism table'
+                repair = r'Table~\ref{tab:subset-contrasts}' if layout == 'thesis' else 'the subset contrasts'
+                if suite == 'ultraquery':
+                    notes.append(rf"$^{{*}}$Part of KG-ICL's deficit under softmax × degree comes from ties at the cap of 0.9999: "
+                                 rf'its 1p MRR falls below that of its raw scores on {drops} of {compared} UQ-23 datasets ({counts}); '
+                                 rf'breaking the ties is the tie-repair contrast in {repair}.')
+                else:  # on +H the rule is not behind the adapter; the ties only lower its 1p MRR
+                    notes.append(rf"$^{{*}}$Ties at the cap of 0.9999 lower KG-ICL's 1p MRR under softmax × degree below that of "
+                                 rf'its raw scores on {drops} of {compared} +H graphs ({counts}).')
+    return notes
+
+
+def tested_note(layout: str) -> str:
+    """The caption's bolding sentence, pointing to the tested contrasts."""
+    if layout == 'thesis':
+        return (' ' + TESTED_NOTE + r' Tested contrasts are in Figure~\ref{fig:main-01-calibration} and '
+                r'Table~\ref{tab:subset-contrasts}.')
+    return ' ' + TESTED_NOTE
+
+
 def ultraquery_table(reports: 'tables.Reports', policy: str, *, layout: str = 'paper') -> str:
     """Main table 1: MRR per method and dataset family, EPFO and negation."""
     rows = ultraquery_rows(reports, policy)
+    rule_notes = rule_labels_and_notes(reports, rows, layout)
     merged = per_graph_row(reports, policy)
     if merged is not None:
         replaced = {method for _, method in PER_GRAPH_BASELINES}
@@ -596,9 +708,10 @@ def ultraquery_table(reports: 'tables.Reports', policy: str, *, layout: str = 'p
              else ' The first group is trained on each target graph.' if any(row['method'] in TRAINED_ON_TARGET for row in rows) else '')
     caption = (r'Complex query answering on the 23 UQ-23 datasets: MRR on the 9 positive (EPFO) and 5 negated '
                r'query types, averaged over query types and then over the datasets of each family.'
-               + first + ' Best in bold, second best underlined.' + seed_legend(adapter_seed_counts(rows)))
+               + first + tested_note(layout) + seed_legend(adapter_seed_counts(rows)))
     notes = ([PER_GRAPH_NOTE.format(cite=r'\citet{galkin2024foundation}' if layout == 'thesis' else r'Galkin et al.\ (2024)')]
              if merged is not None else [])
+    notes.extend(rule_notes)
     if rows:
         notes.append(ZERO_SHOT_NOTE)
         if any(row['method'] == 'kgicl-adapter' for row in rows):
@@ -622,25 +735,34 @@ def plus_h_rows(reports: 'tables.Reports', policy: str) -> list[dict]:
         rows.append(dict(method=method, identity=identity, name=display_name(method, identity), values=values, pending=pending,
                          group='trained' if method in TRAINED_ON_TARGET else 'transferred',
                          records=[r for d, seeds in runs.items() if d in tables.PLUS_H_DATASETS for r in seeds.values()]))
-    return sorted(rows, key=lambda row: system_order(row['method'], row['identity']))
+    keys = [(d, c) for d in (*tables.PLUS_H_DATASETS, 'average') for c in ('epfo', 'negation')]
+    for row in rule_rows(reports, 'plus_h', lambda d: list(tables.PLUS_H_DATASETS) if d == 'average' else [d], keys, policy):
+        rows.append(dict(row, group='transferred'))
+    return sorted(rows, key=lambda row: system_order(row['method'], row['identity'], row.get('rule', False)))
 
 
 def plus_h_table(reports: 'tables.Reports', policy: str, *, layout: str = 'paper') -> str:
     """Main table 2: MRR per method and +H dataset, EPFO and negation, with their average."""
     rows = plus_h_rows(reports, policy)
+    notes = rule_labels_and_notes(reports, rows, layout, suite='plus_h')
+    for row in rows:
+        if row['method'] == 'ultraquery-lp':  # our setting on +H, not a published one
+            row['label'] = (row.get('label') or tables.escape(row['name'])) + r'$^{\dagger}$'
+            notes.append(r'$^{\dagger}$' + tables.PLUS_H_LP_NOTE)
     keys = [(d, c) for d in (*tables.PLUS_H_DATASETS, 'average') for c in ('epfo', 'negation')]
     marks = [ranks([row['values'][key] for row in rows]) for key in keys]
     groups = [(tables.escape(tables.dataset_name(d)), 2) for d in tables.PLUS_H_DATASETS] + [('Average', 2)]
-    body = [(row['group'], [tables.escape(row['name']), *[placeholder(row) if row['pending'][key] else cell(row['values'][key], rank=marks[i][j])
-                                                           for i, key in enumerate(keys)]])
+    body = [(row['group'], [row.get('label') or tables.escape(row['name']),
+                            *[placeholder(row) if row['pending'][key] else cell(row['values'][key], rank=marks[i][j])
+                              for i, key in enumerate(keys)]])
             for j, row in enumerate(rows)]
     caption = (r'Complex query answering on +H: MRR on the 11 positive (EPFO) and 5 negated query types, averaged over '
                r'query types.'
                + (' The first group is trained on each target graph.' if any(row['group'] == 'trained' for row in rows) else '')
-               + ' Best in bold, second best underlined.' + seed_legend(adapter_seed_counts(rows)))
+               + tested_note(layout) + seed_legend(adapter_seed_counts(rows)))
     header = [grouped_header(groups, 1), (['Method', *(['EPFO', 'Neg.'] * len(groups))], [])]
     return compact_table(caption, 'tab:main-plus-h', 'l' + 'c' * 2 * len(groups), header,
-                         body or [('', [tables.MISSING] * (1 + 2 * len(groups)))], layout=layout)
+                         body or [('', [tables.MISSING] * (1 + 2 * len(groups)))], notes=' '.join(notes), layout=layout)
 
 
 def seed_deltas(reference: Runs, variant: Runs, datasets: Sequence[str], policy: str) -> list[list[float]]:
@@ -673,8 +795,10 @@ def ablation_rows(reports: 'tables.Reports', policy: str) -> tuple[list[dict], d
         mains = {r for (m, _), r in primary.items() if m == method}
         variants = []
         for recipe in sorted(r for (m, identity, r) in systems if m == method and not identity and r not in mains):
-            if (recipe[len(backbone) + 1:] if recipe.startswith(backbone + '-') else recipe) in BRACKET_TOKENS:
-                continue  # shown by the bracket table
+            token = recipe[len(backbone) + 1:] if recipe.startswith(backbone + '-') else recipe
+            if token in BRACKET_TOKENS or OBSERVED_FACT_MODES.sub('', token).rstrip('-') in BRACKET_TOKENS \
+                    or re.sub(r'-facts-none(-full)?$', '', token) in BRACKET_TOKENS:
+                continue  # calibration rows, with or without facts, are shown by the calibrations and gains tables
             variant = systems[method, False, recipe]
             values, pending = [], []
             for suite in ('ultraquery', 'plus_h'):
@@ -703,7 +827,7 @@ def ablation_rows(reports: 'tables.Reports', policy: str) -> tuple[list[dict], d
     return rows, primary
 
 
-def ablation_table(reports: 'tables.Reports', policy: str, *, layout: str = 'paper') -> str:
+def ablation_table(reports: 'tables.Reports', policy: str, *, layout: str = 'paper', placement: str = 'H') -> str:
     """Main table 3: each recipe variant's MRR and its change from the primary recipe."""
     rows, primary = ablation_rows(reports, policy)
     groups = [('UQ-23', 2), ('+H', 2)]
@@ -724,53 +848,120 @@ def ablation_table(reports: 'tables.Reports', policy: str, *, layout: str = 'pap
     header = [grouped_header(groups, 2), (['Backbone', 'Variant', *(['MRR', r'$\Delta$'] * len(groups))], [])]
     return compact_table(caption, 'tab:main-ablations', 'll' + 'c' * 2 * len(groups), header,
                          body or [('', [tables.MISSING] * (2 + 2 * len(groups)))], star=False, notes=notes,
-                         layout=layout)
+                         layout=layout, placement=placement)
+
+
+# Calibrations of the frozen scores, ordered by fitted parameters (figure and table plan agreed 2026-10-08):
+# (kind, row label, fitted parameters, fitted on). Rows from 'target-fit' on use target data or test selection.
+CALIBRATIONS = (('identity', 'Raw scores (sigmoid)', '0', 'none'), ('minmax', 'Min-max normalization', '0', 'none'),
+                ('softmax-degree', 'Softmax × degree (QTO)', '0', 'none'),
+                ('uqlp', 'UltraQuery-LP threshold t, beam executor', '0', 'published t'),
+                ('global', 'Global scale and shift', '2', 'source queries'), ('primary', 'Adapter (ours)', '16', 'source queries'),
+                ('target-fit', 'Adapter per target graph', '16 per target', 'target inference graph, 30% facts masked'),
+                ('target-valid', 'Adapter per target, validation queries', '16 per target', 'target validation'),
+                ('oracle', 'Oracle: best zero-shot row per target and type', '-', 'selected on test'))
+TARGET_KINDS = ('target-fit', 'target-valid', 'oracle')
+ORACLE_CANDIDATES = ('identity', 'minmax', 'softmax-degree', 'uqlp', 'global', 'primary')
+
+
+def calibration_runs(systems: dict[System, Runs], primary: dict, method: str, kind: str, suite: str) -> Runs:
+    """The runs of one calibration row: the main tables' control and adapter, else the recipe named by the kind."""
+    backbone = method.split('-')[0]
+    if kind in ('identity', 'primary'):
+        runs = systems.get((method, kind == 'identity', primary.get((method, suite))), {})
+        if kind == 'identity':  # identity calibration takes nothing from the adapter's seed
+            runs = {d: {min(seeds): seeds[min(seeds)]} for d, seeds in runs.items()}
+        return runs
+    return systems.get((method, False, f'{backbone}-{kind}'), {})
+
+
+def oracle_values(systems: dict[System, Runs], primary: dict, method: str, suite: str, policy: str) -> tuple[list, list[str]]:
+    """EPFO and negation MRR of picking, per target and query type, the best zero-shot calibration on test.
+
+    Candidates must cover every target and query type of the suite (seed means for the adapter); returns the two values
+    and the candidate kinds used. Selection uses the scores it reports, so this is an optimistic ceiling.
+    """
+    datasets = suite_datasets(suite)
+    per_type = {}
+    for kind in ORACLE_CANDIDATES:
+        runs = calibration_runs(systems, primary, method, kind, suite)
+        values = {}
+        for dataset in datasets:
+            seeds = runs.get(dataset, {})
+            types = category_types(dataset, 'all')
+            scores = [[tables.policy_values(record, policy)['per_shape'].get(t, {}).get('mrr') for t in types] for record in seeds.values()]
+            if not scores or any(tables.is_missing(v) for row in scores for v in row):
+                break
+            values[dataset] = {t: sum(row[i] for row in scores) / len(scores) for i, t in enumerate(types)}
+        else:
+            per_type[kind] = values
+    if not per_type:
+        return [[], []], []
+    output = []
+    for category in ('epfo', 'negation'):
+        means = []
+        for dataset in datasets:
+            types = category_types(dataset, category)
+            means.append(sum(max(per_type[kind][dataset][t] for kind in per_type) for t in types) / len(types))
+        output.append([sum(means) / len(means)])
+    return output, sorted(per_type)
 
 
 def bracket_rows(reports: 'tables.Reports', policy: str) -> list[dict]:
-    """Per backbone, the rows of BRACKETS with seed values per (suite, category): EPFO and negation of UQ-23, then +H.
+    """Per backbone, the rows of CALIBRATIONS with seed values per (suite, category): EPFO and negation of UQ-23, then +H.
 
-    The no-adapter control and the adapter use the primary recipe, as in the main tables; the other calibrations get a
-    row only for backbones that have runs of them.
+    The raw-score control and the adapter use the primary recipe, as in the main tables; the other calibrations get a
+    row only for backbones that have runs of them; the oracle row needs at least one complete zero-shot candidate.
     """
     systems = collect(reports)
     primary = primary_recipes(reports, systems)
     rows = []
     for method in sorted({m for m, _ in primary}, key=lambda m: system_order(m, False)):
-        backbone = method.split('-')[0]
         name = tables.METHOD_NAMES.get(method, method).replace(' + adapter', '')
-        for kind, label in BRACKETS:
-            values = []
+        for kind, label, parameters, fitted in CALIBRATIONS:
+            values, used = [], set()
             for suite in ('ultraquery', 'plus_h'):
-                if kind in ('identity', 'primary'):
-                    runs = systems.get((method, kind == 'identity', primary.get((method, suite))), {})
-                    if kind == 'identity':  # identity calibration takes nothing from the adapter's seed
-                        runs = {d: {min(seeds): seeds[min(seeds)]} for d, seeds in runs.items()}
-                else:
-                    runs = systems.get((method, False, f'{backbone}-{kind}'), {})
+                if kind == 'oracle':
+                    pair, kinds = oracle_values(systems, primary, method, suite, policy)
+                    values.extend(pair)
+                    used.update(kinds)
+                    continue
+                runs = calibration_runs(systems, primary, method, kind, suite)
                 values.extend(seed_means(runs, suite_datasets(suite), policy, category) for category in ('epfo', 'negation'))
             if kind in ('identity', 'primary') or any(values):
-                rows.append(dict(backbone=name, name=label, kind=kind, values=values))
+                rows.append(dict(backbone=name, name=label, kind=kind, parameters=parameters, fitted=fitted, values=values,
+                                 candidates=sorted(used)))
     return rows
 
 
 def bracket_table(reports: 'tables.Reports', policy: str, *, layout: str = 'paper') -> str:
-    """Main table: the adapter between fixed calibrations (below) and adapters fitted on each target graph (above)."""
+    """Main table: calibrations of the frozen scores by fitted parameters; target-fitted rows and the oracle below a dashed rule,
+    backbones separated by solid rules."""
     rows = bracket_rows(reports, policy)
     groups = [('UQ-23', 2), ('+H', 2)]
     body = []
     for j, row in enumerate(rows):
         label = tables.escape(row['backbone']) if j == 0 or rows[j - 1]['backbone'] != row['backbone'] else ''
-        body.append((row['backbone'], [label, tables.escape(row['name']), *[cell(v) for v in row['values']]]))
+        part = 'target' if row['kind'] in TARGET_KINDS else 'zero-shot'
+        body.append(((row['backbone'], part), [label, tables.escape(row['name']), row['parameters'], tables.escape(row['fitted']),
+                                               *[cell(v) for v in row['values']]]))
     kinds = {row['kind'] for row in rows}
-    caption = ('The adapter between fixed calibrations and adapters fitted on each target graph: MRR on the positive (EPFO) '
-               'and negated query types, averaged over query types and then datasets.'
-               + seed_legend(len(v) for row in rows if row['kind'] == 'primary' for v in row['values']))
-    notes = ' '.join(note for kind, note in BRACKET_NOTES.items() if kind in kinds)
-    header = [grouped_header(groups, 2), (['Backbone', 'Calibration', *(['EPFO', 'Neg.'] * len(groups))], [])]
-    return compact_table(caption, 'tab:main-brackets', 'll' + 'c' * 2 * len(groups), header,
-                         body or [('', [tables.MISSING] * (2 + 2 * len(groups)))], star=False, notes=notes,
-                         layout=layout)
+    caption = ('Calibrations of the frozen backbone scores, ordered by fitted parameters: MRR on the positive (EPFO) and negated '
+               'query types, averaged over query types and then datasets. Rows below a dashed line use target data or select '
+               'on test.' + seed_legend(len(v) for row in rows if row['kind'] == 'primary' for v in row['values']))
+    notes = [BRACKET_NOTES[kind] for kind, *_ in CALIBRATIONS if kind in kinds and kind in BRACKET_NOTES]
+    if 'softmax-degree' in kinds:
+        notes.append(RULE_NOTE.format(cite=r'\citealp{bai2022answering}' if layout == 'thesis' else 'Bai et al., 2023'))
+    header = [grouped_header(groups, 4), (['Backbone', 'Calibration', 'Param.', 'Fitted on', *(['EPFO', 'Neg.'] * len(groups))], [])]
+
+    def separator(previous, group):
+        if previous[0] == group[0]:
+            return rf'\cqaDashedRule{{{3 + 2 * len(groups)}}}' if previous[1] != group[1] else None
+        return r'\midrule'
+
+    return compact_table(caption, 'tab:main-brackets', 'llll' + 'c' * 2 * len(groups), header,
+                         body or [('', [tables.MISSING] * (4 + 2 * len(groups)))], star=False, notes=' '.join(notes),
+                         layout=layout, separator=separator)
 
 
 def recipe_description(method: str, recipe: str) -> str:
