@@ -1,0 +1,99 @@
+{
+  "backbone_state_sha256": "5524f131f909918c40daa0c6169eaf8ebb7ca344ccf9e96e1d81154cd5097e5b",
+  "training": {
+    "objective": "filtered_softmax_v1",
+    "epochs": 500,
+    "batch_size": 8,
+    "learning_rate": 0.02,
+    "identity_penalty": 0.001,
+    "gradient_clip": 1.0,
+    "seed": 2026090851,
+    "weighting": "equal_source_shape",
+    "selection": "source_validation_mrr",
+    "shapes": [
+      "2i",
+      "3i"
+    ],
+    "validation_sources": [
+      "WikiTopicsQuery:tax"
+    ],
+    "validation_every": 5,
+    "training_sources": [
+      "WikiTopicsQuery:tax"
+    ],
+    "train_per_shape": 280,
+    "early_stopping_patience": 100,
+    "beam_size": 64,
+    "tnorm": "prod",
+    "validation_shapes": [
+      "1p",
+      "2p",
+      "3p",
+      "2i",
+      "3i",
+      "2in",
+      "3in",
+      "inp",
+      "pin",
+      "pni"
+    ],
+    "device": "cuda",
+    "validation_device": "cuda",
+    "cpu_threads": 4,
+    "training_cache_bytes": 2147483648,
+    "device_cache_bytes": 536870912,
+    "selected_epoch": 40,
+    "selected_validation_mrr": 0.12912085437877557,
+    "epochs_completed": 140,
+    "stopped_early": true,
+    "stop_reason": "validation_patience",
+    "training_queries": 560,
+    "optimizer_steps": 9800,
+    "row_cache": {
+      "WikiTopicsQuery:tax": {
+        "host_hits": 84197,
+        "device_hits": 288741,
+        "disk_rows": 0,
+        "scored_rows": 3606,
+        "feature_preparations": 3606,
+        "seconds": 214.99889926309697
+      }
+    }
+  },
+  "score_banks": [
+    "92c953deb766e27149c9dce97e1246a90551ecf98320d9d80f1b2932d36b833e"
+  ],
+  "sources": {
+    "WikiTopicsQuery:tax": "2a64aa033ed3531a07716d948fa6f0cfe8c91209e7b2928f1f9d3a2fc2cf9dbc"
+  },
+  "version": 3,
+  "feature_mode": "context_scores",
+  "observed_mix": 1.0,
+  "bias_bound": 8.0,
+  "scale_bound": 2.0,
+  "normalization": "none",
+  "hidden_dim": 0,
+  "weights": [
+    [
+      -0.5700860058675864,
+      0.6059800246539429,
+      1.5399156587048295,
+      0.5511104669336538,
+      2.472752479802484,
+      0.3843054085017674,
+      0.46512334124212146,
+      1.3024842123420355
+    ],
+    [
+      -0.12248462199866329,
+      1.7716484229176517,
+      0.32759051541583684,
+      -0.9575703438185011,
+      -0.917928930516012,
+      -0.6363149797537953,
+      -0.7345691854917936,
+      -1.0575284980922302
+    ]
+  ],
+  "hidden_weights": null
+}

@@ -1,0 +1,108 @@
+{
+  "version": 1,
+  "answer_filter": "corrected",
+  "data_root": "KGs/query-benchmarks-plus-h",
+  "seed": 0,
+  "threads": 4,
+  "archives": {
+    "models": {"sha256": "d30b77a9c84d28de766bb5722c600bdc3c1e46d16cdaa3066ed4faca2b9b236f", "bytes": 4507216854, "source": "https://github.com/april-tools/is-cqa-complex#pre-trained-models"},
+    "datasets": {
+      "source": "https://github.com/april-tools/is-cqa-complex/releases/tag/benchs-1.0",
+      "checksum_status": "Official release API digest; extracted runtime files are independently pinned by freeze.",
+      "sha256": "bf60135d7b1bc109ab9d90892e318fa96ace905fdc8204afd270b1fd98002a80",
+      "bytes": 1675873193
+    }
+  },
+  "recipes": [
+    {
+      "defaults": {
+        "id": "ultra-product-14type-{dataset}",
+        "method": "ultra-adapter",
+        "checkpoint": "checkpoints/ultra_3g.pth",
+        "adapters": {"product": "benchmarks/adapters/ultra_product_14types.json"},
+        "options": {"beam_size": 64, "row_batch_size": 8, "backend_batch_size": 8, "cache_bytes": 536870912, "raw_cache_bytes": 2147483648},
+        "operators": {
+          "1p": "product",
+          "2p": "product",
+          "3p": "product",
+          "2i": "product",
+          "3i": "product",
+          "ip": "product",
+          "pi": "product",
+          "2u": "product",
+          "up": "product",
+          "2in": "product",
+          "3in": "product",
+          "inp": "product",
+          "pin": "product",
+          "pni": "product",
+          "4p": "product",
+          "4i": "product"
+        },
+        "selection_protocol": "target-validation",
+        "finalized": true,
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni", "4p", "4i"],
+        "query_batch_size": 16,
+        "query_order": "relation",
+        "reference": {
+          "status": "frozen shared 14-type recipe; verification pending",
+          "notes": [
+            "Linear score-aware adapter, observed facts, bias bound 8, scale bound 2; all 14 source query types; product t-norm; k=64.",
+            "One shared recipe across both backbones and all three datasets. +H validation screening informed recipe selection; this is not target-untuned zero-shot selection.",
+            "The 4p and 4i types were not included in adapter training.",
+            "Paired learned/identity calibration: alpha=1 and beta=0 in the control; retain observed facts, normalization, query plan, operators and beam width. Share exact atomic batches through a bounded 2 GiB CPU cache; split the 512 MiB calibrated cache equally."
+          ]
+        },
+        "blockers": [],
+        "adapter_ablation": true,
+        "inference_graph": "train+valid"
+      },
+      "entries": [{"dataset": "FB15k237+H"}, {"dataset": "NELL995+H"}, {"dataset": "ICEWS18+H"}]
+    },
+    {
+      "defaults": {
+        "id": "trix-product-14type-{dataset}",
+        "method": "trix-adapter",
+        "checkpoint": "checkpoints/trix/entity_prediction.pth",
+        "adapters": {"product": "benchmarks/adapters/trix_product_14types.json"},
+        "options": {"beam_size": 64, "row_batch_size": 1, "backend_batch_size": 1, "cache_bytes": 536870912, "raw_cache_bytes": 2147483648},
+        "operators": {
+          "1p": "product",
+          "2p": "product",
+          "3p": "product",
+          "2i": "product",
+          "3i": "product",
+          "ip": "product",
+          "pi": "product",
+          "2u": "product",
+          "up": "product",
+          "2in": "product",
+          "3in": "product",
+          "inp": "product",
+          "pin": "product",
+          "pni": "product",
+          "4p": "product",
+          "4i": "product"
+        },
+        "selection_protocol": "target-validation",
+        "finalized": true,
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni", "4p", "4i"],
+        "query_batch_size": 16,
+        "query_order": "relation",
+        "reference": {
+          "status": "frozen shared 14-type recipe; verification pending",
+          "notes": [
+            "Linear score-aware adapter, observed facts, bias bound 8, scale bound 2; all 14 source query types; product t-norm; k=64.",
+            "One shared recipe across both backbones and all three datasets. +H validation screening informed recipe selection; this is not target-untuned zero-shot selection.",
+            "The 4p and 4i types were not included in adapter training.",
+            "Paired learned/identity calibration: alpha=1 and beta=0 in the control; retain observed facts, normalization, query plan, operators and beam width. Share exact atomic batches through a bounded 2 GiB CPU cache; split the 512 MiB calibrated cache equally."
+          ]
+        },
+        "blockers": [],
+        "adapter_ablation": true,
+        "inference_graph": "train+valid"
+      },
+      "entries": [{"dataset": "FB15k237+H"}, {"dataset": "NELL995+H"}, {"dataset": "ICEWS18+H"}]
+    }
+  ]
+}

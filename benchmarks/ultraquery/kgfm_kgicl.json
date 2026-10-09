@@ -1,0 +1,702 @@
+{
+  "version": 1,
+  "answer_filter": "released",
+  "data_root": "KGs/UltraQuery",
+  "seed": 0,
+  "threads": 4,
+  "archives": {
+    "datasets": {
+      "source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90#datasets-1",
+      "checksum_status": "Every extracted runtime input is independently pinned by freeze."
+    },
+    "models": {
+      "source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90/ckpts",
+      "checksum_status": "Released checkpoint and adapter bytes are independently pinned by freeze."
+    }
+  },
+  "recipes": [
+    {
+      "defaults": {
+        "id": "kgicl-product-intersections-{dataset}",
+        "method": "kgicl-adapter",
+        "checkpoint": "checkpoints/kgicl/KG-ICL-6L/model_best.tar",
+        "adapters": {
+          "product": "benchmarks/adapters/kgicl_product_intersections.json"
+        },
+        "options": {
+          "beam_size": 64,
+          "row_batch_size": 8,
+          "backend_batch_size": 8,
+          "cache_bytes": 536870912,
+          "raw_cache_bytes": 2147483648,
+          "projection_cache_mb": 512
+        },
+        "operators": {
+          "1p": "product",
+          "2p": "product",
+          "3p": "product",
+          "2i": "product",
+          "3i": "product",
+          "ip": "product",
+          "pi": "product",
+          "2u": "product",
+          "up": "product",
+          "2in": "product",
+          "3in": "product",
+          "inp": "product",
+          "pin": "product",
+          "pni": "product"
+        },
+        "selection_protocol": "target-validation",
+        "finalized": true,
+        "query_types": [
+          "1p",
+          "2p",
+          "3p",
+          "2i",
+          "3i",
+          "ip",
+          "pi",
+          "2u",
+          "up",
+          "2in",
+          "3in",
+          "inp",
+          "pin",
+          "pni"
+        ],
+        "query_batch_size": 16,
+        "query_order": "relation",
+        "reference": {
+          "status": "KG-ICL adapter recipe, fitted and pinned; additional backbone",
+          "notes": [
+            "Adapter fitted with the shared ULTRA/TRIX recipe (linear score-aware adapter, observed facts, bias bound 8, scale bound 2, 2i/3i source queries of FB15k237, WN18RR and CoDExMedium, source-validation checkpoint selection; training seed 2026090851) and pinned before any test run.",
+            "Backbone: DICE KG-ICL with the official KG-ICL-6L weights (nju-websoft/KG-ICL 6a3166e3), verified against the pinned code plus tests/fixtures/kgicl/upstream-fixes.patch; see docs/kgicl.md.",
+            "Prompt graphs: five examples per relation, sampled from the attached inference graph with prompt seed 0, identical for every query batch and call order; no answer-distance mask. CQD beam 64, product t-norm, paired identity control. The per-layer relation tables of every query relation are cached (projection_cache_mb 512, about 260 MiB for FB15k237); with the default 64 MiB they are recomputed on graphs with many relations, about 2.5 times slower."
+          ]
+        },
+        "blockers": [],
+        "adapter_ablation": true
+      },
+      "entries": [
+        {
+          "dataset": "FB15k237LogicalQuery"
+        },
+        {
+          "dataset": "FB15kLogicalQuery"
+        },
+        {
+          "dataset": "NELL995LogicalQuery"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:106"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:113"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:122"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:134"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:150"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:175"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:217"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:300"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:550"
+        },
+        {
+          "dataset": "WikiTopicsQuery:art"
+        },
+        {
+          "dataset": "WikiTopicsQuery:award"
+        },
+        {
+          "dataset": "WikiTopicsQuery:edu"
+        },
+        {
+          "dataset": "WikiTopicsQuery:health"
+        },
+        {
+          "dataset": "WikiTopicsQuery:infra"
+        },
+        {
+          "dataset": "WikiTopicsQuery:loc"
+        },
+        {
+          "dataset": "WikiTopicsQuery:org"
+        },
+        {
+          "dataset": "WikiTopicsQuery:people"
+        },
+        {
+          "dataset": "WikiTopicsQuery:sci"
+        },
+        {
+          "dataset": "WikiTopicsQuery:sport"
+        },
+        {
+          "dataset": "WikiTopicsQuery:tax"
+        }
+      ]
+    },
+    {
+      "defaults": {
+        "id": "kgicl-product-intersections-seed1-{dataset}",
+        "method": "kgicl-adapter",
+        "checkpoint": "checkpoints/kgicl/KG-ICL-6L/model_best.tar",
+        "adapters": {
+          "product": "benchmarks/adapters/seeds/kgicl_product_intersections_seed1.json"
+        },
+        "options": {
+          "beam_size": 64,
+          "row_batch_size": 8,
+          "backend_batch_size": 8,
+          "cache_bytes": 536870912,
+          "raw_cache_bytes": 2147483648,
+          "projection_cache_mb": 512
+        },
+        "operators": {
+          "1p": "product",
+          "2p": "product",
+          "3p": "product",
+          "2i": "product",
+          "3i": "product",
+          "ip": "product",
+          "pi": "product",
+          "2u": "product",
+          "up": "product",
+          "2in": "product",
+          "3in": "product",
+          "inp": "product",
+          "pin": "product",
+          "pni": "product"
+        },
+        "selection_protocol": "target-validation",
+        "finalized": true,
+        "query_types": [
+          "1p",
+          "2p",
+          "3p",
+          "2i",
+          "3i",
+          "ip",
+          "pi",
+          "2u",
+          "up",
+          "2in",
+          "3in",
+          "inp",
+          "pin",
+          "pni"
+        ],
+        "query_batch_size": 16,
+        "query_order": "relation",
+        "reference": {
+          "status": "adapter training seed 1 of the KG-ICL recipe",
+          "notes": [
+            "Adapter training seed 1 of the KG-ICL recipe: same prepared source queries, masks, selection queries, objective and schedule; the seed sets the initialization and the order of training batches.",
+            "Seed replicates measure adapter-training variance; no seed is selected over another.",
+            "No identity control: identity calibration takes nothing from the training seed, so the reference recipe's control serves every seed.",
+            "Backbone: DICE KG-ICL with the official KG-ICL-6L weights (nju-websoft/KG-ICL 6a3166e3), verified against the pinned code plus tests/fixtures/kgicl/upstream-fixes.patch; see docs/kgicl.md.",
+            "Prompt graphs: five examples per relation, sampled from the attached inference graph with prompt seed 0, identical for every query batch and call order; no answer-distance mask. CQD beam 64, product t-norm, paired identity control. The per-layer relation tables of every query relation are cached (projection_cache_mb 512, about 260 MiB for FB15k237); with the default 64 MiB they are recomputed on graphs with many relations, about 2.5 times slower."
+          ]
+        },
+        "blockers": [],
+        "adapter_ablation": false
+      },
+      "entries": [
+        {
+          "dataset": "FB15k237LogicalQuery"
+        },
+        {
+          "dataset": "FB15kLogicalQuery"
+        },
+        {
+          "dataset": "NELL995LogicalQuery"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:106"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:113"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:122"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:134"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:150"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:175"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:217"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:300"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:550"
+        },
+        {
+          "dataset": "WikiTopicsQuery:art"
+        },
+        {
+          "dataset": "WikiTopicsQuery:award"
+        },
+        {
+          "dataset": "WikiTopicsQuery:edu"
+        },
+        {
+          "dataset": "WikiTopicsQuery:health"
+        },
+        {
+          "dataset": "WikiTopicsQuery:infra"
+        },
+        {
+          "dataset": "WikiTopicsQuery:loc"
+        },
+        {
+          "dataset": "WikiTopicsQuery:org"
+        },
+        {
+          "dataset": "WikiTopicsQuery:people"
+        },
+        {
+          "dataset": "WikiTopicsQuery:sci"
+        },
+        {
+          "dataset": "WikiTopicsQuery:sport"
+        },
+        {
+          "dataset": "WikiTopicsQuery:tax"
+        }
+      ]
+    },
+    {
+      "defaults": {
+        "id": "kgicl-product-intersections-seed2-{dataset}",
+        "method": "kgicl-adapter",
+        "checkpoint": "checkpoints/kgicl/KG-ICL-6L/model_best.tar",
+        "adapters": {
+          "product": "benchmarks/adapters/seeds/kgicl_product_intersections_seed2.json"
+        },
+        "options": {
+          "beam_size": 64,
+          "row_batch_size": 8,
+          "backend_batch_size": 8,
+          "cache_bytes": 536870912,
+          "raw_cache_bytes": 2147483648,
+          "projection_cache_mb": 512
+        },
+        "operators": {
+          "1p": "product",
+          "2p": "product",
+          "3p": "product",
+          "2i": "product",
+          "3i": "product",
+          "ip": "product",
+          "pi": "product",
+          "2u": "product",
+          "up": "product",
+          "2in": "product",
+          "3in": "product",
+          "inp": "product",
+          "pin": "product",
+          "pni": "product"
+        },
+        "selection_protocol": "target-validation",
+        "finalized": true,
+        "query_types": [
+          "1p",
+          "2p",
+          "3p",
+          "2i",
+          "3i",
+          "ip",
+          "pi",
+          "2u",
+          "up",
+          "2in",
+          "3in",
+          "inp",
+          "pin",
+          "pni"
+        ],
+        "query_batch_size": 16,
+        "query_order": "relation",
+        "reference": {
+          "status": "adapter training seed 2 of the KG-ICL recipe",
+          "notes": [
+            "Adapter training seed 2 of the KG-ICL recipe: same prepared source queries, masks, selection queries, objective and schedule; the seed sets the initialization and the order of training batches.",
+            "Seed replicates measure adapter-training variance; no seed is selected over another.",
+            "No identity control: identity calibration takes nothing from the training seed, so the reference recipe's control serves every seed.",
+            "Backbone: DICE KG-ICL with the official KG-ICL-6L weights (nju-websoft/KG-ICL 6a3166e3), verified against the pinned code plus tests/fixtures/kgicl/upstream-fixes.patch; see docs/kgicl.md.",
+            "Prompt graphs: five examples per relation, sampled from the attached inference graph with prompt seed 0, identical for every query batch and call order; no answer-distance mask. CQD beam 64, product t-norm, paired identity control. The per-layer relation tables of every query relation are cached (projection_cache_mb 512, about 260 MiB for FB15k237); with the default 64 MiB they are recomputed on graphs with many relations, about 2.5 times slower."
+          ]
+        },
+        "blockers": [],
+        "adapter_ablation": false
+      },
+      "entries": [
+        {
+          "dataset": "FB15k237LogicalQuery"
+        },
+        {
+          "dataset": "FB15kLogicalQuery"
+        },
+        {
+          "dataset": "NELL995LogicalQuery"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:106"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:113"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:122"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:134"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:150"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:175"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:217"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:300"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:550"
+        },
+        {
+          "dataset": "WikiTopicsQuery:art"
+        },
+        {
+          "dataset": "WikiTopicsQuery:award"
+        },
+        {
+          "dataset": "WikiTopicsQuery:edu"
+        },
+        {
+          "dataset": "WikiTopicsQuery:health"
+        },
+        {
+          "dataset": "WikiTopicsQuery:infra"
+        },
+        {
+          "dataset": "WikiTopicsQuery:loc"
+        },
+        {
+          "dataset": "WikiTopicsQuery:org"
+        },
+        {
+          "dataset": "WikiTopicsQuery:people"
+        },
+        {
+          "dataset": "WikiTopicsQuery:sci"
+        },
+        {
+          "dataset": "WikiTopicsQuery:sport"
+        },
+        {
+          "dataset": "WikiTopicsQuery:tax"
+        }
+      ]
+    },
+    {
+      "defaults": {
+        "id": "kgicl-product-intersections-seed3-{dataset}",
+        "method": "kgicl-adapter",
+        "checkpoint": "checkpoints/kgicl/KG-ICL-6L/model_best.tar",
+        "adapters": {
+          "product": "benchmarks/adapters/seeds/kgicl_product_intersections_seed3.json"
+        },
+        "options": {
+          "beam_size": 64,
+          "row_batch_size": 8,
+          "backend_batch_size": 8,
+          "cache_bytes": 536870912,
+          "raw_cache_bytes": 2147483648,
+          "projection_cache_mb": 512
+        },
+        "operators": {
+          "1p": "product",
+          "2p": "product",
+          "3p": "product",
+          "2i": "product",
+          "3i": "product",
+          "ip": "product",
+          "pi": "product",
+          "2u": "product",
+          "up": "product",
+          "2in": "product",
+          "3in": "product",
+          "inp": "product",
+          "pin": "product",
+          "pni": "product"
+        },
+        "selection_protocol": "target-validation",
+        "finalized": true,
+        "query_types": [
+          "1p",
+          "2p",
+          "3p",
+          "2i",
+          "3i",
+          "ip",
+          "pi",
+          "2u",
+          "up",
+          "2in",
+          "3in",
+          "inp",
+          "pin",
+          "pni"
+        ],
+        "query_batch_size": 16,
+        "query_order": "relation",
+        "reference": {
+          "status": "adapter training seed 3 of the KG-ICL recipe",
+          "notes": [
+            "Adapter training seed 3 of the KG-ICL recipe: same prepared source queries, masks, selection queries, objective and schedule; the seed sets the initialization and the order of training batches.",
+            "Seed replicates measure adapter-training variance; no seed is selected over another.",
+            "No identity control: identity calibration takes nothing from the training seed, so the reference recipe's control serves every seed.",
+            "Backbone: DICE KG-ICL with the official KG-ICL-6L weights (nju-websoft/KG-ICL 6a3166e3), verified against the pinned code plus tests/fixtures/kgicl/upstream-fixes.patch; see docs/kgicl.md.",
+            "Prompt graphs: five examples per relation, sampled from the attached inference graph with prompt seed 0, identical for every query batch and call order; no answer-distance mask. CQD beam 64, product t-norm, paired identity control. The per-layer relation tables of every query relation are cached (projection_cache_mb 512, about 260 MiB for FB15k237); with the default 64 MiB they are recomputed on graphs with many relations, about 2.5 times slower."
+          ]
+        },
+        "blockers": [],
+        "adapter_ablation": false
+      },
+      "entries": [
+        {
+          "dataset": "FB15k237LogicalQuery"
+        },
+        {
+          "dataset": "FB15kLogicalQuery"
+        },
+        {
+          "dataset": "NELL995LogicalQuery"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:106"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:113"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:122"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:134"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:150"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:175"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:217"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:300"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:550"
+        },
+        {
+          "dataset": "WikiTopicsQuery:art"
+        },
+        {
+          "dataset": "WikiTopicsQuery:award"
+        },
+        {
+          "dataset": "WikiTopicsQuery:edu"
+        },
+        {
+          "dataset": "WikiTopicsQuery:health"
+        },
+        {
+          "dataset": "WikiTopicsQuery:infra"
+        },
+        {
+          "dataset": "WikiTopicsQuery:loc"
+        },
+        {
+          "dataset": "WikiTopicsQuery:org"
+        },
+        {
+          "dataset": "WikiTopicsQuery:people"
+        },
+        {
+          "dataset": "WikiTopicsQuery:sci"
+        },
+        {
+          "dataset": "WikiTopicsQuery:sport"
+        },
+        {
+          "dataset": "WikiTopicsQuery:tax"
+        }
+      ]
+    },
+    {
+      "defaults": {
+        "id": "kgicl-product-intersections-seed4-{dataset}",
+        "method": "kgicl-adapter",
+        "checkpoint": "checkpoints/kgicl/KG-ICL-6L/model_best.tar",
+        "adapters": {
+          "product": "benchmarks/adapters/seeds/kgicl_product_intersections_seed4.json"
+        },
+        "options": {
+          "beam_size": 64,
+          "row_batch_size": 8,
+          "backend_batch_size": 8,
+          "cache_bytes": 536870912,
+          "raw_cache_bytes": 2147483648,
+          "projection_cache_mb": 512
+        },
+        "operators": {
+          "1p": "product",
+          "2p": "product",
+          "3p": "product",
+          "2i": "product",
+          "3i": "product",
+          "ip": "product",
+          "pi": "product",
+          "2u": "product",
+          "up": "product",
+          "2in": "product",
+          "3in": "product",
+          "inp": "product",
+          "pin": "product",
+          "pni": "product"
+        },
+        "selection_protocol": "target-validation",
+        "finalized": true,
+        "query_types": [
+          "1p",
+          "2p",
+          "3p",
+          "2i",
+          "3i",
+          "ip",
+          "pi",
+          "2u",
+          "up",
+          "2in",
+          "3in",
+          "inp",
+          "pin",
+          "pni"
+        ],
+        "query_batch_size": 16,
+        "query_order": "relation",
+        "reference": {
+          "status": "adapter training seed 4 of the KG-ICL recipe",
+          "notes": [
+            "Adapter training seed 4 of the KG-ICL recipe: same prepared source queries, masks, selection queries, objective and schedule; the seed sets the initialization and the order of training batches.",
+            "Seed replicates measure adapter-training variance; no seed is selected over another.",
+            "No identity control: identity calibration takes nothing from the training seed, so the reference recipe's control serves every seed.",
+            "Backbone: DICE KG-ICL with the official KG-ICL-6L weights (nju-websoft/KG-ICL 6a3166e3), verified against the pinned code plus tests/fixtures/kgicl/upstream-fixes.patch; see docs/kgicl.md.",
+            "Prompt graphs: five examples per relation, sampled from the attached inference graph with prompt seed 0, identical for every query batch and call order; no answer-distance mask. CQD beam 64, product t-norm, paired identity control. The per-layer relation tables of every query relation are cached (projection_cache_mb 512, about 260 MiB for FB15k237); with the default 64 MiB they are recomputed on graphs with many relations, about 2.5 times slower."
+          ]
+        },
+        "blockers": [],
+        "adapter_ablation": false
+      },
+      "entries": [
+        {
+          "dataset": "FB15k237LogicalQuery"
+        },
+        {
+          "dataset": "FB15kLogicalQuery"
+        },
+        {
+          "dataset": "NELL995LogicalQuery"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:106"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:113"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:122"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:134"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:150"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:175"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:217"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:300"
+        },
+        {
+          "dataset": "InductiveFB15k237Query:550"
+        },
+        {
+          "dataset": "WikiTopicsQuery:art"
+        },
+        {
+          "dataset": "WikiTopicsQuery:award"
+        },
+        {
+          "dataset": "WikiTopicsQuery:edu"
+        },
+        {
+          "dataset": "WikiTopicsQuery:health"
+        },
+        {
+          "dataset": "WikiTopicsQuery:infra"
+        },
+        {
+          "dataset": "WikiTopicsQuery:loc"
+        },
+        {
+          "dataset": "WikiTopicsQuery:org"
+        },
+        {
+          "dataset": "WikiTopicsQuery:people"
+        },
+        {
+          "dataset": "WikiTopicsQuery:sci"
+        },
+        {
+          "dataset": "WikiTopicsQuery:sport"
+        },
+        {
+          "dataset": "WikiTopicsQuery:tax"
+        }
+      ]
+    }
+  ]
+}

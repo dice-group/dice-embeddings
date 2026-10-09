@@ -1,0 +1,111 @@
+{
+  "backbone_state_sha256": "4a2e050130570df0964fc84cf14e6fcaec8672e30afb44f2b0aaf358864d95f7",
+  "training": {
+    "objective": "filtered_softmax_v1",
+    "epochs": 500,
+    "batch_size": 8,
+    "learning_rate": 0.02,
+    "identity_penalty": 0.001,
+    "gradient_clip": 1.0,
+    "seed": 2026090851,
+    "weighting": "equal_source_shape",
+    "selection": "source_validation_mrr",
+    "shapes": [
+      "2i",
+      "3i"
+    ],
+    "validation_sources": [
+      "CoDExMedium",
+      "WN18RR"
+    ],
+    "validation_every": 5,
+    "training_sources": [
+      "CoDExMedium",
+      "WN18RR"
+    ],
+    "train_per_shape": 140,
+    "early_stopping_patience": 100,
+    "beam_size": 64,
+    "tnorm": "prod",
+    "validation_shapes": [
+      "1p",
+      "2p",
+      "3p",
+      "2i",
+      "3i",
+      "2in",
+      "3in",
+      "inp",
+      "pin",
+      "pni"
+    ],
+    "device": "cuda",
+    "validation_device": "cpu",
+    "cpu_threads": 4,
+    "training_cache_bytes": 6442450944,
+    "device_cache_bytes": 536870912,
+    "selected_epoch": 140,
+    "selected_validation_mrr": 0.2132824512154023,
+    "epochs_completed": 240,
+    "stopped_early": true,
+    "stop_reason": "validation_patience",
+    "training_queries": 560,
+    "optimizer_steps": 16800,
+    "row_cache": {
+      "WN18RR": {
+        "host_hits": 306968,
+        "device_hits": 164016,
+        "disk_rows": 6507,
+        "scored_rows": 13,
+        "feature_preparations": 14,
+        "seconds": 26.162073255050927
+      },
+      "CoDExMedium": {
+        "host_hits": 308966,
+        "device_hits": 163570,
+        "disk_rows": 4935,
+        "scored_rows": 33,
+        "feature_preparations": 48,
+        "seconds": 61.986907297512516
+      }
+    }
+  },
+  "score_banks": [
+    "cc2167b115fb9cc77a61b5625c5828a278bcacf6f54fcf5e278ea865d5e99aec",
+    "8a3690ae8e9b2f52a4c98496dd17bbe7598a3ed5e0d497aed1f965f1fd66e86e"
+  ],
+  "sources": {
+    "WN18RR": "b5b638df29e8d26c20f4a32851d2266700a23d7bba4b28d84b917034a41bc9d1",
+    "CoDExMedium": "de72a1ae56a1f8ce0b54314c1cf6b8e06b0f65dba4fabf7ced49f725c2afcd6d"
+  },
+  "version": 3,
+  "feature_mode": "context_scores",
+  "observed_mix": 1.0,
+  "bias_bound": 8.0,
+  "scale_bound": 2.0,
+  "normalization": "none",
+  "hidden_dim": 0,
+  "weights": [
+    [
+      -3.501333656424233,
+      0.827216422561675,
+      1.4833644905055765,
+      -0.42390466499513474,
+      -1.2624805637162413,
+      3.0003077051917737,
+      -2.005538258857798,
+      0.6611030576897173
+    ],
+    [
+      -1.6051233679113148,
+      2.2392658441659328,
+      0.1432945193293975,
+      -0.1762802456777741,
+      -1.207140009201315,
+      -0.6328858451711096,
+      -0.7598897778111452,
+      -0.1463357628542509
+    ]
+  ],
+  "hidden_weights": null
+}

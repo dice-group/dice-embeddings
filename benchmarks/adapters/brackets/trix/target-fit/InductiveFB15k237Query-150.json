@@ -1,0 +1,99 @@
+{
+  "backbone_state_sha256": "4a2e050130570df0964fc84cf14e6fcaec8672e30afb44f2b0aaf358864d95f7",
+  "training": {
+    "objective": "filtered_softmax_v1",
+    "epochs": 500,
+    "batch_size": 8,
+    "learning_rate": 0.02,
+    "identity_penalty": 0.001,
+    "gradient_clip": 1.0,
+    "seed": 2026090851,
+    "weighting": "equal_source_shape",
+    "selection": "source_validation_mrr",
+    "shapes": [
+      "2i",
+      "3i"
+    ],
+    "validation_sources": [
+      "InductiveFB15k237Query:150"
+    ],
+    "validation_every": 5,
+    "training_sources": [
+      "InductiveFB15k237Query:150"
+    ],
+    "train_per_shape": 280,
+    "early_stopping_patience": 100,
+    "beam_size": 64,
+    "tnorm": "prod",
+    "validation_shapes": [
+      "1p",
+      "2p",
+      "3p",
+      "2i",
+      "3i",
+      "2in",
+      "3in",
+      "inp",
+      "pin",
+      "pni"
+    ],
+    "device": "cuda",
+    "validation_device": "cuda",
+    "cpu_threads": 4,
+    "training_cache_bytes": 2147483648,
+    "device_cache_bytes": 536870912,
+    "selected_epoch": 45,
+    "selected_validation_mrr": 0.23650040079713866,
+    "epochs_completed": 145,
+    "stopped_early": true,
+    "stop_reason": "validation_patience",
+    "training_queries": 560,
+    "optimizer_steps": 10150,
+    "row_cache": {
+      "InductiveFB15k237Query:150": {
+        "host_hits": 88837,
+        "device_hits": 294894,
+        "disk_rows": 0,
+        "scored_rows": 6261,
+        "feature_preparations": 6261,
+        "seconds": 5138.201953611104
+      }
+    }
+  },
+  "score_banks": [
+    "f5fcfe893248f2c2a92257b5a84326d3ad5593afcb79a98d82973f220e552e09"
+  ],
+  "sources": {
+    "InductiveFB15k237Query:150": "c3570cbf815506d33450dbb1414cd3af8728e2da3c9251d2377093231aa7c2d7"
+  },
+  "version": 3,
+  "feature_mode": "context_scores",
+  "observed_mix": 1.0,
+  "bias_bound": 8.0,
+  "scale_bound": 2.0,
+  "normalization": "none",
+  "hidden_dim": 0,
+  "weights": [
+    [
+      -0.7043524831232717,
+      1.9291247062303907,
+      0.000563101634929617,
+      0.51650489090389,
+      0.5723774355205744,
+      1.861002817360619,
+      0.2880662834025293,
+      0.19317034472458738
+    ],
+    [
+      -0.8951135684116572,
+      2.1950835458195552,
+      -0.23219147865039574,
+      -0.1838323378871659,
+      -0.9099731017759501,
+      -0.7172718201078301,
+      -1.0341363862416109,
+      -0.3684892491722062
+    ]
+  ],
+  "hidden_weights": null
+}

@@ -1,0 +1,123 @@
+{
+  "backbone_state_sha256": "8816c1555269384a6cd81a4b7650c9bd6e2394cec4cab5e7f75bd9909dcc9020",
+  "training": {
+    "objective": "filtered_softmax_v1",
+    "epochs": 500,
+    "batch_size": 8,
+    "learning_rate": 0.02,
+    "identity_penalty": 0.001,
+    "gradient_clip": 1.0,
+    "seed": 3,
+    "weighting": "equal_source_shape",
+    "selection": "source_validation_mrr",
+    "shapes": [
+      "2i",
+      "3i"
+    ],
+    "validation_sources": [
+      "CoDExMedium",
+      "FB15k237",
+      "WN18RR"
+    ],
+    "validation_every": 5,
+    "training_sources": [
+      "CoDExMedium",
+      "FB15k237",
+      "WN18RR"
+    ],
+    "train_per_shape": 140,
+    "early_stopping_patience": 100,
+    "beam_size": 64,
+    "tnorm": "prod",
+    "validation_shapes": [
+      "1p",
+      "2p",
+      "3p",
+      "2i",
+      "3i",
+      "2in",
+      "3in",
+      "inp",
+      "pin",
+      "pni"
+    ],
+    "device": "cuda",
+    "validation_device": "cpu",
+    "cpu_threads": 4,
+    "training_cache_bytes": 6442450944,
+    "device_cache_bytes": 536870912,
+    "selected_epoch": 170,
+    "selected_validation_mrr": 0.18387948597843148,
+    "epochs_completed": 270,
+    "stopped_early": true,
+    "stop_reason": "validation_patience",
+    "training_queries": 840,
+    "optimizer_steps": 28350,
+    "row_cache": {
+      "FB15k237": {
+        "host_hits": 343375,
+        "device_hits": 187239,
+        "disk_rows": 6574,
+        "scored_rows": 4,
+        "feature_preparations": 4,
+        "seconds": 22.05835298122838
+      },
+      "WN18RR": {
+        "host_hits": 342322,
+        "device_hits": 188336,
+        "disk_rows": 6534,
+        "scored_rows": 0,
+        "feature_preparations": 0,
+        "seconds": 13.883503592573106
+      },
+      "CoDExMedium": {
+        "host_hits": 345424,
+        "device_hits": 186785,
+        "disk_rows": 4976,
+        "scored_rows": 7,
+        "feature_preparations": 7,
+        "seconds": 23.808877972653136
+      }
+    }
+  },
+  "score_banks": [
+    "65bd769dade4744a953d7742ae96dee03c29d30075f9951792c8ac5b9df9bd3b",
+    "0fd86492f49259b3ab273d1885e0413b44389ae9507e7e32aaa96cb1a16b6c7e",
+    "279d5eff7128ad31d2fb5110f2d7d9d35a3b8959b7c14438322caae476a6c3ac"
+  ],
+  "sources": {
+    "FB15k237": "b144aa69f3fb06b4e62148adfae3f966c99776c8942ab987ec011d1a4855e6d1",
+    "WN18RR": "b5b638df29e8d26c20f4a32851d2266700a23d7bba4b28d84b917034a41bc9d1",
+    "CoDExMedium": "de72a1ae56a1f8ce0b54314c1cf6b8e06b0f65dba4fabf7ced49f725c2afcd6d"
+  },
+  "version": 3,
+  "feature_mode": "context_scores",
+  "observed_mix": 1.0,
+  "bias_bound": 8.0,
+  "scale_bound": 2.0,
+  "normalization": "none",
+  "hidden_dim": 0,
+  "weights": [
+    [
+      -2.3036887740402214,
+      4.612747263692607,
+      1.4033624285534751,
+      0.04457931072383037,
+      0.23559022141677888,
+      -3.6940951984294106,
+      -1.3312302027522014,
+      0.2611382758172978
+    ],
+    [
+      -3.007615273626598,
+      -0.42231921212720835,
+      -0.5324142199760353,
+      -1.2344244043741506,
+      -0.7217726966929363,
+      -1.478744712286453,
+      -0.512740155553628,
+      -0.7224098603668668
+    ]
+  ],
+  "hidden_weights": null
+}

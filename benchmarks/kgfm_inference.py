@@ -15,12 +15,17 @@ import time
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-CHECKPOINTS = {'ULTRA': 'ultra_3g.pth', 'TRIX': 'trix/entity_prediction.pth', 'Flock': 'flock/flock_entity.pth'}
+CHECKPOINTS = {'ULTRA': 'ultra_3g.pth', 'TRIX': 'trix/entity_prediction.pth', 'Flock': 'flock/flock_entity.pth',
+               'KGICL': 'kgicl/KG-ICL-6L/model_best.tar'}
 
 
 def digest(path):
-    with path.open('rb') as stream:
-        return hashlib.file_digest(stream, 'sha256').hexdigest()
+    # Chunked hashing also runs on the Python 3.9 reference environment of official KG-ICL.
+    result = hashlib.sha256()
+    with Path(path).open('rb') as stream:
+        for block in iter(lambda: stream.read(1 << 20), b''):
+            result.update(block)
+    return result.hexdigest()
 
 
 def inference_arguments(args):
@@ -41,7 +46,7 @@ def worker(args):
     import torch
 
     from dicee.evaluation.link_prediction import evaluate_lp
-    from dicee.models import TRIX, ULTRA, Flock
+    from dicee.models import KGICL, TRIX, ULTRA, Flock
 
     torch.set_num_threads(args.threads)
     torch.manual_seed(42)
@@ -71,8 +76,8 @@ def worker(args):
                     graph_inference_backend=args.inference_backend, graph_relation_cache_mb=args.relation_cache_mb,
                     graph_projection_cache_mb=args.projection_cache_mb, graph_inference_compile=args.compile_inference,
                     flock_compact_state=args.compact_state, flock_compile_sampler=args.compile_sampler,
-                    flock_pack_walks=args.pack_walks)
-    cls = {'ULTRA': ULTRA, 'TRIX': TRIX, 'Flock': Flock}[args.model]
+                    flock_pack_walks=args.pack_walks, kgicl_masked_distances=metadata.get('kgicl_masked_distances'))
+    cls = {'ULTRA': ULTRA, 'TRIX': TRIX, 'Flock': Flock, 'KGICL': KGICL}[args.model]
     begin = time.perf_counter()
     model = cls(settings).load_pretrained(checkpoint).set_graph(facts).eval().requires_grad_(False).to(device=args.device, dtype=getattr(torch, args.dtype))
     setup_seconds = time.perf_counter() - begin

@@ -1,0 +1,1526 @@
+"""Render saved +H/UltraQuery JSON reports as LaTeX paper tables: four main floats and appendix A1--A11.
+
+Table generation uses only the standard library; --figures uses matplotlib.
+It never loads models, datasets,
+rank traces, or files referenced inside a report. Run without inputs for the
+full default evaluation layout with missing scores, or pass result.json,
+comparison.json, inference-difficulty.json, and
+*-effects.json files together. Use --help for examples and table descriptions.
+"""
+
+import argparse
+import functools
+import json
+import math
+import re
+import sys
+from collections import defaultdict
+from copy import copy
+from pathlib import Path
+
+from ..manifests import SUITES, catalog, read_manifest, suite_directory
+
+ULTRA_TYPES = catalog().ULTRAQUERY_SHAPES
+PLUS_H_TYPES = catalog().PLUS_H_SHAPES
+PLUS_H_DATASETS = catalog().PLUS_H_DATASETS
+GRAPH_INDEPENDENT_METHODS = catalog().GRAPH_INDEPENDENT_METHODS
+FAMILIES = {'transductive': ('Transductive', len(catalog().TRANSDUCTIVE)),
+            'inductive-e': ('Inductive (e)', len(catalog().INDUCTIVE_VERSIONS)),
+            'inductive-er': ('Inductive (e,r)', len(catalog().WIKITOPICS)),
+            'all': ('All datasets', len(catalog().BENCHMARK_DATASETS))}
+METRICS = ('mrr', 'hits1', 'hits3', 'hits10')
+MISSING = '-'
+# Positive-atom bounds from the answer-level classifier.
+POSITIVE_EDGES = dict(zip(PLUS_H_TYPES, (1, 2, 3, 2, 3, 3, 3, 1, 2, 1, 2, 2, 2, 1, 4, 4)))
+METHOD_NAMES = {'cone': 'ConE', 'gnnqe': 'GNN-QE', 'ultraquery': 'UltraQuery',
+                'clmpt': 'CLMPT', 'cqd': 'CQD', 'cqd-hybrid': 'CQD-Hybrid', 'qto': 'QTO',
+                'ultra-adapter': 'ULTRA + adapter', 'trix-adapter': 'TRIX + adapter', 'kgicl-adapter': 'KG-ICL + adapter',
+                'ultraquery-lp': 'UltraQuery-LP', 'incoming-relation': 'Incoming relation',
+                'inductive-gnnqe': 'Inductive GNN-QE'}
+# Appendix tables A1--A11; the main paper's compact tables are in summary.py.
+TABLE_TITLES = (
+    'UQ-23 Results by Freebase Derivation', 'Full UQ-23 Results', '+H Per-Query-Type Performance',
+    'Full +H Hardness Breakdowns', 'Learned vs Identity Adapter', 'Adapter Training Seeds',
+    'Data, Training, and Selection Details',
+)
+LATEX_ESCAPES = {'\\': r'\textbackslash{}', '&': r'\&', '%': r'\%', '$': r'\$',
+                 '#': r'\#', '_': r'\_', '{': r'\{', '}': r'\}',
+                 '~': r'\textasciitilde{}', '^': r'\textasciicircum{}'}
+
+
+def is_missing(value):
+    return (value is None or isinstance(value, str) and not value.strip()
+            or isinstance(value, float) and not math.isfinite(value))
+
+
+def escape(value):
+    """Escape input text, including IDs and paths, without interpreting LaTeX."""
+    if is_missing(value):
+        return MISSING
+    if isinstance(value, (dict, list, tuple)):
+        value = json.dumps(value, sort_keys=True, ensure_ascii=True)
+    return ''.join(LATEX_ESCAPES.get(c, c) for c in ' '.join(str(value).split()))
+
+
+def number(value, *, scale=100, signed=False):
+    if is_missing(value):
+        return MISSING
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value):
+        raise ValueError(f'Expected a finite numeric metric, got {value!r}')
+    if scale == 100 and (abs(value) > 1 or not signed and value < 0):
+        raise ValueError(f'Metric outside its fractional range: {value!r}')
+    return f'{value * scale:+.2f}' if signed else f'{value * scale:.2f}'
+
+
+def ci(value):
+    if is_missing(value):
+        return MISSING
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        raise ValueError(f'Invalid confidence interval: {value!r}')
+    if any(is_missing(endpoint) for endpoint in value):
+        return MISSING
+    if value[0] > value[1]:
+        raise ValueError(f'Invalid confidence interval: {value!r}')
+    return f'[{number(value[0], signed=True)}, {number(value[1], signed=True)}]'
+
+
+def family(dataset):
+    """UltraQuery dataset family; None for +H and unknown datasets."""
+    return catalog().dataset_spec(dataset)[0] if dataset in catalog().BENCHMARK_DATASETS else None
+
+
+def scope(record):
+    return 'full test' if record['complete'] else f"{record['split'] or 'unknown split'} / partial"
+
+
+def condition(record):
+    """Keep alternative graphs, filters, adapters and execution recipes separate."""
+    fields = (record['graph'], record['filter'], record['profile'], record['facts'])
+    return ', '.join(str(v) for v in fields if v is not None and v != '')
+
+
+def averages(shapes):
+    return {group: {m: sum(values[m] for values in selected) / len(selected)
+                    for m in METRICS if all(not is_missing(values.get(m)) for values in selected)} if selected else {}
+            for group, selected in (
+                ('all', list(shapes.values())),
+                ('epfo', [v for s, v in shapes.items() if 'n' not in s]),
+                ('negation', [v for s, v in shapes.items() if 'n' in s]))}
+
+
+def execution_settings(record):
+    """Recorded recipe evidence; absent settings stay absent, never become defaults."""
+    inference = record.get('raw', {}).get('inference') or {}
+    manifest = inference.get('manifest') or {}
+    settings = {key: inference.get(key) if inference.get(key) is not None else manifest.get(key) for key in
+                ('checkpoint', 'checkpoint_sha256', 'options', 'operators', 'selection_protocol')}
+    options = dict(settings.get('options') or {})
+    if manifest.get('per_shape'):
+        options['per_shape'] = {**manifest['per_shape'], **(options.get('per_shape') or {})}
+    if options:
+        settings['options'] = options
+    settings['query_batch_size'] = inference.get('query_batch_size', manifest.get('query_batch_size'))
+    settings['candidates'] = record.get('raw', {}).get('num_candidates', record.get('detail', {}).get('num_candidates'))
+    for key in ('candidate_sha256', 'context_sha256'):
+        value = record.get('raw', {}).get(key, record.get('detail', {}).get(key))
+        settings[key] = None if is_missing(value) else value
+    protocol = record.get('raw', {}).get('protocol') or {}
+    for key in ('query_order', 'query_sampling', 'sampling_seed', 'max_queries_per_shape'):
+        settings[key] = protocol.get(key)
+    settings['graph_recipe_sha256'] = record.get('detail', {}).get('graph_recipe_sha256',
+                                      record.get('raw', {}).get('graph_recipe_sha256'))
+    return {key: value for key, value in settings.items() if value is not None}
+
+
+def result_record(report, *, row=None, comparison=False):
+    row = row or {}
+    inference = report.get('inference') or {}
+    metadata = report.get('dataset_metadata') or {}
+    protocol = report.get('protocol') or {}
+    run = report.get('benchmark_run', report.get('paper_run')) or {}
+    dataset = report.get('dataset', row.get('dataset'))
+    if not isinstance(dataset, str):
+        raise ValueError('A result must have a dataset name')
+    method = row.get('method', inference.get('method', report.get('method', 'unspecified')))
+    entry = report.get('id', row.get('id', run.get('entry', f'{method}-{dataset}')))
+    if not isinstance(entry, str):
+        raise ValueError('A result entry ID must be text')
+    per_shape = {s: v or {} for s, v in (report.get('per_shape') or {}).items()}
+    if comparison:
+        policies = {p: {s: v[p] for s, v in per_shape.items() if p in v} for p in ('sort', 'expected')}
+        groups = report.get('averages') or {}
+        policies = {p: {'per_shape': shapes, 'averages': groups.get(p) or averages(shapes)}
+                    for p, shapes in policies.items()}
+    else:
+        primary = protocol.get('tie_policy', 'sort')
+        policies = {primary: {'per_shape': per_shape, 'averages': report.get('averages') or averages(per_shape)}}
+        policies.update(report.get('additional_tie_metrics') or {})
+    policies = {p: {'per_shape': {s: v or {} for s, v in ((values or {}).get('per_shape') or {}).items()},
+                    'averages': {g: v or {} for g, v in ((values or {}).get('averages') or {}).items()}}
+                for p, values in policies.items()}
+    for values in policies.values():
+        if not values['averages'] and values['per_shape']:
+            values['averages'] = averages(values['per_shape'])
+    # Comparison summary scores are already x100. Its details and raw results
+    # are fractions. Never silently treat a summary mean as per-type evidence.
+    if not per_shape and row:
+        for p, name in (('sort', 'sort_mrr'), ('expected', 'expected_random_mrr')):
+            if row.get(name) is not None:
+                policies[p] = {'per_shape': {}, 'averages': {'all': {'mrr': row[name] / 100}}}
+    split = report.get('split', row.get('phase', 'test' if row.get('complete_test') else None))
+    expected = PLUS_H_TYPES if dataset in PLUS_H_DATASETS else ULTRA_TYPES
+    complete = row.get('complete_test')
+    if complete is None:
+        complete = (split == 'test' and protocol.get('full_split') is True and set(per_shape) == set(expected))
+    facts = row.get('observed_facts', inference.get('observed_facts'))
+    if per_shape and (set(per_shape) != set(expected) or any(
+            v.get('available_queries') is not None and v.get('queries') != v['available_queries']
+            for v in per_shape.values())):
+        complete = False
+    for p, values in policies.items():
+        computed = averages(values['per_shape'])
+        for group, metrics in values['averages'].items():
+            for metric, value in metrics.items():
+                actual = computed.get(group, {}).get(metric)
+                if metric in METRICS and not is_missing(value) and not is_missing(actual) and not math.isclose(value, actual, abs_tol=1e-11):
+                    raise ValueError(f'Inconsistent {p} {group} {metric} average for {entry}')
+    return dict(id=entry, dataset=dataset, method=method, split=split, complete=bool(complete),
+                graph=row.get('inference_graph', report.get('inference_graph', metadata.get('inference_graph'))),
+                filter=row.get('answer_filter', report.get('answer_filter', protocol.get('answer_filter'))),
+                profile=row.get('execution_profile', report.get('execution_profile')),
+                facts=json.dumps(facts, sort_keys=True) if isinstance(facts, dict) else facts,
+                calibration=row.get('calibration', report.get('calibration', inference.get('calibration'))),
+                paired_with=report.get('paired_with'), metrics=policies,
+                counts={s: {k: v[k] for k in ('queries', 'hard_answers') if k in v} for s, v in per_shape.items()},
+                tie_ci=report.get('delta_macro_mrr_ci95'), detail=report if comparison else {},
+                raw=report if not comparison else {}, reference=row.get('reference', report.get('reference')) or {})
+
+
+class Reports:
+    def __init__(self):
+        self.results = {}
+        self.difficulty = []
+        self.effects = {'adapter': [], 'filter': [], 'graph': []}
+        self.template = False
+        self.primary_recipes = ()
+        # Review analyses (review.py): named paired contrasts and mechanism diagnostics, copied, never recomputed.
+        self.review = {}
+
+    def add_result(self, record):
+        key = record['id']
+        previous = self.results.get(key)
+        if previous is not None:
+            for name in ('dataset', 'method', 'graph', 'filter', 'profile', 'facts', 'calibration'):
+                if previous[name] is not None and record[name] is not None and previous[name] != record[name]:
+                    raise ValueError(f'Conflicting entry {key!r}: {name}; use distinct entry IDs for different runs')
+            a, b = execution_settings(previous), execution_settings(record)
+            for name in a.keys() & b.keys():
+                if a[name] != b[name]:
+                    raise ValueError(f'Conflicting entry {key!r}: {name}; use distinct entry IDs for different runs')
+            if previous['tie_ci'] is not None and record['tie_ci'] is not None and previous['tie_ci'] != record['tie_ci']:
+                raise ValueError(f'Conflicting entry {key!r}: tie confidence interval')
+            record['tie_ci'] = record['tie_ci'] if record['tie_ci'] is not None else previous['tie_ci']
+            record['detail'] = previous['detail'] or record['detail']
+            for policy in previous['metrics'].keys() & record['metrics'].keys():
+                left, right = previous['metrics'][policy]['per_shape'], record['metrics'][policy]['per_shape']
+                if left and right and set(left) != set(right):
+                    raise ValueError(f'Conflicting entry {key!r}: {policy} query-type coverage')
+                for shape in left.keys() & right.keys():
+                    for metric in METRICS:
+                        a, b = left[shape].get(metric), right[shape].get(metric)
+                        if not is_missing(a) and not is_missing(b) and not math.isclose(a, b, abs_tol=1e-11):
+                            raise ValueError(f'Conflicting entry {key!r}: {policy} {shape} {metric}')
+                left_means, right_means = previous['metrics'][policy]['averages'], record['metrics'][policy]['averages']
+                for group in left_means.keys() & right_means.keys():
+                    for metric in METRICS:
+                        a, b = (left_means[group] or {}).get(metric), (right_means[group] or {}).get(metric)
+                        if not is_missing(a) and not is_missing(b) and not math.isclose(a, b, abs_tol=1e-11):
+                            raise ValueError(f'Conflicting entry {key!r}: {policy} {group} {metric}')
+                if left and not right:
+                    record['metrics'][policy] = previous['metrics'][policy]
+            record['raw'] = previous['raw'] or record['raw']
+            record['metrics'] = {**previous['metrics'], **record['metrics']}
+            record['counts'] = record['counts'] or previous['counts']
+            for name in ('graph', 'filter', 'profile', 'facts', 'calibration', 'paired_with'):
+                if record[name] is None:
+                    record[name] = previous[name]
+        self.results[key] = record
+
+    def consume(self, payload):
+        if payload is None or payload == {} or payload == []:
+            return
+        if isinstance(payload, list):
+            for item in payload:
+                self.consume(item)
+            return
+        if not isinstance(payload, dict):
+            raise ValueError('Reports must be JSON objects or lists of report objects')
+        if 'review_analyses' in payload:
+            bundle = payload['review_analyses']
+            if not isinstance(bundle, dict) or not isinstance(bundle.get('contrasts', []), list):
+                raise ValueError('Review analyses must be an object with a list of contrasts')
+            for key, value in bundle.items():
+                if key == 'contrasts':
+                    known = {(c['name'], c['suite'], c.get('policy'), c.get('backbone')) for c in self.review.get('contrasts', [])}
+                    self.review.setdefault('contrasts', []).extend(
+                        c for c in value if (c['name'], c['suite'], c.get('policy'), c.get('backbone')) not in known)
+                elif self.review.get(key) not in (None, value):
+                    raise ValueError(f'Conflicting review analyses: {key}')
+                else:
+                    self.review[key] = value
+            return
+        if 'macro' in payload:
+            kind = ('adapter' if 'learned' in payload and 'control' in payload else
+                    'filter' if 'corrected' in payload and 'released' in payload else
+                    'graph' if 'train' in payload and 'train_valid' in payload else None)
+            if kind is None:
+                raise ValueError('Unknown paired-effect report')
+            fields = {'adapter': ('learned', 'control'), 'filter': ('released', 'corrected'),
+                      'graph': ('train', 'train_valid')}[kind]
+            for previous in self.effects[kind]:
+                if all(previous[key] == payload[key] for key in fields) and previous != payload:
+                    raise ValueError(f'Conflicting {kind} effects for the same pair')
+            if payload not in self.effects[kind]:
+                self.effects[kind].append(payload)
+        elif 'grouping' in payload and 'shape' in payload:
+            if payload not in self.difficulty:
+                self.difficulty.append(payload)
+        elif 'dataset' in payload and ('per_shape' in payload or 'averages' in payload):
+            self.add_result(result_record(payload))
+        elif 'rows' in payload and 'details' in payload and all('id' in r for r in payload['rows']):
+            details = {d['id']: d for d in payload['details']}
+            for row in payload['rows']:
+                self.add_result(result_record(details.get(row['id'], {}), row=row, comparison=True))
+        elif 'rows' in payload and ('semantics' in payload or all('grouping' in r for r in payload['rows'])):
+            self.consume(payload['rows'])
+        else:
+            keys = ('results', 'comparison', 'difficulty', 'adapter_effects', 'filter_effects', 'graph_effects')
+            found = [key for key in keys if key in payload]
+            if not found:
+                raise ValueError('Unrecognized report; use result, comparison, difficulty, or paired-effect JSON')
+            for key in found:
+                self.consume(payload[key])
+
+
+def load_reports(paths):
+    reports = Reports()
+    for path in paths:
+        try:
+            reports.consume(json.loads(Path(path).read_text(encoding='utf-8')))
+        except (ValueError, TypeError, KeyError) as error:
+            raise ValueError(f'{path}: {error}') from error
+    return reports
+
+
+def policy_values(record, policy):
+    return record['metrics'].get(policy, {'per_shape': {}, 'averages': {}})
+
+
+def validate_pair(left, right, *, kind):
+    """Only the ablated factor may change in the supplied recipe evidence."""
+    fields = ('dataset', 'method', 'split', 'profile', 'facts', 'complete')
+    fields += (() if kind == 'graph' else ('graph',))
+    fields += (() if kind == 'filter' else ('filter',))
+    fields += (() if kind == 'adapter' else ('calibration',))
+    for field in fields:
+        a, b = left.get(field), right.get(field)
+        if a is not None and b is not None and a != b:
+            raise ValueError(f'{kind.title()} pair changes {field}: {left["id"]}, {right["id"]}')
+    if kind == 'adapter':
+        if any(record.get('method') and not record['method'].endswith('-adapter') for record in (left, right)):
+            raise ValueError('Adapter pairs require a matching adapter backbone')
+        if left.get('calibration') not in (None, 'learned') or right.get('calibration') not in (None, 'without-adapter', 'identity'):
+            raise ValueError('Adapter pair does not compare learned and identity calibration')
+    a, b = execution_settings(left), execution_settings(right)
+    for field in a.keys() & b.keys():
+        if kind == 'graph' and field == 'context_sha256':
+            continue  # Changing the inference graph changes its context identity.
+        if a[field] != b[field]:
+            raise ValueError(f'{kind.title()} pair changes {field}: {left["id"]}, {right["id"]}')
+    if left['counts'] != right['counts']:
+        raise ValueError(f'{kind.title()} pair has different query/answer counts: {left["id"]}, {right["id"]}')
+    for policy in left['metrics'].keys() & right['metrics'].keys():
+        if set(policy_values(left, policy)['per_shape']) != set(policy_values(right, policy)['per_shape']):
+            raise ValueError(f'{kind.title()} pair has different query-type coverage: {left["id"]}, {right["id"]}')
+
+
+def effect_metrics(effect, left, right, policy, *, kind, direction=1):
+    """Check supplied B-minus-A effects and preserve CIs without estimating them."""
+    supplied = dict((effect.get('macro') or {}).get(policy) or {})
+    if left and right:
+        validate_pair(left, right, kind=kind)
+        if effect.get('dataset') is not None and effect['dataset'] != left['dataset']:
+            raise ValueError(f'{kind.title()} effect dataset differs from its paired results')
+        a = policy_values(left, policy)['averages'].get('all', {})
+        b = policy_values(right, policy)['averages'].get('all', {})
+        for metric in METRICS:
+            if not is_missing(a.get(metric)) and not is_missing(b.get(metric)):
+                delta = direction * (b[metric] - a[metric])
+                if not is_missing(supplied.get(metric)) and not math.isclose(supplied[metric], delta, abs_tol=1e-11):
+                    raise ValueError(f'Inconsistent {kind} {policy} {metric} delta for {left["id"]}, {right["id"]}')
+                supplied[metric] = delta
+        shapes = effect.get('per_shape') or {}
+        if shapes and set(shapes) != set(policy_values(left, policy)['per_shape']):
+            raise ValueError(f'{kind.title()} effect has different query-type coverage from its results')
+        for shape, values in shapes.items():
+            if values.get('queries') is not None and left['counts'].get(shape, {}).get('queries') is not None and values['queries'] != left['counts'][shape]['queries']:
+                raise ValueError(f'{kind.title()} effect has different query counts from its results')
+            for metric in METRICS:
+                a_value = policy_values(left, policy)['per_shape'].get(shape, {}).get(metric)
+                b_value = policy_values(right, policy)['per_shape'].get(shape, {}).get(metric)
+                delta = (values.get(policy) or {}).get(metric)
+                if all(not is_missing(v) for v in (a_value, b_value, delta)) and not math.isclose(delta, direction * (b_value - a_value), abs_tol=1e-11):
+                    raise ValueError(f'Inconsistent {kind} {policy} {shape} {metric} delta')
+    return supplied
+
+
+def adapter_rows(reports, policy):
+    pairs = {(p['learned'], p['control']): p for p in reports.effects['adapter']}
+    for r in reports.results.values():
+        if r['paired_with'] in reports.results:
+            pairs.setdefault((r['paired_with'], r['id']), {})
+    rows = []
+    for (left, right), effect in sorted(pairs.items()):
+        learned, control = reports.results.get(left), reports.results.get(right)
+        delta = effect_metrics(effect, learned, control, policy, kind='adapter', direction=-1)
+        values = []
+        for r in (learned, control):
+            values.append(policy_values(r, policy)['averages'].get('all', {}).get('mrr') if r else None)
+        rows.append([escape(effect.get('dataset', learned['dataset'] if learned else None)), escape(left), escape(right),
+                     escape(scope(learned) if learned else None), number(values[0]), number(values[1]),
+                     number(delta.get('mrr'), signed=True), ci(delta.get('mrr_ci95'))])
+    return rows
+
+
+
+
+
+
+def dataset_name(name):
+    if name is None:
+        return MISSING
+    if name.startswith('InductiveFB15k237Query:'):
+        return 'FB15k-237 v' + name.split(':')[1]
+    if name.startswith('WikiTopicsQuery:'):
+        return 'WikiTopics ' + name.split(':')[1]
+    return {'FB15k237LogicalQuery': 'FB15k-237', 'FB15kLogicalQuery': 'FB15k',
+            'NELL995LogicalQuery': 'NELL995', 'FB15k237+H': 'FB15k-237+H'}.get(name, name)
+
+
+# Entry-ID tokens of adapter runs other than the shipped recipe, and their labels: tables that list every run must
+# never show such a run under the shipped recipe's name.
+VARIANT_TOKENS = (('-no-fb-', 'fit without FB15k-237'), ('-ultra_4g-', 'ULTRA 4g'), ('-ultra_50g-', 'ULTRA 50g'),
+                  ('-global-', 'global calibration'), ('-uqlp-', 'UltraQuery-LP thresholds'), ('-target-fit-', 'target fit'),
+                  ('-target-valid-', 'target-validation fit'), ('-minmax-', 'min-max'), ('-softmax-degree-', 'softmax × degree'),
+                  ('-gamma0-', 'refit without facts'), ('-wide-', 'wide bounds'), ('-uqweights-', 'UltraQuery weights'))
+BASELINE_VARIANTS = (('ultraquery-traversal-', ' + observed facts'), ('ultraquery-lp-4g-', ' (ULTRA 4g)'),
+                     ('ultraquery-calibrated-', ' + observed facts + softmax × degree'),
+                     ('ultraquery-lp-calibrated-', ' + observed facts + softmax × degree'),
+                     # +H full-test arms of the review subsets driver (UltraQuery LP has no +H recipes of its own).
+                     ('uqlp-calibrated-', ' + observed facts + softmax × degree'))
+
+
+def method_name(record):
+    method = record.get('method')
+    name = METHOD_NAMES.get(method, method or MISSING)
+    entry = record.get('id', record.get('entry', ''))
+    if method and method.endswith('-adapter') and '-softmax-degree-' in entry and '-uqweights' not in entry:
+        # The training-free rule of the main tables is a system of its own, not an adapter variant.
+        name = name.replace(' + adapter', ' + softmax × degree')
+    elif method and method.endswith('-adapter'):
+        if 'intersections' in entry:
+            name += ' (2i/3i)'
+        elif '14type' in entry:
+            name += ' (14-type)'
+        name += next((f' ({label})' for token, label in VARIANT_TOKENS if token in entry), '')
+        if record.get('paired_with') or record.get('calibration') == 'without-adapter' or '-without-adapter' in entry:
+            name = name.replace(' + adapter', ' identity')
+    else:
+        name += next((label for prefix, label in BASELINE_VARIANTS if (entry or '').startswith(prefix)), '')
+    options = (record.get('raw', {}).get('inference') or {}).get('options') or {}
+    if options.get('observed_facts') in ('none', 'atomic', 'both'):
+        name += ' (facts ' + options['observed_facts'] + ')'
+    return name
+
+
+def entry_record(reports, entry, dataset=None):
+    if entry in reports.results:
+        return reports.results[entry]
+    method = next((m for m in sorted(METHOD_NAMES, key=len, reverse=True) if (entry or '').startswith(m + '-')), None)
+    if method is None and (entry or '').startswith(('ultra-product-', 'trix-product-')):
+        method = entry.split('-')[0] + '-adapter'
+    return dict(id=entry or '', dataset=dataset, method=method, paired_with=None, calibration=None, raw={})
+
+
+def labeled_records(reports):
+    records = dict(reports.results)
+    for row in reports.difficulty:
+        entry = row.get('entry')
+        if entry and entry not in records:
+            records[entry] = hardness_record(reports, row)
+    return records
+
+
+def run_labels(reports):
+    """Compact default names, unique labels whenever a dataset has multiple runs; seed replicates say so."""
+    from . import summary
+    records = labeled_records(reports)
+    groups = defaultdict(list)
+    for entry, record in records.items():
+        groups[record['dataset'], short_method(method_name(record))].append(entry)
+    labels = {}
+    for (_, base), entries in sorted(groups.items(), key=lambda item: str(item[0])):
+        full_names = [method_name(records[entry]) for entry in entries]
+        systems = {entry: summary.system_of(records[entry]) if records[entry].get('dataset') else ((entry,), 0)
+                   for entry in entries}
+        # Several runs: name the recipe (without the backbone), for replicates the seed tag, and the
+        # evaluation condition (answer filters, inference graph) where the runs differ in it.
+        recipes = defaultdict(set)
+        for entry in entries:
+            recipes[systems[entry][0]].add(systems[entry][1])
+        varying = [field for field in ('filter', 'graph') if len({records[entry].get(field) for entry in entries}) > 1]
+        tags = {}
+        for entry in entries:
+            system, seed = systems[entry]
+            parts = [] if len(recipes) == 1 else [summary.recipe_token(records[entry])] if records[entry].get('dataset') else []
+            if len(recipes[system]) > 1:
+                parts.append(f'seed tag {seed}')
+            parts.extend(f'{records[entry][field]} {"filters" if field == "filter" else "graph"}'
+                         for field in varying if records[entry].get(field))
+            tags[entry] = ', '.join(p for p in parts if p)
+        # Colliding names get recipe/seed labels when those name every run uniquely, else numbers.
+        named = all(tags.values()) and len(set(tags.values())) == len(tags)
+        for index, entry in enumerate(sorted(entries), 1):
+            name = method_name(records[entry])
+            labels[entry] = (base if len(entries) == 1 else name if full_names.count(name) == 1
+                             else name + f' ({tags[entry]})' if named else name + f' [R{index}]')
+    return labels
+
+
+def display_method(reports, record):
+    return run_labels(reports).get(record['id'], method_name(record))
+
+
+def shown_labels(reports, records):
+    """Names unique among the shown runs only: a table of one run per method needs no recipe, seed or condition tags."""
+    shown = copy(reports)
+    shown.results = {r['id']: r for r in records}
+    shown.difficulty = [row for row in reports.difficulty if row.get('entry') in shown.results]
+    return run_labels(shown)
+
+
+@functools.lru_cache(maxsize=None)
+def shipped_recipes():
+    """{(suite, adapter method): recipe} of the checked-in kgfm_adapters.json manifests, without seed tags."""
+    from . import summary
+    recipes = {}
+    for suite in SUITES:
+        for entry in read_manifest(suite_directory(suite) / 'kgfm_adapters.json')['entries']:
+            recipe = summary.SEED.sub('', entry['id'].replace(entry['dataset'], ''))
+            recipes[suite, entry['method']] = re.sub('-+', '-', recipe).strip('-')
+    return recipes
+
+
+def paper_records(reports, *, identities=False):
+    """One run per dataset, method and identity flag, as in the main tables (see summary.primary_runs)."""
+    from . import summary
+    return sorted(summary.primary_runs(reports, identities=identities), key=lambda r: (r['dataset'], method_name(r), r['id']))
+
+
+def main_plus_h_records(reports):
+    """The +H tables compare one fact graph and answer-filter policy across methods."""
+    records = [r for r in paper_records(reports) if r['dataset'] in PLUS_H_DATASETS]
+    for field, label in (('graph', 'inference graph'), ('filter', 'answer filters')):
+        applicable = [r for r in records if field != 'graph' or r['method'] not in GRAPH_INDEPENDENT_METHODS]
+        conditions = {r[field] for r in applicable}
+        if len(conditions) > 1 or any(is_missing(value) for value in conditions):
+            details = ', '.join(f'{method_name(r)} ({dataset_name(r["dataset"])}): {r[field] or "unavailable"}'
+                                for r in applicable)
+            raise ValueError(f'The +H tables require the same {label}, explicitly recorded across methods and datasets; {details}')
+    return records
+
+
+# UltraQuery LP on +H is our own setting, not a published one: the review's full-test arms run frozen ULTRA 3g in
+# UltraQuery's executor with the UQ-23 thresholds carried over.
+PLUS_H_LP_NOTE = ('UltraQuery-LP on +H: frozen ULTRA 3g in UltraQuery\'s executor; UltraQuery LP publishes no +H thresholds, '
+                  'so the matching UQ-23 values are carried over (0.97 on NELL995+H, 0.8 elsewhere).')
+
+
+def main_plus_h_protocol_notes(records):
+    graphs = {r['graph'] for r in records if r['method'] not in GRAPH_INDEPENDENT_METHODS}
+    filters = {r['filter'] for r in records}
+    notes = []
+    if graphs:
+        graph = next(iter(graphs))
+        graph_name = {'train': 'training', 'train+valid': 'training + validation'}.get(graph, graph)
+        notes.append('Graph-based methods use ' + graph_name + ' facts.')
+    if any(r['method'] in GRAPH_INDEPENDENT_METHODS for r in records):
+        notes.append('ConE, CLMPT and plain CQD do not consume graph facts at inference.')
+    if filters:
+        notes.append('All methods use ' + next(iter(filters)) + ' answer filters.')
+    if any(r['method'] == 'ultraquery-lp' for r in records):
+        notes.append(PLUS_H_LP_NOTE)
+    return ' '.join(notes)
+
+
+def main_plus_h_rows(reports, policy):
+    records = main_plus_h_records(reports)
+    labels = shown_labels(reports, records)
+    return [[escape(dataset_name(r['dataset'])), escape(labels.get(r['id'], method_name(r))), escape(scope(r)),
+             *[number(policy_values(r, policy)['per_shape'].get(s, {}).get('mrr')) for s in PLUS_H_TYPES]]
+            for r in records]
+
+
+def hardness_record(reports, row):
+    r = entry_record(reports, row.get('entry'), row.get('dataset'))
+    if not r.get('method') and row.get('method'):
+        r = {**r, 'method': row['method']}
+    return r
+
+
+def hardness_scope(reports, row):
+    """Coverage concerns parent queries, never the bin's participating queries."""
+    if reports.template:
+        return True, 'planned full test'
+    parent, available = row.get('parent_queries'), row.get('available_queries')
+    complete = row.get('complete_shape')
+    if parent is not None and available is not None:
+        if parent > available or parent < 0 or available < 0:
+            raise ValueError('Invalid hardness parent-query coverage')
+        if complete is True and parent != available:
+            raise ValueError('Hardness claims complete coverage with missing parent queries')
+        complete = parent == available if complete is None else complete
+    if complete is None and row.get('entry') in reports.results:
+        record = reports.results[row['entry']]
+        online = (record['raw'].get('per_shape') or {}).get(row['shape']) or {}
+        if online.get('available_queries') is not None:
+            complete = online.get('queries') == online['available_queries']
+        else:
+            complete = (True if record['complete'] else (record['raw'].get('protocol') or {}).get('full_split'))
+    text = ('full parent-type test' if complete is True else 'partial parent-type test' if complete is False
+            else 'parent-query coverage unavailable')
+    if parent is not None and available is not None:
+        text += f' ({parent}/{available} parent queries)'
+    return complete, text
+
+
+def hardness_score(reports, row, policy, metric):
+    hardness_scope(reports, row)
+    return number((row.get(policy) or {}).get(metric))
+
+
+def missing_link_count(row):
+    """Exact answer-level counts; coarse/released bins cannot supply these scores."""
+    label = row['label']
+    if isinstance(label, bool) or not str(label).isdigit():
+        raise ValueError('Missing-positive-link bins require integer labels')
+    count = int(label)
+    if not 0 <= count <= POSITIVE_EDGES[row['shape']]:
+        raise ValueError('Missing-positive-link count outside parent-type bounds')
+    return count
+
+
+def main_adapter_matrix(reports, policy):
+    from . import summary
+    selected = {r['id'] for r in paper_records(reports)}
+    pairs = adapter_rows(reports, policy)  # validates paired coverage and preserves supplied CIs
+    cells, scopes, names = {}, defaultdict(set), set()
+    for row in pairs:
+        learned_id = next((key for key in reports.results if escape(key) == row[1]), None)
+        if learned_id and learned_id not in selected:
+            continue
+        effect = next((e for e in reports.effects['adapter'] if escape(e['learned']) == row[1]), {})
+        r = entry_record(reports, learned_id or effect.get('learned'), effect.get('dataset'))
+        dataset = r['dataset'] or effect.get('dataset')
+        # The training recipe is recorded in A11; ULTRA and TRIX remain common column blocks.
+        name = METHOD_NAMES.get(r['method'], r['method'] or MISSING).replace(' + adapter', '')
+        names.add(name)
+        recipe = ('2i/3i' if 'intersections' in r['id'] else '14-type' if '14type' in r['id']
+                  else summary.recipe_token(r) if r.get('dataset') else MISSING)
+        key = (dataset, recipe, name)
+        if key in cells and cells[key] != row[4:]:
+            raise ValueError('Ambiguous adapter recipes; supply one primary recipe per backbone')
+        cells[key] = row[4:]
+        scopes[dataset, recipe].add(row[3])
+    names = sorted(names, key=lambda name: (name != 'ULTRA', name != 'TRIX', name)) or ['ULTRA', 'TRIX']
+    headers = ['Dataset', 'Recipe', 'Scope', *[escape(name + ' / ' + field) if field != 'Delta' else escape(name) + r' / $\Delta$'
+                                   for name in names for field in ('Learned', 'Identity', 'Delta', '95% CI')]]
+    widths = [32, 18, 20, *[w for _ in names for w in (19, 19, 19, 29)]]
+    rows = [[escape(dataset_name(dataset)), escape(recipe), '; '.join(sorted(scopes[dataset, recipe])),
+             *[value for name in names for value in cells.get((dataset, recipe, name), [MISSING] * 4)]]
+            for dataset, recipe in sorted(scopes)]
+    return headers, widths, rows
+
+
+def ultra_matrix_rows(reports, policy):
+    rows = []
+    for r in sorted(reports.results.values(), key=lambda r: (r['dataset'], method_name(r), r['id'])):
+        if family(r['dataset']) is None:
+            continue
+        values = policy_values(r, policy)
+        context = scope(r)
+        if r['graph'] not in (None, 'dataset-defined') or r['filter'] not in (None, 'released'):
+            context += '; ' + condition(r)
+        for metric, label in (('mrr', 'MRR'), ('hits10', 'H@10')):
+            rows.append([escape(dataset_name(r['dataset'])), escape(display_method(reports, r)), escape(context), label,
+                         *[number(values['averages'].get(g, {}).get(metric)) for g in ('all', 'epfo', 'negation')],
+                         *[number(values['per_shape'].get(s, {}).get(metric)) for s in ULTRA_TYPES]])
+    return rows
+
+
+def paper_hardness_rows(reports):
+    """All paper hardness panels use the released test reference, train+valid."""
+    return [row for row in reports.difficulty if row['grouping'] == 'overall' or
+            (row.get('comparison_graph') == 'train+valid'
+             and row.get('label_reference_graph', 'train+valid') == 'train+valid')]
+
+
+def hardness_detail_entries(reports, policy):
+    """Runs whose answer-difficulty bins the appendix shows; None shows every run's bins.
+
+    As in the hardness figure: every main-table +H system with an adapter (learned and no-adapter control) and,
+    per dataset, the baseline with the highest EPFO MRR. Other runs keep their overall rows. Without main-table
+    EPFO scores to rank the baselines, nothing is left out.
+    """
+    from . import summary
+    from .figures import strongest_baselines
+    strongest = strongest_baselines(reports, policy)
+    if not strongest:
+        return None
+    entries = set()
+    for (method, _, _), runs in summary.selected_systems(reports, 'plus_h').items():
+        for dataset, seeds in runs.items():
+            if method.endswith('-adapter') or strongest.get(dataset) == method:
+                entries.update(record['id'] for record in seeds.values())
+    return entries
+
+
+def condition_base(entry):
+    """The run an evaluation-condition twin (graph or released-filter variant) belongs to."""
+    from . import summary
+    for suffix in summary.CONDITION_SUFFIXES:
+        if entry.endswith(suffix):
+            return entry[:-len(suffix)]
+    return entry
+
+
+def hardness_matrix_rows(reports, policy):
+    """Pivot query types; merge identical count vectors, never scores or conditions."""
+    groups = defaultdict(dict)
+    detail = hardness_detail_entries(reports, policy)
+    inputs = [r for r in paper_hardness_rows(reports)
+              if detail is None or r['grouping'] == 'overall' or condition_base(r.get('entry') or '') in detail]
+    for record in reports.results.values():
+        if record['dataset'] not in PLUS_H_DATASETS:
+            continue
+        for shape in set(record['counts']) | set(policy_values(record, policy)['per_shape']):
+            inputs.append(dict(dataset=record['dataset'], entry=record['id'], shape=shape,
+                               grouping='overall', label='all', comparison_graph=record['graph'],
+                               answer_filter=record['filter'], **record['counts'].get(shape, {}),
+                               **{p: policy_values(record, p)['per_shape'].get(shape, {}) for p in ('sort', 'expected')}))
+    # Exact numeric bins replace duplicate coarse categories from the same run.
+    # Keep coarse-only reports visibly identified, without inventing counts.
+    exact = {(r.get('dataset'), r.get('entry'), r['shape'], r.get('comparison_graph'), r.get('answer_filter'))
+             for r in inputs if r['grouping'] == 'inferred_positive_edges'}
+    for r in inputs:
+        if r['grouping'] == 'inferred_positive_edges':
+            missing_link_count(r)
+        if (r['grouping'] == 'difficulty' and r['label'] != 'observed'
+                and (r.get('dataset'), r.get('entry'), r['shape'], r.get('comparison_graph'), r.get('answer_filter')) in exact):
+            continue
+        if r['grouping'] == 'difficulty' and r['label'] == 'observed':
+            if (r.get('dataset'), r.get('entry'), r['shape'], r.get('comparison_graph'), r.get('answer_filter')) in exact:
+                continue
+            r = {**r, 'grouping': 'inferred_positive_edges', 'label': '0'}
+        graph = r.get('comparison_graph')
+        if r['grouping'] == 'overall':
+            record = hardness_record(reports, r)
+            graph = ('not used' if record.get('method') in GRAPH_INDEPENDENT_METHODS else
+                     r.get('inference_graph') or record.get('graph') or graph)
+        key = (r.get('dataset') or '', r.get('entry') or '', graph or '', r.get('answer_filter') or '', r['grouping'], str(r['label']))
+        previous = groups[key].get(r['shape'])
+        if previous is not None:
+            merged = {**previous, **r}
+            for p in ('sort', 'expected'):
+                metrics = {}
+                for metric in METRICS:
+                    a, b = (previous.get(p) or {}).get(metric), (r.get(p) or {}).get(metric)
+                    if not is_missing(a) and not is_missing(b) and not math.isclose(a, b, abs_tol=1e-11):
+                        raise ValueError('Conflicting hardness rows for the same condition and bin')
+                    metrics[metric] = a if is_missing(b) else b
+                merged[p] = metrics
+            for field in ('queries', 'hard_answers', 'parent_queries', 'available_queries', 'complete_shape'):
+                a, b = previous.get(field), r.get(field)
+                if not is_missing(a) and not is_missing(b) and a != b:
+                    raise ValueError('Conflicting hardness counts for the same condition and bin')
+                merged[field] = a if is_missing(b) else b
+            r = merged
+        groups[key][r['shape']] = r
+    rows, counts = [], defaultdict(set)
+    labels = {'difficulty': 'Coarse', 'inferred_positive_edges': 'Missing links',
+              'released_reduction': 'Released reduction', 'overall': 'Overall'}
+    for (dataset, entry, graph, filters, grouping, label), shapes in sorted(groups.items()):
+        name = display_method(reports, entry_record(reports, entry, dataset))
+        base = [escape(dataset_name(dataset)), escape(name), escape(graph), escape(filters),
+                escape(labels.get(grouping, grouping) + ': ' + label)]
+        for metric, title in (('mrr', 'MRR'), ('hits10', 'H@10')):
+            rows.append([*base, title, *[hardness_score(reports, shapes[s], policy, metric) if s in shapes else MISSING
+                                        for s in PLUS_H_TYPES]])
+        for metric, title in (('queries', 'Queries'), ('hard_answers', 'Answers')):
+            values = tuple(escape(shapes.get(s, {}).get(metric)) for s in PLUS_H_TYPES)
+            counts[dataset, graph, filters, grouping, label, title, values].add(name)
+    for (dataset, graph, filters, grouping, label, title, values), names in sorted(counts.items()):
+        name = 'Counts unavailable' if all(v == MISSING for v in values) else 'Shared counts' if len(names) > 1 else next(iter(names))
+        rows.append([escape(dataset_name(dataset)), escape(name),
+                     escape(graph), escape(filters), escape(labels.get(grouping, grouping) + ': ' + label), title, *values])
+    return rows
+
+
+def short_method(name):
+    """Default training recipes belong in notes, not every result row."""
+    return name.replace(' (14-type)', '').replace(' (2i/3i)', '')
+
+
+def applicability(members, all_members):
+    """Use a group name only when it describes exactly the applicable runs."""
+    selections = (
+        ('All configurations', all_members),
+        ('+H suite', {m for m in all_members if m[0] in PLUS_H_DATASETS}),
+        ('UQ-23 suite', {m for m in all_members if family(m[0])}),
+        ('Learned adapters', {m for m in all_members if ' + adapter' in m[1]}),
+        ('Identity controls', {m for m in all_members if ' identity' in m[1]}),
+        ('All adapters', {m for m in all_members if ' + adapter' in m[1] or ' identity' in m[1]}),
+        ('Baselines', {m for m in all_members if ' + adapter' not in m[1] and ' identity' not in m[1]}),
+    )
+    for label, selection in selections:
+        if members == selection:
+            return label
+    datasets = {d for d, _ in members}
+    if members == {m for m in all_members if m[0] in datasets}:
+        return 'All methods (' + ', '.join(dataset_name(d) for d in sorted(datasets)) + ')'
+    # A short exception list is often clearer than listing every included run.
+    excluded = all_members - members
+    excluded_methods = {m[1] for m in excluded}
+    if len(excluded_methods) <= 2 and excluded == {m for m in all_members if m[1] in excluded_methods}:
+        return 'All except ' + ', '.join(sorted(excluded_methods))
+    by_method = defaultdict(set)
+    for dataset, method in members:
+        by_method[method].add(dataset)
+    parts = []
+    for method, datasets in sorted(by_method.items()):
+        method_universe = {d for d, m in all_members if m == method}
+        if datasets == method_universe:
+            parts.append(method)
+        elif datasets == {d for d in method_universe if d in PLUS_H_DATASETS}:
+            parts.append(method + ' (+H)')
+        elif datasets == {d for d in method_universe if family(d)}:
+            parts.append(method + ' (UQ-23)')
+        else:
+            parts.append(method + ' (' + ', '.join(dataset_name(d) for d in sorted(datasets)) + ')')
+    return '; '.join(parts)
+
+
+def setting_value(value):
+    """Readable settings, without JSON punctuation or invented defaults."""
+    if is_missing(value):
+        return MISSING
+    if isinstance(value, bool):
+        return 'yes' if value else 'no'
+    if isinstance(value, str) and value.startswith(('{', '[')):
+        try:
+            return setting_value(json.loads(value))
+        except (ValueError, TypeError):
+            pass
+    if isinstance(value, dict):
+        return '; '.join(str(k).replace('_', ' ') + ': ' + setting_value(v) for k, v in sorted(value.items())) or MISSING
+    if isinstance(value, (list, tuple)):
+        return ', '.join(setting_value(v) for v in value) or MISSING
+    return str(value)
+
+
+def shared_metadata_rows(reports):
+    """Paper-facing settings: compact applicability and one named parameter per row."""
+    groups = defaultdict(set)
+    labels = run_labels(reports)
+    all_members = {(r['dataset'], labels[r['id']]) for r in labeled_records(reports).values()}
+    for r in reports.results.values():
+        raw = r['raw']
+        inference = raw.get('inference') or {}
+        recipe = execution_settings(r)
+        training = (inference.get('paper_protocol') or {}).get('training') or {}
+        checkpoint = recipe.get('checkpoint')
+        # Filenames identify checkpoints together with their dataset/method;
+        # machine-local directory trees belong in the original JSON report.
+        checkpoint_parts = str(checkpoint).replace('\\', '/').split('/') if checkpoint else []
+        checkpoint_label = ('/'.join(checkpoint_parts[-3:]) if checkpoint_parts[-1] == 'checkpoint'
+                            else checkpoint_parts[-1]) if checkpoint_parts else None
+        values = {'scope': scope(r), 'inference graph': r['graph'], 'answer filters': r['filter'],
+                  'execution profile': r['profile'], 'calibration': r['calibration'],
+                  'observed facts': r['facts'], 'checkpoint': checkpoint_label,
+                  'queries': raw.get('queries'), 'candidates': raw.get('num_candidates'),
+                  'checkpoint SHA256': recipe.get('checkpoint_sha256'),
+                  'selection protocol': recipe.get('selection_protocol'),
+                  'seed': inference.get('seed'), 'device': inference.get('device'), 'PyTorch': inference.get('torch')}
+        if 'query_batch_size' in recipe:
+            values['query batch size'] = recipe['query_batch_size']
+        for key, value in training.items():
+            values['training: ' + key.replace('_', ' ')] = value
+        if not training:
+            values['training'] = None
+        operators = recipe.get('operators') or {}
+        by_operator = defaultdict(list)
+        for shape, operator in operators.items():
+            by_operator[setting_value(operator)].append(shape)
+        values['operators'] = ('; '.join(operator + ' (' + ('all query types' if len(shapes) == len(operators)
+                                    else ', '.join(shapes)) + ')' for operator, shapes in sorted(by_operator.items()))
+                               if operators else None)
+        options = recipe.get('options') or {}
+        if not options:
+            values['execution options'] = None
+        overrides = options.get('per_shape') or {}
+        option_keys = (set(options) - {'per_shape'}) | {k for v in overrides.values() for k in v}
+        for key in sorted(option_keys):
+            override_groups = defaultdict(list)
+            for shape, settings in overrides.items():
+                if key in settings:
+                    override_groups[setting_value(settings[key])].append(shape)
+            value = setting_value(options.get(key))
+            if override_groups:
+                value += ' (default); ' + '; '.join(', '.join(shapes) + ': ' + setting
+                                                   for setting, shapes in sorted(override_groups.items()))
+            if key.endswith('_bytes') and not override_groups and isinstance(options.get(key), (int, float)):
+                value = f'{options[key] / 2**20:g} MiB'
+            values[key.replace('_', ' ')] = value
+        full_name = method_name(r)
+        if ' (2i/3i)' in full_name or ' (14-type)' in full_name:
+            values['adapter training types'] = '2i/3i' if ' (2i/3i)' in full_name else '14 query types'
+        member = (r['dataset'], labels[r['id']])
+        for setting, value in values.items():
+            groups[setting, setting_value(value)].add(member)
+    for r in labeled_records(reports).values():
+        if labels[r['id']] != short_method(method_name(r)):
+            groups['run ID', r['id']].add((r['dataset'], labels[r['id']]))
+    return [[escape(applicability(members, all_members)), escape(setting), escape(value)]
+            for (setting, value), members in sorted(groups.items())]
+
+
+# The paper's full plan, for --preview: the shipped recipes, their seeds and ablations, and every baseline of the
+# main tables (UltraQuery-LP with the published thresholds only).
+PREVIEW_PLAN = {'ultraquery': ('baselines.json', 'kgfm_adapters.json', 'kgfm_seeds.json', 'kgfm_ablations.json',
+                               'trained_baselines.json', 'comparisons.json'),
+                'plus_h': ('baselines.json', 'kgfm_adapters.json', 'kgfm_seeds.json', 'kgfm_ablations.json')}
+
+
+def empty_reports(plan=None, *, planned=False):
+    """Plan the test matrix of the checked-in manifests (default: the four default manifests).
+
+    No predictions, counts, trace labels or training outcomes are invented.
+    Only primary evaluations and adapter pairs are planned. Protocol effects
+    are separate appendix rows; no Cartesian graph/filter/reduction grid exists.
+    With planned=True every run is marked as awaiting results (see preview_reports).
+    """
+    plan = plan or {suite: ('baselines.json', 'kgfm_adapters.json') for suite in ('ultraquery', 'plus_h')}
+    reports = Reports()
+    reports.template = True
+    for suite, names in plan.items():
+        for name in names:
+            manifest = read_manifest(suite_directory(suite) / name)
+            for entry in manifest['entries']:
+                if '-no-threshold' in entry['id']:
+                    continue
+                method = entry['method']
+                adapter = method.endswith('-adapter')
+                options = dict(entry.get('options', {}))
+                profile = 'native' if adapter else 'reference'
+                reference = dict(entry.get('reference', {}))
+                if method in ('cqd', 'cqd-hybrid'):
+                    profile = 'bounded'
+                    options.update(reference_batching=False, row_batch_size=32, final_batch_size=32)
+                    reference['status'] = 'bounded execution profile; independent validation required'
+                answer_filter = SUITES[suite]['answer_filter']
+                for identity in (False, True) if entry.get('adapter_ablation') else (False,):
+                    suffix = '-without-adapter' if identity else ''
+                    run_id = entry['id'] + suffix
+                    learned_id = entry['id']
+                    shapes = {shape: {} for shape in entry['query_types']}
+                    raw = dict(dataset=entry['dataset'], split='test', benchmark_run={'entry': run_id},
+                               per_shape=shapes, additional_tie_metrics={'expected': {'per_shape': shapes}},
+                               protocol={'tie_policy': 'sort', 'full_split': True, 'answer_filter': answer_filter},
+                               dataset_metadata={'inference_graph': entry.get('inference_graph', 'dataset-defined')},
+                               execution_profile=profile, reference=reference,
+                               inference=dict(method=method, checkpoint=entry.get('checkpoint'), options=options,
+                                              query_batch_size=entry.get('query_batch_size'),
+                                              operators=entry.get('operators'), seed=manifest.get('seed'),
+                                              selection_protocol=entry.get('selection_protocol'),
+                                              calibration=('without-adapter' if identity else 'learned') if adapter else None,
+                                              observed_facts='checkpoint-default' if adapter else None),
+                               paired_with=learned_id if identity else None)
+                    if planned:
+                        raw['planned'] = True
+                    reports.consume(raw)
+                    if suite != 'plus_h':
+                        continue
+                    reports.effects['filter'].append(dict(
+                        dataset=entry['dataset'], released=run_id + '-released-filters', corrected=run_id))
+                    for graph in ('train+valid',):
+                        for shape in entry['query_types']:
+                            maximum = POSITIVE_EDGES[shape]
+                            bins = [('inferred_positive_edges', str(k)) for k in range(1, maximum + 1)]
+                            for grouping, label in bins:
+                                reports.difficulty.append(dict(
+                                    dataset=entry['dataset'], entry=run_id, shape=shape, grouping=grouping, label=label,
+                                    comparison_graph=graph, answer_filter=answer_filter,
+                                    label_reference_graph='train+valid' if grouping == 'released_reduction' else graph,
+                                    complete_shape=True))
+    return reports
+
+
+def preview_reports(reports, plan=PREVIEW_PLAN):
+    """The reports plus every planned run without results yet, for previewing the main tables at full size."""
+    planned = empty_reports(plan, planned=True)
+    preview = copy(reports)
+    preview.results = {**{entry: r for entry, r in planned.results.items() if entry not in reports.results}, **reports.results}
+    return preview
+
+
+def column_width(width, widths, layout):
+    """A p-column width: millimetres on the paper's landscape page; for the thesis a share of the
+    line width, so the table fills whatever page the thesis gives it (padding included)."""
+    if layout == 'thesis':
+        # Rounded down, so the shares never add up to more than the line.
+        return rf'\dimexpr{math.floor(10000 * width / sum(widths)) / 10000:.4f}\linewidth-2\tabcolsep\relax'
+    return f'{width}mm'
+
+
+def thesis_note(text):
+    """Escaped note text for the thesis: appendix tables named A1--A9 become references."""
+    return re.sub(r'(?<![\w-])A([1-9])(?!\w)', r'\\ref{tab:benchmark-paper-\1}', text)
+
+
+def table(title, label, headers, widths, rows, note='', *, spanners=(), numeric_from=None,
+          row_group=None, keep_group=False, banner='', layout='paper'):
+    """Long tables paginate real reports; all unavailable cells use a dash.
+
+    The thesis layout (researchreport.sty) leaves type size and column padding to the thesis design.
+    """
+    columns = ''.join((r'>{\raggedleft\arraybackslash}' if numeric_from is not None and i >= numeric_from
+                      else r'>{\raggedright\arraybackslash}') + f'p{{{column_width(width, widths, layout)}}}'
+                      for i, width in enumerate(widths))
+    header = ' & '.join(headers) + r' \\'
+    heading = []
+    if banner:
+        # Panel contexts consist of already escaped report cells.
+        banner = banner.replace('/', r'/\allowbreak{}').replace(r'\_', r'\_\allowbreak{}')
+        span = r'\dimexpr\linewidth-2\tabcolsep\relax' if layout == 'thesis' else f'{sum(widths)}mm'
+        heading.extend([rf'\multicolumn{{{len(headers)}}}{{p{{{span}}}}}{{\raggedright {banner}}}\\',
+                        r'\addlinespace[2pt]'])
+    if spanners:
+        cells, rules, start = [], [], 1
+        for name, count in spanners:
+            cells.append(rf'\multicolumn{{{count}}}{{c}}{{{name}}}')
+            if name:
+                rules.append(rf'\cmidrule(lr){{{start}-{start + count - 1}}}')
+            start += count
+        if start - 1 != len(headers):
+            raise ValueError('Grouped headers must cover every table column')
+        heading.extend([' & '.join(cells) + r' \\', ''.join(rules)])
+    heading.append(header)
+    sizing = [] if layout == 'thesis' else [r'\scriptsize', r'\setlength{\tabcolsep}{1.5pt}',
+                                            r'\setlength{\LTpre}{6pt}', r'\setlength{\LTpost}{6pt}']
+    lines = [r'\begingroup', *sizing,
+             rf'\begin{{longtable}}{{{columns}}}', rf'\caption{{{escape(title)}}}\label{{{label}}}\\',
+             r'\toprule', *heading, r'\midrule', r'\endfirsthead',
+             rf'\multicolumn{{{len(headers)}}}{{l}}{{\tablename\ \thetable\ (continued)}}\\',
+             r'\toprule', *heading, r'\midrule', r'\endhead', r'\bottomrule', r'\endfoot']
+    rows = rows or [[MISSING] * len(headers)]
+    for i, row in enumerate(rows):
+        if len(row) != len(headers):
+            raise ValueError(f'Wrong number of cells in {title}')
+        cells = [MISSING if is_missing(cell) else cell for cell in row]
+        # Long paths/JSON identifiers can wrap without adding a package or changing their text.
+        cells = [cell.replace('/', r'/\allowbreak{}').replace(r'\_', r'\_\allowbreak{}')
+                 if len(cell) > 80 else cell for cell in cells]
+        same_group = row_group is not None and i + 1 < len(rows) and row_group(row) == row_group(rows[i + 1])
+        lines.append(' & '.join(cells) + (r' \\*' if same_group and keep_group else r' \\'))
+        if row_group is not None and not same_group and i + 1 < len(rows):
+            lines.append(r'\addlinespace[3pt]')
+    lines.extend([r'\end{longtable}', r'\endgroup'])
+    if note:
+        lines.append(table_note(note, layout))
+    return '\n'.join(lines)
+
+
+def table_note(note, layout):
+    """The note under a long table; the thesis design styles \\tablenote."""
+    if layout == 'thesis':
+        return r'\tablenote{' + thesis_note(escape(note)) + '}'
+    return r'{\scriptsize ' + escape(note) + r'\par}'
+
+
+def protocol_panels(title, label, headers, widths, panels, note='', *, numeric_from=None, group_by=None, spanners=(),
+                    layout='paper'):
+    """One numbered table; each protocol panel repeats its context on continuation pages."""
+    if not panels:
+        return table(title, label, headers, widths, [], note, numeric_from=numeric_from, spanners=spanners,
+                     layout=layout)
+    parts = []
+    for index, panel_data in enumerate(panels):
+        context, rows, *panel_headers = panel_data
+        current_headers = panel_headers[0] if panel_headers else headers
+        group_by = group_by or (lambda row: (row[0], row[1]))
+        group_sizes = defaultdict(int)
+        for row in rows:
+            group_sizes[group_by(row)] += 1
+        panel = table(title, label, current_headers, widths, rows, numeric_from=numeric_from,
+                      banner=context, row_group=group_by, keep_group=max(group_sizes.values(), default=0) <= 20,
+                      spanners=spanners, layout=layout)
+        if index:
+            # Longtable increments the table counter even without a caption; with hyperref, each continuation panel needs
+            # an anchor name of its own, or links to the table can land on another float.
+            # The thesis's own anchor scheme is kept and extended, then restored after the panel.
+            panel = (r'\addtocounter{table}{-1}' + '\n' + r'\providecommand{\theHtable}{\arabic{table}}'
+                     + r'\let\cqaSavedTheHtable\theHtable'
+                     + rf'\renewcommand{{\theHtable}}{{\cqaSavedTheHtable.panel{index}}}' + '\n' + panel
+                     + '\n' + r'\let\theHtable\cqaSavedTheHtable')
+            panel = panel.replace(rf'\caption{{{escape(title)}}}\label{{{label}}}\\',
+                                  '')
+        parts.append(panel)
+    if note:
+        parts.append(table_note(note, layout))
+    return '\n'.join(parts)
+
+
+def method_order(name):
+    names = ('ConE', 'GNN-QE', 'UltraQuery', 'CLMPT', 'CQD', 'CQD-Hybrid', 'QTO',
+             'ULTRA + adapter', 'ULTRA identity', 'TRIX + adapter', 'TRIX identity', 'KG-ICL + adapter', 'KG-ICL identity')
+    base = short_method(name)
+    return (names.index(base) if base in names else len(names), name)
+
+
+def dataset_order(name):
+    plus_h = [dataset_name(d) for d in PLUS_H_DATASETS]
+    if name in plus_h:
+        return 3, plus_h.index(name)
+    if name in ('FB15k', 'FB15k-237', 'NELL995'):
+        return 0, name
+    if name.startswith('FB15k-237 v'):
+        return 1, int(re.match(r'\d+', name.split(' v')[1]).group())
+    if name.startswith('WikiTopics '):
+        return 2, name
+    return 4, name
+
+
+def scope_notes(records):
+    if not records:
+        return 'Evaluation scope unavailable.'
+    partial = defaultdict(set)
+    for r in records:
+        if not r['complete']:
+            partial[scope(r)].add(short_method(method_name(r)) + ' (' + dataset_name(r['dataset']) + ')')
+    return ('Evaluation scope: ' + '; '.join(
+        value + ': ' + ', '.join(sorted(names)) for value, names in sorted(partial.items()))
+        if partial else 'Full test evaluation.')
+
+
+def hardness_panels(reports, policy):
+    panels = defaultdict(list)
+    bins = {'Overall: all': 'Overall', 'Missing links: 0': 'Diagnostic: 0',
+            'Coarse: partial': 'Coarse: partial', 'Coarse: full': 'Coarse: full'}
+    for row in hardness_matrix_rows(reports, policy):
+        dataset, method, graph, filters, group, metric, *scores = row
+        kind = 'inference facts' if group.startswith('Overall:') else 'hardness reference facts'
+        context = (dataset, kind, graph, filters)
+        method = 'Counts' if method == 'Counts unavailable' else method
+        bin_label = (group.removeprefix('Missing links: ') if group.startswith('Missing links: ') and group != 'Missing links: 0'
+                     else bins.get(group, group))
+        panels[context].append([dataset, method, bin_label, metric, *scores])
+    def order(row):
+        bin_order = 0 if row[2] == 'Overall' else 1 if row[2].isdigit() else 2
+        return (row[1] in ('Counts', 'Shared counts'), method_order(row[1]), bin_order,
+                row[2], ('MRR', 'H@10', 'Queries', 'Answers').index(row[3]))
+    output = []
+    for (dataset, kind, graph, filters), rows in sorted(panels.items()):
+        coverage = defaultdict(set)
+        for source in paper_hardness_rows(reports):
+            source_graph = source.get('comparison_graph')
+            if source['grouping'] == 'overall':
+                record = hardness_record(reports, source)
+                source_graph = ('not used' if record.get('method') in GRAPH_INDEPENDENT_METHODS else
+                                source.get('inference_graph') or record.get('graph') or source_graph)
+            source_kind = 'inference facts' if source['grouping'] == 'overall' else 'hardness reference facts'
+            if (escape(dataset_name(source.get('dataset'))), source_kind, escape(source_graph), escape(source.get('answer_filter'))) != (dataset, kind, graph, filters):
+                continue
+            complete, description = hardness_scope(reports, source)
+            if complete is not True:
+                coverage[description].add(display_method(reports, hardness_record(reports, source)) + ' / ' + source['shape'])
+        context = f'{dataset} | ' + (f'inference facts: {graph}; ' if kind == 'inference facts' else '') + f'filters: {filters}'
+        if coverage:
+            context += '; ' + escape('; '.join(description + ': ' + ', '.join(sorted(names))
+                                               for description, names in sorted(coverage.items())))
+        output.append((context, sorted(rows, key=order)))
+    return output
+
+
+def render_tables(reports, *, policy='sort', fragment=False, preview=False):
+    from . import summary
+    if policy not in ('sort', 'expected'):
+        raise ValueError('Tie policy must be sort or expected')
+    if not (reports.results or reports.difficulty or any(reports.effects.values())):
+        reports = empty_reports()
+    lines = ['% Generated by python -m benchmarks.cqa.paper.',
+             '% Required packages: booktabs, longtable, array, threeparttable; the appendix needs a landscape page (geometry).',
+             '% Main tables are floats with one decimal; appendix tables are long tables with two.',
+             '% Scores are x100. Missing data is shown as "-"; no scores are imputed.',
+             f'% Selected tie policy: {policy}.',
+             '% Empty templates: python -m benchmarks.cqa.paper',
+             '% Populate: python -m benchmarks.cqa.paper REPORT.json ... -o tables.tex',
+             '% Use --fragment to omit the preamble; retain both section headers.',
+             '% Appendix table numbering is reset to A1--A7.']
+    if not fragment:
+        lines.extend([r'\documentclass[10pt]{article}', r'\usepackage[a4paper,landscape,margin=15mm]{geometry}',
+                      r'\usepackage{booktabs,longtable,array,threeparttable}', r'\setlength{\LTcapwidth}{\textwidth}',
+                      r'\setlength{\emergencystretch}{2em}', r'\begin{document}'])
+    lines.append(r'\section*{Main paper}')
+    # Settings shared by every table, stated once for the paper's setup section instead of in each caption.
+    # A preview adds the planned runs without results to the main tables only; the appendix keeps real runs.
+    main = preview_reports(reports) if preview else reports
+    lines.extend(['% BEGIN SHARED SETTINGS', r'{\normalsize ' + summary.shared_settings(main, policy) + r'\par}',
+                  '% END SHARED SETTINGS'])
+    if preview:
+        lines.append(r'{\normalsize Preview: xx.x marks a planned result that is not available yet.\par}')
+    if reports.template:
+        lines.append(r'{\scriptsize No-data template: planned full test evaluation over all 23 UQ-23 and three +H datasets, '
+                     r'using the default baselines and adapters. Identity and filter comparisons are separate tables. '
+                     r'Dataset coverage is planned; no evaluation has been run. Scores, intervals and unavailable counts are "-". '
+                     r'Hardness bins contain 1 to 4 missing positive links, as permitted by each parent type; further breakdowns appear only when supplied.\par}')
+    from . import review
+    for index, render in enumerate((summary.ultraquery_table, summary.plus_h_table, summary.bracket_table,
+                                    summary.ablation_table, review.gains_table), 1):
+        lines.extend([f'% BEGIN MAIN TABLE {index}', render(main, policy), f'% END MAIN TABLE {index}'])
+    lines.extend([r'\clearpage', r'\section*{Appendix}', r'\setcounter{table}{0}', r'\renewcommand{\thetable}{A\arabic{table}}',
+                  r'{\normalsize ' + APPENDIX_INTRO + r'\par}'])
+    for index, spec in enumerate(appendix_specifications(reports, policy), 1):
+        if index > 1 and not fragment:
+            # In the standalone preview, each logical table starts together.
+            lines.append(r'\clearpage')
+        lines.extend([f'% BEGIN PAPER TABLE {index}', appendix_table(index, spec), f'% END PAPER TABLE {index}'])
+    for name, render in review.APPENDIX_TABLES:
+        if not fragment:
+            lines.append(r'\clearpage')
+        lines.extend([f'% BEGIN REVIEW TABLE {name}', render(reports, policy), f'% END REVIEW TABLE {name}'])
+    if not fragment:
+        lines.append(r'\end{document}')
+    return '\n\n'.join(lines) + '\n'
+
+
+APPENDIX_INTRO = ("Appendix tables use each method's default recipe (adapters: the primary recipe) at its lowest seed tag; "
+                  'A1 and A6 report every seed tag, and A2, A4 and A7 list every supplied run at its lowest seed tag, '
+                  'except the calibration brackets and observed-fact ablations, which appear in their main tables only. '
+                  'Settings shared by all runs are listed once in A7.')
+
+
+def appendix_table(index, spec, layout='paper'):
+    """Appendix table `index` (1-based) from its specification."""
+    label = f'tab:benchmark-paper-{index}'
+    if 'panels' in spec:
+        return protocol_panels(TABLE_TITLES[index - 1], label, spec['headers'], spec['widths'], spec['panels'],
+                               spec['note'], layout=layout, **spec['options'])
+    return table(TABLE_TITLES[index - 1], label, spec['headers'], spec['widths'], spec['rows'], spec['note'],
+                 layout=layout, **spec['options'])
+
+
+def appendix_specifications(reports, policy):
+    """Headers, column widths (mm on the paper's landscape page), rows or panels, options and notes of A1--A7."""
+    from . import summary
+    adapter_headers, adapter_widths, adapter_values = main_adapter_matrix(reports, policy)
+    primary = paper_records(reports)
+    plus_h_records = main_plus_h_records(reports)
+    plus_h = [[row[0], row[1], *row[3:]]
+              for row in main_plus_h_rows(reports, policy)]
+    plus_h.sort(key=lambda row: (dataset_order(row[0]), method_order(row[1])))
+    adapter_spanners = [('', 1), *[(adapter_headers[i].rsplit(' / ', 1)[0], 4)
+                                  for i in range(3, len(adapter_headers), 4)]]
+    adapter_headers = ['Dataset', *(['Learned', 'Identity', r'$\Delta$', r'95\% CI'] * (len(adapter_spanners) - 1))]
+    adapter_recipe_counts = defaultdict(set)
+    for row in adapter_values:
+        adapter_recipe_counts[row[0]].add(row[1])
+    # Sort by dataset before a recipe label is appended to its name.
+    adapter_values.sort(key=lambda row: (dataset_order(row[0]), row[1]))
+    adapter_values = [[row[0] + (' (' + row[1] + ')' if len(adapter_recipe_counts[row[0]]) > 1 else ''),
+                       *row[3:]] for row in adapter_values]
+    # Tables that list every run show seed replicates once, at the lowest tag (A6 lists every tag), and leave out the
+    # bracket runs and observed-fact ablations, which their main tables summarize.
+    listed = summary.lowest_seed_reports(summary.appendix_reports(reports))
+    ultra_panels = defaultdict(list)
+    for row in ultra_matrix_rows(listed, policy):
+        ultra_panels[row[2]].append([row[0], row[1], *row[3:]])
+    for rows in ultra_panels.values():
+        rows.sort(key=lambda row: (dataset_order(row[0]), method_order(row[1]), row[2] != 'MRR'))
+    seed_rows, seed_recipes = summary.seed_rows(reports, policy)
+    kgicl = any(r['method'] == 'kgicl-adapter' for r in primary)
+    specifications = [
+        dict(headers=['Method', 'EPFO MRR', 'Negation MRR', 'EPFO MRR', 'Negation MRR'], widths=[60, 34, 34, 34, 34],
+             rows=summary.freebase_rows(reports, policy),
+             options=dict(spanners=(('', 1), ('Freebase-derived (11)', 2), ('Other (12)', 2)), numeric_from=1),
+             note='FB15k, FB15k-237 and the nine inductive FB15k-237 splits derive from Freebase, which UltraQuery '
+                  'training queries, the pretraining of the backbones and the source queries of the adapters '
+                  'also use. NELL995 and the eleven WikiTopics datasets do not derive from Freebase, but UltraQuery is '
+                  'initialized from ULTRA 4g, whose pretraining includes NELL995'
+                  + (', and KG-ICL pretrains on a split of NELL995' if kgicl else '') + '. Equal query-type means per dataset, then '
+                  'dataset means; adapter rows give the mean and sample standard deviation over seed tags, as in the main tables.'),
+        dict(headers=['Dataset', 'Method', 'Metric', 'All', 'EPFO', 'Neg.', *ULTRA_TYPES], widths=[29, 40, 13, *([9] * 17)],
+             panels=[(('Scope: ' + context) if context != 'full test' else '', values)
+                     for context, values in sorted(ultra_panels.items())],
+             options=dict(numeric_from=3, group_by=lambda row: row[0]),
+             note='MRR and H@10, including identity controls. Means weight query types equally; protocol and partial '
+                  'scopes are identified in panel headings. Adapter recipes are listed in A7.'),
+        dict(headers=['Dataset', 'Method', *[escape(s) for s in PLUS_H_TYPES]], widths=[30, 40, *([11] * 16)], rows=plus_h,
+             options=dict(numeric_from=2, row_group=lambda row: row[0], keep_group=True),
+             note='MRR for all 16 query types, including five negation types. Adapter recipes are listed in A7. '
+                  + main_plus_h_protocol_notes(plus_h_records) + ' ' + scope_notes(plus_h_records)),
+        dict(headers=['Dataset', 'Method / counts', 'Bin', 'Metric', *PLUS_H_TYPES], widths=[25, 38, 19, 13, *([9] * 16)],
+             panels=hardness_panels(listed, policy), options=dict(numeric_from=4),
+             note='MRR by the minimum number of missing positive links in a valid witness for an answer (numbered bins): '
+                  'for paths, the hops that require inference; negated atoms are not counted. Hardness uses training + '
+                  'validation facts as the fixed reference; witnesses are checked offline against training + validation + test '
+                  'facts. Within a bin, scores average answers per participating query, then participating queries; queries can '
+                  'occur in several bins, so these means do not recombine. Overall panels identify the inference facts and panel '
+                  'headings the parent-query coverage. Identical count vectors are shown once; impossible or unavailable bins '
+                  'are "-".' + (' ' + PLUS_H_LP_NOTE if any(r['method'] == 'ultraquery-lp' for r in plus_h_records) else '')),
+        dict(headers=adapter_headers, widths=[39, *adapter_widths[3:]], rows=adapter_values,
+             options=dict(spanners=adapter_spanners, numeric_from=1),
+             note='Paired MRR; delta is learned minus identity. Supplied 95% confidence intervals are conditional on frozen '
+                  'weights. Adapter recipes are listed in A7. '
+                  + scope_notes([r for r in primary if r['method'].endswith('-adapter')])),
+        dict(headers=['Method', 'Seed tag', 'UQ-23 MRR', '+H MRR'], widths=[50, 18, 34, 34],
+             rows=seed_rows, options=dict(numeric_from=1, row_group=lambda row: row[0]),
+             note='Every seed tag of the primary adapter recipes (' + seed_recipes + '): MRR over all query types, '
+                  'averaged over query types and then all datasets of the suite. Seed tags come from entry IDs (-seedN; '
+                  'untagged runs are 0), not from training seeds. A tag without every dataset of a suite is "-". The main '
+                  'tables report the mean and sample standard deviation over these tags; the other appendix tables use the '
+                  'lowest tag.'),
+        dict(headers=['Applies to', 'Setting', 'Value'], widths=[62, 49, 133], rows=shared_metadata_rows(listed),
+             options=dict(row_group=lambda row: row[1]),
+             note='Shared settings are listed once. Checkpoints are identified by filename and method/dataset; full paths '
+                  'and run records remain in the input reports. Values in empty templates are manifest defaults; '
+                  'unavailable values are "-".'),
+    ]
+    return specifications
+
+
+# Thesis files (--thesis), relative to the thesis project; main.tex inputs them by these names.
+THESIS_TABLES = 'tables/cqa'
+THESIS_MAIN_TABLES = ('main-ultraquery', 'main-plus-h', 'main-brackets', 'main-gains')
+
+
+def render_thesis(reports, *, policy='sort', preview=False):
+    """Thesis-ready LaTeX files for the research-report design of the thesis (researchreport.sty).
+
+    Returns {file name: LaTeX}: the four main tables as single-column floats whose bodies the thesis fits
+    to its reading column (fitblock), the shared settings as a paragraph, and the appendix long tables with
+    column widths in shares of the line width, for landscape pages. The thesis design sets type sizes,
+    spacing and captions; appendix tables are numbered by the thesis and referenced by label.
+    """
+    from . import summary
+    if policy not in ('sort', 'expected'):
+        raise ValueError('Tie policy must be sort or expected')
+    if not (reports.results or reports.difficulty or any(reports.effects.values())):
+        reports = empty_reports()
+    main = preview_reports(reports) if preview else reports
+    header = (f'% Generated by python -m benchmarks.cqa.paper --thesis (tie policy: {policy}'
+              + ('; preview' if preview else '') + '). Regenerate instead of editing.')
+    from . import review
+    renders = (summary.ultraquery_table, summary.plus_h_table, summary.bracket_table, review.gains_table)
+    files = {f'{name}.tex': header + '\n' + render(main, policy, layout='thesis') + '\n'
+             for name, render in zip(THESIS_MAIN_TABLES, renders)}
+    # The rule-centred presentation moves the recipe ablations to the appendix, where they float.
+    files['appendix-ablations.tex'] = header + '\n' + summary.ablation_table(main, policy, layout='thesis', placement='tbp') + '\n'
+    settings = summary.shared_settings(main, policy) + (' ' + summary.PREVIEW_NOTE if preview else '')
+    files['settings.tex'] = header + '\n' + settings + '\n'
+    # The introduction opens the appendix chapter; the long tables follow on landscape pages.
+    appendix = [header, thesis_note(APPENDIX_INTRO) + r'\par', r'\begin{landscapepages}']
+    appendix.extend(appendix_table(index, spec, layout='thesis')
+                    for index, spec in enumerate(appendix_specifications(reports, policy), 1))
+    # The review's appendix tables follow the benchmark tables on the same landscape pages.
+    appendix.extend(render(reports, policy, layout='thesis') for _, render in review.APPENDIX_TABLES)
+    appendix.append(r'\end{landscapepages}')
+    files['appendix.tex'] = '\n\n'.join(appendix) + '\n'
+    return files
+
+
+def write_thesis(reports, directory, *, policy='sort', preview=False, hardness_composition=False):
+    """Write the thesis tables and figures into the thesis project `directory`; returns the written paths."""
+    directory = Path(directory)
+    if not directory.is_dir():
+        raise ValueError(f'Thesis directory {directory} does not exist')
+    # Every thesis table and figure reports full test splits: an interrupted, partial or non-test run must not enter one.
+    incomplete = sorted(entry for entry, record in reports.results.items() if not record['complete']
+                        and not ((record.get('raw') or {}).get('protocol') or {}).get('max_queries_per_shape'))
+    if incomplete and not reports.template:
+        raise ValueError(f'Thesis tables need complete test runs; incomplete: {", ".join(incomplete[:5])}'
+                         + (f' and {len(incomplete) - 5} more' if len(incomplete) > 5 else ''))
+    written = []
+    tables_directory = directory / THESIS_TABLES
+    tables_directory.mkdir(parents=True, exist_ok=True)
+    for name, latex in render_thesis(reports, policy=policy, preview=preview).items():
+        path = tables_directory / name
+        path.write_text(latex, encoding='utf-8')
+        written.append(path)
+    from .figures import THESIS_FIGURES, generate_figures, thesis_design
+    payload = generate_figures(reports, directory / THESIS_FIGURES, policy=policy,
+                               hardness_composition=hardness_composition, theme='thesis',
+                               design=thesis_design(directory))
+    written.extend(directory / THESIS_FIGURES / file for figure in payload['figures'] for file in figure['files'])
+    remove_stale(directory, written)
+    return written
+
+
+GENERATED_HEADER = '% Generated by python -m benchmarks.cqa.paper'
+
+
+def remove_stale(directory, written):
+    """Delete generated thesis files this run no longer writes (a .tex with the generator's header, and its PDF), so a
+    float the presentation dropped cannot compile on silently; returns the removed paths."""
+    from .figures import THESIS_FIGURES
+    written = {Path(path).resolve() for path in written}
+    removed = []
+    for folder in (THESIS_TABLES, THESIS_FIGURES):
+        for path in sorted((Path(directory) / folder).glob('*.tex')):
+            if path.resolve() in written or not path.read_text(encoding='utf-8').startswith(GENERATED_HEADER):
+                continue
+            for stale in (path, path.with_suffix('.pdf')):
+                if stale.is_file() and stale.resolve() not in written:
+                    stale.unlink()
+                    removed.append(stale)
+    return removed
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser(
+        prog='python -m benchmarks.cqa.paper', description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog='''Examples (render saved data only; never run benchmarks):
+  python -m benchmarks.cqa.paper
+      Full default evaluation layout; scores "-" -> console and results/paper_tables.tex.
+  python -m benchmarks.cqa.paper result.json -o tables.tex
+      Fill the applicable tables; missing values are shown as "-".
+  python -m benchmarks.cqa.paper comparison.json inference-difficulty.json adapter-effects.json -o tables.tex
+      Combine scores, hardness groups and paired adapter effects.
+  python -m benchmarks.cqa.paper REPORT.json --fragment --tie-policy sort -o tables.tex
+      Tables for an existing paper; use booktabs, longtable, array and a
+      landscape page with at least 267 mm of text width.
+  python -m benchmarks.cqa.paper REPORT.json ... --figures
+      Also save PDF/SVG/PNG figures and captions/numerical data in
+      results/paper_figures. With no reports, figure layouts show "-".
+  python -m benchmarks.cqa.paper REPORT.json ... --figures --hardness-composition
+      Also export the optional +H composition diagnostic for the appendix.
+
+Main paper (compact floats, one decimal, best bold and second underlined):
+  1. UQ-23 benchmark: methods as rows; EPFO/negation MRR per dataset
+     family (transductive, inductive (e), inductive (e,r), all).
+  2. +H: methods trained on each target graph vs transferred models; EPFO and
+     negation MRR per dataset and their average.
+  3. Brackets: per backbone, the adapter between fixed calibrations (no
+     adapter, UltraQuery-LP thresholds, one global scale and shift) and
+     adapters fitted on each target graph.
+  4. Ablations: each other adapter recipe against the primary recipe.
+  Adapter rows aggregate seed replicates (entry IDs differing only by -seedN):
+  mean and sample s.d. over seeds; --primary-recipe picks the main recipe.
+Appendix (A1--A7, long tables, two decimals):
+  A1. UQ-23 results by Freebase derivation: the 11 Freebase-derived
+      datasets apart from the 12 others, seed means and s.d.
+  A2. Full UQ-23 results: query types as columns; MRR and H@10 rows.
+  A3. +H per-query-type performance: all 16 types; partial scopes labeled.
+  A4. Full +H hardness breakdowns: MRR by missing positive links per query
+      type; counts shared when identical; additional bins only when supplied.
+  A5. Learned vs identity adapter: dataset rows, backbone columns, paired CIs.
+  A6. Adapter training seeds: suite MRR of every seed tag of the primary recipes.
+  A7. Data, training, and selection details: shared settings printed once.
+  Appendix tables use the lowest seed tag of each primary recipe; A1 and A6
+  report every seed.
+
+Optional figures (--figures [DIRECTORY]):
+  Main paper: adapter gain by dataset family (datasets as dots, family means);
+      +H hardness profiles, MRR by missing positive links for 3p/4p/3i/4i.
+  Appendix: per-dataset transfer gains over UltraQuery, EPFO/negation separate;
+      per-dataset adapter gains with supplied paired CIs.
+  figures.tex holds a float with an escaped caption for every figure.
+  --hardness-composition adds an optional appendix diagnostic of evaluated
+      QA pairs by minimum missing positive links; not a model-performance result.
+  figures.json records placement, captions, numerical data, selected runs and
+  missing-data reasons. No observed bin, inferred CI or invented score.
+
+Inputs: raw result.json; runner {"results": [...]} outputs; comparison.json;
+inference-difficulty.json; adapter-/filter-/graph-effects.json. A combined JSON
+may contain results, comparison, difficulty, adapter_effects, filter_effects,
+and graph_effects. Include raw results for detailed training metadata.
+Missing data is shown as "-", never zero-filled. Metrics/deltas are x100; counts are
+unscaled. Confidence intervals are copied, never estimated. Graphs, filters
+and execution recipes remain separate. Hardness cannot be recovered from an
+overall score. Large tables span pages and repeat headers.
+With no data, the four default baselines.json/kgfm_adapters.json manifests
+provide all 23 UQ-23 and three +H datasets, primary methods and adapter
+pairs. Hardness plans positive missing-link counts within each parent type; no Cartesian grid of protocol
+or reduction variants is created. Known labels/settings are filled; scores,
+CIs and unavailable counts stay "-". Dataset coverage assumes full evaluation.
+''')
+    parser.add_argument('results', nargs='*', type=Path, metavar='REPORT.json', help='Saved JSON reports; omit for the full default evaluation layout with scores "-"')
+    parser.add_argument('-o', '--output', type=Path, default=Path('results/paper_tables.tex'), help='LaTeX file (default: results/paper_tables.tex)')
+    parser.add_argument('--fragment', action='store_true', help='Emit tables and section headers without a document preamble')
+    parser.add_argument('--tie-policy', choices=('sort', 'expected'), default='sort',
+                        help='Scores to print: original sort ordering (default, the protocol\'s primary metric) or expected random ties; missing policy is shown as "-"')
+    parser.add_argument('--primary-recipe', action='append', default=[], metavar='RECIPE',
+                        help='Main adapter recipe, with or without its backbone prefix (for example types2); '
+                             'default: the shipped recipe, else the recipe with the most seeds')
+    parser.add_argument('--figures', nargs='?', const=Path('results/paper_figures'), type=Path, metavar='DIRECTORY',
+                        help='Also export the paper figures as PDF/SVG/PNG plus figures.json and figures.tex (default directory: results/paper_figures)')
+    parser.add_argument('--preview', action='store_true',
+                        help='Add every planned run without results to the main tables; their cells read xx.x')
+    parser.add_argument('--released-filters', action='store_true',
+                        help='Also show the released-filter twins of +H runs (default: corrected filters wherever a run has them)')
+    parser.add_argument('--hardness-composition', action='store_true',
+                        help='With --figures or --thesis, also export the optional +H QA-pair composition diagnostic for the appendix')
+    parser.add_argument('--thesis', type=Path, metavar='DIRECTORY',
+                        help=f'Also write thesis-ready tables ({THESIS_TABLES}/) and figures (figures/cqa/) into this thesis '
+                             'project, styled for its research-report design (researchreport.sty)')
+    args = parser.parse_args(argv)
+    if args.hardness_composition and args.figures is None and args.thesis is None:
+        parser.error('--hardness-composition requires --figures or --thesis')
+    try:
+        if args.output.resolve() in {path.resolve() for path in args.results}:
+            raise ValueError('Output must not overwrite an input report')
+        reports = load_reports(args.results)
+        if not args.released_filters:
+            from . import summary
+            reports = summary.corrected_filter_reports(reports)
+        reports.primary_recipes = tuple(args.primary_recipe)
+        latex = render_tables(reports, policy=args.tie_policy, fragment=args.fragment, preview=args.preview)
+        if args.figures is not None:
+            from .figures import figure_names, generate_figures
+            targets = {(args.figures / (name + '.' + extension)).resolve()
+                       for name in figure_names(hardness_composition=args.hardness_composition)
+                       for extension in ('pdf', 'svg', 'png')}
+            targets |= {(args.figures / name).resolve() for name in ('figures.json', 'figures.tex')}
+            if targets & {path.resolve() for path in args.results} or args.output.resolve() in targets:
+                raise ValueError('Figure outputs must not overwrite input reports or the LaTeX output')
+            figures = generate_figures(reports, args.figures, policy=args.tie_policy,
+                                       hardness_composition=args.hardness_composition)
+        if args.thesis is not None:
+            thesis_files = write_thesis(reports, args.thesis, policy=args.tie_policy, preview=args.preview,
+                                        hardness_composition=args.hardness_composition)
+        args.output.parent.mkdir(parents=True, exist_ok=True)
+        args.output.write_text(latex, encoding='utf-8')
+    except (OSError, ValueError, TypeError, KeyError) as error:
+        parser.error(str(error))
+    sys.stdout.write(latex)
+    print(f'Saved {args.output}', file=sys.stderr)
+    if args.figures is not None:
+        for figure in figures['figures']:
+            print(f'{figure["placement"]}: {args.figures / figure["name"]} (.pdf, .svg, .png)', file=sys.stderr)
+        print(f'Captions and numerical data: {args.figures / "figures.json"}', file=sys.stderr)
+    if args.thesis is not None:
+        print(f'Thesis files in {args.thesis}:', *(path.relative_to(args.thesis) for path in thesis_files),
+              sep='\n  ', file=sys.stderr)
+
+
+if __name__ == '__main__':
+    main()

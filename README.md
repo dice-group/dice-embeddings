@@ -351,7 +351,7 @@ The run reuses configuration and serialized artifacts from the existing experime
 ```bash
 dicee --continual_learning "KeciFamilyRun" --path_single_kg "KGs/Family/family-benchmark_rich_background.owl" --model Keci --backend rdflib --eval_model None
 ```
-The continual directory should contain the stored configuration and serialized training data (for example `configuration.json`, `memory_map_train_set.npy`, and mapping files `entity_to_idx`/`relation_to_idx` in `.csv` or legacy `.p` format).
+The continual directory should contain the stored configuration and serialized training data (for example `configuration.json`, `memory_map_train_set.npy`, and mapping files `entity_to_idx`/`relation_to_idx` in `.csv` or `.p` format).
 If `--eval_model` is set, evaluation runs after training using stored indexed artifacts. If `--eval_model None`, no evaluation is executed.
 Periodic evaluation and weight-averaging callbacks are also supported in continual training.
 
@@ -491,53 +491,100 @@ predictions = model.predict_topk(h=["Mongolia"], t=["Asia"], topk=5)
 
 </details>
 
-## Multi-Hop Query Answering
-<details> <summary> EPFO Queries (1p, 2p, 3p, 2i, 3i, ip, pi, 2u, up) </summary>
+## Complex Query Answering (CQA)
+
+Answer path, intersection, union, and negated queries with [CQD](https://arxiv.org/abs/2011.03459)
+over KGEs or [ULTRA](https://arxiv.org/abs/2310.04562)/[TRIX](https://arxiv.org/abs/2502.19512)/[Flock](https://arxiv.org/abs/2510.01510),
+with optional learned score adapters. [ConE](https://arxiv.org/abs/2110.13715),
+[CLMPT](https://arxiv.org/abs/2402.12954), [CQD-Hybrid](https://arxiv.org/abs/2410.12537),
+[GNN-QE](https://proceedings.mlr.press/v162/zhu22c.html), [QTO](https://proceedings.mlr.press/v202/bai23b.html),
+and [UltraQuery](https://arxiv.org/abs/2404.07198) are available as native DICE implementations through `dicee.query_answering.methods`.
+
+<details>
+<summary>Examples: 1-hop, 2-hop, and 3-hop queries</summary>
+
+`KGE` loads both ordinary KGEs and saved KGFM experiments. Keep the KGFM's saved
+graph and vocabulary files alongside its weights. Save an adapter fitted for the
+chosen backbone and t-norm as `adapter.json` in that experiment folder.
+Adapter training defaults to linear `context_scores` (16 parameters); the paper
+configuration uses it with the product t-norm.
 
 ```python
-from dicee import KGE
+import numpy as np
 
-# Load pre-trained model
-model = KGE(path="...")
+from dicee import KGE
+from dicee.models.graph_model import GraphKGE
+from dicee.query_answering import QueryContext, QueryScoreAdapter
+
+# Choose one saved DICE experiment for the family graph.
+model = KGE(path="Experiments/complex-family")       # KGE: ComplEx
+# model = KGE(path="Experiments/ultra-family")       # KGFM: ULTRA
+# model = KGE(path="Experiments/trix-family")        # KGFM: TRIX
+# model = KGE(path="Experiments/flock-family")       # KGFM: Flock
+
+adapter = QueryScoreAdapter.load(f"{model.path}/adapter.json", model=model.model)
+
+# KGFMs reuse their saved graph; context-aware KGE adapters need observed facts.
+context = None
+if not isinstance(model.model, GraphKGE):
+    context = QueryContext(
+        np.load(f"{model.path}/train_set.npy"), model.num_entities, model.num_relations,
+    )
 
 # 1-hop: Who are the siblings of F9M167?
-# Query: ?E : ∃E.hasSibling(E, F9M167)
+# Query: hasSibling(F9M167, E)
 predictions = model.answer_multi_hop_query(
     query_type="1p",
-    query=('http://www.benchmark.org/family#F9M167',
-           ('http://www.benchmark.org/family#hasSibling',)),
-    tnorm="min", k=3
+    query=("http://www.benchmark.org/family#F9M167",
+           ("http://www.benchmark.org/family#hasSibling",)),
+    adapter=adapter, context=context, tnorm="prod", k=3,
 )
-# => [('F9F141', 0.99), ('F9M157', 0.98), ...]
 
 # 2-hop: To whom is a sibling of F9M167 married?
-# Query: ?D : ∃E.Married(D,E) ∧ hasSibling(E, F9M167)
+# Query: ∃E. hasSibling(F9M167, E) ∧ married(E, D)
 predictions = model.answer_multi_hop_query(
     query_type="2p",
     query=("http://www.benchmark.org/family#F9M167",
            ("http://www.benchmark.org/family#hasSibling",
             "http://www.benchmark.org/family#married")),
-    tnorm="min", k=3
+    adapter=adapter, context=context, tnorm="prod", beam_size=64, k=3,
 )
-# => [('F9F158', 0.95), ('F9M142', 0.93), ...]
 
-# 3-hop: What type of people are married to a sibling of F9M167?
-# Query: ?T : ∃D.type(D,T) ∧ Married(D,E) ∧ hasSibling(E, F9M167)
+# 3-hop: What types do those spouses have?
+# Query: ∃E,D. hasSibling(F9M167, E) ∧ married(E, D) ∧ type(D, T)
 predictions = model.answer_multi_hop_query(
     query_type="3p",
     query=("http://www.benchmark.org/family#F9M167",
            ("http://www.benchmark.org/family#hasSibling",
             "http://www.benchmark.org/family#married",
             "http://www.w3.org/1999/02/22-rdf-syntax-ns#type")),
-    tnorm="min", k=5
+    adapter=adapter, context=context, tnorm="prod", beam_size=64, k=5,
 )
-# => [('Person', 0.99), ('Male', 0.99), ('Father', 0.98), ...]
+# Each call returns a list of (entity, score) pairs.
 ```
 
-**📖 [See multi-hop query examples →](tests/test_answer_multi_hop_query.py)**  
-**Supported query types:** `1p` (1-hop projection), `2p` (2-hop), `3p` (3-hop), `2i` (2-way intersection), `3i` (3-way intersection), `ip` (intersection-projection), `pi` (projection-intersection), `2u` (2-way union), `up` (union-projection)
+`beam_size` limits intermediate candidates; `k` limits returned answers.
+Set `adapter = None` to use unadapted sigmoid scores.
 
 </details>
+
+See the [CQA guide](docs/guides/multi_hop_queries.md) for adapters and method evaluation.
+
+**Benchmarks.** [`benchmarks/cqa`](benchmarks/cqa/README.md) evaluates these methods on the
+23 UltraQuery datasets and on **+H**: FB15k237+H, NELL995+H and ICEWS18+H from
+[Gregucci et al.](https://arxiv.org/abs/2410.12537), whose hard answers are balanced across the
+number of links that must be predicted to reach them. Select any methods, datasets and query
+types; `--split` is required:
+
+```bash
+python -m benchmarks.cqa plus_h evaluate --split valid --output results/plus-h-subset \
+  --methods cqd cqd-hybrid qto --datasets FB15k237+H NELL995+H --query-types 2p 3p
+```
+
+The verified workflow freezes inputs and query batches, checks validation predictions against
+the pinned upstream implementations, runs in a pinned Docker image, and reports sort-based and
+expected random-tie metrics with paired adapter controls. The [protocol](benchmarks/cqa/PROTOCOL.md)
+records every known deviation from the publications.
 
 ## Literal Prediction
 <details> <summary> Predicting Numeric/Literal Values </summary>
@@ -675,6 +722,30 @@ sampling budgets, reproducibility, training, and verification against upstream.
 
 </details>
 
+[KG-ICL](docs/kgicl.md) answers queries in context, from prompt graphs around a few
+example facts of the query relation. The official checkpoints run in pure PyTorch,
+with fused Triton kernels for CUDA inference. Scores and gradients are verified
+against the official implementation, with five upstream defects corrected.
+
+<details>
+<summary>KG-ICL checkpoint download and inference</summary>
+
+```bash
+mkdir -p checkpoints/kgicl/KG-ICL-6L
+wget -P checkpoints/kgicl/KG-ICL-6L https://raw.githubusercontent.com/nju-websoft/KG-ICL/6a3166e347ae468acdfb30a70a2cf3608b66b8f1/checkpoint/KG-ICL-6L/model_best.tar
+
+python -m dicee --model KGICL --dataset_dir KGs/UMLS \
+  --kgicl_checkpoint checkpoints/kgicl/KG-ICL-6L/model_best.tar --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique NegSample \
+  --batch_size 8 --eval_model test
+```
+
+Prompt examples are drawn with a seed per graph and relation, so predictions are
+deterministic. The [KG-ICL guide](docs/kgicl.md) covers prompt graphs, the official
+evaluation protocol, training, the corrected defects, and verification.
+
+</details>
+
 ## KGFM Link Prediction
 
 Test-set entity prediction with released checkpoints and no fine-tuning, using
@@ -685,7 +756,8 @@ Tie strategy: **pessimistic** (worst rank among exactly equal scores after filte
 <details>
 <summary>Show results</summary>
 
-**Bold** marks the best result per dataset and metric; **Yes** marks target graphs used in pretraining.
+**Bold** marks the best result per dataset and metric; **Yes** marks target graphs used in pretraining;
+**Partial** marks targets of which KG-ICL saw a subgraph in pretraining (FB V1 and NELL V1; [counts](docs/kgfm_benchmarks.md#kinship-and-nell-variants)).
 
 | Dataset | Model | Target graph used in pretraining? | MRR | Hits@1 | Hits@3 | Hits@10 |
 |---|---|:---:|---:|---:|---:|---:|
@@ -694,63 +766,77 @@ Tie strategy: **pessimistic** (worst rank among exactly equal scores after filte
 | YAGO3-10 | ULTRA-50g | Yes | **0.5769** | **0.4966** | **0.6259** | **0.7203** |
 | YAGO3-10 | TRIX | No | 0.4094 | 0.3024 | 0.4574 | 0.6265 |
 | YAGO3-10 | Flock | No | 0.3998 | 0.3092 | 0.4526 | 0.5636 |
+| YAGO3-10 | KG-ICL | No | 0.3792 | 0.2684 | 0.4356 | 0.5938 |
 | NELL-995-h25† | ULTRA-3g | No | 0.3557 | 0.2771 | 0.4001 | 0.5023 |
 | NELL-995-h25† | ULTRA-4g | Yes | **0.4032** | **0.3218** | **0.4476** | **0.5591** |
 | NELL-995-h25† | ULTRA-50g | Yes | 0.3991 | 0.3169 | 0.4448 | 0.5577 |
 | NELL-995-h25† | TRIX | No | 0.3729 | 0.2939 | 0.4136 | 0.5232 |
 | NELL-995-h25† | Flock | No | 0.3672 | 0.2868 | 0.4100 | 0.5199 |
+| NELL-995-h25† | KG-ICL | Partial | 0.3375 | 0.2700 | 0.3716 | 0.4661 |
 | NELL-995-h50† | ULTRA-3g | No | 0.3480 | 0.2618 | 0.3960 | 0.5108 |
 | NELL-995-h50† | ULTRA-4g | Yes | **0.3975** | **0.3059** | **0.4468** | **0.5753** |
 | NELL-995-h50† | ULTRA-50g | Yes | 0.3828 | 0.2938 | 0.4375 | 0.5516 |
 | NELL-995-h50† | TRIX | No | 0.3637 | 0.2769 | 0.4057 | 0.5309 |
 | NELL-995-h50† | Flock | No | 0.3646 | 0.2730 | 0.4126 | 0.5423 |
+| NELL-995-h50† | KG-ICL | Partial | 0.3374 | 0.2618 | 0.3760 | 0.4805 |
 | NELL-995-h75† | ULTRA-3g | No | 0.3298 | 0.2477 | 0.3741 | 0.4861 |
 | NELL-995-h75† | ULTRA-4g | Yes | **0.3732** | **0.2848** | 0.4164 | **0.5470** |
 | NELL-995-h75† | ULTRA-50g | Yes | 0.3640 | 0.2800 | **0.4180** | 0.5239 |
 | NELL-995-h75† | TRIX | No | 0.3428 | 0.2593 | 0.3798 | 0.5075 |
 | NELL-995-h75† | Flock | No | 0.3469 | 0.2585 | 0.3882 | 0.5227 |
+| NELL-995-h75† | KG-ICL | Partial | 0.3286 | 0.2543 | 0.3644 | 0.4699 |
 | NELL-995-h100 | ULTRA-3g | No | 0.3159 | 0.2368 | 0.3546 | 0.4713 |
 | NELL-995-h100 | ULTRA-4g | Yes | 0.3560 | 0.2719 | 0.3940 | 0.5239 |
 | NELL-995-h100 | ULTRA-50g | Yes | **0.3619** | **0.2803** | **0.4076** | **0.5271** |
 | NELL-995-h100 | TRIX | No | 0.3354 | 0.2504 | 0.3720 | 0.5053 |
 | NELL-995-h100 | Flock | No | 0.3397 | 0.2481 | 0.3840 | 0.5202 |
+| NELL-995-h100 | KG-ICL | Partial | 0.3308 | 0.2552 | 0.3675 | 0.4810 |
 | FB15k-237 | ULTRA-3g | Yes | **0.3693** | 0.2718 | **0.4101** | **0.5620** |
 | FB15k-237 | ULTRA-4g | Yes | 0.3684 | 0.2723 | 0.4051 | 0.5593 |
 | FB15k-237 | ULTRA-50g | Yes | 0.3675 | **0.2724** | 0.4037 | 0.5579 |
 | FB15k-237 | TRIX | Yes | 0.3618 | 0.2649 | 0.3989 | 0.5546 |
 | FB15k-237 | Flock | Yes | 0.3116 | 0.2215 | 0.3442 | 0.4912 |
+| FB15k-237 | KG-ICL | Partial | 0.3310 | 0.2416 | 0.3626 | 0.5098 |
 | WN18RR | ULTRA-3g | Yes | 0.3691 | 0.2924 | 0.3923 | 0.5329 |
 | WN18RR | ULTRA-4g | Yes | 0.4838 | 0.4146 | 0.5198 | 0.6173 |
 | WN18RR | ULTRA-50g | Yes | 0.4282 | 0.3641 | 0.4600 | 0.5463 |
 | WN18RR | TRIX | Yes | 0.5065 | 0.4592 | 0.5217 | 0.6040 |
 | WN18RR | Flock | Yes | **0.5303** | **0.4783** | **0.5482** | **0.6367** |
+| WN18RR | KG-ICL | No | 0.4387 | 0.4017 | 0.4515 | 0.5137 |
 | KINSHIP | ULTRA-3g | No | 0.2054 | 0.1439 | 0.2067 | 0.3156 |
 | KINSHIP | ULTRA-4g | No | 0.1298 | 0.0545 | 0.1336 | 0.2649 |
 | KINSHIP | ULTRA-50g | No | 0.2919 | 0.1858 | 0.2914 | 0.5442 |
 | KINSHIP | TRIX | No | 0.1487 | 0.1020 | 0.1373 | 0.2007 |
 | KINSHIP | Flock | No | **0.3803** | **0.2751** | **0.4013** | **0.6001** |
+| KINSHIP | KG-ICL | No | 0.1522 | 0.0703 | 0.1480 | 0.3012 |
 | UMLS | ULTRA-3g | No | 0.6960 | 0.5983 | 0.7474 | 0.8956 |
 | UMLS | ULTRA-4g | No | 0.6684 | 0.5749 | 0.7118 | 0.8601 |
 | UMLS | ULTRA-50g | No | **0.8061** | **0.7330** | **0.8419** | **0.9607** |
 | UMLS | TRIX | No | 0.7256 | 0.6430 | 0.7632 | 0.8986 |
 | UMLS | Flock | No | 0.7768 | 0.7005 | 0.8169 | 0.9244 |
+| UMLS | KG-ICL | No | 0.7797 | 0.7095 | 0.8132 | 0.9357 |
 | Countries-S1 | ULTRA-3g | No | 0.9375 | 0.8750 | **1.0000** | **1.0000** |
 | Countries-S1 | ULTRA-4g | No | **1.0000** | **1.0000** | **1.0000** | **1.0000** |
 | Countries-S1 | ULTRA-50g | No | 0.9757 | 0.9583 | **1.0000** | **1.0000** |
 | Countries-S1 | TRIX | No | 0.9271 | 0.8542 | **1.0000** | **1.0000** |
 | Countries-S1 | Flock | No | 0.9271 | 0.8542 | **1.0000** | **1.0000** |
+| Countries-S1 | KG-ICL | No | 0.9132 | 0.8333 | **1.0000** | **1.0000** |
 | Countries-S2 | ULTRA-3g | No | 0.8715 | 0.7500 | **1.0000** | **1.0000** |
 | Countries-S2 | ULTRA-4g | No | **0.9167** | **0.8333** | **1.0000** | **1.0000** |
 | Countries-S2 | ULTRA-50g | No | 0.9062 | 0.8125 | **1.0000** | **1.0000** |
 | Countries-S2 | TRIX | No | 0.8854 | 0.7708 | **1.0000** | **1.0000** |
 | Countries-S2 | Flock | No | 0.8854 | 0.7708 | **1.0000** | **1.0000** |
+| Countries-S2 | KG-ICL | No | 0.6643 | 0.5000 | 0.7708 | **1.0000** |
 | Countries-S3 | ULTRA-3g | No | 0.2354 | **0.0625** | 0.2917 | 0.6458 |
 | Countries-S3 | ULTRA-4g | No | 0.2459 | 0.0208 | 0.4375 | 0.5000 |
 | Countries-S3 | ULTRA-50g | No | 0.2049 | **0.0625** | 0.1667 | 0.6042 |
 | Countries-S3 | TRIX | No | **0.3625** | **0.0625** | **0.5833** | **0.8958** |
 | Countries-S3 | Flock | No | 0.2533 | 0.0208 | 0.4583 | 0.5000 |
+| Countries-S3 | KG-ICL | No | 0.2455 | 0.0417 | 0.3958 | 0.5208 |
 
 † Original splits contain training/test leakage: h25/h50/h75 include 52/33/9 distinct test facts in training. Splits are preserved; these scores are not strictly held-out estimates.
+
+KG-ICL uses prompt seed 0 and no answer-distance mask; its paper reports the official protocol, see the [KG-ICL guide](docs/kgicl.md#scores-and-the-official-evaluation-protocol).
 
 </details>
 
@@ -768,6 +854,10 @@ RTX 4070 Ti SUPER, float32, matched query batches, and five-repeat medians on sa
 
 \* Flock includes independently sampled walks at the same budget; identical-walk neural speedups are **1.23–2.01×**.
 YAGO3-10 Flock timings varied more. See the [full comparison and validation](docs/kgfm_inference.md).
+
+KG-ICL, measured separately on an RTX 5070 Laptop GPU against the official code with its
+[corrected defects](docs/kgicl.md#upstream-defects-corrected-in-dice), is **49.76×** faster on FB15k-237,
+**4.43×** on WN18RR, and **35.58×** on YAGO3-10 ([details](docs/kgfm_inference.md#kg-icl)).
 
 </details>
 

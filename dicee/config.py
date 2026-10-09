@@ -55,6 +55,17 @@ class Namespace(argparse.Namespace):
         self.flock_compact_state: bool = True
         self.flock_compile_sampler: bool = True
         self.flock_pack_walks: bool = True
+        self.kgicl_checkpoint: Optional[str] = None
+        self.kgicl_dim: int = 32
+        self.kgicl_attn_dim: int = 5
+        self.kgicl_num_layers: int = 6
+        self.kgicl_prompt_layers: int = 3
+        self.kgicl_prompt_hops: int = 3
+        self.kgicl_shots: int = 5
+        self.kgicl_prompt_open_nodes: int = 50
+        self.kgicl_prompt_seed: int = 0
+        self.kgicl_masked_distances: Optional[list] = None
+        self.kgicl_query_batch_size: int = 8
         self.graph_inference_backend: str = 'auto'
         self.graph_relation_cache_mb: int = 64
         self.graph_projection_cache_mb: int = 64

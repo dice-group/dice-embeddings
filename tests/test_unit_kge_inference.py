@@ -12,6 +12,8 @@ from unittest.mock import MagicMock
 import pytest
 import torch
 
+from dicee.knowledge_graph_embeddings import KGE
+
 # ---------------------------------------------------------------------------
 # Fixtures: Mock Model and KGE Instance
 # ---------------------------------------------------------------------------
@@ -53,13 +55,8 @@ def mock_model():
 
 @pytest.fixture
 def mock_kge_instance(tmp_path):
-    """Create a minimal real KGE-like instance for validation testing.
-
-    This uses a real object (not MagicMock) so that real validation
-    logic in methods like predict_topk, predict, etc. actually executes.
-    """
-    # Create a simple object that has the required attributes
-    class MinimalKGE:
+    """Use real KGE methods with a mock model, without loading a checkpoint."""
+    class MinimalKGE(KGE):
         def __init__(self):
             self.entity_to_idx = {f"e{i}": i for i in range(100)}
             self.idx_to_entity = {i: f"e{i}" for i in range(100)}
@@ -79,17 +76,7 @@ def mock_kge_instance(tmp_path):
             self.model.to = MagicMock(return_value=self.model)
             self.model.entity_embeddings = MagicMock(return_value=torch.randn(100, 64))
 
-    kge = MinimalKGE()
-
-    # Attach real validation methods from KGE
-    from dicee.knowledge_graph_embeddings import KGE as RealKGE
-    kge.to = RealKGE.to.__get__(kge, type(kge))
-    kge.predict_topk = RealKGE.predict_topk.__get__(kge, type(kge))
-    kge.predict = RealKGE.predict.__get__(kge, type(kge))
-    kge.get_transductive_entity_embeddings = RealKGE.get_transductive_entity_embeddings.__get__(kge, type(kge))
-    kge.__str__ = RealKGE.__str__.__get__(kge, type(kge))
-
-    return kge
+    return MinimalKGE()
 
 
 # ---------------------------------------------------------------------------
@@ -109,6 +96,19 @@ class TestDeviceManagement:
         """to('cuda') should not raise."""
         mock_kge_instance.to("cuda")
         mock_kge_instance.model.to.assert_called_with("cuda")
+
+    @pytest.mark.parametrize("device", ["cpu", "cuda"])
+    def test_to_clears_query_cache_before_transfer(self, mock_kge_instance, device):
+        mock_kge_instance._query_engine = object()
+        mock_kge_instance._query_engine_key = object()
+
+        def transfer(target):
+            assert mock_kge_instance._query_engine is None
+            assert mock_kge_instance._query_engine_key is None
+
+        mock_kge_instance.model.to.side_effect = transfer
+        mock_kge_instance.to(device)
+        mock_kge_instance.model.to.assert_called_once_with(device)
 
     def test_to_device_invalid_raises_valueerror(self, mock_kge_instance):
         """to() with invalid device should raise ValueError (not AssertionError)."""
