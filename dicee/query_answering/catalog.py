@@ -36,6 +36,7 @@ PLUS_H_PREFIX = 'iscqa-compl-benchmarks/new_benchmarks'
 ULTRA = ('DeepGraphLearning/ULTRA', '427966ad8ed60420eef034063d44f3153addff90')
 TRIX = ('yuchengz99/TRIX', '7596e14eefefe89e61396205a0550172cadeddb0')
 KG_ICL = ('nju-websoft/KG-ICL', '6a3166e347ae468acdfb30a70a2cf3608b66b8f1')
+FLOCK = ('jw9730/flock', 'f35103d25a78bdf4075de5c673a51de4979aa4d7')
 INDUCTIVE_QE = ('DeepGraphLearning/InductiveQE', 'ab49a0e64e3449e687e484a42269d9898e1d1325')
 IS_CQA = ('april-tools/is-cqa-complex', 'd1ce74164936a7c09d9147e83190da047cb39429')
 REFERENCES = {
@@ -50,9 +51,9 @@ REFERENCES = {
     'cone': ('MIRALab-USTC/QE-ConE', 'cc45b90e3cdce0f609670a257e6f756d28495a93'),
     'clmpt': ('qianlima-lab/CLMPT', '6c4f3b8a5e052e8bc1c0c93eaed18ef869a1bcd7'),
 }
-KGFM_ADAPTERS = ('ultra-adapter', 'trix-adapter', 'kgicl-adapter')
+KGFM_ADAPTERS = ('ultra-adapter', 'trix-adapter', 'kgicl-adapter', 'flock-adapter')
 # The upstream backbone each adapter method reproduces (KG-ICL with docs/kgicl.md's bug fixes).
-KGFM_BACKBONES = {'ultra-adapter': ULTRA, 'trix-adapter': TRIX, 'kgicl-adapter': KG_ICL}
+KGFM_BACKBONES = {'ultra-adapter': ULTRA, 'trix-adapter': TRIX, 'kgicl-adapter': KG_ICL, 'flock-adapter': FLOCK}
 METHODS = (*REFERENCES, *KGFM_ADAPTERS)
 # Methods whose checkpoints score queries without the inference graph.
 GRAPH_INDEPENDENT_METHODS = ('cone', 'clmpt', 'cqd')
@@ -137,9 +138,18 @@ def check_recipe(entry: dict, shapes: list[str] | tuple[str, ...]) -> None:
         return
     if options.get('observed_facts', 'none') not in ('none', 'atomic', 'both'):
         raise ValueError('Observed facts must be none, atomic, or both')
+    if options.get('observed_ties', 'entity') not in ('entity', 'model'):
+        raise ValueError('Observed ties must be entity or model')
+    if options.get('negation', 'model') not in ('model', 'observed'):
+        raise ValueError('Negation must be model or observed')
     if 'prompt_seed' in options and (method != 'kgicl-adapter' or type(options['prompt_seed']) is not int
                                      or not 0 <= options['prompt_seed'] < 2**63):
         raise ValueError('Only KG-ICL recipes take prompt_seed, a nonnegative integer below 2**63')
+    if 'relation_conditioning' in options and (method != 'ultra-adapter' or options['relation_conditioning'] not in ('direct', 'query')):
+        raise ValueError('Only ULTRA recipes take relation_conditioning, direct or query')
+    if any(name in options and (method != 'flock-adapter' or type(options[name]) is not int or options[name] < 1)
+           for name in ('test_samples', 'walk_num')):
+        raise ValueError('Only Flock recipes take test_samples and walk_num, positive integers')
     if type(entry.get('adapter_ablation', False)) is not bool:
         raise ValueError('Adapter ablation must be a boolean')
     if entry.get('selection_protocol') not in ('source-validation', 'target-validation'):

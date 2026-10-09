@@ -170,6 +170,11 @@ class ULTRA(GraphKGE):
         self.set_inference_backend(args.get('graph_inference_backend', 'auto'))
         for layer in (*self.relation_model.layers, *self.entity_model.layers):
             layer.inference_compile = args.get('graph_inference_compile', False)
+        # 'query' conditions an inverse tail query on the inverse relation, as UltraQuery's projection does, for weights
+        # trained that way; the default 'direct' is ULTRA link prediction.
+        self.relation_conditioning = args.get('ultra_relation_conditioning', 'direct')
+        if self.relation_conditioning not in ('direct', 'query'):
+            raise ValueError('ultra_relation_conditioning must be direct or query')
 
     def clear_inference_cache(self):
         self._relation_cache = OrderedDict()

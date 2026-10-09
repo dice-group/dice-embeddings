@@ -8,10 +8,13 @@ from ._ordered_aggregation import aggregate, cached_layout
 
 
 class UltraQuery(FuzzyGNN):
-    def __init__(self, context, *, dim=64, num_layers=6, threshold=0., logic='product', cache_bytes=64 * 2**20):
-        super().__init__(context, logic)
+    def __init__(self, context, *, dim=64, num_layers=6, threshold=0., logic='product', cache_bytes=64 * 2**20,
+                 observed_traversal=False, calibration=None):
+        super().__init__(context, logic, observed_traversal, calibration)
         if not 0 <= threshold <= 1:
             raise ValueError('Threshold must be between zero and one')
+        if calibration and threshold:
+            raise ValueError('A calibrated projection takes no membership threshold')
         self.threshold = threshold
         self.relation_model = RelNBFNet(dim, num_layers)
         self.entity_model = EntityNBFNet(dim, num_layers)
@@ -32,7 +35,7 @@ class UltraQuery(FuzzyGNN):
         value = layer.linear(torch.cat((hidden, update), -1))
         return layer.layer_norm(value).relu() + hidden
 
-    def project_batch(self, membership, relation, *, relation_ids=None):
+    def project_batch(self, membership, relation, *, relation_ids=None, logits=False):
         rel_edges = cached_layout(self._layouts, 'relation', self.rel_edge_index, self.rel_edge_type,
                                    self.context.num_relations)
         ent_edges = cached_layout(self._layouts, 'entity', self.edge_index, self.edge_type, self.context.num_entities)
@@ -63,4 +66,5 @@ class UltraQuery(FuzzyGNN):
             hidden = self._layer(layer, hidden, boundary, projected, ent_edges)
         # Preserve the reference MLP arithmetic, including saturated probability ties.
         features = torch.cat((hidden, query[:, None].expand_as(hidden)), -1)
-        return self.entity_model.mlp(features).squeeze(-1).sigmoid()
+        output = self.entity_model.mlp(features).squeeze(-1)
+        return output if logits else output.sigmoid()

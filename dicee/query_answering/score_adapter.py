@@ -18,6 +18,21 @@ from ._deferred import require
 from .context import checkpoint_state, state_fingerprint, state_token
 
 FEATURE_COUNTS = {'global': 1, 'context': 4, 'context_scores': 8}
+# Fixed calibrations of published executors, applied instead of the sigmoid when ``fixed_calibration`` selects them:
+# CQD-Hybrid's min-max normalization below the observed-fact membership, and QTO's softmax times the observed degree.
+FIXED_CALIBRATIONS = ('minmax', 'softmax-degree', 'softmax', 'softmax-degree-ties')
+# Softmax calibrations: QTO's softmax times the observed degree, the plain softmax (degree one) and QTO with the ties at
+# its cap ordered by the raw score, so that a beam or a ranking keeps the backbone's order among capped entities.
+SOFTMAX_CALIBRATIONS = ('softmax-degree', 'softmax', 'softmax-degree-ties')
+MINMAX_CEILING = .9
+SOFTMAX_DEGREE_CEILING = .9999
+# softmax-degree-ties lowers a capped log-membership by CAP_TIE_EPSILON * (1/2 - atan(raw) / pi), less than this
+# much and strictly decreasing in the raw score: resolvable at the cap and after summing log-memberships over atoms.
+CAP_TIE_EPSILON = 1e-6
+# With observed_tie_break, a known fact gets membership exp(-OBSERVED_TIE_EPSILON * (1 - mu)), mu its calibrated
+# membership, instead of exactly one: still one for every practical purpose, but a beam over more known tails than it
+# holds keeps those the backbone scores highest instead of those with the lowest entity IDs.
+OBSERVED_TIE_EPSILON = 1e-9
 
 
 def canonical_feature_mode(mode):
@@ -63,12 +78,14 @@ class QueryScoreAdapter(nn.Module):
     learn eight and sixteen with a linear head. Context observations can override or
     interpolate memberships. Newly fitted adapters bind to a backbone state hash.
     ``membership_threshold`` zeroes memberships at or below a fixed value, the hand-set
-    calibration of UltraQuery LP; it is not trained.
+    calibration of UltraQuery LP; it is not trained. ``fixed_calibration`` replaces the sigmoid by a training-free
+    row calibration: ``minmax`` (CQD-Hybrid: 0.9 times the min-max normalized row) or ``softmax-degree`` (QTO: the
+    softmax over tails times the number of observed tails, at least one, capped below one). Both take no weights.
     """
 
     def __init__(self, feature_mode='context_scores', observed_mix=0., *, weights=None, metadata=None,
                  bias_bound=4., scale_bound=2., normalization='none', hidden_dim=0, hidden_weights=None, seed=0,
-                 membership_threshold=0.):
+                 membership_threshold=0., fixed_calibration=None, mask_known_logits=False):
         super().__init__()
         feature_mode = canonical_feature_mode(feature_mode)
         if not math.isfinite(observed_mix) or not 0 <= observed_mix <= 1:
@@ -83,10 +100,20 @@ class QueryScoreAdapter(nn.Module):
             raise ValueError('membership_threshold must be in [0, 1)')
         if type(hidden_dim) is not int or hidden_dim < 0:
             raise ValueError('hidden_dim must be a nonnegative integer')
+        if fixed_calibration not in (None, *FIXED_CALIBRATIONS):
+            raise ValueError(f'Choose a fixed calibration: {", ".join(FIXED_CALIBRATIONS)}, or None for the sigmoid')
+        if fixed_calibration and (feature_mode != 'global' or hidden_dim or normalization != 'none'
+                                  or (weights is not None and bool(torch.as_tensor(weights).any()))):
+            raise ValueError('Training-free calibrations take no weights, features or normalization')
+        if mask_known_logits and fixed_calibration not in SOFTMAX_CALIBRATIONS:
+            raise ValueError('Masking known-tail logits applies to the softmax calibrations only')
         self.feature_mode, self.observed_mix = feature_mode, float(observed_mix)
         self.bias_bound, self.normalization, self.hidden_dim = float(bias_bound), normalization, hidden_dim
         self.scale_bound = None if scale_bound is None else float(scale_bound)
         self.membership_threshold = float(membership_threshold)
+        self.fixed_calibration = fixed_calibration
+        self.mask_known_logits = bool(mask_known_logits)
+        self.observed_tie_break = False  # an evaluation option of the recipe, not part of the adapter artifact
         features = FEATURE_COUNTS[feature_mode]
         size = (2, hidden_dim or features)
         value = torch.zeros(size, dtype=torch.float64) if weights is None else torch.as_tensor(weights, dtype=torch.float64)
@@ -112,7 +139,16 @@ class QueryScoreAdapter(nn.Module):
                              scale_bound=self.scale_bound, normalization=self.normalization, hidden_dim=self.hidden_dim)
         if self.membership_threshold:
             configuration['membership_threshold'] = self.membership_threshold
+        if self.fixed_calibration:
+            configuration['fixed_calibration'] = self.fixed_calibration
+        if self.mask_known_logits:
+            configuration['mask_known_logits'] = True
         return configuration
+
+    @property
+    def needs_context(self):
+        """Whether rows need the observed facts of a context graph (features, overrides or observed degrees)."""
+        return self.feature_mode != 'global' or bool(self.observed_mix) or self.fixed_calibration in SOFTMAX_CALIBRATIONS
 
     def prepare(self, raw, observed=None, base=None):
         """Prepare parameter-independent inputs once for frozen training banks."""
@@ -120,7 +156,7 @@ class QueryScoreAdapter(nn.Module):
         if raw.ndim != 2:
             raise ValueError('Adapter requires [rows, entities] logits')
         if observed is None or base is None:
-            if self.feature_mode != 'global' or self.observed_mix:
+            if self.needs_context:
                 raise ValueError('Context features/observations require an explicit context graph')
             observed = torch.zeros_like(raw, dtype=torch.bool)
             base = raw.new_zeros((len(raw), 4))
@@ -142,6 +178,8 @@ class QueryScoreAdapter(nn.Module):
         return copies[name][1]
 
     def transform(self, raw, observed, features):
+        if self.fixed_calibration:
+            return self._fixed(raw, observed)
         weights = self._on('weights', raw.device)
         if self.hidden_weights is not None:
             features = (features @ self._on('hidden_weights', raw.device).T).tanh()
@@ -154,12 +192,37 @@ class QueryScoreAdapter(nn.Module):
         scale = log_scale.exp()
         require(torch.isfinite(scale).all() & ~(scale <= 0).any(), FloatingPointError('Nonfinite or zero adapter scale'))
         logits = scale[:, None] * raw + self.bias_bound * v.tanh()[:, None]
-        logs = F.logsigmoid(logits)
+        return self._finish(F.logsigmoid(logits), observed)
+
+    def _fixed(self, raw, observed):
+        if self.fixed_calibration == 'minmax':
+            low, high = raw.min(1, keepdim=True).values, raw.max(1, keepdim=True).values
+            # A constant row has no order to normalize; all its memberships become zero.
+            logs = (MINMAX_CEILING * (raw - low) / torch.where(high > low, high - low, 1.)).log()
+        else:
+            scores = raw
+            if self.mask_known_logits:
+                # Known tails leave the softmax (a row of known tails only keeps its scores); the override still
+                # gives them membership one.
+                scores = torch.where(observed.all(1, keepdim=True), raw, raw.masked_fill(observed, -math.inf))
+            logs = scores.log_softmax(1)
+            if self.fixed_calibration != 'softmax':
+                logs = logs + observed.sum(1, keepdim=True).clamp_min(1).to(raw.dtype).log()
+            capped = logs >= math.log(SOFTMAX_DEGREE_CEILING)
+            logs = logs.clamp_max(math.log(SOFTMAX_DEGREE_CEILING))
+            if self.fixed_calibration == 'softmax-degree-ties':
+                logs = torch.where(capped, logs - CAP_TIE_EPSILON * (.5 - torch.atan(raw) / math.pi), logs)
+        return self._finish(logs, observed)
+
+    def _finish(self, logs, observed):
         if self.membership_threshold:
             # UltraQuery LP's fixed calibration: memberships at or below the threshold become exactly zero.
             logs = logs.masked_fill(logs <= math.log(self.membership_threshold), -math.inf)
         if self.observed_mix == 1:
-            logs = logs.masked_fill(observed, 0.)
+            if self.observed_tie_break:
+                logs = torch.where(observed, OBSERVED_TIE_EPSILON * torch.expm1(logs), logs)
+            else:
+                logs = logs.masked_fill(observed, 0.)
         elif self.observed_mix:
             mixed = torch.logaddexp(logs.new_tensor(math.log(self.observed_mix)), math.log1p(-self.observed_mix) + logs)
             logs = torch.where(observed, mixed, logs)
@@ -218,7 +281,7 @@ class QueryScoreAdapter(nn.Module):
         if payload.get('version', 1) not in (1, 2, 3):
             raise ValueError('Unsupported adapter artifact version')
         fields = ('weights', 'feature_mode', 'observed_mix', 'version', 'bias_bound', 'scale_bound', 'normalization', 'hidden_dim',
-                  'hidden_weights', 'membership_threshold')
+                  'hidden_weights', 'membership_threshold', 'fixed_calibration', 'mask_known_logits')
         metadata = {k: v for k, v in payload.items() if k not in fields}
         if 'backbone_state_sha256' not in metadata:
             if checkpoint is None or 'backbone_checkpoint_sha256' not in metadata:
@@ -233,6 +296,7 @@ class QueryScoreAdapter(nn.Module):
                       weights=payload['weights'], metadata=metadata, bias_bound=payload.get('bias_bound', 4.),
                       scale_bound=payload.get('scale_bound', 2.),
                       normalization=payload.get('normalization', 'none'), hidden_dim=payload.get('hidden_dim', 0),
-                      hidden_weights=payload.get('hidden_weights'), membership_threshold=payload.get('membership_threshold', 0.))
+                      hidden_weights=payload.get('hidden_weights'), membership_threshold=payload.get('membership_threshold', 0.),
+                      fixed_calibration=payload.get('fixed_calibration'), mask_known_logits=payload.get('mask_known_logits', False))
         adapter.verify_model(model)
         return adapter

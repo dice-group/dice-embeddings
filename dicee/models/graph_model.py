@@ -61,6 +61,9 @@ class GraphKGE(BaseKGE):
         for name in ('graph_triples', 'relation_id_map', 'edge_index', 'edge_type'):
             self.register_buffer(name, None, persistent=False)
         self.num_direct_relations = 0
+        # Which relation conditions relation reasoning for a tail query (h, r, ?): 'direct', as upstream link
+        # prediction does (an inverse query uses its direct relation), or 'query', the queried relation itself.
+        self.relation_conditioning = 'direct'
 
     def clear_inference_cache(self):
         """Drop derived representations when graph, weights or device change."""
@@ -79,7 +82,7 @@ class GraphKGE(BaseKGE):
         tensors = list(self.parameters()) + list(self.buffers())
         if any(t.is_inference() for t in tensors):
             return None
-        return (getattr(self, '_inference_backend', 'auto'), torch.is_autocast_enabled(self.device.type),
+        return (getattr(self, '_inference_backend', 'auto'), self.relation_conditioning, torch.is_autocast_enabled(self.device.type),
                 torch.are_deterministic_algorithms_enabled(),
                 float32_precision_token(),
                 tuple(getattr(m, 'inference_compile', False) for m in self.modules() if hasattr(m, 'inference_backend')),
@@ -257,8 +260,10 @@ class GraphKGE(BaseKGE):
         # Host queries were validated without a device read; keep their relation
         # IDs on the host so inference caches need no device-to-host copy.
         host_ids = None
+        direct = self.relation_conditioning == 'direct'
         if x.device.type == 'cpu' and self.device.type != 'cpu':
-            host_ids = (self._host_relation_map()[x[:, 1]] % self.num_direct_relations).tolist()
+            mapped = self._host_relation_map()[x[:, 1]]
+            host_ids = (mapped % self.num_direct_relations if direct else mapped).tolist()
         x = to_device(x, self.device)
         queries = torch.stack((x[:, 0], self.relation_id_map[x[:, 1]]), dim=1)
         candidates = target_entity_idx.to(dtype=torch.long)
@@ -272,7 +277,7 @@ class GraphKGE(BaseKGE):
         candidates = candidates.to(device=self.device)
         if all_entities:
             candidates._dicee_all_entities = True
-        query_relations = queries[:, 1] % self.num_direct_relations
+        query_relations = queries[:, 1] % self.num_direct_relations if direct else queries[:, 1]
         if host_ids is not None:
             query_relations._dicee_ids = host_ids
         return self._score(queries[:, 0], queries[:, 1], candidates, query_relations, self._training_edges(queries=queries))

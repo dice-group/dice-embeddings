@@ -162,6 +162,24 @@ def test_observed_proofs_survive_pruning_and_do_not_shortcut_negation():
     assert exact[3] == 0
 
 
+def test_negation_from_known_facts_excludes_only_their_answers(raw):
+    # Known answers: (1, 1) -> {2, 3}; the chain 0 -0-> 1 -1-> reaches {2, 3} too.
+    context = QueryContext([(0, 0, 1), (1, 1, 2), (1, 1, 3)], 4, 2)
+    engine = QueryAnswerer(TableModel(raw), context=context, observed_mix=1)
+    keep = torch.tensor([1., 1., 0., 0.], dtype=torch.float64)
+    pa, pb = engine.predict((0, (0,))), engine.predict((1, (1,)))
+    two_in = ((0, (0,)), (1, (1, -2)))
+    torch.testing.assert_close(engine.predict(two_in, negation='observed'), pa * keep, rtol=1e-14, atol=0)
+    # The default still negates the backbone's memberships, not the facts.
+    torch.testing.assert_close(engine.predict(two_in), pa * (1 - pb), rtol=1e-14, atol=0)
+    pni = ((0, (0, 1, -2)), (1, (1,)))
+    torch.testing.assert_close(engine.predict(pni, negation='observed'), pb * keep, rtol=1e-14, atol=0)
+    with pytest.raises(ValueError, match='Negation must be'):
+        engine.predict(two_in, negation='facts')
+    with pytest.raises(ValueError, match='known facts needs'):
+        QueryAnswerer(TableModel(raw)).predict(two_in, negation='observed')
+
+
 def test_cache_bounded_reused_and_invalidated(raw):
     model = TableModel(raw)
     engine = QueryAnswerer(model, cache_bytes=4*8)
@@ -542,3 +560,74 @@ def test_membership_threshold_runs_in_the_executor_and_keys_its_cache():
     after = engine.predict(((0, (0,)), (1, (1, -2))))
     # Zero memberships are ordinary values for the executor, also under negation.
     assert torch.isfinite(after).all() and (after == 0).any() and (after > 0).any() and not torch.equal(before, after)
+
+
+def test_training_free_calibrations_follow_cqd_hybrid_and_qto(tmp_path):
+    model = TableModel(np.zeros((4, 1, 4)))
+    raw = torch.tensor([[-2., 0., 1., 3.], [5., 5., 5., 5.]], dtype=torch.float64)
+    observed, base = QueryContext([(0, 0, 0), (0, 0, 1)], 4, 1).features([(0, 0), (1, 0)], device='cpu')
+    minmax = QueryScoreAdapter('global', 0., fixed_calibration='minmax')(raw, observed, base).exp()
+    # CQD-Hybrid: 0.9 (s - min) / (max - min); a constant row has no order and gets zero everywhere.
+    torch.testing.assert_close(minmax[0], .9 * (raw[0] + 2) / 5, rtol=0, atol=1e-15)
+    assert bool((minmax[1] == 0).all())
+    softmax = QueryScoreAdapter('global', 0., fixed_calibration='softmax-degree')(raw, observed, base).exp()
+    # QTO: softmax times the observed tail count (two for (0, 0), at least one otherwise), capped at 0.9999.
+    expected = (raw.softmax(1) * torch.tensor([[2.], [1.]], dtype=torch.float64)).clamp_max(.9999)
+    torch.testing.assert_close(softmax, expected, rtol=1e-12, atol=0)
+    facts = QueryScoreAdapter('global', 1., fixed_calibration='softmax-degree',
+                              metadata={'backbone_state_sha256': state_fingerprint(model), 'calibration': 'documentation only'})
+    scores = facts(raw, observed, base)
+    assert scores[0, 0] == 0 and scores[0, 1] == 0 and scores[0, 3] < 0
+    facts.save(tmp_path / 'adapter.json')
+    loaded = QueryScoreAdapter.load(tmp_path / 'adapter.json', model=model)
+    assert loaded.configuration == facts.configuration and loaded.fixed_calibration == 'softmax-degree' and loaded.needs_context
+    assert loaded.metadata['calibration'] == 'documentation only'
+    # The default sigmoid keeps every existing configuration, artifact and cache key unchanged.
+    assert 'fixed_calibration' not in QueryScoreAdapter('global').configuration and not QueryScoreAdapter('global').needs_context
+    with pytest.raises(ValueError, match='Training-free'):
+        QueryScoreAdapter('global', fixed_calibration='minmax', weights=[[1.], [0.]])
+    with pytest.raises(ValueError, match='Training-free'):
+        QueryScoreAdapter('context_scores', fixed_calibration='softmax-degree')
+    with pytest.raises(ValueError, match='fixed calibration'):
+        QueryScoreAdapter('global', fixed_calibration='temperature')
+    with pytest.raises(ValueError, match='context graph'):
+        QueryScoreAdapter('global', fixed_calibration='softmax-degree')(raw)
+
+
+def test_observed_ties_follow_the_backbone_only_when_asked():
+    raw = torch.tensor([[1., 3., 2., 0.]], dtype=torch.float64)
+    observed, base = QueryContext([(0, 0, 0), (0, 0, 1), (0, 0, 2)], 4, 1).features([(0, 0)], device='cpu')
+    adapter = QueryScoreAdapter('global', 1.)
+    plain = adapter(raw, observed, base)
+    # Default: every known tail is exactly one, so a beam keeps the lowest entity IDs among them.
+    assert bool((plain[0, :3] == 0).all()) and plain[0, 3] < 0
+    adapter.observed_tie_break = True
+    ordered = adapter(raw, observed, base)
+    # Known tails stay within a billionth of one, ordered by the backbone (entity 1 > 2 > 0); other entities are unchanged.
+    assert bool((ordered[0, :3] <= 0).all()) and bool((ordered[0, :3] > -1e-9).all())
+    assert ordered[0, 1] > ordered[0, 2] > ordered[0, 0]
+    assert ordered[0, 3] == plain[0, 3]
+    assert 'observed_tie_break' not in adapter.configuration
+
+
+def test_softmax_calibration_variants_and_known_tail_masking():
+    raw = torch.tensor([[0., 30., 30.5, 2., 1.], [1., 2., 3., 4., 5.]], dtype=torch.float64)
+    observed, base = QueryContext([(0, 0, 0), (0, 0, 3), (0, 0, 4)], 5, 1).features([(0, 0), (1, 0)], device='cpu')
+    softmax = QueryScoreAdapter('global', 0., fixed_calibration='softmax')(raw, observed, base).exp()
+    # d = 1: the plain softmax, capped below one.
+    torch.testing.assert_close(softmax, raw.softmax(1).clamp_max(.9999), rtol=1e-12, atol=0)
+    qto = QueryScoreAdapter('global', 0., fixed_calibration='softmax-degree')(raw, observed, base)
+    ties = QueryScoreAdapter('global', 0., fixed_calibration='softmax-degree-ties')(raw, observed, base)
+    # QTO's memberships up to a millionth; with d = 3, entities 1 and 2 of row 0 both exceed the cap and tie under QTO.
+    assert float((qto - ties).abs().max()) <= 1e-6
+    assert qto[0, 1] == qto[0, 2] and ties[0, 2] > ties[0, 1]
+    assert bool((qto[1] == ties[1]).all())
+    masked = QueryScoreAdapter('global', 1., fixed_calibration='softmax-degree', mask_known_logits=True)
+    scores = masked(raw, observed, base)
+    # Known tails (entities 0, 3 and 4 of row 0) leave the softmax and keep membership one through the override.
+    expected = (raw[0, 1:3].softmax(0) * 3).clamp_max(.9999).log()
+    torch.testing.assert_close(scores[0, 1:3], expected, rtol=1e-12, atol=0)
+    assert scores[0, 0] == 0 and scores[0, 3] == 0 and scores[0, 4] == 0
+    assert masked.configuration['mask_known_logits'] is True and 'mask_known_logits' not in QueryScoreAdapter('global').configuration
+    with pytest.raises(ValueError, match='Masking known-tail'):
+        QueryScoreAdapter('global', fixed_calibration='minmax', mask_known_logits=True)

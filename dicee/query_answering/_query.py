@@ -182,8 +182,13 @@ def negate(value, norm='standard', parameter=0., *, logits=False):
 
 
 def execute_query(tree, row_batches, *, n, device, row_batch_size, beam_size=64,
-                  tnorm="prod", neg_norm="standard", lambda_=0., use_logits=False, executor="cqd", stats=None, skip_zero_prefix=False):
-    """Compose rows with live beam selection; gradients flow through retained scores."""
+                  tnorm="prod", neg_norm="standard", lambda_=0., use_logits=False, executor="cqd", stats=None, skip_zero_prefix=False,
+                  negation_answers=None):
+    """Compose rows with live beam selection; gradients flow through retained scores.
+
+    With ``negation_answers`` (a callable from a subtree to its exact answers over the known facts), a negated branch
+    excludes exactly those answers and nothing else: membership zero on them, one elsewhere.
+    """
     if stats is None:
         stats = dict(negated_pruning=False, bound_skipped=0)
     def execute(node):
@@ -197,6 +202,12 @@ def execute_query(tree, row_batches, *, n, device, row_batch_size, beam_size=64,
         if op in ('and', 'or'):
             branches = [execute(child) for child in node[1:]]
             return combine([v for v, _ in branches], op, tnorm, logits=use_logits), any(p for _, p in branches)
+        if op == 'not' and negation_answers is not None:
+            result = torch.zeros((n,), dtype=torch.float64, device=device)
+            answers = sorted(negation_answers(node[1]))
+            if answers:
+                result[torch.tensor(answers, device=device)] = -torch.inf
+            return result, False
         if op == 'not':
             values, pruned = execute(node[1])
             stats['negated_pruning'] |= pruned

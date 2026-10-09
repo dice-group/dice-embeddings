@@ -425,3 +425,133 @@ def test_checkpoint_graphs_validate_ids_without_using_held_out_edges():
     graph._edge_list = torch.tensor([[0, 2, 2]])
     with pytest.raises(ValueError, match='out-of-vocabulary'):
         _validate_graph_buffer('graph', graph, context, metadata)
+
+
+@pytest.mark.parametrize('index', range(3))
+def test_ultraquery_observed_traversal_is_an_exact_max_with_symbolic_traversal(tmp_path, index):
+    """The opt-in observed-fact traversal equals max(GNN projection, naive symbolic traversal) at every projection."""
+    from dicee.query_answering.methods._common import fuzzy_combine
+    fixture = torch.load(ROOT / 'ultra.pt', weights_only=True, map_location='cpu')
+    case = fixture['cases'][index]
+    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'])
+    path = tmp_path / 'checkpoint.pt'
+    torch.save({'model_state_dict': case['state']}, path)
+    plain = load_method('ultraquery', path, context, **case['config'])
+    model = load_method('ultraquery', path, context, **case['config'], observed_traversal=True)
+    assert model.provenance['configuration']['observed_traversal'] is True
+
+    def symbolic(source, relation):
+        result = torch.zeros_like(source)
+        for h, r, t in context.triples:
+            if r == relation:
+                result[t] = torch.maximum(result[t], source[h])
+        return result
+
+    def membership(tree):
+        if tree[0] == 'anchor':
+            return torch.nn.functional.one_hot(torch.tensor(tree[1]), context.num_entities).float()
+        if tree[0] == 'project':
+            source = membership(tree[2])
+            return torch.maximum(plain.project(source, tree[1]), symbolic(source, tree[1]))
+        if tree[0] == 'not':
+            return 1 - membership(tree[1])
+        return fuzzy_combine([membership(child) for child in tree[1:]], tree[0], plain.logic)
+
+    with torch.no_grad():
+        for shape, query in fixture['queries'].items():
+            tree = compile_query(query)
+            torch.testing.assert_close(model.membership(tree), membership(tree), atol=0, rtol=0, msg=shape)
+            # Off by default: the plain port keeps the pinned upstream scores.
+            torch.testing.assert_close(plain.predict(query), case['scores'][shape], atol=3e-5, rtol=3e-5, msg=shape)
+        anchor, (relation,) = fixture['queries']['1p']
+        tails = sorted(context.outgoing.get(anchor, {}).get(relation, ()))
+        assert tails and bool((model.membership(compile_query(fixture['queries']['1p']))[tails] == 1).all())
+        batch = [fixture['queries'][shape] for shape in ('2p', '2p')]
+        torch.testing.assert_close(model.predict_batch(batch)[0], model.predict(batch[0]), atol=3e-5, rtol=3e-5)
+
+
+@pytest.mark.parametrize('conditioning', ['direct', 'query'])
+def test_frozen_ultra_with_query_conditioning_equals_the_ultraquery_projection(tmp_path, conditioning):
+    """UltraQuery's weights as a frozen ULTRA: with relation_conditioning='query', every atom equals UltraQuery's 1p projection;
+    ULTRA's link-prediction default conditions inverse queries on their direct relation instead."""
+    from dicee.models import ULTRA
+    from dicee.query_answering.context import attached_context, evaluation_mode
+    fixture = torch.load(ROOT / 'ultra.pt', weights_only=True, map_location='cpu')
+    case = fixture['cases'][0]
+    # Declared inverse pairs make the context graph identical for both models.
+    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'], ((0, 2), (1, 3)))
+    path = tmp_path / 'checkpoint.pt'
+    torch.save({'model_state_dict': case['state']}, path)
+    port = load_method('ultraquery', path, context, threshold=0.)
+    state = {key.removeprefix('model.model.').removeprefix('model.'): value for key, value in case['state'].items()}
+    torch.save({'model': state}, tmp_path / 'ultra.pth')
+    dim = state['relation_model.layers.0.linear.weight'].shape[0]
+    layers = len({key.split('.')[2] for key in state if key.startswith('relation_model.layers.')})
+    model = ULTRA(dict(num_entities=1, num_relations=1, graph_inference_backend='torch', ultra_dim=dim, ultra_num_layers=layers,
+                       ultra_relation_conditioning=conditioning)).load_pretrained(str(tmp_path / 'ultra.pth')).eval()
+    differences = {}
+    with torch.no_grad(), attached_context(model, context), evaluation_mode(model):
+        for h in range(context.num_entities):
+            for r in range(context.num_relations):
+                membership = port.project(torch.nn.functional.one_hot(torch.tensor(h), context.num_entities).float(), r)
+                differences[h, r] = (model.forward_k_vs_all(torch.tensor([[h, r]]))[0].sigmoid() - membership).abs().max().item()
+    direct = [d for (_, r), d in differences.items() if r in (0, 1)]
+    inverse = [d for (_, r), d in differences.items() if r in (2, 3)]
+    assert max(direct) < 1e-5
+    assert (max(inverse) < 1e-5) == (conditioning == 'query')
+    with pytest.raises(ValueError, match='relation_conditioning'):
+        ULTRA(dict(num_entities=1, num_relations=1, ultra_relation_conditioning='inverse'))
+
+
+@pytest.mark.parametrize('index', [0])
+@pytest.mark.parametrize('traversal', [False, True])
+def test_ultraquery_softmax_degree_calibration_follows_its_closed_form(tmp_path, index, traversal):
+    """Calibrated projections: min(d * softmax(logits), 0.9999), d the observed-tail mass reached from the fuzzy set."""
+    from dicee.query_answering.methods._common import fuzzy_combine
+    fixture = torch.load(ROOT / 'ultra.pt', weights_only=True, map_location='cpu')
+    case = fixture['cases'][index]
+    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'])
+    path = tmp_path / 'checkpoint.pt'
+    torch.save({'model_state_dict': case['state']}, path)
+    config = dict(case['config'], threshold=0.)
+    plain = load_method('ultraquery', path, context, **config)
+    model = load_method('ultraquery', path, context, **config, observed_traversal=traversal, calibration='softmax-degree')
+    assert model.provenance['configuration']['calibration'] == 'softmax-degree'
+
+    def symbolic(source, relation):
+        result = torch.zeros_like(source)
+        for h, r, t in context.triples:
+            if r == relation:
+                result[t] = torch.maximum(result[t], source[h])
+        return result
+
+    def membership(tree):
+        if tree[0] == 'anchor':
+            return torch.nn.functional.one_hot(torch.tensor(tree[1]), context.num_entities).float()
+        if tree[0] == 'project':
+            source = membership(tree[2])
+            logits = plain.project_batch(source[None], torch.tensor([tree[1]]), relation_ids=(tree[1],), logits=True)[0]
+            known = symbolic(source, tree[1])
+            value = (logits.softmax(0) * known.sum().clamp_min(1)).clamp_max(.9999)
+            return torch.maximum(value, known) if traversal else value
+        if tree[0] == 'not':
+            return 1 - membership(tree[1])
+        return fuzzy_combine([membership(child) for child in tree[1:]], tree[0], plain.logic)
+
+    with torch.no_grad():
+        for shape, query in fixture['queries'].items():
+            tree = compile_query(query)
+            torch.testing.assert_close(model.membership(tree), membership(tree), atol=1e-6, rtol=1e-5, msg=shape)
+        # A single anchor head: d is its number of observed tails, as in the beam executor's calibration.
+        anchor, (relation,) = fixture['queries']['1p']
+        tails = sorted(context.outgoing.get(anchor, {}).get(relation, ()))
+        logits = plain.project_batch(torch.nn.functional.one_hot(torch.tensor([anchor]), context.num_entities).float(),
+                                     torch.tensor([relation]), relation_ids=(relation,), logits=True)[0]
+        expected = (logits.softmax(0) * max(1, len(tails))).clamp_max(.9999)
+        if traversal:
+            expected[tails] = 1.
+        torch.testing.assert_close(model.membership(compile_query(fixture['queries']['1p'])), expected, atol=1e-6, rtol=1e-5)
+    with pytest.raises(ValueError, match='threshold'):
+        load_method('ultraquery', path, context, **dict(case['config'], threshold=.5), calibration='softmax-degree')
+    with pytest.raises(ValueError, match='calibration'):
+        load_method('ultraquery', path, context, **config, calibration='minmax')
