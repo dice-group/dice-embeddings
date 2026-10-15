@@ -199,3 +199,14 @@ def test_export_fixed_test_reference_corrected_filters_and_pending_jobs(tmp_path
     assert all(r['answer_filter'] == 'corrected' for r in payload['rows'])
     with pytest.raises(ValueError, match='new report directory'):
         export_difficulty_reports(results, bundle, tmp_path / 'inputs', results / 'out')
+    # A direct evaluate run carries no bundle hash: refused by default, read with direct=True.
+    write_json(results / 'result.json', report | {'benchmark_run': {'entry': 'done', 'mode': 'direct'}})
+    with pytest.raises(ValueError, match='frozen bundle'):
+        export_difficulty_reports(results, bundle, tmp_path / 'inputs', tmp_path / 'refused', entries=['done'], query_types=['2p'])
+    unbundled = export_difficulty_reports(results, bundle, tmp_path / 'inputs', tmp_path / 'direct', entries=['done'],
+                                         query_types=['2p'], direct=True)
+    assert unbundled['rows'] == payload['rows'] and unbundled['pending_main_entries'] == []
+    assert (unbundled['result_mode'], payload['result_mode']) == ('direct', 'bundle')
+    with pytest.raises(ValueError, match='a direct run'):
+        export_difficulty_reports(results, bundle, tmp_path / 'inputs', tmp_path / 'none', entries=['excluded'], query_types=['2p'],
+                                  direct=True)

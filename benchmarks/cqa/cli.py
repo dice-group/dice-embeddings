@@ -144,6 +144,8 @@ def build_parser():
     p.add_argument('--labels-root', type=Path, help='Separate extraction root for released reduction labels')
     p.add_argument('--entries', nargs='+', action='extend', help='Completed result IDs, including control suffixes')
     p.add_argument('--query-types', nargs='+', action='extend', help='Report-only query-type subset')
+    p.add_argument('--direct', action='store_true',
+                   help='Read results of direct evaluate runs; the bundle only pins the data files and filter corrections')
     container(p)
 
     p = command('train', 'Train UltraQuery baselines in the author runtime (UltraQuery suite)')
@@ -459,7 +461,8 @@ def report(parser, args):
 def difficulty_report(parser, args):
     from .difficulty import export_difficulty_reports
     result = export_difficulty_reports(args.results, args.bundle, args.input_root, args.output,
-                                       labels_root=args.labels_root, entries=args.entries, query_types=args.query_types)
+                                       labels_root=args.labels_root, entries=args.entries, query_types=args.query_types,
+                                       direct=args.direct)
     print(json.dumps(dict(rows=len(result['rows']), pending_main_entries=len(result['pending_main_entries']), output=str(args.output))))
 
 

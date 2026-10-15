@@ -300,12 +300,17 @@ def summarize_difficulty(path, records, classifier, *, author_labels=None, shape
     return dict(rows=result, counts=dict(counts), seen=seen)
 
 
-def export_difficulty_reports(results, bundle, input_root, output, *, labels_root=None, entries=None, query_types=None):
+def export_difficulty_reports(results, bundle, input_root, output, *, labels_root=None, entries=None, query_types=None,
+                              direct=False):
     """Postprocess completed jobs from a frozen inference bundle.
 
     No frozen-source verification, model loading, checkpoint locks or writes to
     inference artifacts. A new output directory is required. In-progress traces
     without result.json are never opened.
+
+    ``direct`` reads the results of direct evaluate runs, which carry no bundle
+    hash. The bundle then only pins the label-generation inputs and the filter
+    corrections.
     """
     from dicee.query_answering.method_evaluation import GRAPH_INDEPENDENT_METHODS
 
@@ -326,12 +331,13 @@ def export_difficulty_reports(results, bundle, input_root, output, *, labels_roo
         run = report.get('benchmark_run', report.get('paper_run'))
         if run is None:
             continue
-        if run.get('bundle') == bundle_hash:
+        matches = (run.get('mode') == 'direct' and 'bundle' not in run) if direct else run.get('bundle') == bundle_hash
+        if matches:
             completed.add(run['entry'])
         if selected_entries is not None and run['entry'] not in selected_entries:
             continue
-        if run['bundle'] != bundle_hash:
-            raise ValueError(f'Result was not produced by this frozen bundle: {path}')
+        if not matches:
+            raise ValueError(f'Result was not produced by {"a direct run" if direct else "this frozen bundle"}: {path}')
         if report['split'] != 'test':
             raise ValueError('Inference difficulty currently supports test traces only')
         jobs.append((path, report, run))
@@ -440,7 +446,8 @@ def export_difficulty_reports(results, bundle, input_root, output, *, labels_roo
                    semantics='Minimum missing positive atoms on full-truth witnesses; negation restricts truth at zero cost; union selects a branch.',
                    averaging='Within each group: answers per query, then participating queries per parent type. No cross-type difficulty macro.',
                    contribution='original_weight_contribution sums to the parent metric within each grouping; query_weight is its original answer-per-query mass.',
-                   pending_main_entries=sorted(expected_jobs - completed), selected_types=sorted(shapes),
+                   pending_main_entries=[] if direct else sorted(expected_jobs - completed), selected_types=sorted(shapes),
+                   result_mode='direct' if direct else 'bundle',
                    sources=sources, details=details, rows=all_rows)
     write_json(output / 'inference-difficulty.json', payload)
     fields = ['entry', 'dataset', 'method', 'calibration', 'answer_filter', 'inference_graph', 'comparison_graph',
