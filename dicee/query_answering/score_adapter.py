@@ -20,10 +20,11 @@ from .context import checkpoint_state, state_fingerprint, state_token
 FEATURE_COUNTS = {'global': 1, 'context': 4, 'context_scores': 8}
 # Fixed calibrations of published executors, applied instead of the sigmoid when ``fixed_calibration`` selects them:
 # CQD-Hybrid's min-max normalization below the observed-fact membership, and QTO's softmax times the observed degree.
-FIXED_CALIBRATIONS = ('minmax', 'softmax-degree', 'softmax', 'softmax-degree-ties')
-# Softmax calibrations: QTO's softmax times the observed degree, the plain softmax (degree one) and QTO with the ties at
-# its cap ordered by the raw score, so that a beam or a ranking keeps the backbone's order among capped entities.
-SOFTMAX_CALIBRATIONS = ('softmax-degree', 'softmax', 'softmax-degree-ties')
+FIXED_CALIBRATIONS = ('minmax', 'softmax-degree', 'softmax', 'softmax-degree-ties', 'softmax-mass')
+# Softmax calibrations: QTO's softmax times the observed degree, the plain softmax (degree one), QTO with the ties at
+# its cap ordered by the raw score, so that a beam or a ranking keeps the backbone's order among capped entities, and
+# FIT's softmax times the observed degree over the softmax mass on the observed tails (softmax-mass).
+SOFTMAX_CALIBRATIONS = ('softmax-degree', 'softmax', 'softmax-degree-ties', 'softmax-mass')
 MINMAX_CEILING = .9
 SOFTMAX_DEGREE_CEILING = .9999
 # softmax-degree-ties lowers a capped log-membership by CAP_TIE_EPSILON * (1/2 - atan(raw) / pi), less than this
@@ -79,8 +80,9 @@ class QueryScoreAdapter(nn.Module):
     interpolate memberships. Newly fitted adapters bind to a backbone state hash.
     ``membership_threshold`` zeroes memberships at or below a fixed value, the hand-set
     calibration of UltraQuery LP; it is not trained. ``fixed_calibration`` replaces the sigmoid by a training-free
-    row calibration: ``minmax`` (CQD-Hybrid: 0.9 times the min-max normalized row) or ``softmax-degree`` (QTO: the
-    softmax over tails times the number of observed tails, at least one, capped below one). Both take no weights.
+    row calibration: ``minmax`` (CQD-Hybrid: 0.9 times the min-max normalized row), ``softmax-degree`` (QTO: the
+    softmax over tails times the number of observed tails, at least one, capped below one) or ``softmax-mass`` (FIT: the
+    softmax times the number of observed tails over their softmax mass, capped below one). They take no weights.
     """
 
     def __init__(self, feature_mode='context_scores', observed_mix=0., *, weights=None, metadata=None,
@@ -107,6 +109,8 @@ class QueryScoreAdapter(nn.Module):
             raise ValueError('Training-free calibrations take no weights, features or normalization')
         if mask_known_logits and fixed_calibration not in SOFTMAX_CALIBRATIONS:
             raise ValueError('Masking known-tail logits applies to the softmax calibrations only')
+        if mask_known_logits and fixed_calibration == 'softmax-mass':
+            raise ValueError('softmax-mass divides by the softmax mass on the known tails, so they cannot leave the softmax')
         self.feature_mode, self.observed_mix = feature_mode, float(observed_mix)
         self.bias_bound, self.normalization, self.hidden_dim = float(bias_bound), normalization, hidden_dim
         self.scale_bound = None if scale_bound is None else float(scale_bound)
@@ -206,7 +210,14 @@ class QueryScoreAdapter(nn.Module):
                 # gives them membership one.
                 scores = torch.where(observed.all(1, keepdim=True), raw, raw.masked_fill(observed, -math.inf))
             logs = scores.log_softmax(1)
-            if self.fixed_calibration != 'softmax':
+            if self.fixed_calibration == 'softmax-mass':
+                # FIT (Yin et al., 2024, Section 5.2): the softmax is scaled so that the observed tails together hold
+                # their count, which makes their mean membership one before the cap. A row without observed tails keeps
+                # the softmax. The cap stays QTO's 0.9999, below the membership of an observed fact.
+                count = observed.sum(1, keepdim=True)
+                mass = logs.masked_fill(~observed, -math.inf).logsumexp(1, keepdim=True)
+                logs = logs + torch.where(count > 0, count.clamp_min(1).to(raw.dtype).log() - mass, 0.)
+            elif self.fixed_calibration != 'softmax':
                 logs = logs + observed.sum(1, keepdim=True).clamp_min(1).to(raw.dtype).log()
             capped = logs >= math.log(SOFTMAX_DEGREE_CEILING)
             logs = logs.clamp_max(math.log(SOFTMAX_DEGREE_CEILING))

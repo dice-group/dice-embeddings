@@ -631,3 +631,16 @@ def test_softmax_calibration_variants_and_known_tail_masking():
     assert masked.configuration['mask_known_logits'] is True and 'mask_known_logits' not in QueryScoreAdapter('global').configuration
     with pytest.raises(ValueError, match='Masking known-tail'):
         QueryScoreAdapter('global', fixed_calibration='minmax', mask_known_logits=True)
+    # FIT: the softmax times the observed tail count over the softmax mass on the observed tails, so that the observed
+    # tails of row 0 (entities 0, 3 and 4) together hold three before the cap; row 1 has none and keeps the softmax.
+    fit = QueryScoreAdapter('global', 0., fixed_calibration='softmax-mass')(raw, observed, base).exp()
+    share = raw.softmax(1)
+    factor = 3 / share[0, [0, 3, 4]].sum()
+    torch.testing.assert_close(fit[0], (share[0] * factor).clamp_max(.9999), rtol=1e-12, atol=0)
+    torch.testing.assert_close(fit[1], share[1].clamp_max(.9999), rtol=1e-12, atol=0)
+    # Before the cap the observed tails hold exactly their count. Here the two unobserved entities hold nearly all of the
+    # softmax mass, so the factor is large and lifts them to the cap, above two of the three observed tails.
+    torch.testing.assert_close((share[0, [0, 3, 4]] * factor).sum(), torch.tensor(3., dtype=torch.float64), rtol=1e-12, atol=0)
+    assert float(factor) > 1e11 and fit[0, 1] == fit[0, 2] == .9999 and fit[0, 0] < fit[0, 4] < .9999
+    with pytest.raises(ValueError, match='softmax-mass'):
+        QueryScoreAdapter('global', fixed_calibration='softmax-mass', mask_known_logits=True)

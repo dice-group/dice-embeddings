@@ -153,7 +153,8 @@ def test_reference_applies_a_fixed_membership_threshold(operator, facts, mode):
 
 @pytest.mark.parametrize('operator', ['product', 'min'])
 @pytest.mark.parametrize('facts', ['none', 'atomic', 'both'])
-@pytest.mark.parametrize('calibration', ['minmax', 'softmax-degree', 'softmax', 'softmax-degree-ties', 'softmax-degree-ties-masked'])
+@pytest.mark.parametrize('calibration', ['minmax', 'softmax-degree', 'softmax', 'softmax-degree-ties', 'softmax-degree-ties-masked',
+                                         'softmax-mass'])
 def test_reference_applies_training_free_calibrations(operator, facts, calibration):
     model = Rows().eval()
     context = QueryContext([(0, 0, 1), (0, 0, 2), (2, 1, 6), (1, 1, 3), (3, 2, 4), (4, 3, 5)], 7, 4)

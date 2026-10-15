@@ -11,7 +11,7 @@ class ReferenceKGFM:
         if (adapter['feature_mode'] not in ('context_scores', 'context_scores_v1', 'global') or adapter['hidden_dim']
                 or adapter['normalization'] != 'none' or adapter['observed_mix'] not in (0, 1)
                 or not 0 <= adapter.get('membership_threshold', 0.) < 1
-                or adapter.get('fixed_calibration') not in (None, 'minmax', 'softmax-degree', 'softmax', 'softmax-degree-ties')
+                or adapter.get('fixed_calibration') not in (None, 'minmax', 'softmax-degree', 'softmax', 'softmax-degree-ties', 'softmax-mass')
                 or (adapter.get('fixed_calibration')
                     and (adapter['feature_mode'] != 'global' or any(w for row in adapter['weights'] for w in row)))):
             raise ValueError('This reference covers the frozen linear observed-fact recipe')
@@ -73,6 +73,13 @@ class ReferenceKGFM:
             if calibration == 'softmax-degree-ties':
                 calibrated = calibrated - torch.where(level >= math.log(0.9999), 1e-6 * torch.atan2(torch.ones_like(raw), raw) / math.pi,
                                                       raw.new_zeros(()))
+        elif calibration == 'softmax-mass':
+            # FIT: softmax times the observed tail count over the softmax mass on the observed tails (no factor for a row
+            # without observed tails), capped at 0.9999 below one.
+            share = torch.softmax(raw, 1)
+            mass = (share * observed).sum(1)
+            factor = torch.where(count > 0, count.double() / mass, raw.new_ones(()))
+            calibrated = torch.minimum((share * factor[:, None]).log(), raw.new_tensor(math.log(0.9999)))
         else:
             u, v = (features @ raw.new_tensor(self.adapter['weights']).T).unbind(1)
             bound = math.log(self.adapter['scale_bound'])
