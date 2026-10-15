@@ -1,0 +1,77 @@
+Fixes to nju-websoft/KG-ICL at 6a3166e347ae468acdfb30a70a2cf3608b66b8f1; apply with
+patch -p1 in the checkout root. It changes only the defects documented in docs/kgicl.md:
+
+B1 src/encoder/EntityEncoder.py: the attention activation was a fresh nn.RReLU(), which is
+   always in training mode, so inference sampled random negative slopes. Use the module's
+   training flag: random slopes in training, the mean slope in evaluation.
+B2 src/data_loader.py: evaluation slot i of the batch-wide relation list selected case i mod
+   n_cases, which depends on the relation's rank among the batch relations when it has fewer
+   than shot cases. Select case (i mod shot) mod n_cases.
+B3 run_your_own_dataset/utils_all.py: distance labels were paired with prompt nodes in set
+   iteration order and the loader reads label rows as local node IDs, so most entities got
+   another entity's tokens. Pair each node with its own label, rows in local-ID order.
+B4 run_your_own_dataset/utils_all.py: a self-loop pair was looked up in both directions,
+   duplicating its facts in the prompt graph.
+B5 src/data_loader.py: for a self-loop example fact (u, q, u) the tail token went to local
+   node 1, an unrelated entity. Both tokens go to the example entity.
+
+--- a/run_your_own_dataset/utils_all.py
++++ b/run_your_own_dataset/utils_all.py
+@@ -265,9 +265,10 @@
+             edges_type += list(rels)
+             edges_index += [(edge[0], edge[1]) for i in range(len(rels))]
+             # 添加反向边
+-            rels = self.ht2r[(edge[1], edge[0])]
+-            edges_type += list(rels)
+-            edges_index += [(edge[1], edge[0]) for i in range(len(rels))]
++            if edge[0] != edge[1]:
++                rels = self.ht2r[(edge[1], edge[0])]
++                edges_type += list(rels)
++                edges_index += [(edge[1], edge[0]) for i in range(len(rels))]
+         edges_index = np.array(edges_index).T
+         edges_type = np.array(edges_type)
+ 
+@@ -279,7 +280,8 @@
+         for i in range(len(edges_type)):
+             if [nodes2id[edges_index[0][i]], edges_type[i], nodes2id[edges_index[1][i]]] != [nodes2id[triple[0]], triple[1], nodes2id[triple[2]]]:
+                 triples.append([nodes2id[edges_index[0][i]], edges_type[i], nodes2id[edges_index[1][i]]])
+-        ent2label = {nodes2id[node]: labels[i] for i, node in enumerate(set(enclosing_subgraph_nodes).union({head, tail}))}
++        node_labels = dict(zip(enclosing_subgraph_nodes, labels))
++        ent2label = {nodes2id[node]: node_labels[node] for node in sorted(nodes2id, key=nodes2id.get)}
+         ent_subid2ent_id = {nodes2id[node]: node for i, node in enumerate(set(enclosing_subgraph_nodes).union({head, tail}))}
+         return triples, ent2label, ent_subid2ent_id
+ 
+--- a/src/data_loader.py
++++ b/src/data_loader.py
+@@ -295,7 +295,7 @@
+         num_ent = 0
+         for i, rel in enumerate(rels):
+             if not random_order:
+-                id_ = i
++                id_ = i % self.args.shot
+             else:
+                 id_ = None
+             edges_index, edges_type, query_relation, labels, num_nodes = self.case_select(rel, id=id_)
+@@ -305,7 +305,10 @@
+             batch_edge_type.append(torch.from_numpy(edges_type + i * (relation_num)).to(self.args.device))
+             batch_edge_query_relations.append(
+                 torch.ones(edges_type.shape).to(self.args.device) * query_relation + i * (self.relation_num))
+-            if rel < self.relation_num // 2:
++            if edges_index[0][0] == edges_index[1][0]:  # self-loop example fact
++                batch_h_positions.append(num_ent)
++                batch_t_positions.append(num_ent)
++            elif rel < self.relation_num // 2:
+                 batch_h_positions.append(num_ent)
+                 batch_t_positions.append(num_ent + 1)
+             else:
+--- a/src/encoder/EntityEncoder.py
++++ b/src/encoder/EntityEncoder.py
+@@ -44,7 +44,7 @@
+         h_qr = rel_embeddings[q_rel + torch.arange(q_rel.size(0)).to(self.args.device) * (loader.kg.relation_num + 1)][r_idx]
+ 
+         alpha = self.w_alpha(
+-            nn.RReLU()(self.Ws_attn(hs) + self.Wr_attn(hr) + self.Wqr_attn(h_qr)))
++            nn.functional.rrelu(self.Ws_attn(hs) + self.Wr_attn(hr) + self.Wqr_attn(h_qr), training=self.training))
+         alpha = torch.sigmoid(alpha)  # [N_edge_of_all_batch, 1]
+ 
+         # if not torch.cuda.is_available():

@@ -1,0 +1,229 @@
+{
+  "version": 1,
+  "answer_filter": "released",
+  "data_root": "KGs/UltraQuery",
+  "seed": 0,
+  "threads": 4,
+  "archives": {
+    "datasets": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90#datasets-1", "checksum_status": "Every extracted runtime input is independently pinned by freeze."},
+    "models": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90/ckpts", "checksum_status": "Released checkpoint and adapter bytes are independently pinned by freeze."}
+  },
+  "recipes": [
+    {
+      "defaults": {
+        "id": "ultraquery-lp-{dataset}",
+        "method": "ultraquery-lp",
+        "checkpoint": "Experiments/query-baselines/upstream/ultra/ckpts/ultra_3g.pth",
+        "options": {"logic": "product", "cache_bytes": 67108864},
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni"],
+        "query_batch_size": 32,
+        "query_order": "upstream-pickle",
+        "reference": {
+          "status": "released PyG port; frozen validation parity required",
+          "settings": "https://arxiv.org/html/2404.07198v2#S0.SS2",
+          "notes": ["Released PyG 3g link-prediction checkpoint; thresholds follow UltraQuery arXiv v2, Appendix B.", "Released PyG checkpoint is distinct from original TorchDrug paper weights."]
+        },
+        "blockers": []
+      },
+      "entries": [
+        {"dataset": "FB15k237LogicalQuery", "options": {"threshold": 0.8}},
+        {
+          "dataset": "FB15k237LogicalQuery",
+          "id": "ultraquery-lp-no-threshold-FB15k237LogicalQuery",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "FB15kLogicalQuery", "options": {"threshold": 0.8}},
+        {
+          "dataset": "FB15kLogicalQuery",
+          "id": "ultraquery-lp-no-threshold-FB15kLogicalQuery",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "NELL995LogicalQuery", "options": {"threshold": 0.97}},
+        {
+          "dataset": "NELL995LogicalQuery",
+          "id": "ultraquery-lp-no-threshold-NELL995LogicalQuery",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "InductiveFB15k237Query:106", "options": {"threshold": 0.8}},
+        {
+          "dataset": "InductiveFB15k237Query:106",
+          "id": "ultraquery-lp-no-threshold-InductiveFB15k237Query:106",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "InductiveFB15k237Query:113", "options": {"threshold": 0.8}},
+        {
+          "dataset": "InductiveFB15k237Query:113",
+          "id": "ultraquery-lp-no-threshold-InductiveFB15k237Query:113",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "InductiveFB15k237Query:122", "options": {"threshold": 0.8}},
+        {
+          "dataset": "InductiveFB15k237Query:122",
+          "id": "ultraquery-lp-no-threshold-InductiveFB15k237Query:122",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "InductiveFB15k237Query:134", "options": {"threshold": 0.8}},
+        {
+          "dataset": "InductiveFB15k237Query:134",
+          "id": "ultraquery-lp-no-threshold-InductiveFB15k237Query:134",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "InductiveFB15k237Query:150", "options": {"threshold": 0.8}},
+        {
+          "dataset": "InductiveFB15k237Query:150",
+          "id": "ultraquery-lp-no-threshold-InductiveFB15k237Query:150",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "InductiveFB15k237Query:175", "options": {"threshold": 0.8}},
+        {
+          "dataset": "InductiveFB15k237Query:175",
+          "id": "ultraquery-lp-no-threshold-InductiveFB15k237Query:175",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "InductiveFB15k237Query:217", "options": {"threshold": 0.8}},
+        {
+          "dataset": "InductiveFB15k237Query:217",
+          "id": "ultraquery-lp-no-threshold-InductiveFB15k237Query:217",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "InductiveFB15k237Query:300", "options": {"threshold": 0.8}},
+        {
+          "dataset": "InductiveFB15k237Query:300",
+          "id": "ultraquery-lp-no-threshold-InductiveFB15k237Query:300",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "InductiveFB15k237Query:550", "options": {"threshold": 0.8}},
+        {
+          "dataset": "InductiveFB15k237Query:550",
+          "id": "ultraquery-lp-no-threshold-InductiveFB15k237Query:550",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "WikiTopicsQuery:art", "options": {"threshold": 0.8}},
+        {
+          "dataset": "WikiTopicsQuery:art",
+          "id": "ultraquery-lp-no-threshold-WikiTopicsQuery:art",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "WikiTopicsQuery:award", "options": {"threshold": 0.8}},
+        {
+          "dataset": "WikiTopicsQuery:award",
+          "id": "ultraquery-lp-no-threshold-WikiTopicsQuery:award",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "WikiTopicsQuery:edu", "options": {"threshold": 0.8}},
+        {
+          "dataset": "WikiTopicsQuery:edu",
+          "id": "ultraquery-lp-no-threshold-WikiTopicsQuery:edu",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "WikiTopicsQuery:health", "options": {"threshold": 0.8}},
+        {
+          "dataset": "WikiTopicsQuery:health",
+          "id": "ultraquery-lp-no-threshold-WikiTopicsQuery:health",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "WikiTopicsQuery:infra", "options": {"threshold": 0.8}},
+        {
+          "dataset": "WikiTopicsQuery:infra",
+          "id": "ultraquery-lp-no-threshold-WikiTopicsQuery:infra",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "WikiTopicsQuery:loc", "options": {"threshold": 0.8}},
+        {
+          "dataset": "WikiTopicsQuery:loc",
+          "id": "ultraquery-lp-no-threshold-WikiTopicsQuery:loc",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "WikiTopicsQuery:org", "options": {"threshold": 0.8}},
+        {
+          "dataset": "WikiTopicsQuery:org",
+          "id": "ultraquery-lp-no-threshold-WikiTopicsQuery:org",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "WikiTopicsQuery:people", "options": {"threshold": 0.8}},
+        {
+          "dataset": "WikiTopicsQuery:people",
+          "id": "ultraquery-lp-no-threshold-WikiTopicsQuery:people",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "WikiTopicsQuery:sci", "options": {"threshold": 0.8}},
+        {
+          "dataset": "WikiTopicsQuery:sci",
+          "id": "ultraquery-lp-no-threshold-WikiTopicsQuery:sci",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "WikiTopicsQuery:sport", "options": {"threshold": 0.8}},
+        {
+          "dataset": "WikiTopicsQuery:sport",
+          "id": "ultraquery-lp-no-threshold-WikiTopicsQuery:sport",
+          "options": {"threshold": 0.0}
+        },
+        {"dataset": "WikiTopicsQuery:tax", "options": {"threshold": 0.8}},
+        {
+          "dataset": "WikiTopicsQuery:tax",
+          "id": "ultraquery-lp-no-threshold-WikiTopicsQuery:tax",
+          "options": {"threshold": 0.0}
+        }
+      ]
+    },
+    {
+      "defaults": {
+        "id": "incoming-relation-{dataset}",
+        "method": "incoming-relation",
+        "checkpoint": "benchmarks/ultraquery/heuristic.json",
+        "options": {},
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni"],
+        "query_batch_size": 32,
+        "query_order": "upstream-pickle",
+        "reference": {
+          "status": "untrained authors heuristic; independent validation parity required",
+          "settings": "https://github.com/DeepGraphLearning/InductiveQE/tree/ab49a0e64e3449e687e484a42269d9898e1d1325",
+          "notes": ["Boolean incoming-relation classes; query-seeded random shuffle for resumable evaluation."]
+        },
+        "blockers": []
+      },
+      "entries": [
+        {"dataset": "WikiTopicsQuery:art"},
+        {"dataset": "WikiTopicsQuery:award"},
+        {"dataset": "WikiTopicsQuery:edu"},
+        {"dataset": "WikiTopicsQuery:health"},
+        {"dataset": "WikiTopicsQuery:infra"},
+        {"dataset": "WikiTopicsQuery:loc"},
+        {"dataset": "WikiTopicsQuery:org"},
+        {"dataset": "WikiTopicsQuery:people"},
+        {"dataset": "WikiTopicsQuery:sci"},
+        {"dataset": "WikiTopicsQuery:sport"},
+        {"dataset": "WikiTopicsQuery:tax"}
+      ]
+    },
+    {
+      "defaults": {
+        "id": "qto-{dataset}",
+        "method": "qto",
+        "options": {"threshold": 0.0002, "row_batch_size": 32, "cache_bytes": 536870912, "reference_batching": true, "matrix_bytes": 6442450944, "host_matrix_bytes": 34359738368},
+        "query_types": ["1p", "2p", "3p", "2i", "3i", "ip", "pi", "2u", "up", "2in", "3in", "inp", "pin", "pni"],
+        "query_batch_size": 1,
+        "query_order": "upstream-pickle",
+        "reference": {
+          "status": "native reference port; full reproduction pending",
+          "settings": "https://arxiv.org/html/2410.12537v3#A6",
+          "notes": ["Reuse +H released weights: original ID maps and training triples are identical; verify against QTO on original query sets."],
+          "inference_graph": "train"
+        },
+        "blockers": []
+      },
+      "entries": [
+        {
+          "dataset": "FB15k237LogicalQuery",
+          "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CQD:CQD-HYBRID:QTO/QTO/fb15k237checkpoint",
+          "options": {"negation_scale": 3}
+        },
+        {
+          "dataset": "NELL995LogicalQuery",
+          "checkpoint": "checkpoints/query-baselines/iscqa-compl-models/models/CQD:CQD-HYBRID:QTO/QTO/nellcheckpoint",
+          "options": {"negation_scale": 6}
+        }
+      ]
+    }
+  ]
+}

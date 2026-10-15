@@ -13,7 +13,8 @@ from setuptools import setup, find_packages
 # Core dependencies (includes torch and lightning)
 # Use --extra-index-url https://download.pytorch.org/whl/cpu for CPU-only installation
 _core_deps = [
-    "numpy==1.26.4",
+    "numpy==1.26.4; python_version < '3.13'",
+    "numpy>=2.1,<3; python_version >= '3.13'",
     "torch>=2.5.1",
     "lightning>=2.5.0.post0",
     "pandas>=2.1.0",
@@ -25,7 +26,9 @@ _core_deps = [
 
 # Optional dependencies for various features
 _optional_deps = [
-    "pyarrow>=11.0.0",
+    # pyarrow 26 requires NumPy 2, which the NumPy pin above excludes before Python 3.13.
+    "pyarrow>=11.0.0,<26; python_version < '3.13'",
+    "pyarrow>=11.0.0; python_version >= '3.13'",
     "rdflib>=7.0.0",
     "tiktoken>=0.5.1",
     "pykeen>=1.10.2",

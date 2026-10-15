@@ -52,7 +52,7 @@ class FilteredRanker:
         if exclude_target:
             filters.discard(target_idx)
         if filters:
-            filtered[list(filters)] = -np.Inf
+            filtered[list(filters)] = -np.inf
 
         if self.tie_policy == "sort":
             # Preserve DICE's original per-vector torch.sort ordering.
@@ -90,7 +90,7 @@ class FilteredRanker:
         for i, (target, filters) in enumerate(zip(target_indices, filter_indices_list)):
             target = int(target)
             if len(filters):
-                filtered[i, list(filters)] = -np.Inf
+                filtered[i, list(filters)] = -np.inf
             filtered[i, target] = predictions[i, target]
         order = torch.sort(filtered, dim=1, descending=True).indices
         return [int(torch.where(row == int(target))[0].item()) + 1

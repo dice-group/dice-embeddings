@@ -57,12 +57,13 @@ ignore = [
 "__init__.py" = ["F401"]  # Allow unused imports in __init__.py files
 
 [tool.ruff.lint.isort]
-known-first-party = ["dicee"]
+known-first-party = ["dicee", "benchmarks"]
 section-order = ["future", "standard-library", "third-party", "first-party", "local-folder"]
 
 [tool.pytest.ini_options]
 # Pytest configuration
-testpaths = ["tests"]
+testpaths = ["tests", "benchmarks"]
+pythonpath = ["."]
 python_files = ["test_*.py"]
 python_classes = ["Test*"]
 python_functions = ["test_*"]
