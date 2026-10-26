@@ -175,18 +175,20 @@ def read_with_polars(data_path, read_only_few: Optional[int] = None, sample_trip
     if ".zst" in data_path:
         df = polars.read_csv(data_path, n_rows=read_only_few)
     else:
+        # Keep numeric-looking entity and relation identifiers as strings.
         df = polars.read_csv(data_path,
                              has_header=False,
                              low_memory=False,
                              n_rows=read_only_few,
                              columns=[0, 1, 2],
-                             dtypes=[polars.String],
-                             new_columns=['subject', 'relation', 'object'],
+                             infer_schema_length=0,
                              separator=separator)
+        # Name the selected columns after reading; files may contain trailing fields.
+        df.columns = ['subject', 'relation', 'object']
 
     if sample_triples_ratio:
         logger.info(f'Subsampling {sample_triples_ratio} of input data {df.shape}...')
-        df = df.sample(frac=sample_triples_ratio)
+        df = df.sample(fraction=sample_triples_ratio)
         logger.info(df.shape)
 
     return _filter_literal_triples(df, "polars")
