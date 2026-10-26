@@ -25,7 +25,8 @@ _core_deps = [
 
 # Optional dependencies for various features
 _optional_deps = [
-    "pyarrow>=11.0.0",
+    # PyArrow 26 requires NumPy 2.x; keep compatible with our NumPy 1.26 pin.
+    "pyarrow>=11.0.0,<26",
     "rdflib>=7.0.0",
     "tiktoken>=0.5.1",
     "pykeen>=1.10.2",
