@@ -180,7 +180,7 @@ def read_with_polars(data_path, read_only_few: Optional[int] = None, sample_trip
                              low_memory=False,
                              n_rows=read_only_few,
                              columns=[0, 1, 2],
-                             dtypes=[polars.String],
+                             schema_overrides=[polars.String] * 3,
                              new_columns=['subject', 'relation', 'object'],
                              separator=separator)
 

@@ -18,7 +18,7 @@ _core_deps = [
     "lightning>=2.5.0.post0",
     "pandas>=2.1.0",
     "requests>=2.32.3",
-    "polars>=0.16.14",
+    "polars>=0.20.31",
     "tiktoken>=0.5.1",
     "psutil>=5.9.4",
 ]
