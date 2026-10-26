@@ -65,8 +65,6 @@ Module Contents
 
 
    .. py:attribute:: entity_to_idx
-      :value: None
-
 
 
    .. py:attribute:: qdrant_client
