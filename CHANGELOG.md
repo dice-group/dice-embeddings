@@ -33,6 +33,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dataset memory duplication in worker processes; `BytE` BPE-save crash
 - Implicit-`Optional` parameter defaults; partial config validation
 - Precision lookup crashed on PyTorch releases lacking `fp32_precision` on some backends (e.g. `cudnn.rnn` in 2.10)
+- `import dicee` no longer sets the global float32 matmul precision (moved into `TorchDDPTrainer.__init__`), which made `torch.compile` fail on torch 2.10 with mixed legacy/new TF32 settings (#466)
 
 ### Known issues
 - NELL-995-h25/h50/h75 splits (inherited from the MuRP authors' files) contain train/valid/test overlaps and duplicate rows (#462)

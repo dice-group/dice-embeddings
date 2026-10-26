@@ -12,8 +12,6 @@ from dicee.trainer.auto_batch_finder import find_good_batch_size
 
 logger = logging.getLogger(__name__)
 
-torch.set_float32_matmul_precision('high')
-
 
 def make_iterable_verbose(iterable_object, verbose, desc="Default", position=None, leave=True) -> Iterable:
     if verbose:
@@ -25,6 +23,9 @@ def make_iterable_verbose(iterable_object, verbose, desc="Default", position=Non
 class TorchDDPTrainer(AbstractTrainer):
     def __init__(self, args, callbacks):
         super().__init__(args, callbacks)
+        # Set per trainer, not at import: a module-level call changes TF32 state for every `import dicee`
+        # and makes torch.compile reject the mix of legacy and fp32_precision settings.
+        torch.set_float32_matmul_precision('high')
 
     def fit(self, *args, **kwargs):
         assert len(args) == 1
