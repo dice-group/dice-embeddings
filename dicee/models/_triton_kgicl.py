@@ -152,10 +152,28 @@ def _matrix(W, rows, columns, R: tl.constexpr, C: tl.constexpr):
 
 
 @triton.jit
+def _bias(B, index: tl.constexpr, feature, D: tl.constexpr):
+    # b[index * D:(index + 1) * D] as one [1, FEATURES] row; padding is zero.
+    return tl.load(B + index * D + feature, feature < D, other=0)[None, :]
+
+
+@triton.jit
 def _gate(x, W, B, index: tl.constexpr, feature, D: tl.constexpr, PRECISION: tl.constexpr):
     # One GRU gate block: x @ W[index * D:(index + 1) * D].T + b[index * D:(index + 1) * D].
     value = tl.dot(x, _matrix(W + index * D * D, feature, feature, D, D), input_precision=PRECISION)
-    return value + tl.load(B + index * D + feature, feature < D, other=0)[None, :]
+    return value + _bias(B, index, feature, D)
+
+
+@triton.jit
+def _hidden(h, W, B, index: tl.constexpr, feature, D: tl.constexpr, FIRST: tl.constexpr, PRECISION: tl.constexpr):
+    # The hidden block W_hh h + b_hh of one GRU gate. The first layer's state is zero, so the product is
+    # exactly zero and only the bias remains. Skipping that dot also avoids a Triton 3.1 compiler abort
+    # ("DotOperandEncodingAttr non-NvidiaMmaEncodingAttr parent") on tf32x3 dots of a constant zero tensor.
+    if FIRST:
+        value = _bias(B, index, feature, D)
+    else:
+        value = _gate(h, W, B, index, feature, D, PRECISION)
+    return value
 
 
 @triton.jit
@@ -187,10 +205,10 @@ def _update(AGG, H, NEW, OUT, SCORE, WH, LNW, LNB, WIH, WHH, BIH, BHH, WF, TOTAL
     norm_weight = tl.load(LNW + feature, feature < D, other=0)
     norm_bias = tl.load(LNB + feature, feature < D, other=0)
     y = centered * tl.rsqrt(variance + EPS)[:, None] * norm_weight[None, :] + norm_bias[None, :]
-    reset = tl.sigmoid(_gate(y, WIH, BIH, 0, feature, D, PRECISION) + _gate(previous, WHH, BHH, 0, feature, D, PRECISION))
-    update = tl.sigmoid(_gate(y, WIH, BIH, 1, feature, D, PRECISION) + _gate(previous, WHH, BHH, 1, feature, D, PRECISION))
+    reset = tl.sigmoid(_gate(y, WIH, BIH, 0, feature, D, PRECISION) + _hidden(previous, WHH, BHH, 0, feature, D, FIRST, PRECISION))
+    update = tl.sigmoid(_gate(y, WIH, BIH, 1, feature, D, PRECISION) + _hidden(previous, WHH, BHH, 1, feature, D, FIRST, PRECISION))
     candidate = libdevice.tanh(_gate(y, WIH, BIH, 2, feature, D, PRECISION)
-                               + reset * _gate(previous, WHH, BHH, 2, feature, D, PRECISION))
+                               + reset * _hidden(previous, WHH, BHH, 2, feature, D, FIRST, PRECISION))
     state = (1 - update) * candidate + update * previous
     state = tl.where(active[:, None] & (feature[None, :] < D), state, 0.)
     if LAST:

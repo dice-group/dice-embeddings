@@ -9,6 +9,15 @@ from dicee.models import ULTRA
 from dicee.models._inference import cached_relation_batch, float32_precision_backends
 from dicee.query_answering.engine import AtomicBatchCache, AtomicScorer
 
+# Module-level imports: Triton 3.1 resolves the names in a kernel from module globals only, not from an
+# enclosing function, so the oracle kernels below fail with NameError('tl is not defined') otherwise.
+try:
+    import triton
+    import triton.language as tl
+    from triton.language.extra.cuda import libdevice
+except ImportError:  # CPU-only installs: every Triton test calls pytest.importorskip('triton').
+    triton = tl = libdevice = None
+
 CUDA = pytest.mark.skipif(not torch.cuda.is_available(), reason='CUDA unavailable')
 DEVICES = ['cpu', pytest.param('cuda', marks=CUDA)]
 
@@ -120,8 +129,6 @@ def test_one_warp_ordered_aggregation_is_bitwise_equal_to_four_warps(dim, reduct
 
 def _single_pass_rows():
     """The previous one-program-per-row kernel, retained as the bitwise oracle."""
-    import triton
-    import triton.language as tl
 
     @triton.jit
     def rows(S, R, B, O, PTR, SRC, TYPE,
@@ -192,9 +199,6 @@ def test_hub_split_rows_are_bitwise_equal_to_single_pass_rows(batch, dim, dtype)
 
 def _sequential_ordered():
     """The previous one-edge-per-iteration ordered kernel, retained as the bitwise oracle."""
-    import triton
-    import triton.language as tl
-    from triton.language.extra.cuda import libdevice
 
     @triton.jit
     def reduce(S, R, O, PTR, SRC, REL,
