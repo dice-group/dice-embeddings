@@ -1,0 +1,179 @@
+"""Command line of the ProofPFN benchmark: ``python -m benchmarks.proofpfn <command>``.
+
+Commands:
+    list        the graphs of a manifest view
+    check       CPU only: the graphs' hash checks and counts, and the systems' files and pins; no score
+    run         rank the graphs with the systems and write one row file per graph (``evaluate.evaluate_graph``)
+    cells       the query cells of the graphs (``queries.csv``, ``cells.write_queries``)
+    fv1-models  the ``--models`` file of the registered ``fv1_tables.py`` from ``models.json``
+
+A family is ``--family [KEY=]ARM:TEMPLATE``: ARM is S, R, M, N, HT, CU or UL; TEMPLATE is the checkpoint or research
+export path with ``{seed}`` (seeds 42, 43, 44); KEY defaults to the arm's registered key, whose pins every file must
+match. References: ``--references trix,ultra3g,flockoff`` (checkpoints below ``--checkpoint-root``).
+
+Exit codes: 0 done; 2 wrong input (graph, system, hash, pins); 3 a graph ran out of CUDA memory (its error record is in
+``.errors/`` of the row folder); 76 stopped at ``--max-minutes`` (the part file is saved); 143 stopped by SIGTERM.
+"""
+import argparse
+import json
+import logging
+import os
+import signal
+import sys
+from pathlib import Path
+from typing import Any, Optional, Sequence
+
+from .manifests import REPO, BlindSetError, ManifestError, read_manifest, read_models
+
+logger = logging.getLogger(__name__)
+EXIT_INPUT, EXIT_OOM, EXIT_PARTIAL, EXIT_TERM = 2, 3, 76, 143
+
+
+def parse_family(spec: str, models: Any) -> tuple[str, str, str]:
+    """``(key, arm, template)`` of a ``[KEY=]ARM:TEMPLATE`` option; the key defaults to the arm's registered key.
+
+    Raises:
+        ValueError: For a malformed option or an arm without a registered key.
+    """
+    key, rest = spec.split('=', 1) if '=' in spec.split(':', 1)[0] else ('', spec)
+    if ':' not in rest:
+        raise ValueError(f'--family {spec!r}: expected [KEY=]ARM:TEMPLATE')
+    arm, template = rest.split(':', 1)
+    if not key:
+        if arm not in models.families:
+            raise ValueError(f'--family {spec!r}: arm {arm!r} has no registered key')
+        key = models.families[arm].key
+    return key, arm, template
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """The argument parser of the commands."""
+    parser = argparse.ArgumentParser(prog='python -m benchmarks.proofpfn', description=__doc__.split('\n')[0])
+    commands = parser.add_subparsers(dest='command', required=True)
+    for name in ('list', 'check', 'run', 'cells'):
+        sub = commands.add_parser(name)
+        sub.add_argument('--set', required=True, help='a manifest name (dev121, t1, gate) or a manifest file')
+        sub.add_argument('--view', default=None, help='a view of the manifest (dev121: main, contamination, apart, all)')
+        sub.add_argument('--graphs', default=None, help='comma list of graph names or keys')
+        sub.add_argument('--codes', default=None, help='comma list of audit group codes (E, L, B, S, O, R, C, T)')
+        sub.add_argument('--release', default=None, help='the name of the blind test set that this run may open')
+        sub.add_argument('--data-root', type=Path, default=REPO, help='the folder that the manifest paths are relative to')
+        if name in ('check', 'run'):
+            sub.add_argument('--family', action='append', default=[], help='[KEY=]ARM:TEMPLATE with {seed}; repeat for more families')
+            sub.add_argument('--references', default='', help='comma list of trix, ultra3g, flockoff')
+            sub.add_argument('--checkpoint-root', type=Path, default=REPO / 'checkpoints')
+            sub.add_argument('--models', type=Path, default=None, help='the model pins (default: manifests/models.json)')
+            sub.add_argument('--flock-passes-in-sequence', action='store_true',
+                             help="run official Flock's passes of a query one after another, not as one microbatch")
+        if name == 'run':
+            sub.add_argument('--out', type=Path, required=True)
+            sub.add_argument('--device', default='cuda')
+            sub.add_argument('--shard', default='1/1', help='i/k: block i of k contiguous blocks of the query groups')
+            sub.add_argument('--parts', action='store_true', help='keep a part file (and resume from it) also without shards')
+            sub.add_argument('--save-minutes', type=float, default=10.0)
+            sub.add_argument('--max-minutes', type=float, default=0.0, help='save and stop after this time (0: no limit)')
+        if name == 'cells':
+            sub.add_argument('--out', type=Path, required=True, help='the queries.csv file')
+    fv1 = commands.add_parser('fv1-models')
+    fv1.add_argument('--models', type=Path, default=None)
+    fv1.add_argument('--out', type=Path, required=True)
+    return parser
+
+
+def _entries(args: argparse.Namespace) -> tuple[Any, list[Any]]:
+    manifest = read_manifest(args.set, release=args.release)
+    graphs = [g for g in args.graphs.split(',') if g] if args.graphs else None
+    codes = args.codes.split(',') if args.codes else None
+    return manifest, manifest.select(view=args.view or (None if graphs else 'all'), graphs=graphs, codes=codes)
+
+
+def _systems(args: argparse.Namespace) -> list[Any]:
+    from .systems import family, reference
+    models = read_models(args.models)
+    systems: list[Any] = [family(*parse_family(spec, models), models) for spec in args.family]
+    systems += [reference(key, models, args.checkpoint_root, one_microbatch=not args.flock_passes_in_sequence)
+                for key in args.references.split(',') if key]
+    if not systems:
+        raise ValueError('give at least one --family or --references')
+    return systems
+
+
+def _check(args: argparse.Namespace) -> int:
+    from .data import load_graph, prepare_queries
+    manifest, entries = _entries(args)
+    systems = _systems(args)
+    for system in systems:
+        system.check()
+        print(f'{system.key}: {json.dumps(system.model_sha256())}')
+    for entry in entries:
+        graph = load_graph(manifest, entry, args.data_root)
+        queries = prepare_queries(graph, manifest.sample_rule)
+        print(f'{entry.key:45s} entities {graph.num_entities:7d} relations {graph.num_relations:5d} train {len(graph.train):8d} '
+              f'test rows {queries.test_rows:6d} ranked {len(queries.facts):5d} query groups {len(queries.groups):6d} ok')
+    print(f'check passed ({len(entries)} graphs, systems {",".join(s.key for s in systems)})')
+    return 0
+
+
+def _run(args: argparse.Namespace) -> int:
+    import torch
+
+    from .evaluate import error_path, evaluate_graph, row_file_path, write_json
+    manifest, entries = _entries(args)
+    systems = _systems(args)
+    shard = tuple(int(x) for x in args.shard.split('/'))
+    if len(shard) != 2:
+        raise ValueError(f'--shard {args.shard!r}: expected i/k')
+    statuses = {}
+    for entry in entries:
+        try:
+            statuses[entry.key] = evaluate_graph(manifest, entry, systems, args.out, root=args.data_root, device=args.device,
+                                                 shard=(shard[0], shard[1]), parts=args.parts, save_minutes=args.save_minutes,
+                                                 max_minutes=args.max_minutes)
+        except torch.cuda.OutOfMemoryError as error:
+            write_json(error_path(row_file_path(args.out, entry, systems)), dict(key=entry.key, systems=[s.key for s in systems],
+                                                                                 error=str(error).splitlines()[0][:400]))
+            torch.cuda.empty_cache()
+            statuses[entry.key] = 'oom'
+        print(entry.key, statuses[entry.key], flush=True)
+    if 'oom' in statuses.values():
+        return EXIT_OOM
+    return EXIT_PARTIAL if 'stopped' in statuses.values() else 0
+
+
+def _cells(args: argparse.Namespace) -> int:
+    from .cells import write_queries
+    manifest, entries = _entries(args)
+    meta = write_queries(manifest, entries, args.out, args.data_root)
+    print(f"{len(meta['graphs'])} graphs, {sum(meta['graphs'].values())} queries -> {args.out}")
+    return 0
+
+
+def _fv1_models(args: argparse.Namespace) -> int:
+    args.out.write_text(json.dumps(read_models(args.models).fv1_models(), indent=1, sort_keys=True) + '\n')
+    print(f'-> {args.out}')
+    return 0
+
+
+def main(argv: Optional[Sequence[str]] = None) -> int:
+    """Run a command; returns the exit code."""
+    args = build_parser().parse_args(argv)
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s %(name)s: %(message)s')
+    workspace = os.environ.get('CUBLAS_WORKSPACE_CONFIG')
+    if workspace is None:   # deterministic cuBLAS needs it before CUDA starts
+        os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
+    previous = signal.signal(signal.SIGTERM, lambda *_: sys.exit(EXIT_TERM))
+    try:
+        if args.command == 'list':
+            for entry in _entries(args)[1]:
+                print(entry.key)
+            return 0
+        commands = dict(check=_check, run=_run, cells=_cells)
+        commands['fv1-models'] = _fv1_models
+        return commands[args.command](args)
+    except (ManifestError, BlindSetError, KeyError, ValueError) as error:
+        print(f'error: {error}', file=sys.stderr)
+        return EXIT_INPUT
+    finally:
+        signal.signal(signal.SIGTERM, previous)
+        if workspace is None:
+            del os.environ['CUBLAS_WORKSPACE_CONFIG']
