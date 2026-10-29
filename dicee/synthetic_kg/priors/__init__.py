@@ -330,9 +330,10 @@ def _generate(seed: int, slot: Slot, spec: Optional[FamilySpec]) -> tuple[dict[s
             return plain(seed, slot.index)
         from .stage2 import stage2_world
         return stage2_world(seed, slot.index)
-    module = 'real' if spec.generator == 'real' else 'records'
-    null = ' with the structural null (priors/null.py)' if spec.null_swap_budget is not None else ''
-    raise NotImplementedError(f'the {spec.generator} generator{null} is not ported yet (dicee/synthetic_kg/priors/{module}.py)')
+    if spec.generator == 'real':
+        raise NotImplementedError('the real generator is not ported yet (dicee/synthetic_kg/priors/real.py)')
+    from .records import record_world
+    return record_world(seed, slot.index, spec)
 
 
 def research_fingerprint(world: World) -> dict[str, str]:

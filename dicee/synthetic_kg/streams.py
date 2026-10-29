@@ -237,3 +237,19 @@ def rule_program_stream(seed: int, name: str) -> int:
 def pair_affinity_stream(seed: int, name: str) -> int:
     """A pair-affinity stream ``'pair-affinity-v1:<seed>:<name>'`` with SHA-256 (``affinity.seed_for``)."""
     return sha256_int(f'{PAIR_AFFINITY_VERSION}:{seed}:{name}')
+
+
+# ----------------------------------------------------------------------------------------------- record families
+# The record families draw from world_stream with these versions.
+
+CATEGORICAL2_VERSION = 'prior-fix-v2f'
+"""``pf_prior2f.VERSION``: categorical2 worlds."""
+
+ATTR2_VERSION = 'attr-v2'
+"""``pf_attr2.VERSION``: attr2 worlds."""
+
+REC1_VERSION = 'rec-v1'
+"""``pf_rec1.VERSION``: rec1 worlds."""
+
+LIST1_VERSION = 'list-v2'
+"""``pf_list1.VERSION``: list1 worlds."""
