@@ -231,12 +231,27 @@ RECORD_PARAMS: Mapping[str, Mapping[str, Any]] = _frozen(dict(
     categorical2=CATEGORICAL2_PARAMS, attr2=ATTR2_PARAMS, rec1=REC1_PARAMS, list1=LIST1_PARAMS))
 """The record families' default parameters, by generator name."""
 
+REAL_PARAMS: Mapping[str, Any] = _frozen(dict(  # pt_real (realworlds-v1 with realworlds-v3's size cap)
+    max_entities=20000,           # RW_MAXN: the largest entity target of a subgraph, log-uniform from 400
+))
+
+REAL_SOURCE_SHA256: Mapping[str, str] = _frozen({   # pcu-training-20261026/plan.json; rw_prior.SOURCES order
+    'FB15k-237': '653525529c02f9b7d88ec66702a27a128024693dbc0ffb0c2336576122ddb1ef',
+    'WN18RR': '19d9dc38e66247a7e6680801eff6c45564efa5b22a49975eff8d64ecac17a4e7',
+    'CoDEx-M': 'aebdfbc3130be64766dc5714ac048d84f985898957c6daae9b46bc29a0d0e218',
+})
+"""The pinned SHA-256 of each real source graph's ``data.pt`` (the train splits are read); a world draws its source
+from these names in this order."""
+
+GENERATOR_PARAMS: Mapping[str, Mapping[str, Any]] = _frozen(dict(RECORD_PARAMS, real=REAL_PARAMS))
+"""The default parameters of every hook generator."""
+
 
 def record_params(generator: str, overrides: Optional[Mapping[str, Any]] = None) -> dict[str, Any]:
-    """A record family's parameters with overrides; JSON lists become tuples, as the research hooks did.
+    """A hook generator's parameters with overrides; JSON lists become tuples, as the research hooks did.
 
     Args:
-        generator: ``'categorical2'``, ``'attr2'``, ``'rec1'`` or ``'list1'``.
+        generator: ``'categorical2'``, ``'attr2'``, ``'rec1'``, ``'list1'`` or ``'real'``.
         overrides: Entries that replace defaults; every key must exist.
 
     Returns:
@@ -245,9 +260,9 @@ def record_params(generator: str, overrides: Optional[Mapping[str, Any]] = None)
     Raises:
         ValueError: For an unknown generator or override key.
     """
-    if generator not in RECORD_PARAMS:
-        raise ValueError(f'unknown record family {generator!r}')
-    values = dict(RECORD_PARAMS[generator])
+    if generator not in GENERATOR_PARAMS:
+        raise ValueError(f'unknown hook generator {generator!r}')
+    values = dict(GENERATOR_PARAMS[generator])
     for key, value in (overrides or {}).items():
         if key not in values:
             raise ValueError(f'{generator} has no parameter {key!r}')

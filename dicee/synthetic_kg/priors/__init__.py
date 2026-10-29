@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from typing import Any, NamedTuple, Optional, Sequence
 
 from ..batch import World, WorldBatch, check_batch, world_sizes
-from ..recipe import RECORD_PARAMS, STAGE1_WORLDS, STAGE2_OFFSET, TOTAL_UPDATES
+from ..recipe import GENERATOR_PARAMS, RECORD_PARAMS, STAGE1_WORLDS, STAGE2_OFFSET, TOTAL_UPDATES
 from ..streams import mixture_draw, stage2_family
 
 BUILTIN_FAMILIES = ('plain', 'structured', 'statistical')
@@ -49,7 +49,8 @@ class FamilySpec:
         name: The family name in the mixture.
         generator: The world generator, one of ``GENERATORS``.
         first: The first index of the family's stream.
-        params: Overrides of the generator's parameters as ``(key, value)`` pairs (``recipe.record_params``).
+        params: Overrides of the generator's parameters as ``(key, value)`` pairs (``recipe.record_params``; the real
+            worlds take ``max_entities``).
         null_swap_budget: The structural null of arm N: the swap budget of each world's truth, or ``None`` for intact
             worlds.
     """
@@ -70,12 +71,9 @@ class FamilySpec:
         keys = [key for key, _ in self.params]
         if len(set(keys)) != len(keys):
             raise ValueError(f'{self.name}: repeated parameter')
-        if self.generator == 'real' and self.params:
-            raise ValueError('the real family takes no parameters')
-        if self.generator in RECORD_PARAMS:
-            unknown = sorted(set(keys) - set(RECORD_PARAMS[self.generator]))
-            if unknown:
-                raise ValueError(f'{self.name}: unknown parameters {unknown}')
+        unknown = sorted(set(keys) - set(GENERATOR_PARAMS[self.generator]))
+        if unknown:
+            raise ValueError(f'{self.name}: unknown parameters {unknown}')
         if self.null_swap_budget is not None and self.null_swap_budget < 1:
             raise ValueError('the null swap budget must be positive')
 
@@ -331,7 +329,8 @@ def _generate(seed: int, slot: Slot, spec: Optional[FamilySpec]) -> tuple[dict[s
         from .stage2 import stage2_world
         return stage2_world(seed, slot.index)
     if spec.generator == 'real':
-        raise NotImplementedError('the real generator is not ported yet (dicee/synthetic_kg/priors/real.py)')
+        from .real import real_world
+        return real_world(seed, slot.index, spec)
     from .records import record_world
     return record_world(seed, slot.index, spec)
 

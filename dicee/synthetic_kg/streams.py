@@ -253,3 +253,9 @@ REC1_VERSION = 'rec-v1'
 
 LIST1_VERSION = 'list-v2'
 """``pf_list1.VERSION``: list1 worlds."""
+
+
+# ----------------------------------------------------------------------------------------------- real worlds
+
+REAL_VERSION = 'realworlds-v1'
+"""``rw_prior.VERSION``: real subgraph worlds (through world_stream)."""
