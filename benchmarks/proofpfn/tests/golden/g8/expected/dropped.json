@@ -1,0 +1,20 @@
+{
+ "conv-c01-1": {
+  "KGPFN": "out of memory on GPUs 0 and 1 (simulated drop, proofpfn-golden G8)"
+ },
+ "conv-c19-0": {
+  "MERIT": "out of memory on GPUs 0 and 1 (simulated drop, proofpfn-golden G8)"
+ },
+ "conv-c20-0": {
+  "KGPFN": "out of memory on GPUs 0 and 1 (simulated drop, proofpfn-golden G8)"
+ },
+ "conv-c21-0": {
+  "FLOCK": "out of memory on GPUs 0 and 1 (simulated drop, proofpfn-golden G8)"
+ },
+ "conv-c22-0": {
+  "FLOCK": "out of memory on GPUs 0 and 1 (simulated drop, proofpfn-golden G8)"
+ },
+ "pub-b8-0": {
+  "ANYBURL": "out of memory on GPUs 0 and 1 (simulated drop, proofpfn-golden G8)"
+ }
+}

@@ -1,0 +1,159 @@
+{
+ "format": "proofpfn-models-v1",
+ "about": "Export pins of the ProofPFN families (research exports K/<research_run>/training/<seed>/export-<export>.pt, weights decay/ema, seeds 42, 43, 44) and the SHA-256 of the reference checkpoints (paths relative to the checkpoint root). From K/fresh-v1/models.json (computed on kiowl on 29 October 2026). rows_only: arms of the old architecture whose rows the analysis reads from the frozen run; the clean code does not load them. external: files of the external adapters (phase 3d), outside the fv1_tables models object.",
+ "sources": {
+  "K/fresh-v1/models.json": "dace17d9c406bad8c18c4b5c48785b0a7acaf2f51af3683f764ca0bcb42ac646"
+ },
+ "families": {
+  "S": {
+   "key": "rec10axlepcunoa",
+   "research_run": "prior-fix-REC10A-XLE-PCU-noA",
+   "export": 24000,
+   "weights": "decay/ema",
+   "export_sha256": {
+    "42": "a8fcb350b7881a5ff1d1bfb1ba9575d7583ab7d59a5069e265bb2a4331f4f95d",
+    "43": "2a798dd42217dbfbcc399a715bd898a938754b7a84daeabd13d207973e76be6b",
+    "44": "9c83cb5f9c6e0b42cb1ca736dfe00fb01fb1f7b08be55444d5b56c3c60e18e48"
+   }
+  },
+  "R": {
+   "key": "pcur",
+   "research_run": "icml-roadmap-20261025/pcu-training-20261026/runs/PCU-R",
+   "export": 24000,
+   "weights": "decay/ema",
+   "export_sha256": {
+    "42": "d8aaab55ae4e6b318225d489a229b6f6818926f6c8f8a87a46f2f026fe5e466e",
+    "43": "f77fca6a727d52264412efa8294e9a5b0ad67e43bb1722903faacc0a8a60ac79",
+    "44": "b22125cec7ce5e9b6342167fe461789be7ad9b7d27a7d4bd846693ac1a3fa47a"
+   }
+  },
+  "M": {
+   "key": "pcum",
+   "research_run": "icml-roadmap-20261025/pcu-training-20261026/runs/PCU-M",
+   "export": 24000,
+   "weights": "decay/ema",
+   "export_sha256": {
+    "42": "30f06f6badbaade3bf358de10db75147ea6c317028f23a44a32c476aa0656a0d",
+    "43": "33a65d98c3530cb20ee31efe7540bbe9d2df019cb5701bcc49964f4c53fb85d9",
+    "44": "f425fcf8b971d4fa3a39242e68dd778264aa0032294650c098ea5b3dd96d13ff"
+   }
+  },
+  "N": {
+   "key": "pcun",
+   "research_run": "icml-roadmap-20261025/pcu-training-20261026/runs/PCU-N",
+   "export": 24000,
+   "weights": "decay/ema",
+   "export_sha256": {
+    "42": "973e6bb7722c6dcfb743dbca402747e77151d1ef2c52a65af62eadd2d399d5e4",
+    "43": "8c1992d1e79a7483b065c3e195d366439f979cddada0b83fe24549ba894ddcb9",
+    "44": "338c839b856ad3a47fcd298c23c954b1585823ccdf851851121895dfae20c0df"
+   }
+  },
+  "HT": {
+   "key": "pcuht",
+   "research_run": "icml-roadmap-20261025/pcu-ht-20261029/runs/PCU-HT",
+   "export": 24000,
+   "weights": "decay/ema",
+   "export_sha256": null,
+   "pending": "HT is in training; the lead fills export_sha256 from verified-ht-24000.json (the research models-pcuht.json) before the read. Until then the key is refused."
+  },
+  "CU": {
+   "key": "rec10axlecunoa",
+   "research_run": "prior-fix-REC10A-XLE-CU-noA",
+   "export": 24000,
+   "weights": "decay/ema",
+   "export_sha256": {
+    "42": "dd65fb06d84b4ca894a78aad4ab65cdcca8e8c22802a2bde7b9b9943b99d904b",
+    "43": "38e6d177afd71e7dbdf7a3555b916c01bd4c319e629290c2c633d1130342c8a2",
+    "44": "917b345cb4f30a87baf5cba5ef4d225ec9d1f09398728fed946c198efbd5ed00"
+   }
+  },
+  "UL": {
+   "key": "rec10axleulnoa",
+   "research_run": "prior-fix-REC10A-XLE-UL-noA",
+   "export": 24000,
+   "weights": "decay/ema",
+   "export_sha256": {
+    "42": "281f9f0d9df06a5cf99509066a36f64ab578687f6914c12e3be0d6f8e53c96fb",
+    "43": "ac66079ff0dc7fd9a6b3249601bf65700a8297118c8c37d1133037daea2507a1",
+    "44": "ad1b460e9a00bdcd2136ce613b9ac46b2e234920bacd6cadad02fb9cf7d40ef8"
+   }
+  }
+ },
+ "rows_only": {
+  "S0": {
+   "key": "rec10axlenoa",
+   "research_run": "prior-fix-REC10A-XLE-noA",
+   "export": 24000,
+   "weights": "decay/ema",
+   "export_sha256": {
+    "42": "5f94bea52fe8d14620d7b27ee119809ad955d33811a1d45f75daecf60d3a37f0",
+    "43": "78db13b159ca0c21cbda615807d132a56d1684e2a2ee74df5488075159221559",
+    "44": "ba033c5af3d055ae75571a4c7007ee29533db965712683568f4553cd9bd9042e"
+   }
+  },
+  "DT": {
+   "key": "rec10axledtnoa",
+   "research_run": "prior-fix-REC10A-XLE-DT-noA",
+   "export": 24000,
+   "weights": "decay/ema",
+   "export_sha256": {
+    "42": "82d1913f68bf105daf6bac3cba7e26ed8f54eaa6fd24d7cc19eceebfffcd84d4",
+    "43": "b125571b49e4336e06d8c060afbbb91b701f87e7fe5dd482dce59567ffe59429",
+    "44": "0f8f94701a0898219917fbeb2f9c7500fc53154a16bed7a63d069577680e6f87"
+   }
+  },
+  "PV": {
+   "key": "rec10axlepvnoa",
+   "research_run": "prior-fix-REC10A-XLEPV-noA",
+   "export": 24000,
+   "weights": "decay/ema",
+   "export_sha256": {
+    "42": "61cf9c9bc9f2e0b02be2bee0adda9d26488b98b976293b24f2ee01563a39f6ea",
+    "43": "7a59ad55d1b16ab20ef810fb62821ab6dc571a7ed0f45e46d2a949bc8a2c47f4",
+    "44": "bcdd549fc68ea0aa8097cf0d90e3d9ac0c1beb0ed352cc30fcc2a22811f494e6"
+   }
+  }
+ },
+ "references": {
+  "trix": {
+   "path": "trix/entity_prediction.pth",
+   "sha256": "8f6e7266093c2d15ad88d41e9825e4b327171143543cf060cfee907d9a890342"
+  },
+  "ultra3g": {
+   "path": "ultra_3g.pth",
+   "sha256": "fdedc01b0045fc089d2ad5da08569466b7b221691fe978a18e91082bbb133c18"
+  },
+  "flockoff": {
+   "path": "flock/flock_entity.pth",
+   "sha256": "d32ae78c0b0b5731ce183fd7e05f6443c03bbb4dd795481d0077818b8ba67850"
+  },
+  "merit1024": {
+   "path": null,
+   "sha256": "956dc8f9b349187003d147d799289c593a5ca5688e97dd4f1a2465e9aeadb523"
+  },
+  "merit2025": {
+   "path": null,
+   "sha256": "644d2db65a1f9b89110fb4c67cff8d27d9af1b69f4bf120a799cf065bd82dbd0"
+  },
+  "merit2026": {
+   "path": null,
+   "sha256": "9dd705c631e73c4f34924ed62a85769d3313b5d6241c254db28f6a6bacd82b45"
+  },
+  "merit4000": {
+   "path": null,
+   "sha256": "ed3e44e7a89d6b35be46d5a603ac0a8ddfa3c9bfb1d96730ba85c76ef11f5e7a"
+  },
+  "merit8000": {
+   "path": null,
+   "sha256": "dab42f819d5f13c015a8c88446c2526993d0a9c8da7a7b756fbcf9ae5ac676d5"
+  }
+ },
+ "external": {
+  "kgpfn": {
+   "kgpfn_icl_3g.pth": "1ce0a3c238f3876548c7ea7b22620b2c569363b6e183d21bc8d22907127236a1",
+   "source": "kgpfn-ref-v1-runtime/kgpfn_eval.py, lines 74 and 75",
+   "tabicl": "0db9cb538f114e79026bf08f45f41ad8dd7ad2de2aaca9a5ca8cd3bd9748ae7a"
+  }
+ }
+}
