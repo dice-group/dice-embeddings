@@ -176,7 +176,7 @@ def test_relation_cache_respects_memory_limit_and_weight_reload():
 
 @pytest.mark.parametrize('cls', [ULTRA, TRIX])
 @pytest.mark.parametrize('backend_name', ['legacy', '', 'cuda.matmul', 'mkldnn.matmul', 'cudnn.conv', 'cudnn.rnn'])
-def test_relation_cache_tracks_backend_precision(cls, backend_name, monkeypatch):
+def test_relation_cache_tracks_backend_precision(cls, backend_name, monkeypatch, request):
     if backend_name == 'legacy':
         backend = torch.backends.cuda.matmul
         if hasattr(backend, 'fp32_precision'):
@@ -195,7 +195,11 @@ def test_relation_cache_tracks_backend_precision(cls, backend_name, monkeypatch)
 
         monkeypatch.setattr(torch, 'get_float32_matmul_precision', legacy_getter)
         attribute, initial, changed = 'fp32_precision', 'bf16' if backend_name == 'mkldnn.matmul' else 'ieee', 'tf32'
-    monkeypatch.setattr(backend, attribute, initial)
+    # Not monkeypatch: since pytest 9.2 its undo calls delattr on instances without a data descriptor,
+    # which backends serving settings through __getattr__/__setattr__ (cuBLASModule) do not support.
+    original = getattr(backend, attribute)
+    request.addfinalizer(lambda: setattr(backend, attribute, original))
+    setattr(backend, attribute, initial)
     facts = torch.tensor([[0, 0, 1], [1, 1, 2], [2, 0, 0]])
     model = cls(dict(num_entities=4, num_relations=2, ultra_dim=8, trix_dim=8,
                      ultra_num_layers=2)).set_graph(facts).eval()
