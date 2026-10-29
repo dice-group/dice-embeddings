@@ -18,7 +18,8 @@ Blind sets. A manifest with ``"blind": true`` (a confirmatory test set) is opene
 it, and only a blind manifest may name a folder below ``BLIND_FOLDERS``. This branch holds no blind manifest.
 
 ``models.json`` pins the research exports of the ProofPFN families (seeds 42, 43 and 44) and the reference checkpoints.
-HT's pins are ``null`` until its training ends; a family without pins is refused under its registered key.
+HT's pins come from the research ``models-pcuht.json``, written after HT's training. A family whose pins are ``null``
+is refused under its registered key.
 
 The ``build_*`` functions derive the graph manifests from the research inputs named in each manifest's ``sources``;
 a test rebuilds them when the inputs are available.

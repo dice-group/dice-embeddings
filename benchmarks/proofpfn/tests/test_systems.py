@@ -1,4 +1,5 @@
 """The systems: family pins and keys, the converter path, and Flock's official setting."""
+import json
 from pathlib import Path
 
 import pytest
@@ -34,10 +35,16 @@ def test_family_keys_and_pins(tmp_path):
     assert registered.pins == pins.families['S'].export_sha256
     with pytest.raises(sy.SystemCheckError, match='pinned research export'):
         registered.check()
-    for key, arm, message in (('rec10axlepcunoa', 'CU', 'registered key of arm S'), ('pcuht', 'HT', 'no pins'),
-                              ('rec10axlenoa', 'S', 'registered key of arm S0'), ('trix', 'S', 'reference key'), ('Ts', 'S', 'lower-case')):
+    assert sy.family('pcuht', 'HT', template, pins).pins == pins.families['HT'].export_sha256
+    for key, arm, message in (('rec10axlepcunoa', 'CU', 'registered key of arm S'), ('rec10axlenoa', 'S', 'registered key of arm S0'),
+                              ('trix', 'S', 'reference key'), ('Ts', 'S', 'lower-case')):
         with pytest.raises(sy.SystemCheckError, match=message):
             sy.family(key, arm, template, pins)
+    doc = json.loads((mf.MANIFESTS / 'models.json').read_text())
+    doc['families']['HT']['export_sha256'] = None   # a registered key whose pins are pending is refused
+    (tmp_path / 'pending.json').write_text(json.dumps(doc))
+    with pytest.raises(sy.SystemCheckError, match='no pins'):
+        sy.family('pcuht', 'HT', template, mf.read_models(tmp_path / 'pending.json'))
     with pytest.raises(sy.SystemCheckError, match='seed'):
         sy.family('ts', 'S', str(tmp_path / 'S.pt'), pins)
     with pytest.raises(Exception, match='arm S, not UL'):

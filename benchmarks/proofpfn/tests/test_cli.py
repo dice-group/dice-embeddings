@@ -48,7 +48,7 @@ def test_refusals(tmp_path, capsys):
     assert cli.main(['list', '--set', str(blind), '--release', 'blindtest']) == 0
     assert cli.main(['list', '--set', 'gate', '--graphs', 'FB15k-237']) == cli.EXIT_INPUT
     template = clean_checkpoints(tmp_path, 'S')
-    for family in (f'HT:{template}', f'rec10axlepcunoa=CU:{template}'):   # pins pending; the key of another arm
+    for family in (f'HT:{template}', f'rec10axlepcunoa=CU:{template}'):   # S checkpoints under HT's pins; the key of another arm
         assert cli.main(['check', '--set', 'gate', '--graphs', 'UMLS', '--family', family]) == cli.EXIT_INPUT
     assert cli.main(['check', '--set', 'gate', '--graphs', 'UMLS', '--family', f'S:{template}']) == cli.EXIT_INPUT   # not the pinned exports
     assert 'error:' in capsys.readouterr().err

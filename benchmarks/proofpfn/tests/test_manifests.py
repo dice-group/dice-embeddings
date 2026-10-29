@@ -85,12 +85,21 @@ def test_blind_sets_open_only_with_their_release_flag(tmp_path):
 def test_model_pins():
     pins = mf.read_models()
     assert {arm: f.key for arm, f in pins.families.items()} == REGISTERED_KEYS
-    assert pins.families['HT'].export_sha256 is None   # filled by the lead when HT's training ends
-    assert all(f.export_sha256 is not None for arm, f in pins.families.items() if arm != 'HT')
+    assert all(f.export_sha256 is not None for f in pins.families.values())
     assert not any(pins.families[a].loadable for a in ('S0', 'DT', 'PV'))
     assert set(pins.references) == {'trix', 'ultra3g', 'flockoff', 'merit1024', 'merit2025', 'merit2026', 'merit4000', 'merit8000'}
     models = pins.fv1_models()['models']
-    assert 'pcuht' not in models and models['trix'] == {'model': pins.references['trix'].sha256}
+    assert models['pcuht'] == {str(s): v for s, v in pins.families['HT'].export_sha256.items()}
+    assert models['trix'] == {'model': pins.references['trix'].sha256}
+
+
+def test_pending_pins_leave_the_fv1_models(tmp_path):
+    doc = json.loads((mf.MANIFESTS / 'models.json').read_text())
+    doc['families']['HT']['export_sha256'] = None
+    path = tmp_path / 'models.json'
+    path.write_text(json.dumps(doc))
+    pins = mf.read_models(path)
+    assert pins.families['HT'].export_sha256 is None and 'pcuht' not in pins.fv1_models()['models']
 
 
 def test_manifests_rebuild_from_their_inputs():
@@ -113,8 +122,11 @@ def test_manifests_rebuild_from_their_inputs():
             recorded = {g['record']['key']: {s: g['record']['sha256'][f'{s}.txt'] for s in mf.SPLITS} for g in g6['graphs'].values()}
             doc = mf.build_gate(audit, inventory, recorded, sources)
         assert mf.dumps(doc) == committed, name
-    research = json.loads((root / 'work' / 'tree' / 'Experiments' / 'synthetic-kg' / 'fresh-v1' / 'models.json').read_text())
+    research_path = root / 'work' / 'tree' / 'Experiments' / 'synthetic-kg' / 'fresh-v1' / 'models.json'
+    ht_path = kiowl / 'fresh-v1' / 'models-pcuht.json'   # written on kiowl after the snapshot, so a kiowl input
+    research = json.loads(research_path.read_text())['models']
+    research_ht = json.loads(ht_path.read_text())['models']   # the frozen worker merges the two files the same way
     pins = mf.read_models()
-    assert pins.fv1_models() == {'models': research['models']}
-    assert mf.file_sha256(root / 'work' / 'tree' / 'Experiments' / 'synthetic-kg' / 'fresh-v1' / 'models.json') == \
-        json.loads((mf.MANIFESTS / 'models.json').read_text())['sources']['K/fresh-v1/models.json']
+    assert pins.fv1_models() == {'models': dict(research, **research_ht)}
+    sources = json.loads((mf.MANIFESTS / 'models.json').read_text())['sources']
+    assert sources == {'K/fresh-v1/models.json': mf.file_sha256(research_path), 'K/fresh-v1/models-pcuht.json': mf.file_sha256(ht_path)}
