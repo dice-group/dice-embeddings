@@ -7,6 +7,7 @@ arm presets. The research configuration chain: tests/fixtures/proofpfn/recipe_re
 """
 import dataclasses
 import gzip
+import hashlib
 import io
 
 import pytest
@@ -72,6 +73,7 @@ def test_streams():
     assert streams.sha256_int('abc', 'little') == int.from_bytes(bytes.fromhex('ba7816bf8f01cfea'), 'little')
     assert streams.mixture_draw(42, 'REC10A-XLE', 0) == streams.sha256_int('prior-fix-v1:mix:42:REC10A-XLE:0') / 2 ** 64
     assert streams.initial_seed(42) == streams.sha256_int('capacity-prior-v1:42:initial:d64') % (2 ** 63 - 1)
+    assert streams.hard_target_seed(43, 7) == int.from_bytes(hashlib.sha256(b'pt_hard:43:7').digest()[:8], 'little')   # pt_hard.generator
     versions = RECIPE['constants']
     assert streams.MIXTURE_VERSION == versions['pt_common']['VERSION'] and streams.CAPACITY_VERSION == versions['cp_prior_VERSION']
     assert streams.STATISTICAL_VERSION == versions['st_prior_VERSION'] and streams.STRUCTURED_VERSION == versions['sw_prior_VERSION']

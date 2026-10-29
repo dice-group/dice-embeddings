@@ -28,7 +28,7 @@ def sha256_int(key: str, byteorder: Literal['big', 'little'] = 'big') -> int:
 
     Args:
         key: The stream key, version string included.
-        byteorder: Byte order of the 8 bytes; every stream here is big-endian.
+        byteorder: Byte order of the 8 bytes; every stream here is big-endian except the hard target's.
 
     Returns:
         An integer in ``[0, 2**64)``.
@@ -80,6 +80,23 @@ def capacity_stream(seed: int, name: str) -> int:
         The stream integer.
     """
     return sha256_int(f'{CAPACITY_VERSION}:{seed}:{name}')
+
+
+HARD_TARGET_VERSION = 'pt_hard'
+"""``pt_hard``: the answer that the hard target of arm HT draws for each query of an update."""
+
+
+def hard_target_seed(seed: int, update: int) -> int:
+    """The seed of the CPU generator that draws the hard targets of one update (``pt_hard.generator``).
+
+    Args:
+        seed: The run seed.
+        update: The 0-based update.
+
+    Returns:
+        The first 8 bytes of SHA-256 of ``'pt_hard:<seed>:<update>'``, little-endian.
+    """
+    return sha256_int(f'{HARD_TARGET_VERSION}:{seed}:{update}', 'little')
 
 
 def initial_seed(seed: int, width: str = 'd64') -> int:
