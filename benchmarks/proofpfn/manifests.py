@@ -123,9 +123,12 @@ class GraphEntry:
         return entry
 
     def record(self) -> dict[str, Any]:
-        """The entry's fields for the ``allgraph`` record of a row file."""
-        return dict(key=self.key, collection=self.collection, path=self.path, group=self.group, verdict=self.verdict, weight=self.weight,
-                    origin_class=self.origin_class, suite_id=self.suite_id)
+        """The entry's fields for the ``allgraph`` record of a row file (with the suite's tail-only flag where it has one)."""
+        record = dict(key=self.key, collection=self.collection, path=self.path, group=self.group, verdict=self.verdict, weight=self.weight,
+                      origin_class=self.origin_class, suite_id=self.suite_id)
+        if self.tail_only_view is not None:
+            record['tail_only_view'] = self.tail_only_view
+        return record
 
 
 @dataclass(frozen=True)

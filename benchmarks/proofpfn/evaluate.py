@@ -306,10 +306,8 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
         queries = prepare_queries(graph, manifest.sample_rule)
         if not 1 <= i <= k <= max(1, len(queries.groups)):
             raise ValueError(f'{entry.name}: shard {i}/{k} for {len(queries.groups)} query groups')
-        for system in systems:
-            if isinstance(system, ProofPFNFamily) and set(system.members) != set(SEEDS):
-                system.check()
-            elif not isinstance(system, ProofPFNFamily):
+        for system in systems:   # a family reads its files once; a reference checks its file for every graph
+            if not isinstance(system, ProofPFNFamily) or set(system.members) != set(SEEDS):
                 system.check()
         flock = [s.key for s in systems if isinstance(s, OfficialFlock)]
         setting = official_setting(entry, graph, flock) if flock else None
