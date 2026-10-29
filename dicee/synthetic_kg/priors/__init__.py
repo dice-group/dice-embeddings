@@ -294,15 +294,19 @@ def world(seed: int, slot: Slot, prior: PriorConfig) -> World:
 
     Returns:
         The world; ``meta['family']`` is the slot's family, and hook families keep the generator's own family name as
-        ``meta['generator_family']``.
+        ``meta['generator_family']``. ``meta['recipe_batch']`` holds per task the research RecipeBatch fields that no
+        update reads (``world_sha256``, ``sampling_seed``, ``requested_positives``, from the legacy template), for
+        ``research_fingerprint``.
 
     Raises:
         NotImplementedError: For a family whose generator is not ported yet.
-        ValueError: For a slot that does not belong to the prior, or a world that fails ``check_batch``.
+        ValueError: For a slot that does not belong to the prior, or a world that fails ``check_batch`` (a generator's
+            own errors propagate too; the research generators never resample a world).
     """
     spec = prior.family(slot.family)
     sources = ('hook',) if spec is not None else ('s1', 's2') if slot.family == 'plain' else ('s2',)
-    if slot.family not in prior.shares or slot.source not in sources or slot.index < 0:
+    stage1 = slot.source == 's1' and slot.index >= STAGE1_WORLDS
+    if slot.family not in prior.shares or slot.source not in sources or slot.index < 0 or stage1 or (slot.source == 's2' and slot.index < STAGE2_OFFSET):
         raise ValueError(f'slot {tuple(slot)} does not belong to this prior')
     batch, meta = _generate(seed, slot, spec)
     check_batch(batch)
@@ -316,13 +320,36 @@ def world(seed: int, slot: Slot, prior: PriorConfig) -> World:
 def _generate(seed: int, slot: Slot, spec: Optional[FamilySpec]) -> tuple[dict[str, WorldBatch], dict[str, Any]]:
     """Dispatch to the family generator: ``(task name -> WorldBatch, generator metadata)``.
 
-    The generators are ported in phase 3b, each in its own module of this package, imported here at call time:
-    ``legacy`` (stage 1, ``'s1'``), ``stage2`` (``'s2'``: structured, statistical and stage-2 plain worlds), ``records``
-    (categorical2, rec1, attr2, list1), ``real`` (real subgraph worlds) and ``null`` (``FamilySpec.null_swap_budget``).
+    The generators live in the modules of this package, imported here at call time: ``legacy`` (stage 1, ``'s1'``),
+    ``stage2`` (``'s2'``: structured, statistical and stage-2 plain worlds), ``records`` (categorical2, rec1, attr2,
+    list1, with the structural null of ``null``) and ``real`` (real subgraph worlds).
     """
     if spec is None:
-        module = 'legacy' if slot.source == 's1' else 'stage2'
-        raise NotImplementedError(f'the {slot.family} worlds of stream {slot.source!r} are not ported yet (dicee/synthetic_kg/priors/{module}.py)')
+        if slot.source == 's1':
+            from .legacy import plain
+            return plain(seed, slot.index)
+        raise NotImplementedError(f'the {slot.family} worlds of stream {slot.source!r} are not ported yet (dicee/synthetic_kg/priors/stage2.py)')
     module = 'real' if spec.generator == 'real' else 'records'
     null = ' with the structural null (priors/null.py)' if spec.null_swap_budget is not None else ''
     raise NotImplementedError(f'the {spec.generator} generator{null} is not ported yet (dicee/synthetic_kg/priors/{module}.py)')
+
+
+def research_fingerprint(world: World) -> dict[str, str]:
+    """The research ``RecipeBatch.fingerprint`` of each task of a world (``pt_worlds.fingerprint``).
+
+    It hashes the task's training content and its RecipeBatch provenance (``world['meta']['recipe_batch']``), so it
+    also checks the latent legacy world that the template was sampled from.
+
+    Args:
+        world: A world of ``world``.
+
+    Returns:
+        Task name to hex digest.
+    """
+    from .factorial import json_sha256
+    out = {}
+    for task, b in world.batch.items():
+        value = dict(groups=b.groups.tolist(), head_prediction=b.head_prediction.tolist(), context=sorted(b.context), truth=sorted(b.truth),
+                     num_entities=b.num_entities, num_relations=b.num_relations, **world.meta['recipe_batch'][task])
+        out[task] = json_sha256(value)
+    return out

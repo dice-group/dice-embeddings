@@ -123,11 +123,8 @@ def test_prior_validation():
     assert parse_mix('a=0.25, b=0.75,c=0') == {'a': 0.25, 'b': 0.75}
 
 
-def test_world_dispatch_waits_for_the_generators():
+def test_world_refuses_slots_of_other_streams():
     prior = research_prior('M')
-    for slot in build_order(42, prior, 40):
-        with pytest.raises(NotImplementedError, match='not ported yet'):
-            world(42, slot, prior)
     with pytest.raises(ValueError, match='does not belong'):
         world(42, Slot('rec1', 's2', 20_000), prior)
     with pytest.raises(ValueError, match='does not belong'):

@@ -150,10 +150,90 @@ def stage2_family(seed: int, index: int) -> str:
     return 'structured' if is_structured(seed, index) else 'plain'
 
 
-# ----------------------------------------------------------------------------------------------- generator streams
-# The world generators (phase 3b) add their streams below, one function per research stream, each with its research
-# version string as a module constant: the record families ('prior-fix-v2f', 'attr-v2', 'rec-v1', 'list-v2') and the
-# real worlds ('realworlds-v1') through world_stream; the structural null (s5_swap); the legacy generator's streams
-# (rule-program-v1 and pair-affinity-v2 '<version>:<seed>:<name>' with SHA-256; world_first and joint-worlds-v2 with an
-# 8-byte BLAKE2b digest, which needs its own primitive next to sha256_int); and the hard-target draw of the pretraining
-# ('pt_hard:<seed>:<update>', little-endian through sha256_int).
+# ----------------------------------------------------------------------------------------------- legacy generator
+# The legacy generator has streams of three layouts, two of them with an 8-byte BLAKE2b digest.
+
+WORLD_FIRST_VERSION = 'world-first-v1'
+"""The prefix of ``world_first.stream`` (world-first version 1): the control worlds of the legacy generator."""
+
+JOINT_WORLDS_STREAM_VERSION = 'joint-worlds-v1'
+"""``worlds.STREAM_VERSION`` of joint-worlds-v2: the rule worlds, their batches and the source schedule."""
+
+SOURCE_SCHEDULE_VERSION = 'joint-retention-v1'
+"""``joint-scaling common.SCHEDULE_VERSION``: which legacy indices are control worlds."""
+
+PAIR_SLOT_VERSION = 'pair-affinity-training-v1'
+"""``pair_batches.VERSION``: which rule worlds get the pair-affinity rewiring."""
+
+OBSERVATION_MASK_VERSION = 'role-observation-v1'
+"""``oc_common.VERSION``: the targeted observation masks of the legacy batches."""
+
+RULE_PROGRAM_VERSION = 'rule-program-v1'
+"""``program.VERSION``: which rule worlds get new rule programs, and the programs."""
+
+PAIR_AFFINITY_VERSION = 'pair-affinity-v1'
+"""``affinity.VERSION`` (pair-affinity-v2 runtime): the latent pair affinities and the rewiring."""
+
+
+def blake2b_int(key: str) -> int:
+    """The 8-byte BLAKE2b digest of ``key`` (UTF-8) as a big-endian unsigned integer.
+
+    Args:
+        key: The stream key, version string included.
+
+    Returns:
+        An integer in ``[0, 2**64)``.
+    """
+    return int.from_bytes(hashlib.blake2b(key.encode(), digest_size=8).digest(), 'big')
+
+
+def world_first_stream(seed: int, name: str, value: object) -> int:
+    """A stream of the control worlds: ``'world-first-v1:<seed>:<name>:<value>'`` with BLAKE2b (``world_first.stream``).
+
+    Args:
+        seed: A run seed or a world's own seed.
+        name: The purpose of the stream.
+        value: Formatted with ``str``, so a tuple appears in Python's notation, for example ``('train', 3)``.
+
+    Returns:
+        The stream integer.
+    """
+    return blake2b_int(f'{WORLD_FIRST_VERSION}:{seed}:{name}:{value}')
+
+
+def joint_world_stream(seed: int, name: str) -> int:
+    """A stream of the rule worlds: ``'joint-worlds-v1:<seed>:<name>'`` with BLAKE2b (joint-worlds-v2 ``worlds.stream``).
+
+    Args:
+        seed: A run seed, a world seed or a batch's sampling seed.
+        name: The purpose of the stream.
+
+    Returns:
+        The stream integer.
+    """
+    return blake2b_int(f'{JOINT_WORLDS_STREAM_VERSION}:{seed}:{name}')
+
+
+def source_schedule_stream(seed: int, block: int) -> int:
+    """The shuffle of the source schedule's block of five legacy indices (``joint-scaling common.source_arm``)."""
+    return joint_world_stream(seed, f'{SOURCE_SCHEDULE_VERSION}:block:{block}')
+
+
+def pair_slot_stream(seed: int, index: int) -> int:
+    """The rank of a rule-world index among the candidates of the pair-affinity rewiring (``pair_batches.selected``)."""
+    return joint_world_stream(seed, f'{PAIR_SLOT_VERSION}:slot:{index}')
+
+
+def observation_mask_stream(sampling_seed: int) -> int:
+    """The anchor order of the targeted observation mask of a legacy batch (``oc_prior.masks``)."""
+    return joint_world_stream(sampling_seed, f'{OBSERVATION_MASK_VERSION}:targeted')
+
+
+def rule_program_stream(seed: int, name: str) -> int:
+    """A rule-program stream ``'rule-program-v1:<seed>:<name>'`` with SHA-256 (``program.seed_for``)."""
+    return sha256_int(f'{RULE_PROGRAM_VERSION}:{seed}:{name}')
+
+
+def pair_affinity_stream(seed: int, name: str) -> int:
+    """A pair-affinity stream ``'pair-affinity-v1:<seed>:<name>'`` with SHA-256 (``affinity.seed_for``)."""
+    return sha256_int(f'{PAIR_AFFINITY_VERSION}:{seed}:{name}')
