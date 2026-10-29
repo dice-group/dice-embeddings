@@ -13,7 +13,7 @@ import torch
 from dicee.synthetic_kg.arms import ARMS
 from dicee.synthetic_kg.priors import Slot, factorial, legacy, world
 from dicee.synthetic_kg.streams import blake2b_int, joint_world_stream, pair_affinity_stream, rule_program_stream, sha256_int, world_first_stream
-from tests.synthetic_worlds import check_world, golden_names, require_slow
+from tests.synthetic_worlds import check_world, golden_names
 
 FAST = ('42/S/plain/0',    # a rule world
         '42/S/plain/1',    # with new rule programs
@@ -28,8 +28,7 @@ def test_plain_world_equals_the_research_world(name):
 
 
 @pytest.mark.slow
-def test_every_golden_plain_world(request):
-    require_slow(request)
+def test_every_golden_plain_world():
     names = golden_names({'plain'})
     assert len(names) == 11
     for name in names:

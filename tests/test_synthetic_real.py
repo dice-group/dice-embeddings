@@ -9,7 +9,7 @@ import pytest
 import torch
 
 from dicee.synthetic_kg.priors import FamilySpec, real
-from tests.synthetic_worlds import check_world, golden_names, require_slow
+from tests.synthetic_worlds import check_world, golden_names
 
 
 def require_real_sources():
@@ -23,8 +23,7 @@ def test_real_world_equals_the_research_world():
 
 
 @pytest.mark.slow
-def test_every_golden_real_world(request):
-    require_slow(request)
+def test_every_golden_real_world():
     require_real_sources()
     names = golden_names({'real'})
     assert len(names) == 10

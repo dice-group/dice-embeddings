@@ -5,7 +5,7 @@ import pytest
 from dicee.synthetic_kg.arms import ARMS
 from dicee.synthetic_kg.priors import FamilySpec, null
 from dicee.synthetic_kg.streams import null_stream, sha256_int
-from tests.synthetic_worlds import WORLDS, check_world, golden_names, require_slow
+from tests.synthetic_worlds import WORLDS, check_world, golden_names
 
 FAST = ('42/N/categorical2/0', '42/N/attr2/3', '42/N/list1/4', '44/N/rec1/0')
 
@@ -16,8 +16,7 @@ def test_null_world_equals_the_research_world(name):
 
 
 @pytest.mark.slow
-def test_every_golden_null_world(request):
-    require_slow(request)
+def test_every_golden_null_world():
     names = golden_names({'categorical2', 'attr2', 'rec1', 'list1'}, {'N'})
     assert len(names) == 36
     for name in names:

@@ -7,10 +7,9 @@ family; at seeds 43 and 44 positions 0 and 1 of each. A clean world equals its g
 RecipeBatch provenance, so also the latent legacy world), its metadata (the research keys, timings excluded), its
 template provenance and its task order are equal.
 
-Each group's test file checks a few small worlds in the default run and all of its golden worlds in a slow test, which
-runs with ``-m slow`` or ``PROOFPFN_SLOW=1``.
+Each group's test file checks a few small worlds and, in a test marked ``slow`` (deselect with ``-m "not slow"``), all
+of its golden worlds.
 """
-import os
 from typing import Optional
 
 import pytest
@@ -32,12 +31,6 @@ TASK_FIELDS = ('world_sha256', 'sampling_seed', 'requested_positives')
 def golden_names(families: set[str], arms: Optional[set[str]] = None) -> list[str]:
     """The names of the golden worlds of some families (and arms)."""
     return [name for name, w in WORLDS.items() if w['family'] in families and (arms is None or w['arm'] in arms)]
-
-
-def require_slow(request: pytest.FixtureRequest) -> None:
-    """Skip a slow check unless ``-m`` names the slow marker or ``PROOFPFN_SLOW`` is set."""
-    if 'slow' not in (request.config.getoption('markexpr') or '') and not os.environ.get('PROOFPFN_SLOW'):
-        pytest.skip('slow check: run with -m slow or PROOFPFN_SLOW=1')
 
 
 def check_world(name: str) -> None:
