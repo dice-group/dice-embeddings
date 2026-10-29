@@ -181,3 +181,8 @@ def sanity_check_callback_args(args):
             "with torchFSDP. Entity embeddings are sharded across ranks and cannot be "
             "gathered mid-training. Evaluate after training completes instead."
         )
+
+    # ASWA ranks each epoch's weights by validation MRR, which needs the validation split to be loaded.
+    if args.adaptive_swa and args.eval_model in (None, "None"):
+        raise ValueError("adaptive_swa needs validation data, but eval_model is 'None'. "
+                         "Use eval_model='val', 'train_val' or 'train_val_test'.")
