@@ -11,7 +11,8 @@
   item links; null, weak and strong worlds.
 
 Each world takes the task layout of the legacy template of its stream index and samples its queries and negatives
-with ``stage2.query_world`` (observed share from the family's parameters, at least 30 facts hidden).
+with ``stage2.query_world`` (observed share from the family's parameters, at least 30 facts hidden). With
+``FamilySpec.null_swap_budget`` the structural null (``null.swap_truth``) replaces the truth before the observation.
 """
 from typing import TYPE_CHECKING, Any, Callable, Optional
 
@@ -19,8 +20,9 @@ import numpy as np
 
 from ..batch import WorldBatch
 from ..recipe import record_params
-from ..streams import ATTR2_VERSION, CATEGORICAL2_VERSION, LIST1_VERSION, REC1_VERSION, world_stream
+from ..streams import ATTR2_VERSION, CATEGORICAL2_VERSION, LIST1_VERSION, NULL_VERSION, REC1_VERSION, world_stream
 from .legacy import template
+from .null import swap_truth
 from .stage2 import query_world
 
 if TYPE_CHECKING:
@@ -570,16 +572,12 @@ def record_world(seed: int, index: int, spec: 'FamilySpec') -> tuple[dict[str, W
     Args:
         seed: The run seed.
         index: The stream index.
-        spec: The family; its generator names the record family and ``params`` override its parameters.
+        spec: The family; its generator names the record family, ``params`` override its parameters and
+            ``null_swap_budget`` asks for the structural null.
 
     Returns:
-        The batch and its metadata (the research keys and order).
-
-    Raises:
-        NotImplementedError: For the structural null, which is not ported yet (``priors/null.py``).
+        The batch and its metadata (the research keys and order, without the null's timing).
     """
-    if spec.null_swap_budget is not None:
-        raise NotImplementedError('the structural null is not ported yet (dicee/synthetic_kg/priors/null.py)')
     P = record_params(spec.generator, spec.overrides)
     layout = template(seed, index)
     version = VERSIONS[spec.generator]
@@ -594,10 +592,18 @@ def record_world(seed: int, index: int, spec: 'FamilySpec') -> tuple[dict[str, W
     else:
         latent: Callable[[np.random.Generator, dict[str, Any]], LatentWorld] = record_world_latent if spec.generator == 'rec1' else list_world
         n, nr, facts, domains, ranges, info = latent(rng, P)
+    summary: dict[str, Any] = {}
+    if spec.null_swap_budget is not None:
+        facts, summary = swap_truth(facts, domains, ranges, n, seed, index, spec.generator, float(spec.null_swap_budget))
     fact_list = [tuple(f) for f in facts.tolist()]
     batch, observed = query_world(layout, fact_list, [d.tolist() for d in domains], [r.tolist() for r in ranges], n, nr, rng, stream,
                                   P['observed'], cap=True)
     meta: dict[str, Any] = dict(family=spec.generator, entities=n, relations_total=nr, context=observed, facts=len(fact_list), **info)
+    if spec.generator != 'categorical2':   # the null's summary travelled in the generator's own metadata
+        meta.update(summary)
     meta['program_slot'] = layout.program_slot
+    if summary:
+        meta.update({k: v for k, v in summary.items() if k not in meta})
+        meta['structural_null'] = NULL_VERSION
     meta['recipe_batch'] = layout.recipe_batch
     return batch, meta

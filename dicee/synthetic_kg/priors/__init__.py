@@ -74,6 +74,8 @@ class FamilySpec:
         unknown = sorted(set(keys) - set(GENERATOR_PARAMS[self.generator]))
         if unknown:
             raise ValueError(f'{self.name}: unknown parameters {unknown}')
+        if self.null_swap_budget is not None and self.generator not in RECORD_PARAMS:
+            raise ValueError('the structural null applies to the record families only')
         if self.null_swap_budget is not None and self.null_swap_budget < 1:
             raise ValueError('the null swap budget must be positive')
 
@@ -297,7 +299,6 @@ def world(seed: int, slot: Slot, prior: PriorConfig) -> World:
         ``research_fingerprint``.
 
     Raises:
-        NotImplementedError: For a family whose generator is not ported yet.
         ValueError: For a slot that does not belong to the prior, or a world that fails ``check_batch`` (a generator's
             own errors propagate too; the research generators never resample a world).
     """

@@ -259,3 +259,28 @@ LIST1_VERSION = 'list-v2'
 
 REAL_VERSION = 'realworlds-v1'
 """``rw_prior.VERSION``: real subgraph worlds (through world_stream)."""
+
+
+# ----------------------------------------------------------------------------------------------- structural null
+
+NULL_VERSION = 'step5-null-v2'
+"""``s5_swap.VERSION``: the structural null; seeds its undirected swaps and labels null worlds."""
+
+NULL_DIRECTED_VERSION = 'step5-null-v1'
+"""``s5_swap.DIRECTED``: seeds the directed swaps of the structural null."""
+
+
+def null_stream(family: str, seed: int, index: int, directed: bool) -> int:
+    """A stream of the structural null: ``'<tag>:<family>:<seed>:<index>'`` with SHA-256 (``s5_swap.swap_seed``).
+
+    Args:
+        family: The generator of the nulled world (``'rec1'``, ``'attr2'``, ``'list1'`` or ``'categorical2'``).
+        seed: The run seed.
+        index: The world's stream index.
+        directed: ``True`` for the directed swaps (tag ``NULL_DIRECTED_VERSION``), ``False`` for the undirected swaps
+            of symmetric relations (tag ``NULL_VERSION``).
+
+    Returns:
+        The stream integer.
+    """
+    return sha256_int(f'{NULL_DIRECTED_VERSION if directed else NULL_VERSION}:{family}:{seed}:{index}')
