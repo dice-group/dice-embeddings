@@ -3,13 +3,16 @@ and, on request, their simulations. The files run in subprocesses only (``confte
 """
 import gzip
 import hashlib
+import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
 
+from benchmarks.proofpfn.evaluate import write_json
 from benchmarks.proofpfn.manifests import REPO, file_sha256, read_models
 
 from .golden import GOLDEN, fixture, fixture_bytes
@@ -82,6 +85,13 @@ def test_registered_chain_reproduces_golden_g8(tmp_path):
         assert (case / name.removesuffix('.gz')).read_bytes() == fixture_bytes(f'g8/expected/{name}'), name
     assert hashlib.sha256(gzip.decompress((GOLDEN / 'g8' / 'expected' / 'result-b999.json.gz').read_bytes())).hexdigest() == \
         record['files']['result-b999.json']
+    # the clean writer serializes a row file as the research harness did, so the chain reads its files byte for byte alike
+    copy = tmp_path / 'copy.json'
+    for path in (case / 'rows').rglob('*.json'):
+        if not any(part.startswith('.') for part in path.relative_to(case / 'rows').parts):
+            write_json(copy, json.loads(path.read_bytes()))
+            assert copy.read_bytes() == path.read_bytes(), path
+    shutil.rmtree(case)   # about 0.5 GB of simulated rows and tables in the temporary folder
 
 
 @pytest.mark.simulate
