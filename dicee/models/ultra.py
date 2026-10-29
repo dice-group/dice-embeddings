@@ -29,7 +29,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from collections import OrderedDict
-from typing import Optional, cast
+from typing import NamedTuple, Optional, cast
 
 import torch
 from torch import nn
@@ -200,6 +200,42 @@ def weighted_relation_graph(graph_triples: torch.Tensor, num_entities: int, num_
     return rel_edge_index, rel_edge_type, weight.to(rel_edge_index.device)
 
 
+class RelationGraph(NamedTuple):
+    """ULTRA's relation graph: the edges between relations, their types and, with count weighting, their float64 weights."""
+
+    edge_index: torch.Tensor
+    edge_type: torch.Tensor
+    edge_weight: Optional[torch.Tensor]
+
+
+def relation_graph(graph_triples: torch.Tensor, num_entities: int, num_direct: int, relation_weighting: str = 'binary',
+                   pair_channels: str = 'off') -> RelationGraph:
+    """The relation graph of ULTRA with these options, as ``ULTRA.set_graph`` builds it.
+
+    ``'binary'`` gives ``build_relation_graph``'s support without weights; ``'normalized'`` gives
+    ``weighted_relation_graph`` with the pair channels when ``pair_channels`` is ``'on'``. The result can be computed in
+    another process and attached with ``ULTRA.attach_graph``.
+
+    Args:
+        graph_triples: Internal graph triples with technical inverses (``GraphKGE.internal_graph``).
+        num_entities: Number of entities.
+        num_direct: Number of direct relations.
+        relation_weighting: ``ultra_relation_weighting``.
+        pair_channels: ``ultra_pair_channels``.
+
+    Returns:
+        The relation graph on the device of ``graph_triples``.
+    """
+    if relation_weighting not in RELATION_WEIGHTINGS or pair_channels not in PAIR_CHANNELS:
+        raise ValueError(f'unknown ULTRA options {relation_weighting!r}, {pair_channels!r}')
+    if pair_channels == 'on' and relation_weighting != 'normalized':
+        raise ValueError("ultra_pair_channels='on' requires ultra_relation_weighting='normalized'")
+    if relation_weighting == 'binary':
+        edge_index, edge_type = build_relation_graph(graph_triples[:, [0, 2]].T, graph_triples[:, 1], num_entities, 2 * num_direct)
+        return RelationGraph(edge_index, edge_type, None)
+    return RelationGraph(*weighted_relation_graph(graph_triples, num_entities, num_direct, pair_channels == 'on'))
+
+
 class ULTRA(GraphKGE):
     """Pure PyTorch ULTRA with the official state dictionary and DICE triple order.
 
@@ -269,16 +305,21 @@ class ULTRA(GraphKGE):
         self._projection_cache_token = None
 
     def _build_relation_graph(self):
-        self.clear_inference_cache()
-        if self.relation_weighting == 'binary':
-            self.rel_edge_index, self.rel_edge_type = build_relation_graph(
-                self.edge_index, self.edge_type, self.num_entities, 2 * self.num_direct_relations)
-            self.rel_edge_weight = None
-            return
         num_entities, _ = self._require_graph()
-        self.rel_edge_index, self.rel_edge_type, weight = weighted_relation_graph(
-            self.graph_triples, num_entities, self.num_direct_relations, self.pair_channels == 'on')
-        self.rel_edge_weight = weight.to(dtype=next(self.parameters()).dtype)
+        self._attach_relation_graph(relation_graph(self.graph_triples, num_entities, self.num_direct_relations,
+                                                   self.relation_weighting, self.pair_channels))
+
+    def _attach_relation_graph(self, graph: RelationGraph) -> None:
+        """Store a relation graph of ``relation_graph`` for this model's options; the weights take the parameter dtype."""
+        edge_index, edge_type, edge_weight = graph
+        if (edge_weight is None) != (self.relation_weighting == 'binary'):
+            raise ValueError(f'the relation graph does not fit ultra_relation_weighting={self.relation_weighting!r}')
+        if tuple(edge_index.shape) != (2, len(edge_type)) or (edge_weight is not None and edge_weight.shape != edge_type.shape):
+            raise ValueError('Relation-graph edge indices, types and weights must match')
+        self.clear_inference_cache()
+        self.rel_edge_index = to_device(edge_index, self.device)
+        self.rel_edge_type = to_device(edge_type, self.device)
+        self.rel_edge_weight = None if edge_weight is None else to_device(edge_weight.to(dtype=next(self.parameters()).dtype), self.device)
 
     def load_pretrained(self, path):
         """Load weights; a checkpoint whose ``model_config`` records the relation-graph options must match them."""

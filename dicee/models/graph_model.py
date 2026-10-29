@@ -29,6 +29,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from pathlib import Path
+from typing import Any, Mapping, Optional, Union
 
 import torch
 from torch import nn
@@ -109,29 +110,40 @@ class GraphKGE(BaseKGE):
     def get_embeddings(self):
         raise NotImplementedError(f'{self.name} has query-conditioned representations, not static embedding tables')
 
-    def set_graph(self, triples, num_entities=None, num_relations=None, inverse_relations=None):
-        """Attach training facts; inverse_relations maps direct DICE IDs to inverse IDs.
+    @classmethod
+    def internal_graph(cls, triples: Any, num_entities: int, num_relations: int, inverse_relations: Optional[Mapping[int, int]] = None,
+                       device: Union[str, torch.device, None] = None) -> tuple[torch.Tensor, torch.Tensor, int]:
+        """The internal graph of ``set_graph``, computed without a model (for example in a worker process).
 
-        Without a mapping every supplied relation is treated as a direct relation.
-        Repeated facts and explicitly supplied inverse facts are deduplicated.
+        Direct relations keep their order and get the internal ids ``0 .. num_direct - 1``; the inverse of internal
+        relation ``r`` is ``r + num_direct``. Repeated facts and supplied inverse facts are deduplicated.
+
+        Args:
+            triples: External ``(h, r, t)`` facts ``[N, 3]``.
+            num_entities: Number of entities.
+            num_relations: Number of external relations.
+            inverse_relations: Maps direct external relation ids to the ids of their inverses; ``None``: every relation
+                is direct.
+            device: The device of the result (default: that of ``triples``).
+
+        Returns:
+            ``(graph_triples, relation_id_map, num_direct)``: the sorted unique internal facts with technical inverses
+            ``[E, 3]``, the internal id of every external relation ``[num_relations]``, and the number of direct relations.
         """
-        device = self.device
         triples = torch.as_tensor(triples, dtype=torch.long, device=device).clone()
-        ne = self.num_entities if num_entities is None else num_entities
-        nr = self.num_relations if num_relations is None else num_relations
         if triples.ndim != 2 or triples.shape[1] != 3 or not len(triples):
-            raise ValueError(f'{self.name} requires a nonempty [N, 3] training graph')
-        if ne is None or nr is None or ne < 1 or nr < 1:
+            raise ValueError(f'{cls.name} requires a nonempty [N, 3] training graph')
+        if num_entities < 1 or num_relations < 1:
             raise ValueError('Positive vocabulary sizes are required')
-        if triples.min() < 0 or triples[:, [0, 2]].max() >= ne or triples[:, 1].max() >= nr:
+        if triples.min() < 0 or triples[:, [0, 2]].max() >= num_entities or triples[:, 1].max() >= num_relations:
             raise ValueError('Graph IDs are outside the supplied vocabulary')
         pairs = {int(k): int(v) for k, v in (inverse_relations or {}).items()}
         if (len(set(pairs.values())) != len(pairs) or set(pairs) & set(pairs.values())
-                or any(min(k, v) < 0 or max(k, v) >= nr for k, v in pairs.items())):
+                or any(min(k, v) < 0 or max(k, v) >= num_relations for k, v in pairs.items())):
             raise ValueError('Inverse relation mapping must contain disjoint, valid direct/inverse pairs')
-        direct = sorted(set(range(nr)) - set(pairs.values()))
+        direct = sorted(set(range(num_relations)) - set(pairs.values()))
         num_direct = len(direct)
-        mapping = torch.empty(nr, dtype=torch.long, device=device)
+        mapping = torch.empty(num_relations, dtype=torch.long, device=triples.device)
         for internal, external in enumerate(direct):
             mapping[external] = internal
             if external in pairs:
@@ -140,14 +152,53 @@ class GraphKGE(BaseKGE):
         converted[:, 1] = mapping[converted[:, 1]]
         inverse = converted[:, [2, 1, 0]].clone()
         inverse[:, 1] = (inverse[:, 1] + num_direct) % (2 * num_direct)
-        graph = torch.cat((converted, inverse)).unique(dim=0)
-        self.num_entities, self.num_relations = int(ne), int(nr)
-        self.num_direct_relations = num_direct
-        self.graph_triples = graph
-        self.relation_id_map = mapping
-        self.edge_index, self.edge_type = graph[:, [0, 2]].T, graph[:, 1]
-        self._build_relation_graph()
+        return torch.cat((converted, inverse)).unique(dim=0), mapping, num_direct
+
+    def set_graph(self, triples, num_entities=None, num_relations=None, inverse_relations=None):
+        """Attach training facts; inverse_relations maps direct DICE IDs to inverse IDs.
+
+        Without a mapping every supplied relation is treated as a direct relation.
+        Repeated facts and explicitly supplied inverse facts are deduplicated.
+        """
+        ne = self.num_entities if num_entities is None else num_entities
+        nr = self.num_relations if num_relations is None else num_relations
+        if ne is None or nr is None:
+            raise ValueError('Positive vocabulary sizes are required')
+        graph, mapping, num_direct = self.internal_graph(triples, ne, nr, inverse_relations, device=self.device)
+        return self.attach_graph(graph, mapping, ne, nr, num_direct)
+
+    def attach_graph(self, graph_triples: torch.Tensor, relation_id_map: torch.Tensor, num_entities: int, num_relations: int,
+                     num_direct_relations: int, relation_graph: Any = None) -> 'GraphKGE':
+        """Attach an internal graph of ``internal_graph``, for example one that a worker process prepared.
+
+        Args:
+            graph_triples: The sorted unique internal facts with technical inverses, int64 ``[E, 3]``.
+            relation_id_map: The internal id of every external relation, int64 ``[num_relations]``.
+            num_entities: Number of entities.
+            num_relations: Number of external relations.
+            num_direct_relations: Number of direct internal relations.
+            relation_graph: The model's derived graph tensors for this graph, computed elsewhere by the model's own rule
+                (ULTRA: ``ultra.relation_graph``); ``None`` derives them here.
+
+        Returns:
+            The model.
+        """
+        if (graph_triples.ndim != 2 or graph_triples.shape[1] != 3 or not len(graph_triples)
+                or tuple(relation_id_map.shape) != (num_relations,) or not 1 <= num_direct_relations <= num_relations):
+            raise ValueError(f'{self.name} requires internal graph triples [E, 3] and a relation map of the vocabulary')
+        self.num_entities, self.num_relations = int(num_entities), int(num_relations)
+        self.num_direct_relations = int(num_direct_relations)
+        self.graph_triples = to_device(graph_triples, self.device)
+        self.relation_id_map = to_device(relation_id_map, self.device)
+        self.edge_index, self.edge_type = self.graph_triples[:, [0, 2]].T, self.graph_triples[:, 1]
+        if relation_graph is None:
+            self._build_relation_graph()
+        else:
+            self._attach_relation_graph(relation_graph)
         return self
+
+    def _attach_relation_graph(self, relation_graph):
+        raise NotImplementedError(f'{self.name} derives its graph tensors itself; attach_graph takes no relation_graph')
 
     def save_graph(self, path):
         self._require_graph()
@@ -163,12 +214,8 @@ class GraphKGE(BaseKGE):
             raise ValueError(f'Unsupported {self.name} graph artifact version')
         if (data['num_entities'], data['num_relations']) != (self.num_entities, self.num_relations):
             raise ValueError(f'{self.name} graph vocabulary does not match the experiment')
-        self.num_direct_relations = data['num_direct_relations']
-        self.graph_triples = data['graph_triples'].to(self.device)
-        self.relation_id_map = data['relation_id_map'].to(self.device)
-        self.edge_index, self.edge_type = self.graph_triples[:, [0, 2]].T, self.graph_triples[:, 1]
-        self._build_relation_graph()
-        return self
+        return self.attach_graph(data['graph_triples'], data['relation_id_map'], data['num_entities'], data['num_relations'],
+                                 data['num_direct_relations'])
 
     def load_pretrained(self, path):
         state = torch.load(path, map_location='cpu', weights_only=True)
@@ -233,6 +280,32 @@ class GraphKGE(BaseKGE):
         # Upstream conditions relation reasoning on the original relation before
         # transforming head corruption to inverse-relation tail prediction.
         return self._score(heads, relations, candidates, r[:, 0] % self.num_direct_relations, edges)
+
+    def forward_query_facts(self, facts: torch.Tensor, head_prediction: bool) -> torch.Tensor:
+        """Scores of every entity in the queried position of each fact, on the whole attached graph.
+
+        A fact ``(h, r, t)`` asks for its tail, or with ``head_prediction`` for its head, which is scored as the tail
+        of ``(t, inverse of r)``; relation reasoning is conditioned on the direct relation, as in ``forward_grouped``.
+        The model scores in its current mode. In training mode ``forward_k_vs_all`` and ``forward_grouped`` hide the
+        queried facts' edges from the graph; this method hides none (ProofPFN's pretraining masks the observed answers
+        in its loss instead).
+
+        Args:
+            facts: External ``(h, r, t)`` ids ``[B, 3]``.
+            head_prediction: Score the head of each fact instead of its tail.
+
+        Returns:
+            The scores ``[B, num_entities]``.
+        """
+        num_entities, _ = self._require_graph()
+        h, r, t = self._convert(facts).unbind(-1)
+        head = torch.full((len(h),), head_prediction, device=h.device)
+        nd = self.num_direct_relations
+        candidates = torch.arange(num_entities, device=self.device).expand(len(h), -1)
+        candidates._dicee_all_entities = True  # type: ignore[attr-defined]  # the candidates are every entity in order
+        scores: torch.Tensor = self._score(torch.where(head, t, h), (r + head.long() * nd) % (2 * nd), candidates, r % nd,
+                                           (self.edge_index, self.edge_type))
+        return scores
 
     def forward_triples(self, x):
         triples = self._convert(x)
