@@ -328,7 +328,8 @@ def _generate(seed: int, slot: Slot, spec: Optional[FamilySpec]) -> tuple[dict[s
         if slot.source == 's1':
             from .legacy import plain
             return plain(seed, slot.index)
-        raise NotImplementedError(f'the {slot.family} worlds of stream {slot.source!r} are not ported yet (dicee/synthetic_kg/priors/stage2.py)')
+        from .stage2 import stage2_world
+        return stage2_world(seed, slot.index)
     module = 'real' if spec.generator == 'real' else 'records'
     null = ' with the structural null (priors/null.py)' if spec.null_swap_budget is not None else ''
     raise NotImplementedError(f'the {spec.generator} generator{null} is not ported yet (dicee/synthetic_kg/priors/{module}.py)')
