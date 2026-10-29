@@ -150,8 +150,28 @@ def make_checkpoint(state: Mapping[str, torch.Tensor], *, arm: Union[str, ArmPre
     return checkpoint
 
 
+def atomic_save(value: Mapping[str, Any], path: Union[str, Path]) -> Path:
+    """``torch.save`` a dictionary atomically: into a temporary file next to the target, then rename.
+
+    Args:
+        value: The dictionary.
+        path: The target file; its folder is created.
+
+    Returns:
+        The path.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    buffer = io.BytesIO()
+    torch.save(dict(value), buffer)
+    temporary = path.with_name(path.name + '.tmp')
+    temporary.write_bytes(buffer.getvalue())
+    os.replace(temporary, path)
+    return path
+
+
 def save_checkpoint(checkpoint: Mapping[str, Any], path: Union[str, Path]) -> Path:
-    """Write a checked checkpoint atomically (temporary file, then rename).
+    """Write a checked checkpoint atomically (``atomic_save``).
 
     Args:
         checkpoint: The checkpoint dictionary.
@@ -161,14 +181,7 @@ def save_checkpoint(checkpoint: Mapping[str, Any], path: Union[str, Path]) -> Pa
         The path.
     """
     check_checkpoint(checkpoint)
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    buffer = io.BytesIO()
-    torch.save(dict(checkpoint), buffer)
-    temporary = path.with_name(path.name + '.tmp')
-    temporary.write_bytes(buffer.getvalue())
-    os.replace(temporary, path)
-    return path
+    return atomic_save(checkpoint, path)
 
 
 def read_checkpoint(path: Union[str, Path]) -> dict[str, Any]:
