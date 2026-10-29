@@ -92,10 +92,11 @@ def test_a_large_test_split_is_sampled_and_keeps_its_filter(tmp_path):
     graph = D.read_graph(write_graph(tmp_path / 'g', ['\t'.join(f) for f in train], [], ['\t'.join(f) for f in test]))
     queries = D.prepare_queries(graph, 'first-1000')
     rows = D.as_triples(graph.test)
-    assert queries.test_rows == 1220 and queries.positions == D.sample_positions(rows) and len(queries.facts) == 1000
-    assert all(p < 1200 for p in queries.positions) and queries.facts == [rows[p] for p in queries.positions]
-    assert [queries.index(m) for m in range(1000)] == queries.positions
-    unsampled = [rows[i] for i in range(1200) if i not in set(queries.positions)]
+    positions = queries.positions
+    assert positions is not None and positions == D.sample_positions(rows) and queries.test_rows == 1220 and len(queries.facts) == 1000
+    assert all(p < 1200 for p in positions) and queries.facts == [rows[p] for p in positions]
+    assert [queries.index(m) for m in range(1000)] == positions
+    unsampled = [rows[i] for i in range(1200) if i not in set(positions)]
     assert all(t in queries.known[False][r, h] and h in queries.known[True][r, t] for h, r, t in unsampled)
     members = sorted(m for _, group in queries.groups for m in group)
     assert members == sorted(2 * list(range(1000)))
