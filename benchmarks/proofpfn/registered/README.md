@@ -1,11 +1,12 @@
 # Registered analysis files (freeze anchors)
 
-The six files of the registered fresh-v1 analysis, byte-identical to the copies in `fresh-v1-runtime/` of the research
-snapshot, whose SHA-256 the registration (section 16) fixes. Any edit breaks the anchors, so they are exempt from the
-code standard: ruff skips them (`extend-exclude` in the root `pyproject.toml`), pytest does not collect their test
-scripts (`../conftest.py`), and nothing imports them in the test process. `../tests/test_registered.py` checks the hashes below, runs the fast checks of
-`test_fv1_analysis.py` and `test_fv1_tables.py` as subprocesses, reproduces golden G8 (simulated rows → `fv1_tables.py` →
-`fv1_analysis.py`) and, with `PROOFPFN_SIMULATE=1`, runs the simulations of `test_fv1_analysis.py --simulate`.
+The six files of the registered fresh-v1 analysis, byte-identical to the research copies in `fresh-v1-runtime/`, whose
+SHA-256 the registration (section 16) fixes. Any edit breaks the anchors, so they are exempt from the code standard:
+ruff skips them (`extend-exclude` in the root `pyproject.toml`), pytest does not collect their test scripts
+(`../conftest.py`), and nothing imports them in the test process. `../tests/test_registered.py` checks the hashes below,
+runs the fast checks of `test_fv1_analysis.py` and `test_fv1_tables.py` as subprocesses, reproduces golden G8 (simulated
+rows → `fv1_tables.py` → `fv1_analysis.py`) and, with `PROOFPFN_SIMULATE=1`, runs the simulations of
+`test_fv1_analysis.py --simulate`.
 
 | File | SHA-256 |
 |---|---|

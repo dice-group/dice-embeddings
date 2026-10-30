@@ -4,7 +4,7 @@ This document states how the [ProofPFN benchmark](README.md) ranks a graph, and 
 reproduces. The research chain was `fresh-v1-runtime/fv1_harness.py` → `allgraph-v1/ag_seedraw.py` → `ag_eval.py` →
 `lockbox-v6-runtime/fair_eval.evaluate` → `lockbox-v5-runtime/lb5_eval` → `ensemble-v2-runtime/e3_eval` →
 `inductive-benchmark-v1-runtime/ib_eval` and `ib_rule_eval` → `context-injection-v1-runtime/ci_evaluate.query_scores`
-(paths below `Experiments/synthetic-kg` of the research snapshot). Here each step is one function, without registry
+(paths below `Experiments/synthetic-kg` of the archived research code). Here each step is one function, without registry
 patches, `sys.path` changes or frame hooks.
 
 ## Graph

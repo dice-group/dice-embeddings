@@ -312,8 +312,8 @@ adapter.
 
 - The thesis rows of the fresh-v1 test come from the frozen run of the research code. The development rows also come
   from the research code.
-- The fresh-v1 registration fixed the graphs, models, protocol and analysis before the run (commit `73c94830`, tag
-  `freeze/fresh-v1`).
+- The fresh-v1 registration fixed the graphs, models, protocol and analysis before the run. Its section 16 fixes the
+  SHA-256 of the six registered files (the freeze anchors).
 - The six registered files in `benchmarks/proofpfn/registered/` turn row files into the registered analysis.
 - `fv1_tables.py` writes the tables `mrr.csv`, `ranks.csv` and `cost.csv`. `fv1_analysis.py analyse` writes the
   result. The two test scripts check the others.
@@ -327,9 +327,9 @@ adapter.
   not.
 - The fresh-v1 and block-3 manifests are not in the repository. They follow after the frozen read. A blind manifest
   opens only with `--release NAME`.
-- The research code and its notes stay outside this branch. They are in the branch `proofpfn-research` with the tags
-  `research/proofpfn-20261029` and `freeze/fresh-v1`. The snapshot repository `proofpfn-research-snapshot` holds the
-  runtime folders of the research runs.
+- The research code and its notes are archived outside this repository. The goldens and the registered files document
+  the equivalence: the goldens record what the research code computes, and the registered files are byte-identical to
+  the freeze anchors.
 
 Seam. The writer of each input of the registered analysis:
 

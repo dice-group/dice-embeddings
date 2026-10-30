@@ -236,7 +236,7 @@ def test_manifests_rebuild_from_their_inputs():
             doc = build_gate(audit, inventory, recorded, sources)
         assert dumps(doc) == committed, name
     research_path = root / 'work' / 'tree' / 'Experiments' / 'synthetic-kg' / 'fresh-v1' / 'models.json'
-    ht_path = kiowl / 'fresh-v1' / 'models-pcuht.json'   # written on kiowl after the snapshot, so a kiowl input
+    ht_path = kiowl / 'fresh-v1' / 'models-pcuht.json'   # written on kiowl after HT's training, so a kiowl input
     research = json.loads(research_path.read_text())['models']
     research_ht = json.loads(ht_path.read_text())['models']   # the frozen worker merges the two files the same way
     pins = mf.read_models()
