@@ -33,8 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Regression bounds updated for the new embedding initialization (AConEx, CoKE)
 - DeCaL initialization delegates embedding setup to dedicated methods (part of #427)
 - CI ratchets the mypy error count instead of `continue-on-error`
-- ULTRA options `ultra_relation_weighting` (`binary`, `normalized`) and `ultra_pair_channels` (`off`, `on`): count-weighted relation-graph messages and two entity-pair edge types. The defaults keep official ULTRA. `load_pretrained` refuses a checkpoint whose `model_config` records other options
-- `GraphKGE`: `internal_graph` builds the inference graph without a model, and `attach_graph` attaches a prepared graph. `set_graph` and `load_graph` attach through `attach_graph`. `forward_query_facts` scores query facts on the whole attached graph
+- ULTRA options `ultra_relation_weighting` (`binary`, `normalized`) and `ultra_pair_channels` (`off`, `on`), also flags of the `dicee` command line: count-weighted relation-graph messages and two entity-pair edge types. The defaults keep official ULTRA. `load_pretrained` refuses a checkpoint whose `model_config` records other options, and `attach_graph` a relation graph built for other options
+- `GraphKGE`: `internal_graph` builds the inference graph without a model, and `attach_graph` attaches a prepared graph. `set_graph` and `load_graph` attach through `attach_graph`. `forward_query_facts` scores query facts on the whole attached graph. `load_checkpoint` loads the weights of a checkpoint dictionary; `load_pretrained` reads its file once and delegates to it
 
 ### Fixed
 - Label smoothing in `LabelSmoothingLoss.forward`, `KvsAll`, `AllvsAll` and `KvsSample` targets

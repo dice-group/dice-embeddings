@@ -139,7 +139,7 @@ ULTRA pretrained only on worlds of a synthetic prior, then evaluated zero-shot. 
 
 - `dicee/synthetic_kg/`: `recipe` (fixed prior and schedule values), `streams` (seeded SHA-256 streams), `batch` (world batch), `digests` (golden digest rules), `determinism`.
 - `dicee/synthetic_kg/priors/`: `PriorConfig`, `build_order` and `world`, with the generators `legacy`, `factorial`, `stage2`, `records`, `real` and `null`.
-- `arms` (presets S, R, M, N, HT, CU, UL), `prepare` (worker preparation), `pretraining` (`PretrainConfig`, `pretrain`), `checkpoint` (`proofpfn-checkpoint-v1`, `load_model`, `from_research_export`).
+- `arms` (presets S, R, M, N, HT, CU, UL), `prepare` (worker preparation), `pretraining` (`PretrainConfig`, `pretrain`), `checkpoint` (`proofpfn-checkpoint-v1`, `load_model`, `model_from_checkpoint`, `from_research_export`).
 - The version strings of `streams` fix every world order, world and initial weight. Never change them.
 - Command `dicee_pretrain_synthetic` (`dicee/scripts/pretrain_synthetic.py`). Model side: the ULTRA options `ultra_relation_weighting` and `ultra_pair_channels` (`dicee/models/ultra.py`, `_relation_weights.py`) and `GraphKGE.internal_graph`, `attach_graph`, `forward_query_facts`.
 - `benchmarks/proofpfn/`: `python -m benchmarks.proofpfn`, documented in its `README.md` and `PROTOCOL.md`. `registered/` holds six freeze-anchor files. Never edit them: a test checks their SHA-256.

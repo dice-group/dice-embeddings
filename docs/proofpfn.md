@@ -117,7 +117,7 @@ A model family of the benchmark needs the seeds 42, 43 and 44 of one arm. Train 
 | `--save_every` | 250 | updates between two writes of `last.pt` |
 | `--allow_code_change` | off | resume although the sources of the run, the torch version or the GPU changed |
 | `--stop_after` | none | test option: stop after this update and write `last.pt` |
-| `--exports` | `4000,8000,16000,20000,24000` | test option: the export updates |
+| `--exports` | `4000,8000,16000,20000,24000` | test option: the export updates; update 24,000 is always exported |
 
 Files of a run folder:
 
@@ -127,6 +127,7 @@ Files of a run folder:
 | `export-<N>-raw.pt`, `export-<N>-ema.pt` | checkpoints of the raw and of the EMA weights after update N |
 | `last.pt` | the latest training state: model, AdamW state, EMA and history |
 | `progress.json` | the last logged update, every 50 updates and at the end |
+| `.lock` | the lock that the training process holds while it trains |
 
 Pretraining writes checkpoints at the export updates and after update 24,000. The registered models are the EMA weights
 of update 24,000.
@@ -134,7 +135,7 @@ of update 24,000.
 ### Resume
 
 - If the run folder holds a `last.pt`, the command resumes from it. To resume, run the same command again.
-- A resumed run gives the same updates as an uninterrupted run.
+- A resumed run gives the same updates as an uninterrupted run on the same torch version and device.
 - SIGINT and SIGTERM stop the run after the current update. The command then writes `last.pt` and exits with code 3.
 - The command refuses a folder that holds another run (another arm, seed or option), and a folder that another process
   trains into (the run holds the folder's `.lock`).
@@ -214,6 +215,7 @@ with torch.no_grad():
 ```
 
 - `load_model` checks the checkpoint, builds ULTRA with its `model_config` and loads the weights.
+  `model_from_checkpoint` does the same for a checkpoint dictionary that is already loaded.
 - `ULTRA(checkpoint['model_config']).load_pretrained(path)` also reads the format.
 - `ULTRA.load_pretrained` refuses a checkpoint whose `model_config` records other options than the model's.
 - The `dicee` command line loads a checkpoint with `--ultra_checkpoint` and the arm's options
