@@ -11,7 +11,9 @@ from pathlib import Path
 from typing import Any
 
 import pytest
+import torch
 
+from dicee.synthetic_kg.digests import tensor_digest
 from dicee.synthetic_kg.priors import FamilySpec, PriorConfig
 
 FIXTURES = Path(__file__).resolve().parent / 'fixtures' / 'proofpfn'
@@ -50,6 +52,11 @@ def golden_large(name: str) -> Path:
             if (folder / name).is_file():
                 return folder / name
     pytest.skip(f'golden file large/{name} not available (set PROOFPFN_GOLDEN to the proofpfn-golden folder)')
+
+
+def per_key_digests(tensors: dict[str, torch.Tensor]) -> dict[str, str]:
+    """The tensor digest of each entry alone, in sorted key order; it names the tensor behind a differing digest."""
+    return {key: tensor_digest({key: value}) for key, value in sorted(tensors.items())}
 
 
 def typed(value: Any) -> Any:

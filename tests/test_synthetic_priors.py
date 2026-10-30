@@ -14,11 +14,12 @@ import pytest
 import torch
 
 from dicee.synthetic_kg import recipe, streams
-from dicee.synthetic_kg.batch import WorldBatch, check_batch, content_sha256, content_tensors, world_sizes
+from dicee.synthetic_kg.batch import WorldBatch, check_batch, content_sha256, world_sizes
 from dicee.synthetic_kg.digests import tensor_digest
 from dicee.synthetic_kg.priors import RESERVED_HOOK, RESERVED_STAGE2, FamilySpec, PriorConfig, Slot, build_order, hook_indices, mixture_bounds, order_sha256, parse_mix, stage2_indices, world
 from tests.proofpfn_fixtures import fixture, golden_large, typed
 from tests.proofpfn_fixtures import research_prior as prior_of_entry
+from tests.synthetic_worlds import content_tensors
 
 G1 = fixture('g1_orders.json.gz')
 RECIPE = fixture('recipe_research.json.gz')
@@ -171,7 +172,7 @@ def test_check_batch():
     with pytest.raises(ValueError, match='query groups'):
         check_batch({'rule': rule})
     content = content_tensors(world_batch)
-    assert list(content)[:6] == ['base/groups', 'base/head_prediction', 'base/context', 'base/truth', 'base/num_entities', 'base/num_relations']
+    assert sorted(content)[:6] == ['base/context', 'base/groups', 'base/head_prediction', 'base/num_entities', 'base/num_relations', 'base/truth']
     assert content_sha256(world_batch) == tensor_digest(content) == content_sha256(dict(reversed(list(world_batch.items()))))
 
 

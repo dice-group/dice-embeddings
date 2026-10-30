@@ -97,37 +97,23 @@ def world_sizes(batch: Mapping[str, WorldBatch]) -> dict[str, int]:
     return dict(n_entities=max(b.num_entities for b in batch.values()), n_context=max(len(b.context) for b in batch.values()))
 
 
-def content_tensors(batch: Mapping[str, WorldBatch]) -> dict[str, torch.Tensor]:
-    """The training content of a world as named tensors, by sorted task name.
-
-    Per task: ``groups`` (int64), ``head_prediction`` (bool), ``context`` and ``truth`` as sorted int64 ``[n, 3]``, and
-    ``num_entities`` and ``num_relations`` as int64 scalars; keys ``'<task>/<name>'``.
-
-    Args:
-        batch: Task name to ``WorldBatch``.
-
-    Returns:
-        The named tensors of ``content_sha256``.
-    """
-    out = {}
-    for task in sorted(batch):
-        b = batch[task]
-        out[f'{task}/groups'] = b.groups.to(torch.long)
-        out[f'{task}/head_prediction'] = b.head_prediction.to(torch.bool)
-        out[f'{task}/context'] = torch.tensor(sorted(b.context), dtype=torch.long).reshape(-1, 3)
-        out[f'{task}/truth'] = torch.tensor(sorted(b.truth), dtype=torch.long).reshape(-1, 3)
-        out[f'{task}/num_entities'] = torch.tensor(int(b.num_entities), dtype=torch.long)
-        out[f'{task}/num_relations'] = torch.tensor(int(b.num_relations), dtype=torch.long)
-    return out
-
-
 def content_sha256(batch: Mapping[str, WorldBatch]) -> str:
-    """The content digest of a world: ``tensor_digest(content_tensors(batch))`` (golden G2's ``content_sha256``).
+    """The content digest of a world (golden G2's ``content_sha256``): the tensor digest of its training content.
+
+    The content holds per task ``groups`` (int64), ``head_prediction`` (bool), ``context`` and ``truth`` as sorted int64
+    ``[n, 3]``, and ``num_entities`` and ``num_relations`` as int64 scalars, under the keys ``'<task>/<name>'``.
 
     Args:
         batch: Task name to ``WorldBatch``.
 
     Returns:
-        The hex digest.
+        The hex digest; it does not depend on the task order.
     """
-    return tensor_digest(content_tensors(batch))
+    content = {}
+    for task, b in batch.items():
+        content.update({f'{task}/groups': b.groups.to(torch.long), f'{task}/head_prediction': b.head_prediction.to(torch.bool),
+                        f'{task}/context': torch.tensor(sorted(b.context), dtype=torch.long).reshape(-1, 3),
+                        f'{task}/truth': torch.tensor(sorted(b.truth), dtype=torch.long).reshape(-1, 3),
+                        f'{task}/num_entities': torch.tensor(int(b.num_entities), dtype=torch.long),
+                        f'{task}/num_relations': torch.tensor(int(b.num_relations), dtype=torch.long)})
+    return tensor_digest(content)

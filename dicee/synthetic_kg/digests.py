@@ -27,18 +27,6 @@ def tensor_digest(tensors: Mapping[str, torch.Tensor]) -> str:
     return digest.hexdigest()
 
 
-def per_key_digests(tensors: Mapping[str, torch.Tensor]) -> dict[str, str]:
-    """The tensor digest of each entry alone, in sorted key order; it names the tensor behind a differing digest.
-
-    Args:
-        tensors: Named tensors.
-
-    Returns:
-        ``{key: tensor_digest({key: tensor})}``.
-    """
-    return {key: tensor_digest({key: value}) for key, value in sorted(tensors.items())}
-
-
 def file_sha256(path: Union[str, Path]) -> str:
     """SHA-256 of a file's bytes.
 

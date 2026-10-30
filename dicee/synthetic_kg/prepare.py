@@ -15,7 +15,7 @@ from the task's graph and queries alone, so that a worker process can do it whil
 Tasks with the same context and sizes share one graph. This is the research worker's preparation
 (``statworlds-scale-v1-runtime/fast_pipeline.prepare_world`` with mode ``'rbce'``, targets from
 ``proofpfn-runtime/pp_mix``) without the observed-path features and role tables, which fed only adapters that stayed
-at zero output. ``PreparedWorld.tensors`` names the tensors as the golden references do.
+at zero output.
 """
 from collections import defaultdict
 from dataclasses import dataclass
@@ -97,27 +97,6 @@ class PreparedWorld:
     def num_queries(self) -> int:
         """The query groups of the world over all tasks."""
         return sum(len(task.queries) for task in self.tasks.values())
-
-    def tensors(self) -> dict[str, torch.Tensor]:
-        """The prepared tensors by golden name, sorted by task: ``'<task>/graph/<name>'``, ``'<task>/soft'``, ``'<task>/context_mask'``.
-
-        The graph names are ``graph_triples``, ``relation_id_map``, ``rel_edge_index``, ``rel_edge_type``,
-        ``edge_weight`` (only with count weighting) and the int64 scalars ``num_entities``, ``num_relations`` and
-        ``num_direct``.
-        """
-        out = {}
-        for name in sorted(self.tasks):
-            task = self.tasks[name]
-            graph = task.graph
-            edge_index, edge_type, edge_weight = graph.relation_graph
-            values = dict(graph_triples=graph.graph_triples, relation_id_map=graph.relation_id_map, rel_edge_index=edge_index,
-                          rel_edge_type=edge_type, edge_weight=edge_weight)
-            out.update({f'{name}/graph/{key}': value for key, value in values.items() if value is not None})
-            for key in ('num_entities', 'num_relations', 'num_direct'):
-                out[f'{name}/graph/{key}'] = torch.tensor(int(getattr(graph, key)), dtype=torch.long)
-            out[f'{name}/soft'] = task.soft
-            out[f'{name}/context_mask'] = task.context_mask
-        return out
 
 
 def answers_by_anchor(facts: frozenset[Triple]) -> tuple[defaultdict[tuple[int, int], set[int]], defaultdict[tuple[int, int], set[int]]]:

@@ -15,9 +15,9 @@ import torch
 from dicee.models.ultra import ULTRA
 from dicee.synthetic_kg.arms import ARMS
 from dicee.synthetic_kg.batch import World, WorldBatch
-from dicee.synthetic_kg.digests import per_key_digests
-from dicee.synthetic_kg.prepare import context_answers, prepare_slot, prepare_task, prepare_world, rbw_answers
+from dicee.synthetic_kg.prepare import PreparedWorld, context_answers, prepare_slot, prepare_task, prepare_world, rbw_answers
 from dicee.synthetic_kg.priors import Slot, real, world
+from tests.proofpfn_fixtures import per_key_digests
 from tests.synthetic_worlds import WORLDS
 
 PCU = ARMS['S'].model_config()
@@ -33,6 +33,24 @@ def two_threads():
     torch.set_num_threads(previous)
 
 
+def prepared_tensors(prepared: PreparedWorld) -> dict[str, torch.Tensor]:
+    """The prepared tensors by golden name: ``'<task>/graph/<name>'``, ``'<task>/soft'`` and ``'<task>/context_mask'``.
+
+    The graph names are ``graph_triples``, ``relation_id_map``, ``rel_edge_index``, ``rel_edge_type``, ``edge_weight``
+    (only with count weighting) and the int64 scalars ``num_entities``, ``num_relations`` and ``num_direct``.
+    """
+    out = {}
+    for name, task in prepared.tasks.items():
+        graph = task.graph
+        values = dict(graph_triples=graph.graph_triples, relation_id_map=graph.relation_id_map, rel_edge_index=graph.relation_graph.edge_index,
+                      rel_edge_type=graph.relation_graph.edge_type, edge_weight=graph.relation_graph.edge_weight,
+                      num_entities=torch.tensor(graph.num_entities), num_relations=torch.tensor(graph.num_relations),
+                      num_direct=torch.tensor(graph.num_direct))
+        out.update({f'{name}/graph/{key}': value for key, value in values.items() if value is not None})
+        out.update({f'{name}/soft': task.soft, f'{name}/context_mask': task.context_mask})
+    return out
+
+
 def golden_world(name: str) -> tuple[Slot, World]:
     golden = WORLDS[name]
     slot = Slot(golden['family'], golden['source'], golden['index'])
@@ -44,7 +62,7 @@ def check_prepared(name: str) -> None:
     slot, generated = golden_world(name)
     prepared = prepare_world(generated, slot, PCU['ultra_relation_weighting'], PCU['ultra_pair_channels'])
     expected = {k: v for k, v in WORLDS[name]['prepared_per_key'].items() if not k.endswith(DEGREE)}
-    found = per_key_digests(prepared.tensors())
+    found = per_key_digests(prepared_tensors(prepared))
     assert list(found) == list(expected), name
     differing = [k for k in expected if found[k] != expected[k]]
     assert differing == [], f'{name}: the prepared tensors differ in {differing}'
@@ -85,6 +103,7 @@ def test_the_relation_graph_without_pairs_is_the_block_of_types_0_to_3(arm):
     part = prepare_world(generated, slot, options['ultra_relation_weighting'], options['ultra_pair_channels'])
     for task in full.tasks:
         index, types, weight = full.tasks[task].graph.relation_graph
+        assert weight is not None
         block = int((types < 4).sum())
         assert bool((types[:block] < 4).all()) and bool((types[block:] >= 4).all())
         cut = part.tasks[task].graph.relation_graph
@@ -117,7 +136,7 @@ def test_targets_by_hand():
     truth = frozenset({(0, 0, 1), (0, 0, 2), (0, 0, 4), (2, 0, 1), (4, 0, 1), (1, 1, 2)})
     batch = WorldBatch(groups, torch.tensor([False, True, False]), frozenset({(0, 0, 2), (4, 0, 1)}), truth, 5, 2)
     assert rbw_answers(batch) == [[1, 4], [0, 2], [2]] and context_answers(batch) == [[2], [4], []]
-    task = prepare_task(batch, None)   # the targets do not read the graph
+    task = prepare_task(batch, None)   # type: ignore[arg-type]  # the targets do not read the graph
     assert task.soft.dtype == torch.float32 and task.soft[0].tolist() == [0, 0.5, 0, 0, 0.5]
     assert torch.equal(task.soft[1], torch.tensor([0.5, 0, 0.5, 0, 0])) and task.soft[2].tolist() == [0, 0, 1, 0, 0]
     assert task.context_mask.tolist() == [[False, False, True, False, False], [False, False, False, False, True], [False] * 5]

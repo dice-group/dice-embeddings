@@ -9,22 +9,32 @@ seed and requested positives of each task) and its task order are equal.
 Each group's test file checks a few small worlds and, in a test marked ``slow`` (deselect with ``-m "not slow"``), all
 of its golden worlds.
 """
-from typing import Optional
+from typing import Mapping, Optional
 
 import pytest
 import torch
 
 from dicee.synthetic_kg.arms import ARMS
-from dicee.synthetic_kg.batch import content_sha256, content_tensors
-from dicee.synthetic_kg.digests import per_key_digests
+from dicee.synthetic_kg.batch import WorldBatch, content_sha256
 from dicee.synthetic_kg.priors import Slot, world
-from tests.proofpfn_fixtures import fixture
+from tests.proofpfn_fixtures import fixture, per_key_digests
 
 G2 = fixture('g2_worlds.json.gz')
 WORLDS = {f"{w['seed']}/{w['arm']}/{w['family']}/{w['k']}": w for w in G2['worlds']}
 """The golden worlds by ``'<seed>/<arm>/<family>/<k>'`` (k: the position in the family's stream)."""
 
 TASK_FIELDS = ('sampling_seed', 'requested_positives')
+
+
+def content_tensors(batch: Mapping[str, WorldBatch]) -> dict[str, torch.Tensor]:
+    """The named tensors that ``batch.content_sha256`` hashes, for the per-key digests of G2."""
+    out = {}
+    for task, b in batch.items():
+        out.update({f'{task}/groups': b.groups, f'{task}/head_prediction': b.head_prediction,
+                    f'{task}/context': torch.tensor(sorted(b.context), dtype=torch.long).reshape(-1, 3),
+                    f'{task}/truth': torch.tensor(sorted(b.truth), dtype=torch.long).reshape(-1, 3),
+                    f'{task}/num_entities': torch.tensor(b.num_entities), f'{task}/num_relations': torch.tensor(b.num_relations)})
+    return out
 
 
 def golden_names(families: set[str], arms: Optional[set[str]] = None) -> list[str]:
