@@ -32,8 +32,8 @@ SLOT_KEYS = ('family', 'source', 'index', 'n_entities', 'n_context')
 
 
 def g4_runs() -> list[tuple[str, int, int, str]]:
-    """(arm, seed, K, fixture tag) of every G4 run."""
-    return [(arm, golden['seed'], k, tag) for tag, golden in G4.items() for arm, k in golden['k'].items()]
+    """(arm, seed, K, fixture tag) of every G4 run but S's 100 updates of seed 42, which ``s_42_100`` trains."""
+    return [(arm, golden['seed'], k, tag) for tag, golden in G4.items() for arm, k in golden['k'].items() if (arm, golden['seed'], k) != ('S', 42, 100)]
 
 
 def train(folder: Path, arm: str, seed: int, k: int, device: str = 'cpu', workers: int = 0, **options) -> list[dict]:
@@ -120,13 +120,32 @@ def test_every_golden_run_equals_the_research_loop(arm, seed, k, tag, tmp_path):
         options['real_sources'] = os.environ[real.SOURCES_ENV]
     history = train(tmp_path, arm, seed, k, workers=2, **options)
     check_g4(tmp_path, history, arm, k, tag)
-    if (arm, seed) == ('S', 42):   # G5: the exports equal the converted research exports, tensor by tensor
-        for update in (20, 100):
-            research = golden_large(f'g4/golden-runs/REC10A-XLE-PCU-noA/training/42/export-{update}.pt')
-            for weights in ('raw', 'ema'):
-                expected = from_research_export(research, 'S', weights)['model']
-                found = read_checkpoint(tmp_path / f'export-{update}-{weights}.pt')['model']
-                assert list(found) == list(expected) and all(torch.equal(found[key], expected[key]) for key in expected)
+
+
+@pytest.fixture(scope='module')
+def s_42_100(tmp_path_factory: pytest.TempPathFactory) -> tuple[Path, list[dict]]:
+    """S's 100 updates of seed 42 with an export after each, trained once for the G4 and the G5 test."""
+    require_cpu_training_golden_environment()
+    folder = tmp_path_factory.mktemp('S-42-100')
+    return folder, train(folder, 'S', 42, 100, workers=2)
+
+
+@pytest.mark.slow
+def test_the_100_updates_of_s_equal_the_research_loop(s_42_100):
+    folder, history = s_42_100
+    check_g4(folder, history, 'S', 100, 's42')
+
+
+@pytest.mark.slow
+def test_the_exports_of_the_100_updates_equal_the_converted_research_exports(request):
+    """G5: the exports at updates 20 and 100 equal the converted research exports, tensor by tensor."""
+    research = {update: golden_large(f'g4/golden-runs/REC10A-XLE-PCU-noA/training/42/export-{update}.pt') for update in (20, 100)}
+    folder, _ = request.getfixturevalue('s_42_100')   # after the golden lookup: without the goldens the test skips first
+    for update, path in research.items():
+        for weights in ('raw', 'ema'):
+            expected = from_research_export(path, 'S', weights)['model']
+            found = read_checkpoint(folder / f'export-{update}-{weights}.pt')['model']
+            assert list(found) == list(expected) and all(torch.equal(found[key], expected[key]) for key in expected)
 
 
 @pytest.mark.slow
