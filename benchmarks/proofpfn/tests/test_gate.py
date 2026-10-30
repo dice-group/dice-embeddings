@@ -67,10 +67,14 @@ def test_plain_slots_equal_the_heldout_index():
     assert len(plain) == 100 and plain == [tuple(s) for s in gt.heldout_slots('plain', 100)]
 
 
-def test_gate_refuses_other_arms():
-    family = sy.ProofPFNFamily(key='gs', arm='S', checkpoints={seed: Path(f'{seed}.pt') for seed in SEEDS})
+def test_gate_refuses_other_arms_and_nondeterministic_cuda(monkeypatch):
+    s = sy.ProofPFNFamily(key='gs', arm='S', checkpoints={seed: Path(f'{seed}.pt') for seed in SEEDS})
+    n = sy.ProofPFNFamily(key='gn', arm='N', checkpoints={seed: Path(f'{seed}.pt') for seed in SEEDS})
     with pytest.raises(ValueError, match='compares S with N'):
-        gt.gate(family, family)
+        gt.gate(s, s)
+    monkeypatch.delenv('CUBLAS_WORKSPACE_CONFIG', raising=False)
+    with pytest.raises(RuntimeError, match='CUBLAS_WORKSPACE_CONFIG'):
+        gt.gate(s, n, device='cuda')
 
 
 def test_one_world_scores_like_the_research_gate():

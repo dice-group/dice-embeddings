@@ -30,7 +30,7 @@ import torch
 from dicee.models.ultra import ULTRA
 from dicee.synthetic_kg.arms import ARMS, SEEDS
 from dicee.synthetic_kg.batch import World
-from dicee.synthetic_kg.determinism import deterministic_execution
+from dicee.synthetic_kg.determinism import deterministic_execution, require_cublas_workspace
 from dicee.synthetic_kg.prepare import PreparedWorld, answers_by_anchor, prepare_world
 from dicee.synthetic_kg.priors import Slot, world
 from dicee.synthetic_kg.streams import stage2_family
@@ -194,9 +194,15 @@ def gate(s: ProofPFNFamily, n: ProofPFNFamily, families: Sequence[str] = FAMILIE
     Returns:
         The record: the systems with their model hashes, the settings, ``results`` (``compare``), ``queries``,
         ``per_world`` (``score``'s MRRs) and, with every family, the ``reading``.
+
+    Raises:
+        ValueError: For families of other arms.
+        RuntimeError: For CUDA without a deterministic cuBLAS workspace setting.
     """
     if (s.arm, n.arm) != ('S', 'N'):
         raise ValueError(f'the gate compares S with N, not {s.arm} with {n.arm}')
+    if torch.device(device).type == 'cuda':
+        require_cublas_workspace()
     models: dict[str, dict[str, ULTRA]] = {}
     for arm, system in (('a', s), ('b', n)):
         system.check()
