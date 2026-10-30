@@ -9,7 +9,8 @@ negatives are false in the world.
 
 The source graphs are not part of the code. Their folder holds ``<name>/data.pt`` for each name of
 ``recipe.REAL_SOURCE_SHA256`` (the research files, checked against these pins before they load); it is given to
-``real_world`` or read from the environment variable ``PROOFPFN_REAL_SOURCES``, which spawned workers inherit.
+``real_world``, else read from the environment variable ``PROOFPFN_REAL_SOURCES``. Pretraining passes it to its worker
+processes explicitly.
 """
 import os
 from pathlib import Path

@@ -99,17 +99,17 @@ def hard_target_seed(seed: int, update: int) -> int:
     return sha256_int(f'{HARD_TARGET_VERSION}:{seed}:{update}', 'little')
 
 
-def initial_seed(seed: int, width: str = 'd64') -> int:
-    """The ``torch.manual_seed`` value of a run's initial weights (``cp_common.create``).
+def initial_seed(seed: int) -> int:
+    """The ``torch.manual_seed`` value of a run's initial weights (``cp_common.create`` with the width tag ``d64`` of
+    every ported arm).
 
     Args:
         seed: The run seed.
-        width: The model width tag of the research arms; every ported arm is ``'d64'``.
 
     Returns:
-        ``capacity_stream(seed, 'initial:<width>') % (2**63 - 1)``.
+        ``capacity_stream(seed, 'initial:d64') % (2**63 - 1)``.
     """
-    return capacity_stream(seed, f'initial:{width}') % (2 ** 63 - 1)
+    return capacity_stream(seed, 'initial:d64') % (2 ** 63 - 1)
 
 
 # ----------------------------------------------------------------------------------------------- stage-2 routing

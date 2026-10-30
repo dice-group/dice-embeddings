@@ -143,9 +143,9 @@ class PretrainResult(NamedTuple):
 
 # ------------------------------------------------------------------------------------------------------ the update
 
-def learning_rate(update: int, constant: int = CONSTANT_UPDATES, decay: int = DECAY_UPDATES) -> float:
-    """The learning rate of a 0-based update: ``LEARNING_RATE`` for ``constant`` updates, then linear to 0 over ``decay``."""
-    return LEARNING_RATE if update < constant else LEARNING_RATE * (1 - (update - constant) / decay)
+def learning_rate(update: int) -> float:
+    """The learning rate of a 0-based update: ``LEARNING_RATE`` for ``CONSTANT_UPDATES``, then linear to 0 over ``DECAY_UPDATES``."""
+    return LEARNING_RATE if update < CONSTANT_UPDATES else LEARNING_RATE * (1 - (update - CONSTANT_UPDATES) / DECAY_UPDATES)
 
 
 def hard_target(soft: torch.Tensor, generator: torch.Generator) -> torch.Tensor:
@@ -171,7 +171,7 @@ def hard_target(soft: torch.Tensor, generator: torch.Generator) -> torch.Tensor:
     return hard
 
 
-def _backward(model: ULTRA, prepared: PreparedWorld, generator: Optional[torch.Generator], microbatch: int) -> float:
+def _backward(model: ULTRA, prepared: PreparedWorld, generator: Optional[torch.Generator]) -> float:
     """Accumulate the gradients of the update's loss; returns the logged loss."""
     total = prepared.num_queries
     device, dtype = model.device, next(model.parameters()).dtype
@@ -183,8 +183,8 @@ def _backward(model: ULTRA, prepared: PreparedWorld, generator: Optional[torch.G
         context = to_device(task.context_mask, device)
         for head in (False, True):
             rows_of_direction = (task.head_prediction == head).nonzero().flatten().tolist()
-            for start in range(0, len(rows_of_direction), microbatch):
-                rows = rows_of_direction[start:start + microbatch]
+            for start in range(0, len(rows_of_direction), MICROBATCH):
+                rows = rows_of_direction[start:start + MICROBATCH]
                 place = to_device(torch.tensor(rows, dtype=torch.long), device)
                 scores = model.forward_query_facts(queries[place], head)
                 observed = context[place]
@@ -205,8 +205,7 @@ def _backward(model: ULTRA, prepared: PreparedWorld, generator: Optional[torch.G
     return value
 
 
-def update(model: ULTRA, optimizer: torch.optim.Optimizer, prepared: PreparedWorld, generator: Optional[torch.Generator] = None,
-           microbatch: int = MICROBATCH) -> dict[str, float]:
+def update(model: ULTRA, optimizer: torch.optim.Optimizer, prepared: PreparedWorld, generator: Optional[torch.Generator] = None) -> dict[str, float]:
     """One pretraining update on a prepared world; the caller sets the learning rate.
 
     Args:
@@ -215,7 +214,6 @@ def update(model: ULTRA, optimizer: torch.optim.Optimizer, prepared: PreparedWor
         prepared: The prepared world.
         generator: The update's CPU generator for the hard target (``streams.hard_target_seed``); ``None`` trains on the
             RB-W rows.
-        microbatch: Query rows per backward chunk.
 
     Returns:
         ``loss`` (the logged loss), ``grad_norm`` and ``seconds``.
@@ -227,7 +225,7 @@ def update(model: ULTRA, optimizer: torch.optim.Optimizer, prepared: PreparedWor
         raise ValueError('pretraining scores in training mode')
     started = time.monotonic()
     optimizer.zero_grad(set_to_none=True)
-    loss = _backward(model, prepared, generator, microbatch)
+    loss = _backward(model, prepared, generator)
     norm = torch.stack([p.grad.detach().norm() for p in model.parameters() if p.grad is not None]).norm()
     if not torch.isfinite(norm):
         raise FloatingPointError('the gradient norm is not finite')
@@ -238,11 +236,12 @@ def update(model: ULTRA, optimizer: torch.optim.Optimizer, prepared: PreparedWor
 
 
 @torch.no_grad()
-def ema_update(ema: Mapping[str, torch.Tensor], model: torch.nn.Module, decay: float = EMA_DECAY) -> None:
-    """Move the EMA of every floating tensor of the model's state towards its value: ``ema = decay * ema + (1 - decay) * value``."""
+def ema_update(ema: Mapping[str, torch.Tensor], model: torch.nn.Module) -> None:
+    """Move the EMA of every floating tensor of the model's state towards its value: ``ema = d * ema + (1 - d) * value``
+    with ``d = EMA_DECAY``."""
     for key, value in model.state_dict().items():
         if value.dtype.is_floating_point:
-            ema[key].mul_(decay).add_(value.detach(), alpha=1 - decay)
+            ema[key].mul_(EMA_DECAY).add_(value.detach(), alpha=1 - EMA_DECAY)
 
 
 # ------------------------------------------------------------------------------------------------------ the run
@@ -320,7 +319,8 @@ def _worker_init(threads: int) -> None:
 
 
 def prepared_worlds(seed: int, slots: Sequence[Slot], prior: PriorConfig, options: Mapping[str, str], workers: int = 4,
-                    prefetch: Optional[int] = None, worker_threads: int = 1) -> Generator[PreparedWorld, None, None]:
+                    prefetch: Optional[int] = None, worker_threads: int = 1,
+                    real_sources: Union[str, Path, None] = None) -> Generator[PreparedWorld, None, None]:
     """The prepared worlds of the slots, in slot order, generated ahead by a pool of spawned worker processes.
 
     At most ``prefetch`` worlds are in flight. A generator error in a worker is raised here (the run stops on it).
@@ -333,13 +333,14 @@ def prepared_worlds(seed: int, slots: Sequence[Slot], prior: PriorConfig, option
         workers: Worker processes; 0 prepares the worlds in this process.
         prefetch: Worlds in flight; ``None``: twice the workers.
         worker_threads: Torch threads of a worker.
+        real_sources: The folder of the real source graphs, passed to every job (``priors.world``).
 
     Yields:
         One prepared world per slot.
     """
     if workers == 0:
         for slot in slots:
-            yield prepare_slot(seed, slot, prior, options)
+            yield prepare_slot(seed, slot, prior, options, real_sources)
         return
     ahead = prefetch if prefetch is not None else 2 * workers
     pool = ProcessPoolExecutor(workers, mp_context=get_context('spawn'), initializer=_worker_init, initargs=(worker_threads,))
@@ -347,14 +348,14 @@ def prepared_worlds(seed: int, slots: Sequence[Slot], prior: PriorConfig, option
         pending: deque[Future[PreparedWorld]] = deque()
         remaining = iter(slots)
         for slot in remaining:
-            pending.append(pool.submit(prepare_slot, seed, slot, prior, dict(options)))
+            pending.append(pool.submit(prepare_slot, seed, slot, prior, dict(options), real_sources))
             if len(pending) >= ahead:
                 break
         while pending:
             prepared = pending.popleft().result()
             following = next(remaining, None)
             if following is not None:
-                pending.append(pool.submit(prepare_slot, seed, following, prior, dict(options)))
+                pending.append(pool.submit(prepare_slot, seed, following, prior, dict(options), real_sources))
             yield prepared
     finally:
         pool.shutdown(wait=True, cancel_futures=True)
@@ -362,22 +363,14 @@ def prepared_worlds(seed: int, slots: Sequence[Slot], prior: PriorConfig, option
 
 @contextmanager
 def _run_environment(config: PretrainConfig) -> Iterator[None]:
-    """Torch threads, deterministic execution and the real-source folder of a run; all restored afterwards."""
+    """Torch threads and deterministic execution of a run; both restored afterwards."""
     threads = torch.get_num_threads()
-    previous = os.environ.get(real.SOURCES_ENV)
     torch.set_num_threads(config.threads)
-    if config.real_sources is not None:
-        os.environ[real.SOURCES_ENV] = str(config.real_sources)
     try:
         with deterministic_execution():
             yield
     finally:
         torch.set_num_threads(threads)
-        if config.real_sources is not None:
-            if previous is None:
-                del os.environ[real.SOURCES_ENV]
-            else:
-                os.environ[real.SOURCES_ENV] = previous
 
 
 def _cpu(state: Mapping[str, torch.Tensor]) -> dict[str, torch.Tensor]:
@@ -455,8 +448,9 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
 
         done, stopped = start, False
         began = time.monotonic()
+        sources = real.source_folder(config.real_sources) if origin['real_sources'] else None
         worlds = prepared_worlds(config.seed, order[start:end], preset.prior, preset.model_config(), config.workers, config.prefetch,
-                                 config.worker_threads)
+                                 config.worker_threads, sources)
         with closing(worlds):
             for i, prepared in enumerate(worlds, start):
                 if tuple(prepared.slot) != tuple(order[i]):

@@ -16,7 +16,7 @@ legacy template of index ``i``:
 """
 import random
 from collections import defaultdict
-from typing import Any, Callable, Iterable, Optional, Sequence
+from typing import Any, Callable, Iterable, Sequence
 
 import numpy as np
 import torch
@@ -142,18 +142,18 @@ def similarity_world(rng: np.random.Generator) -> tuple[int, int, list[Triple], 
     return n, relations, sorted(triples), domains, ranges
 
 
-def statistical(seed: int, index: int, layout: Optional[Template] = None) -> tuple[dict[str, WorldBatch], dict[str, Any]]:
-    """A statistical world (``st_prior.statistical``): a similarity world, 70 to 90 % observed.
+def statistical(seed: int, index: int) -> tuple[dict[str, WorldBatch], dict[str, Any]]:
+    """A statistical world (``st_prior.statistical``): a similarity world, 70 to 90 % observed, in the layout of the
+    index's legacy template.
 
     Args:
         seed: The run seed.
         index: The stage-2 index.
-        layout: The legacy template of the index, built when ``None``.
 
     Returns:
         The batch and its metadata.
     """
-    layout = layout or template(seed, index)
+    layout = template(seed, index)
     rng = np.random.default_rng(statistical_stream(seed, index, 'world'))
     n, nr, facts, domains, ranges = similarity_world(rng)
     batch, observed = query_world(layout, facts, [d.tolist() for d in domains], [r.tolist() for r in ranges], n, nr, rng,
@@ -263,18 +263,18 @@ def background(n0: int, original: np.ndarray, context_size: int, rng: np.random.
     return new, kinds, facts
 
 
-def structured(seed: int, index: int, layout: Optional[Template] = None) -> tuple[dict[str, WorldBatch], dict[str, Any]]:
-    """A structured world, or the plain template where the index's hash says plain (``sw_prior.structured``).
+def structured(seed: int, index: int) -> tuple[dict[str, WorldBatch], dict[str, Any]]:
+    """A structured world on the index's legacy template, or the template itself where the index's hash says plain
+    (``sw_prior.structured``).
 
     Args:
         seed: The run seed.
         index: The stage-2 index.
-        layout: The legacy template of the index, built when ``None``.
 
     Returns:
         The batch and its metadata.
     """
-    layout = layout or template(seed, index)
+    layout = template(seed, index)
     batch = layout.batch
     if not is_structured(seed, index):
         return batch, dict(family='plain', program_slot=layout.program_slot, recipe_batch=layout.recipe_batch)

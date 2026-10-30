@@ -14,7 +14,8 @@ is prefix-stable: slot ``i`` does not depend on the run length. ``order_sha256``
 """
 import hashlib
 from dataclasses import dataclass
-from typing import Any, NamedTuple, Optional, Sequence
+from pathlib import Path
+from typing import Any, NamedTuple, Optional, Sequence, Union
 
 from ..batch import World, WorldBatch, check_batch, world_sizes
 from ..recipe import GENERATOR_PARAMS, RECORD_PARAMS, STAGE1_WORLDS, STAGE2_OFFSET, TOTAL_UPDATES
@@ -281,7 +282,7 @@ def order_sha256(order: Sequence[Sequence[Any]]) -> str:
     return hashlib.sha256('\n'.join(f'{f} {s} {i}' for f, s, i in order).encode()).hexdigest()
 
 
-def world(seed: int, slot: Slot, prior: PriorConfig) -> World:
+def world(seed: int, slot: Slot, prior: PriorConfig, real_sources: Union[str, Path, None] = None) -> World:
     """The world of an order slot, checked (the research worker's ``pt_worlds.world`` and ``check_batches``).
 
     The world depends on the seed, the slot and the family's spec only; generators draw from their own seeded streams
@@ -291,6 +292,7 @@ def world(seed: int, slot: Slot, prior: PriorConfig) -> World:
         seed: The run seed.
         slot: A slot of ``build_order(seed, prior)``.
         prior: The prior of the order.
+        real_sources: The folder of the real source graphs, which the real worlds read (``real.source_folder``).
 
     Returns:
         The world; ``meta['family']`` is the slot's family, and hook families keep the generator's own family name as
@@ -306,7 +308,7 @@ def world(seed: int, slot: Slot, prior: PriorConfig) -> World:
     stage1 = slot.source == 's1' and slot.index >= STAGE1_WORLDS
     if slot.family not in prior.shares or slot.source not in sources or slot.index < 0 or stage1 or (slot.source == 's2' and slot.index < STAGE2_OFFSET):
         raise ValueError(f'slot {tuple(slot)} does not belong to this prior')
-    batch, meta = _generate(seed, slot, spec)
+    batch, meta = _generate(seed, slot, spec, real_sources)
     check_batch(batch)
     if spec is not None:
         meta = dict(meta, generator_family=meta.get('family'), family=slot.family)
@@ -315,7 +317,7 @@ def world(seed: int, slot: Slot, prior: PriorConfig) -> World:
     return World(batch, {**meta, **world_sizes(batch)})
 
 
-def _generate(seed: int, slot: Slot, spec: Optional[FamilySpec]) -> tuple[dict[str, WorldBatch], dict[str, Any]]:
+def _generate(seed: int, slot: Slot, spec: Optional[FamilySpec], real_sources: Union[str, Path, None]) -> tuple[dict[str, WorldBatch], dict[str, Any]]:
     """Dispatch to the family generator: ``(task name -> WorldBatch, generator metadata)``.
 
     The generators live in the modules of this package, imported here at call time: ``legacy`` (stage 1, ``'s1'``),
@@ -330,7 +332,7 @@ def _generate(seed: int, slot: Slot, spec: Optional[FamilySpec]) -> tuple[dict[s
         return stage2_world(seed, slot.index)
     if spec.generator == 'real':
         from .real import real_world
-        return real_world(seed, slot.index, spec)
+        return real_world(seed, slot.index, spec, real_sources)
     from .records import record_world
     return record_world(seed, slot.index, spec)
 

@@ -19,7 +19,8 @@ at zero output. ``PreparedWorld.tensors`` names the tensors as the golden refere
 """
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import Any, Mapping
+from pathlib import Path
+from typing import Any, Mapping, Union
 
 import torch
 
@@ -238,7 +239,7 @@ def prepare_world(generated: World, slot: Slot, relation_weighting: str = 'binar
     return PreparedWorld(slot, tasks, dict(generated.meta), relation_weighting, pair_channels)
 
 
-def prepare_slot(seed: int, slot: Slot, prior: PriorConfig, options: Mapping[str, str]) -> PreparedWorld:
+def prepare_slot(seed: int, slot: Slot, prior: PriorConfig, options: Mapping[str, str], real_sources: Union[str, Path, None] = None) -> PreparedWorld:
     """The worker job of pretraining: generate the world of an order slot and prepare it.
 
     Args:
@@ -246,8 +247,9 @@ def prepare_slot(seed: int, slot: Slot, prior: PriorConfig, options: Mapping[str
         slot: The order slot.
         prior: The prior of the order.
         options: ``ultra_relation_weighting`` and ``ultra_pair_channels`` of the model.
+        real_sources: The folder of the real source graphs (``priors.world``).
 
     Returns:
         The prepared world.
     """
-    return prepare_world(world(seed, slot, prior), slot, options['ultra_relation_weighting'], options['ultra_pair_channels'])
+    return prepare_world(world(seed, slot, prior, real_sources), slot, options['ultra_relation_weighting'], options['ultra_pair_channels'])
