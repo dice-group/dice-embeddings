@@ -1,0 +1,80 @@
+{
+ "about": "Per-position KGPFN ranks of the probe graphs as int64 digests (golden README section 1), per GPU: the tail and head ranks and their rule views of the worker output (raw.json), index = position in test.txt. The ranks depend on the GPU type.",
+ "graphs": {
+  "FB15k237Inductive_v1": {
+   "manifest": "dev121",
+   "key": "ultra-suite-v1/FB15k237Inductive_v1",
+   "test_rows": 411,
+   "num_neg": 80,
+   "batch_size": 64,
+   "entity_chunk": 64,
+   "eval_chunk": 256
+  },
+  "WN18RRInductive_v1": {
+   "manifest": "dev121",
+   "key": "ultra-suite-v1/WN18RRInductive_v1",
+   "test_rows": 373,
+   "num_neg": 80,
+   "batch_size": 64,
+   "entity_chunk": 64,
+   "eval_chunk": 256
+  },
+  "NELLInductive_v1": {
+   "manifest": "gate",
+   "key": "ultra-suite-v1/NELLInductive_v1",
+   "test_rows": 201,
+   "num_neg": 40,
+   "batch_size": 64,
+   "entity_chunk": 64,
+   "eval_chunk": 256
+  }
+ },
+ "references": {
+  "NVIDIA GeForce RTX 4070 Ti SUPER": {
+   "source": "research kgpfn-ref-v1-runtime/kgpfn_eval.py (SHA-256 a2f91f78a2ca742504b4425cb07e1511d22332289e86d685c4876125e9601b02), unchanged, in kgfm/kgpfn:af415c33 on the local GPU on 30 October 2026, with the meta.json of the clean adapter (blind context, seed 0, the settings above)",
+   "digests": {
+    "FB15k237Inductive_v1": {
+     "tail_rank": "a4b853e7888c78bc02bff1a6830d48c3be28236086cbb2e85da0050477132519",
+     "head_rank": "7c98c3bb4c07d9ff96d30f85b645c967a84a25e49dd9bac07151e6eb43067777",
+     "tail_rank_rule": "00b127bfa3156b2f3b881f4524146985a69922de94ddc57c419289945686fa90",
+     "head_rank_rule": "c4527895aa4f9e34f67b386e5fa93f40fdd40b3d8669e7dde6aa5a8d4f39570c"
+    },
+    "WN18RRInductive_v1": {
+     "tail_rank": "98388b1378857dc61b3b8c53a65805906335c5c44250e78af428ae290dd945d9",
+     "head_rank": "d0de104d897f884f46611a48ccb88ca087db89c4c4a4fb3775e28c5a316e117f",
+     "tail_rank_rule": "1d8882583e31a667dce91cc2ed1d4a54942df296588af2d69c4cf8245f0e9800",
+     "head_rank_rule": "38fbcfe71f2625c519478f5168c7ff85462b2be27acb6d884522980ecc2e564f"
+    },
+    "NELLInductive_v1": {
+     "tail_rank": "75c3f47fa14de40eba33a65c0aef2706ea04538caf47274b78bb06b92fa8fcf8",
+     "head_rank": "6077ebbe86cbf6074b6f7dd9a69e7ee3cda74f090c065e87008d4814104e29fc",
+     "tail_rank_rule": "56f427659f0a661328fe801db19cbfb98215d892539e9517c0d3f73387a71fbf",
+     "head_rank_rule": "a7a93ac95703273c3b436fadb3fa50777752db2d8ed0c9cd0b00c6dc4d47313c"
+    }
+   }
+  },
+  "NVIDIA H100 NVL": {
+   "source": "kiowl rows K/allgraph-v1/rows-kgpfn/ultra-suite-v1/kgpfn/<graph>.json (kgpfn_ag.py finalize of kgpfn_eval.py runs in the portable files of kgfm/kgpfn:af415c33); their raw ranks equal K/kgpfn-ref-v1/check-blind/<graph>.json",
+   "digests": {
+    "FB15k237Inductive_v1": {
+     "tail_rank": "4fd9240562dbe4bfd3449a68446930abc74ab0bbc6fc397dd21e710fb49b057c",
+     "head_rank": "6984542b0574ddcddfbf8de0e1ef97d58e544ae6a7df982488b8ed349725f325",
+     "tail_rank_rule": "25d3f3cb39d6991b228fbd0cf62fe701dab19a6a40b9d7170f514c66438d7284",
+     "head_rank_rule": "ff55ef3759a8ff387770d3fb435bbb6666bec01e4975d14c8e10f54f6fb672cd"
+    },
+    "WN18RRInductive_v1": {
+     "tail_rank": "730a179a01668fea98db6f22d1b1eb7d53e5aa3b98d8b026d528e4d8f178d0de",
+     "head_rank": "bab9a338e920df81cc1ceebbfb2004c770f6c819af9bd8b1c7eba3ab41687ad7",
+     "tail_rank_rule": "accf0618b1cc87be38081e1af115c76b69d439f72e7059ebaa0d4d73ee07b059",
+     "head_rank_rule": "a240aa2d256e1ce4b08caa6943f3944d4930a6f4621c1e587dbf7f8b2c942858"
+    },
+    "NELLInductive_v1": {
+     "tail_rank": "ff0a22d9544aeb7369b89d9e7b1b845a1fa44862afadcbd2ea046923baf12d4b",
+     "head_rank": "be7bf5122e88efa232a002fdee60d27141b97c3d7993291967fe803c03e615cb",
+     "tail_rank_rule": "8ee165d7ca61950ae50fc3c1612313dfde48fa5601766bb8adc2c94a72b90d09",
+     "head_rank_rule": "b8eaa33a6f0f6a89749ae6622e6e08824272ff567523f5912d762f3737824c49"
+    }
+   }
+  }
+ }
+}
