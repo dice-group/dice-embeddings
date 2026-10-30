@@ -12,7 +12,8 @@ The two tasks of the batch sample 15 rule targets and 15 base targets with 512 n
 ``pair_batches.from_world``, ``program.make_batch_values``), and a targeted observation mask removes the observed answers
 of up to three frequent anchors per task (``oc_prior``, arm ``targeted``). Every family keeps from this template its
 task names and order, the head and tail pattern of each task and the program-slot flag; the record and real families
-also keep its RecipeBatch provenance (``Template.recipe_batch``).
+also keep its RecipeBatch provenance (``Template.recipe_batch``). The research also stored a fingerprint of the world
+record in each batch (``world_sha256``); no update reads it and no draw depends on it, so the port omits it.
 
 The generator reads four values of the research recipe (``aa_common.cfg``; see ``recipe``): the run seed,
 ``QUERIES``, ``NEGATIVES`` and the world sizes ``WORLD``. The research rebuilt the same worlds in several
@@ -31,7 +32,7 @@ import numpy as np
 from ..batch import WorldBatch
 from ..recipe import LEGACY_OFFSET, NEGATIVES, QUERIES
 from ..streams import joint_world_stream, observation_mask_stream, pair_affinity_stream, pair_slot_stream, rule_program_stream, source_schedule_stream
-from .factorial import LegacyBatch, Proofs, Rule, Triple, control_batches, control_world, derive, json_sha256, sample_groups, task_quotas
+from .factorial import LegacyBatch, Rule, Triple, control_batches, control_world, derive, sample_groups, task_quotas
 
 POSITION_OFFSET = 50_000
 """``confirm_common.OFFSET``: legacy position = ``LEGACY_OFFSET + stream index + POSITION_OFFSET``."""
@@ -48,9 +49,6 @@ MAX_FACTS = 200_000
 OBSERVATION_CAP = 20_000
 """Most observed facts of a rule world (``worlds.observe``)."""
 
-WORLDS_VERSION = 'joint-worlds-v2'
-"""``worlds.VERSION``: the version field of a rule world's record."""
-
 MAX_ANCHORS, MAX_REMOVAL_FRACTION, MIN_ROLE_COUNT, ROLE_QUANTILE = 3, .20, 2, .75
 """The targeted mask (``oc_prior``): anchors per task, largest removed share of the context, frequent-role rule."""
 
@@ -59,32 +57,34 @@ MAX_ANCHORS, MAX_REMOVAL_FRACTION, MIN_ROLE_COUNT, ROLE_QUANTILE = 3, .20, 2, .7
 
 @dataclass(frozen=True)
 class RuleWorld:
-    """A typed rule world with exact truth and an independent observation (joint-worlds-v2 ``World``, profile ``sparse``)."""
+    """A typed rule world with exact truth and an independent observation (joint-worlds-v2 ``World``, profile ``sparse``).
+
+    Attributes:
+        seed: The world's own seed; it seeds the streams of the later layers.
+        n: Entity count.
+        nr: Relation count.
+        base: The base facts.
+        truth: The closure of the base under the rules.
+        rules: The rules.
+        context: The observed facts.
+        observation_seed: The seed of the observation, which the later layers draw again.
+        types: The type of every entity.
+        signatures: The (head type, tail type) of every relation.
+    """
 
     seed: int
     n: int
     nr: int
     base: frozenset[Triple]
     truth: frozenset[Triple]
-    proofs: Proofs
     rules: tuple[Rule, ...]
     context: frozenset[Triple]
     observation_seed: int
-    observed_fraction: float
     types: tuple[int, ...]
     signatures: tuple[tuple[int, int], ...]
 
-    def fingerprint(self) -> str:
-        """SHA-256 of the research world record (``World.fingerprint``); the ``world_sha256`` of its batches."""
-        return json_sha256(dict(version=WORLDS_VERSION, seed=self.seed, profile='sparse', n=self.n, R=self.nr, base=sorted(self.base),
-                                truth=sorted(self.truth), context=sorted(self.context),
-                                rules=[dict(body=r.body, head=r.head, reverse=r.reverse) for r in self.rules],
-                                proofs=[[q, rid, premises] for q, (rid, premises) in sorted(self.proofs.items())],
-                                observation_seed=self.observation_seed, observed_fraction=self.observed_fraction,
-                                types=self.types, signatures=self.signatures), compact=True)
 
-
-def observe(truth: frozenset[Triple], seed: int) -> tuple[frozenset[Triple], float]:
+def observe(truth: frozenset[Triple], seed: int) -> frozenset[Triple]:
     """Observe each fact with one probability U(0.5, 0.9), at most ``OBSERVATION_CAP`` facts (``worlds.observe``)."""
     rng = np.random.default_rng(seed)
     fraction = float(rng.uniform(.5, .9))
@@ -92,7 +92,7 @@ def observe(truth: frozenset[Triple], seed: int) -> tuple[frozenset[Triple], flo
     kept = [q for q, flag in zip(ordered, rng.random(len(ordered)) < fraction) if flag]
     if len(kept) > OBSERVATION_CAP:
         kept = [kept[i] for i in rng.choice(len(kept), OBSERVATION_CAP, replace=False)]
-    return frozenset(kept), fraction
+    return frozenset(kept)
 
 
 def rule_world(seed: int) -> RuleWorld:
@@ -137,10 +137,9 @@ def rule_world(seed: int) -> RuleWorld:
         remapped_types[new] = int(types[old])
     for old, new in enumerate(relations):
         remapped_signatures[new] = signatures[old]
-    truth, proofs = derive(base_ids, rules, MAX_FACTS)
+    truth, _ = derive(base_ids, rules, MAX_FACTS)
     observation_seed = joint_world_stream(seed, 'observation')
-    context, fraction = observe(truth, observation_seed)
-    return RuleWorld(seed, n, nr, base_ids, truth, proofs, rules, context, observation_seed, fraction, tuple(remapped_types),
+    return RuleWorld(seed, n, nr, base_ids, truth, rules, observe(truth, observation_seed), observation_seed, tuple(remapped_types),
                      tuple(remapped_signatures))
 
 
@@ -175,9 +174,8 @@ def affinity_rewiring(source: RuleWorld) -> RuleWorld:
             edges[i], edges[j] = (h, y), (x, t)
         facts.difference_update(q for q in source.base if q[1] == r)
         facts.update((h, r, t) for h, t in pairs)
-    truth, proofs = derive(facts, source.rules, MAX_FACTS)
-    context, fraction = observe(truth, source.observation_seed)
-    return replace(source, base=frozenset(facts), truth=truth, proofs=proofs, context=context, observed_fraction=fraction)
+    truth, _ = derive(facts, source.rules, MAX_FACTS)
+    return replace(source, base=frozenset(facts), truth=truth, context=observe(truth, source.observation_seed))
 
 
 def alternatives(signatures: tuple[tuple[int, int], ...], available: set[int], target: tuple[int, int]) -> list[tuple[tuple[int, ...], bool]]:
@@ -224,9 +222,8 @@ def rule_programs(source: RuleWorld) -> RuleWorld:
         rules.extend(Rule(body, head, reverse) for body, reverse in chosen)
         available.add(head)
         bound += additional
-    truth, proofs = derive(source.base, tuple(rules), MAX_FACTS)
-    context, fraction = observe(truth, source.observation_seed)
-    return replace(source, rules=tuple(rules), truth=truth, proofs=proofs, context=context, observed_fraction=fraction)
+    truth, _ = derive(source.base, tuple(rules), MAX_FACTS)
+    return replace(source, rules=tuple(rules), truth=truth, context=observe(truth, source.observation_seed))
 
 
 # ----------------------------------------------------------------------------------------------- source selection
@@ -284,7 +281,6 @@ def rule_batches(world: RuleWorld, index: int, joint_exclusion: bool) -> dict[st
         ValueError: For a short pool, or a context without facts.
     """
     total = QUERIES
-    fingerprint = world.fingerprint()
     pools = _pools(world)
     result = {}
     for task, (count, tails) in task_quotas(index, total).items():
@@ -297,7 +293,7 @@ def rule_batches(world: RuleWorld, index: int, joint_exclusion: bool) -> dict[st
         indices = [*range(tails), *range(total // 2, total // 2 + count - tails)]
         groups, directions = groups[indices], directions[indices]
         context = world.context - set(map(tuple, groups[:, 0].tolist()))
-        result[task] = LegacyBatch(groups, directions, context, world.truth, world.n, world.nr, fingerprint, sampling_seed, count)
+        result[task] = LegacyBatch(groups, directions, context, world.truth, world.n, world.nr, sampling_seed, count)
     if joint_exclusion:
         targets = {tuple(q) for batch in result.values() for q in batch.groups[:, 0].tolist()}
         result = {task: batch._replace(context=world.context - targets) for task, batch in result.items()}
@@ -371,8 +367,8 @@ class Template:
 
     Attributes:
         batch: ``'rule'`` and ``'base'`` with 15 query groups each, as an update reads them.
-        recipe_batch: Per task the research RecipeBatch fields that no update reads: ``world_sha256`` (the fingerprint of
-            the world the batch was sampled from), ``sampling_seed`` and ``requested_positives``.
+        recipe_batch: Per task the research RecipeBatch fields that no update reads: ``sampling_seed`` (the seed of the
+            task's query sample) and ``requested_positives``.
         program_slot: Whether the world has new rule programs.
     """
 
@@ -411,8 +407,7 @@ def template(seed: int, index: int) -> Template:
         batches = rule_batches(world, sampler, pair)
     batch = {task: WorldBatch(b.groups, b.head_prediction, targeted_context(b), b.truth, b.num_entities, b.num_relations)
              for task, b in batches.items()}
-    provenance = {task: dict(world_sha256=b.world_sha256, sampling_seed=b.sampling_seed, requested_positives=b.requested_positives)
-                  for task, b in batches.items()}
+    provenance = {task: dict(sampling_seed=b.sampling_seed, requested_positives=b.requested_positives) for task, b in batches.items()}
     return Template(batch, provenance, program)
 
 

@@ -15,16 +15,14 @@ generator layers, each a treatment of the one below; the port keeps their order 
 6. endpoint reuse: sixteen copies with merged head-only and tail-only nodes (``endpoint_prior``, arm
    ``concentrated``).
 
-``control_batches`` samples the two tasks of the update from the final world. The research hashed every layer into a
-provenance chain; ``world_sha256`` of the batches is its last link (a fingerprint that no update reads), so the port
-computes the chain too. Only the training split is reachable; the research checks that the construction guarantees
-(for example the local rule applications of a closure) are not repeated.
+``control_batches`` samples the two tasks of the update from the final world. The research also hashed every layer into
+a provenance record of the batches (``world_sha256``); no update reads it and no draw depends on it, so the port omits
+it. Only the training split is reachable; the research checks that the construction guarantees (for example the local
+rule applications of a closure) are not repeated.
 """
-import hashlib
-import json
 import random
 from collections import defaultdict
-from dataclasses import asdict, dataclass, replace
+from dataclasses import dataclass, replace
 from itertools import permutations
 from typing import Any, Callable, Iterable, NamedTuple, Optional
 
@@ -53,14 +51,6 @@ class Rule:
     body: tuple[int, ...]
     head: int
     reverse: bool = False
-
-
-class Contrast(NamedTuple):
-    """A false endpoint pair of a candidate grid with its wrongly ordered path (``generator.Contrast``)."""
-
-    positive: Triple
-    negative: Triple
-    path: tuple[Triple, ...]
 
 
 def derive(base: Iterable[Triple], rules: tuple[Rule, ...], limit: Optional[int] = None) -> tuple[frozenset[Triple], Proofs]:
@@ -129,7 +119,20 @@ def proof_leaves(fact: Triple, base: frozenset[Triple], proofs: Proofs) -> froze
 
 @dataclass(frozen=True)
 class Episode:
-    """A complete world and its observation (``generator.Episode`` without queries, labels and contrasts, always empty here)."""
+    """A complete world and its observation (the fields of ``generator.Episode`` that a world reads).
+
+    Attributes:
+        seed: The world's own seed; it seeds the streams of the later layers.
+        num_entities: Entity count.
+        num_relations: Relation count.
+        rules: The rules of the world.
+        base: The base facts.
+        truth: The closure of the base under the rules.
+        context: The observed facts.
+        support: The facts that reveal the rules (the demonstration paths and their correct endpoint pairs).
+        protected: The support facts that the observation must keep.
+        background_relation: The relation outside every rule.
+    """
 
     seed: int
     num_entities: int
@@ -138,23 +141,9 @@ class Episode:
     base: frozenset[Triple]
     truth: frozenset[Triple]
     context: frozenset[Triple]
-    proofs: Proofs
     support: frozenset[Triple]
     protected: frozenset[Triple]
     background_relation: int
-    observed_fraction: float
-    kind: str
-    prior: str
-
-
-def serialize_episode(ep: Episode) -> dict[str, Any]:
-    """The research ``shift_diagnostic.serialize_episode`` record of an episode (for the provenance digests)."""
-    return {'seed': ep.seed, 'num_entities': ep.num_entities, 'num_relations': ep.num_relations,
-            'rules': [{'body': r.body, 'head': r.head, 'reverse': r.reverse} for r in ep.rules],
-            'base': sorted(ep.base), 'truth': sorted(ep.truth), 'context': sorted(ep.context), 'queries': [], 'labels': [],
-            'proofs': [{'fact': q, 'rule': rule, 'premises': premises} for q, (rule, premises) in sorted(ep.proofs.items())],
-            'support': sorted(ep.support), 'protected': sorted(ep.protected), 'background_relation': ep.background_relation,
-            'observed_fraction': ep.observed_fraction, 'kind': ep.kind, 'prior': ep.prior, 'contrasts': [], 'generation_attempts': 1}
 
 
 def validate_world(ep: Episode) -> None:
@@ -182,15 +171,7 @@ def remap_episode(ep: Episode, entities: list[int], relations: list[int]) -> Epi
     return replace(ep, num_entities=len(entities),
                    rules=tuple(Rule(tuple(relations[r] for r in rule.body), relations[rule.head], rule.reverse) for rule in ep.rules),
                    base=facts(ep.base), truth=facts(ep.truth), context=facts(ep.context),
-                   proofs={fact(q): (rule, tuple(map(fact, premises))) for q, (rule, premises) in ep.proofs.items()},
                    support=facts(ep.support), protected=facts(ep.protected), background_relation=relations[ep.background_relation])
-
-
-def json_sha256(value: Any, compact: bool = False) -> str:
-    """SHA-256 of ``json.dumps(value, sort_keys=True)``: ``shift_experiments.json_hash``, or with ``compact`` separators
-    the joint worlds' ``World.fingerprint``."""
-    text = json.dumps(value, sort_keys=True, separators=(',', ':')) if compact else json.dumps(value, sort_keys=True)
-    return hashlib.sha256(text.encode()).hexdigest()
 
 
 # ----------------------------------------------------------------------------------------------- batches
@@ -204,7 +185,6 @@ class LegacyBatch(NamedTuple):
     truth: frozenset[Triple]
     num_entities: int
     num_relations: int
-    world_sha256: str
     sampling_seed: int
     requested_positives: int
 
@@ -273,7 +253,7 @@ def _remap_grids(groups: list[dict], fact: Callable[[Triple], Triple], relations
     return out
 
 
-def first_world(seed: int, index: int) -> tuple[Episode, list[dict], str]:
+def first_world(seed: int, index: int) -> tuple[Episode, list[dict]]:
     """A world-first world of the training split with its candidate grids (``world_first.generate_world``), with the
     world sizes ``recipe.WORLD``.
 
@@ -282,7 +262,7 @@ def first_world(seed: int, index: int) -> tuple[Episode, list[dict], str]:
         index: The world index.
 
     Returns:
-        The episode, its grid blocks (remapped; ``order`` per bundle) and the SHA-256 of the research world record.
+        The episode and its grid blocks (remapped, with ``correct`` per bundle).
     """
     world_seed = world_first_stream(seed, 'world', ('train', index))
     obs_seed = world_first_stream(world_seed, 'observation', 0)
@@ -323,8 +303,8 @@ def first_world(seed: int, index: int) -> tuple[Episode, list[dict], str]:
                         base.update(path)
                         paths.append(path)
                     bundles.append({'triple': (h, output, t), 'order': order, 'paths': paths})
-            blocks.append({'rule': rid, 'demonstration': ordinal == 0, 'heads': heads, 'tails': tails, 'copies': copies, 'bundles': bundles})
-    truth, proofs = derive(base, rules)
+            blocks.append({'rule': rid, 'demonstration': ordinal == 0, 'copies': copies, 'bundles': bundles})
+    truth, _ = derive(base, rules)
     # One complete path copy per pair; further copies observed by a mask coupled by path position within a block.
     observed = obs.uniform(WORLD.min_observed, WORLD.max_observed)
     context = {q for q in sorted(background) if obs.random() < observed}
@@ -340,31 +320,19 @@ def first_world(seed: int, index: int) -> tuple[Episode, list[dict], str]:
                 if tuple(bundle['order']) == rule.body:
                     support.add(bundle['triple'])
     context.update(support)
-    # The masked view (unused by the recipe, which observes the supported context) enters only the world record.
-    masked = {q for q in sorted(context & background) if obs.random() < WORLD.mask_keep}
-    for block in blocks:
-        masks = [[obs.random() < WORLD.mask_keep for _ in rules[block['rule']].body] for _ in range(block['copies'])]
-        for bundle in block['bundles']:
-            for copy, path in enumerate(bundle['paths']):
-                masked.update(q for q, seen in zip(path, masks[copy]) if seen and q in context)
-    masked.update(q for q in sorted(support) if q[1] == output and obs.random() < WORLD.mask_keep)
+    # The research drew a masked view of the context from ``obs`` here, for its world record only.
     entities = rng.sample(range(next_node), next_node)
     relations = rng.sample(range(nr), nr)
-    ep = Episode(world_seed, next_node, nr, rules, frozenset(base), truth, frozenset(context), proofs, frozenset(support),
-                 frozenset(support), noise, observed, 'original', 'world-first-v1')
-    ep = remap_episode(ep, entities, relations)
+    ep = remap_episode(Episode(world_seed, next_node, nr, rules, frozenset(base), truth, frozenset(context), frozenset(support),
+                               frozenset(support), noise), entities, relations)
 
     def fact(q: Triple) -> Triple:
         return entities[q[0]], relations[q[1]], entities[q[2]]
 
-    remapped = [{**block, 'heads': [entities[x] for x in block['heads']], 'tails': [entities[x] for x in block['tails']]}
-                for block in _remap_grids(blocks, fact, relations)]
     validate_world(ep)
-    record = {'version': 1, 'template': serialize_episode(ep), 'masked_context': sorted(fact(q) for q in masked), 'blocks': remapped,
-              'config': asdict(WORLD), 'world_seed': world_seed, 'observation_seed': obs_seed}
     groups = [{**block, 'bundles': [{**b, 'correct': tuple(b['order']) == ep.rules[block['rule']].body} for b in block['bundles']]}
-              for block in remapped]
-    return ep, groups, json_sha256(record)
+              for block in _remap_grids(blocks, fact, relations)]
+    return ep, groups
 
 
 def family_rules(family: str) -> tuple[Rule, ...]:
@@ -376,12 +344,11 @@ def family_rules(family: str) -> tuple[Rule, ...]:
     return rules[family]
 
 
-def family_world(family: str, seed: int, index: int, blocks: int) -> dict[str, Any]:
+def family_world(family: str, seed: int, index: int, blocks: int) -> tuple[Episode, list[dict]]:
     """A world of balanced endpoint grids of one logical family, split ``test`` (``prior_mechanisms.family_world``).
 
     Returns:
-        The research record: ``episode`` (the ``Episode`` itself, not its serialization), ``groups`` (remapped grids
-        with ``correct`` per bundle), ``world_seed`` and ``family``.
+        The episode and its grid blocks (remapped, with ``correct`` per bundle).
 
     Raises:
         ValueError: When a grid pair is true by accident (no resampling).
@@ -436,11 +403,10 @@ def family_world(family: str, seed: int, index: int, blocks: int) -> dict[str, A
                         if correct:
                             support.add(query)
                     bundles.append({'triple': query, 'correct': correct, 'paths': paths})
-            groups.append({'group': group, 'length': length, 'demonstration': ordinal == 0, 'bundles': bundles})
-    truth, proofs = derive(base, rules)
+            groups.append({'demonstration': ordinal == 0, 'bundles': bundles})
+    truth, _ = derive(base, rules)
     context.update(support)
-    ep = Episode(world_seed, next_node, 10, rules, frozenset(base), truth, frozenset(context), proofs, frozenset(support),
-                 frozenset(support), 9, observed, family, 'mechanism-family-v1')
+    ep = Episode(world_seed, next_node, 10, rules, frozenset(base), truth, frozenset(context), frozenset(support), frozenset(support), 9)
     entities, relations = rng.sample(range(next_node), next_node), rng.sample(range(10), 10)
     ep = remap_episode(ep, entities, relations)
 
@@ -453,21 +419,20 @@ def family_world(family: str, seed: int, index: int, blocks: int) -> dict[str, A
             if (bundle['triple'] in ep.truth) != bundle['correct']:
                 raise ValueError('a controlled family has an accidentally true endpoint pair; no resampling')
     validate_world(ep)
-    return {'episode': ep, 'groups': remapped, 'world_seed': world_seed, 'family': family}
+    return ep, remapped
 
 
-def source_world(seed: int, index: int, family: str) -> tuple[Episode, list[dict], str]:
+def source_world(seed: int, index: int, family: str) -> tuple[Episode, list[dict]]:
     """The observed source world of a family (``prior_factorial.source_world``, split ``train``).
 
     Returns:
-        The episode, its grid blocks and the SHA-256 of its research provenance record.
+        The episode and its grid blocks.
     """
     if family == 'current':
         return first_world(world_first_stream(seed, 'factorial-original-v1', 'train'), index)
     if family not in FACTORIAL_FAMILIES:
         raise ValueError(f'unknown family {family!r}')
-    value = family_world(family, world_first_stream(seed, 'factorial-fresh-family-v1', 'train'), index, WORLD.blocks_per_rule)
-    ep, groups = value['episode'], value['groups']
+    ep, groups = family_world(family, world_first_stream(seed, 'factorial-fresh-family-v1', 'train'), index, WORLD.blocks_per_rule)
     planted = {q for block in groups for b in block['bundles'] for path in b['paths'] for q in path}
     context = set(ep.context - planted)
     obs = random.Random(world_first_stream(ep.seed, 'factorial-family-observations-v1', 'train'))
@@ -480,10 +445,9 @@ def source_world(seed: int, index: int, family: str) -> tuple[Episode, list[dict
             for path, mask in zip(bundle['paths'], masks):
                 context.update(q for q, keep in zip(path, mask) if keep or block['demonstration'])
     context.update(ep.support)
-    observed = replace(ep, context=frozenset(context), observed_fraction=fraction)
+    observed = replace(ep, context=frozenset(context))
     validate_world(observed)
-    construction = dict(value, episode=serialize_episode(ep))
-    return observed, groups, json_sha256({'construction': construction, 'observed_episode': serialize_episode(observed), 'split': 'train'})
+    return observed, groups
 
 
 def add_sparse_demonstrations(ep: Episode, groups: list[dict]) -> tuple[Episode, list[dict]]:
@@ -517,12 +481,12 @@ def add_sparse_demonstrations(ep: Episode, groups: list[dict]) -> tuple[Episode,
                     context.add(query)
                     support.add(query)
                 examples.append({'triple': query, 'correct': correct, 'paths': [path]})
-        added.append({'demonstration': True, 'kind': 'sparse_rule_examples', 'bundles': examples})
-    truth, proofs = derive(base, ep.rules)
+        added.append({'demonstration': True, 'bundles': examples})
+    truth, _ = derive(base, ep.rules)
     for block in added:
         if any((b['triple'] in truth) != b['correct'] for b in block['bundles']):
             raise ValueError('sparse demonstration labels disagree with the complete closure')
-    result = replace(ep, num_entities=next_node, base=frozenset(base), truth=truth, proofs=proofs, context=frozenset(context),
+    result = replace(ep, num_entities=next_node, base=frozenset(base), truth=truth, context=frozenset(context),
                      support=frozenset(support), protected=frozenset(support))
     return result, groups + added
 
@@ -531,28 +495,21 @@ def add_sparse_demonstrations(ep: Episode, groups: list[dict]) -> tuple[Episode,
 
 @dataclass(frozen=True)
 class FactorialWorld:
-    """A treated world with its target pools (``prior_factorial.FactorialWorld``; split ``train``)."""
+    """A treated world with its target pools (the fields of ``prior_factorial.FactorialWorld`` that a world reads).
+
+    Attributes:
+        episode: The treated world.
+        rule_pool: The held-out rule targets.
+        base_pool: The observed base targets.
+        family: The family of the source world; it seeds the query sample.
+        witnesses: Per rule target the paths that prove it.
+    """
 
     episode: Episode
     rule_pool: tuple[Triple, ...]
     base_pool: tuple[Triple, ...]
     family: str
-    scheduled_family: str
-    index: int
-    topology: str
-    source_sha256: str
-    augmentation: frozenset[Triple]
     witnesses: dict[Triple, tuple[tuple[Triple, ...], ...]]
-    candidate_contrasts: dict[Triple, tuple[Contrast, ...]]
-
-    def payload(self) -> dict[str, Any]:
-        """The research record of the world (``FactorialWorld.payload``)."""
-        return {'version': 1, 'episode': serialize_episode(self.episode), 'rule_pool': self.rule_pool, 'base_pool': self.base_pool,
-                'family': self.family, 'scheduled_family': self.scheduled_family, 'split': 'train', 'index': self.index,
-                'topology': self.topology, 'source_sha256': self.source_sha256, 'augmentation': sorted(self.augmentation),
-                'witnesses': [{'triple': q, 'paths': paths} for q, paths in sorted(self.witnesses.items())],
-                'candidate_contrasts': [{'positive': q, 'negatives': [{'triple': c.negative, 'path': c.path} for c in cs]}
-                                        for q, cs in sorted(self.candidate_contrasts.items())]}
 
 
 def scheduled_family(seed: int, index: int) -> str:
@@ -582,29 +539,16 @@ def scheduled_topology(seed: int, index: int) -> str:
     return values[index % 20]
 
 
-def factorial_world(seed: int, index: int, attached: bool, family: str, source: tuple[Episode, list[dict], str],
-                    sparse: tuple[Episode, list[dict]], ids: tuple[list[int], list[int]]) -> FactorialWorld:
+def factorial_world(attached: bool, family: str, sparse: tuple[Episode, list[dict]], ids: tuple[list[int], list[int]]) -> FactorialWorld:
     """The factorial treatment of a source world with sparse demonstrations (``prior_factorial.make_world``, arm
     ``both`` with ``attached``, else ``rules``).
 
     Raises:
         ValueError: When the world has no held-out planted target, or the fresh relation changed a label.
     """
-    _, _, source_hash = source
     ep, groups = sparse
-    source_hash = json_sha256({'source': source_hash, 'episode': serialize_episode(ep), 'groups': groups})
     witnesses = {b['triple']: tuple(tuple(p) for p in b['paths']) for block in groups if not block['demonstration']
                  for b in block['bundles'] if b['correct'] and b['triple'] in ep.truth}
-    contrasts = {}
-    for block in groups:
-        if block['demonstration']:
-            continue
-        for bundle in block['bundles']:
-            q = bundle['triple']
-            if q not in witnesses:
-                continue
-            contrasts[q] = tuple(Contrast(q, b['triple'], tuple(b['paths'][0])) for b in block['bundles']
-                                 if b['triple'] not in ep.truth and (b['triple'][:2] == q[:2] or b['triple'][1:] == q[1:]))
     if not witnesses or any(q in ep.context for q in witnesses):
         raise ValueError('need held-out positive rule targets')
     base_pool = sorted(ep.base & ep.context)
@@ -622,11 +566,11 @@ def factorial_world(seed: int, index: int, attached: bool, family: str, source: 
     extra = attached_edges if attached else frozenset(background)
     if len(extra) != len(anchors):
         raise ValueError('topology edge budgets differ')
-    truth, proofs = derive(ep.base | extra, ep.rules)
+    truth, _ = derive(ep.base | extra, ep.rules)
     if {q for q in truth if q[1] != new_relation} != set(ep.truth):
         raise ValueError('the irrelevant augmentation changed an original label')
-    result = replace(ep, num_relations=ep.num_relations + 1, base=ep.base | extra, truth=truth, proofs=proofs, context=ep.context | extra,
-                     background_relation=new_relation, prior='prior-factorial-v1', kind='both' if attached else 'rules')
+    result = replace(ep, num_relations=ep.num_relations + 1, base=ep.base | extra, truth=truth, context=ep.context | extra,
+                     background_relation=new_relation)
     entities, relations = ids
 
     def fact(q: Triple) -> Triple:
@@ -635,14 +579,10 @@ def factorial_world(seed: int, index: int, attached: bool, family: str, source: 
     result = remap_episode(result, entities, relations)
     validate_world(result)
     return FactorialWorld(result, tuple(sorted(fact(q) for q in witnesses)), tuple(sorted(fact(q) for q in base_pool)), family,
-                          scheduled_family(seed, index), index, 'attached' if attached else 'core', source_hash,
-                          frozenset(fact(q) for q in extra),
-                          {fact(q): tuple(tuple(fact(e) for e in p) for p in paths) for q, paths in witnesses.items()},
-                          {fact(q): tuple(Contrast(fact(c.positive), fact(c.negative), tuple(fact(e) for e in c.path)) for c in cs)
-                           for q, cs in contrasts.items()})
+                          {fact(q): tuple(tuple(fact(e) for e in p) for p in paths) for q, paths in witnesses.items()})
 
 
-def observation_dose(world: FactorialWorld, source: tuple[Episode, list[dict], str], sparse: tuple[Episode, list[dict]],
+def observation_dose(world: FactorialWorld, source: tuple[Episode, list[dict]], sparse: tuple[Episode, list[dict]],
                      ids: tuple[list[int], list[int]]) -> FactorialWorld:
     """Hide every sparse example after the first of its kind and add as many background edges in the core
     (``demo_context.layout``, ``_background`` and ``transform`` with view ``dose``).
@@ -650,7 +590,7 @@ def observation_dose(world: FactorialWorld, source: tuple[Episode, list[dict], s
     Raises:
         ValueError: When the treatment would leak a target or remove its last witness or a base target.
     """
-    before, groups, _ = source
+    before, groups = source
     after, expanded = sparse
     entities, relations = ids
 
@@ -682,8 +622,7 @@ def observation_dose(world: FactorialWorld, source: tuple[Episode, list[dict], s
     if len(extra) != len(sparse_nodes):
         raise ValueError('the matched background edge budget changed')
     context = (ep.context - removed) | extra
-    result = replace(ep, base=ep.base | extra, truth=ep.truth | extra, context=context, protected=ep.protected & context,
-                     kind='dose', prior='demo-context-v1')
+    result = replace(ep, base=ep.base | extra, truth=ep.truth | extra, context=context, protected=ep.protected & context)
     if any(q in context for q in world.rule_pool) or any(q[1] == ep.background_relation for q in world.rule_pool):
         raise ValueError('a rule target leaked or uses the augmentation relation')
     if any(not any(set(path) <= context for path in world.witnesses[q]) for q in world.rule_pool):
@@ -691,7 +630,7 @@ def observation_dose(world: FactorialWorld, source: tuple[Episode, list[dict], s
     pool = tuple(q for q in world.base_pool if q not in added)
     if not set(pool) <= context:
         raise ValueError('a common base target is no longer observed')
-    return replace(world, episode=result, base_pool=pool, augmentation=world.augmentation | extra)
+    return replace(world, episode=result, base_pool=pool)
 
 
 def second_matching(groups: list[dict], seed: int) -> tuple[dict[Triple, Triple], frozenset[Triple]]:
@@ -748,7 +687,7 @@ def multiple_matchings(original: FactorialWorld, groups: list[dict]) -> Factoria
 
     ep = original.episode
     new_base = facts(ep.base)
-    truth, proofs = derive(new_base, ep.rules)
+    truth, _ = derive(new_base, ep.rules)
     if not promoted <= truth or not set(original.rule_pool) <= truth:
         raise ValueError('the relabelled paths do not imply every designated positive')
     if len(new_base) != len(ep.base) or {(h, t) for h, _, t in new_base} != {(h, t) for h, _, t in ep.base}:
@@ -756,20 +695,14 @@ def multiple_matchings(original: FactorialWorld, groups: list[dict]) -> Factoria
     context = facts(ep.context)
     if len(context) != len(ep.context) or not context <= truth:
         raise ValueError('the relabelled observation changed its size or became false')
-    changed = replace(ep, base=new_base, truth=truth, proofs=proofs, context=context, support=facts(ep.support),
-                      protected=facts(ep.protected), prior='cardinality-prior-v1', kind='multiple')
-    contrasts = {q: tuple(Contrast(q, c.negative, tuple(map(fact, c.path))) for c in values if c.negative not in truth)
-                 for q, values in original.candidate_contrasts.items()}
+    changed = replace(ep, base=new_base, truth=truth, context=context, support=facts(ep.support), protected=facts(ep.protected))
     multiple = replace(original, episode=changed, base_pool=tuple(sorted(fact(q) for q in original.base_pool)),
-                       witnesses={q: tuple(tuple(map(fact, path)) for path in paths) for q, paths in original.witnesses.items()},
-                       candidate_contrasts=contrasts)
+                       witnesses={q: tuple(tuple(map(fact, path)) for path in paths) for q, paths in original.witnesses.items()})
     for world in (original, multiple):
         validate_world(world.episode)
         if not set(world.base_pool) <= world.episode.context:
             raise ValueError('the common base target pool is not observed')
-    binding = json_sha256({'version': 1, 'original': original.payload(), 'arm': 'multiple', 'relabelings': sorted(mapping.items()),
-                           'context': sorted(multiple.episode.context)})
-    return replace(multiple, source_sha256=binding)
+    return multiple
 
 
 def endpoint_reuse(world: FactorialWorld) -> FactorialWorld:
@@ -800,20 +733,17 @@ def endpoint_reuse(world: FactorialWorld) -> FactorialWorld:
         return frozenset((ids[mapping[copy, h]], r, ids[mapping[copy, t]]) for copy in range(ENDPOINT_COPIES) for h, r, t in original)
 
     base, context = facts(ep.base), facts(ep.context)
-    truth, proofs = derive(base, ep.rules)
+    truth, _ = derive(base, ep.rules)
     supported, observed_proofs = derive(context, ep.rules)
     rule_pool = supported - context - base
     witnesses: dict[Triple, tuple[tuple[Triple, ...], ...]] = {q: (tuple(sorted(proof_leaves(q, context, observed_proofs))),) for q in sorted(rule_pool)}
-    result_ep = replace(ep, num_entities=len(values), base=base, truth=truth, proofs=proofs, context=context, support=facts(ep.support),
-                        protected=facts(ep.protected), kind='concentrated', prior='endpoint-reuse-v1')
+    result_ep = replace(ep, num_entities=len(values), base=base, truth=truth, context=context, support=facts(ep.support),
+                        protected=facts(ep.protected))
     validate_world(result_ep)
     base_pool = tuple(sorted(facts(world.base_pool)))
     if not (set(base_pool) <= context & base and len(rule_pool) >= 30 and len(base_pool) >= 30):
         raise ValueError('the endpoint-reuse world needs 30 observed rule and base targets')
-    source = json_sha256({'source': world.source_sha256, 'version': 1, 'arm': 'concentrated', 'copies': ENDPOINT_COPIES,
-                          'mapping': sorted(mapping.items())})
-    return replace(world, episode=result_ep, rule_pool=tuple(sorted(rule_pool)), base_pool=base_pool, augmentation=facts(world.augmentation),
-                   witnesses=witnesses, candidate_contrasts={q: () for q in rule_pool}, source_sha256=source)
+    return replace(world, episode=result_ep, rule_pool=tuple(sorted(rule_pool)), base_pool=base_pool, witnesses=witnesses)
 
 
 def control_world(seed: int, index: int) -> FactorialWorld:
@@ -828,7 +758,7 @@ def control_world(seed: int, index: int) -> FactorialWorld:
     ep = sparse[0]
     ids = random.Random(world_first_stream(ep.seed, 'factorial-final-ids-v1', 0))
     permutation = (ids.sample(range(ep.num_entities), ep.num_entities), ids.sample(range(ep.num_relations + 1), ep.num_relations + 1))
-    world = factorial_world(seed, index, attached, family, source, sparse, permutation)
+    world = factorial_world(attached, family, sparse, permutation)
     world = observation_dose(world, source, sparse, permutation)
     entities, relations = permutation
     grids = _remap_grids(source[1], lambda q: (entities[q[0]], relations[q[1]], entities[q[2]]))
@@ -844,7 +774,6 @@ def control_batches(world: FactorialWorld, seed: int, index: int) -> dict[str, L
     """
     total = QUERIES
     ep = world.episode
-    fingerprint = json_sha256(world.payload())
     result = {}
     for task, (count, tails) in task_quotas(index, total).items():
         pool = world.rule_pool if task == 'rule' else world.base_pool
@@ -861,5 +790,5 @@ def control_batches(world: FactorialWorld, seed: int, index: int) -> dict[str, L
             raise ValueError('rule training lost every planted witness')
         if positives & context or not context:
             raise ValueError('invalid task context')
-        result[task] = LegacyBatch(groups, directions, context, ep.truth, ep.num_entities, ep.num_relations, fingerprint, sampling_seed, count)
+        result[task] = LegacyBatch(groups, directions, context, ep.truth, ep.num_entities, ep.num_relations, sampling_seed, count)
     return result

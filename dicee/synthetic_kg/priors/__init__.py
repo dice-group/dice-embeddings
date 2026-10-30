@@ -294,9 +294,8 @@ def world(seed: int, slot: Slot, prior: PriorConfig) -> World:
 
     Returns:
         The world; ``meta['family']`` is the slot's family, and hook families keep the generator's own family name as
-        ``meta['generator_family']``. ``meta['recipe_batch']`` holds per task the research RecipeBatch fields that no
-        update reads (``world_sha256``, ``sampling_seed``, ``requested_positives``, from the legacy template), for
-        ``research_fingerprint``.
+        ``meta['generator_family']``. ``meta['recipe_batch']`` holds per task the research RecipeBatch fields of the
+        legacy template that no update reads (``sampling_seed``, ``requested_positives``).
 
     Raises:
         ValueError: For a slot that does not belong to the prior, or a world that fails ``check_batch`` (a generator's
@@ -335,23 +334,3 @@ def _generate(seed: int, slot: Slot, spec: Optional[FamilySpec]) -> tuple[dict[s
     from .records import record_world
     return record_world(seed, slot.index, spec)
 
-
-def research_fingerprint(world: World) -> dict[str, str]:
-    """The research ``RecipeBatch.fingerprint`` of each task of a world (``pt_worlds.fingerprint``).
-
-    It hashes the task's training content and its RecipeBatch provenance (``world['meta']['recipe_batch']``), so it
-    also checks the latent legacy world that the template was sampled from.
-
-    Args:
-        world: A world of ``world``.
-
-    Returns:
-        Task name to hex digest.
-    """
-    from .factorial import json_sha256
-    out = {}
-    for task, b in world.batch.items():
-        value = dict(groups=b.groups.tolist(), head_prediction=b.head_prediction.tolist(), context=sorted(b.context), truth=sorted(b.truth),
-                     num_entities=b.num_entities, num_relations=b.num_relations, **world.meta['recipe_batch'][task])
-        out[task] = json_sha256(value)
-    return out

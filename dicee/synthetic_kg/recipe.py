@@ -62,7 +62,8 @@ MICROBATCH = 2
 
 @dataclass(frozen=True)
 class WorldConfig:
-    """Rule-world sizes of the legacy generator (``world_first.WorldConfig``, default values)."""
+    """Rule-world sizes of the legacy generator: ``world_first.WorldConfig`` with its default values, without ``mask_keep``,
+    which fed only the research world record."""
 
     min_core_entities: int = 96
     max_core_entities: int = 192
@@ -75,7 +76,6 @@ class WorldConfig:
     blocks_per_rule: int = 6
     grid_size: int = 3
     max_copies: int = 2
-    mask_keep: float = 0.5
 
 
 WORLD = WorldConfig()
