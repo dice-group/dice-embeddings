@@ -2,10 +2,11 @@
 
 - ``ProofPFNFamily``: the three seeds (42, 43, 44) of one arm, each a clean checkpoint (``proofpfn-checkpoint-v1``) or a
   research export, which ``dicee.synthetic_kg.checkpoint.from_research_export`` converts (EMA weights) after its
-  inertness checks. Under a key registered in ``models.json``, every file must match the arm's research export pins:
-  a research export by its SHA-256, a clean checkpoint by the ``research_export_sha256`` of its provenance. The row
-  file records the research export's SHA-256 as the model hash when there is one (so rows of both formats compare
-  with the registered pins), else the clean file's.
+  inertness checks. Under a key registered in ``models.json``, every file must hold the arm's pinned research export
+  of its seed: a research export by its SHA-256, a clean checkpoint by the ``research_export_sha256`` of its
+  provenance, and both with the pinned weights (EMA), the pinned update and the seed. The row file records the research
+  export's SHA-256 as the model hash when there is one (so rows of both formats compare with the registered pins), else
+  the clean file's.
 - ``Reference``: TRIX (``trix``) or ULTRA-3g (``ultra3g``), the released checkpoints.
 - ``OfficialFlock`` (``flockoff``): the released Flock checkpoint at the graph's official walk count with the official
   passes and sampling seed 42 (``flock_setting``). With ``one_microbatch`` (the research setting) the passes of one
@@ -28,10 +29,10 @@ from dicee.models.graph_model import GraphKGE
 from dicee.models.trix import TRIX
 from dicee.models.ultra import ULTRA
 from dicee.synthetic_kg.arms import ARMS, SEEDS
-from dicee.synthetic_kg.checkpoint import FORMAT, CheckpointError, check_checkpoint, from_research_export, model_from_checkpoint
+from dicee.synthetic_kg.checkpoint import FORMAT, RESEARCH_ARM, CheckpointError, check_checkpoint, from_research_export, model_from_checkpoint
 
 from .data import GraphData, inference_stats
-from .manifests import REPO, GraphEntry, ModelPins, file_sha256
+from .manifests import REPO, FamilyPins, GraphEntry, ModelPins, file_sha256
 
 logger = logging.getLogger(__name__)
 
@@ -204,13 +205,14 @@ class ProofPFNFamily:
         key: The system key of the row file (``<key>``, ``<key>.seed<S>``).
         arm: The arm (``S``, ``R``, ``M``, ``N``, ``HT``, ``CU``, ``UL``).
         checkpoints: Seed to the checkpoint or research export file.
-        pins: Seed to the research export SHA-256 that each file must match, or ``None`` for an unregistered key.
+        pins: The research exports that the files must hold (export SHA-256 per seed, weights, update), or ``None`` for
+            an unregistered key.
     """
 
     key: str
     arm: str
     checkpoints: Mapping[int, Path]
-    pins: Optional[Mapping[int, str]] = None
+    pins: Optional[FamilyPins] = None
     members: dict[int, Member] = field(default_factory=dict, init=False, repr=False)
 
     def __post_init__(self) -> None:
@@ -218,6 +220,8 @@ class ProofPFNFamily:
             raise SystemCheckError(f'{self.key}: unknown arm {self.arm!r}')
         if tuple(sorted(self.checkpoints)) != SEEDS:
             raise SystemCheckError(f'{self.key}: a family needs the seeds {SEEDS}')
+        if self.pins is not None and self.pins.export_sha256 is None:
+            raise SystemCheckError(f'{self.key}: models.json has no pins for arm {self.arm} yet')
 
     @property
     def labels(self) -> list[Label]:
@@ -227,16 +231,25 @@ class ProofPFNFamily:
     def check(self) -> None:
         """Read every seed (format, arm, inertness of a research export) and compare it with the pins.
 
+        A pinned seed needs the research export of its pin, its pinned weights and update, and its own seed.
+
         Raises:
-            SystemCheckError: For a missing file or a hash that differs from the pins.
+            SystemCheckError: For a missing file, or a file that differs from the pins.
         """
         for seed in SEEDS:
             path = Path(self.checkpoints[seed])
             if not path.is_file():
                 raise SystemCheckError(f'{self.key}: missing {path}')
             member = read_member(path, self.arm)
-            if self.pins is not None and member.research_export_sha256 != self.pins[seed]:
-                raise SystemCheckError(f'{self.key} seed {seed}: {path.name} is not the pinned research export of arm {self.arm}')
+            pins, checkpoint = self.pins, member.checkpoint
+            if pins is not None and pins.export_sha256 is not None:
+                problems = [text for differs, text in (
+                    (member.research_export_sha256 != pins.export_sha256[seed], f'not the pinned research export of arm {self.arm}'),
+                    (f"{RESEARCH_ARM}/{checkpoint['weights']}" != pins.weights, f"weights {checkpoint['weights']}, the pins {pins.weights}"),
+                    (checkpoint['updates'] != pins.export, f"update {checkpoint['updates']}, the pins {pins.export}"),
+                    (checkpoint['seed'] != seed, f"the checkpoint of seed {checkpoint['seed']}")) if differs]
+                if problems:
+                    raise SystemCheckError(f'{self.key} seed {seed}: {path.name}: ' + '; '.join(problems))
             self.members[seed] = member
 
     def build(self) -> dict[Label, GraphKGE]:
@@ -386,15 +399,11 @@ def family(key: str, arm: str, template: str, pins: ModelPins) -> ProofPFNFamily
     registered = pins.family_of_key(key)
     if key in pins.references or key in REFERENCE_KEYS:
         raise SystemCheckError(f'{key} is a reference key')
-    if registered is not None:
-        if registered.arm != arm or not registered.loadable:
-            raise SystemCheckError(f'{key} is the registered key of arm {registered.arm}, not of {arm}')
-        if registered.export_sha256 is None:
-            raise SystemCheckError(f'{key}: models.json has no pins for arm {arm} yet')
+    if registered is not None and (registered.arm != arm or not registered.loadable):
+        raise SystemCheckError(f'{key} is the registered key of arm {registered.arm}, not of {arm}')
     if not key.isalnum() or not key.islower():
         raise SystemCheckError(f'family key {key!r}: lower-case letters and digits only')
-    return ProofPFNFamily(key=key, arm=arm, checkpoints=MappingProxyType({s: Path(template.format(seed=s)) for s in SEEDS}),
-                          pins=None if registered is None else registered.export_sha256)
+    return ProofPFNFamily(key=key, arm=arm, checkpoints=MappingProxyType({s: Path(template.format(seed=s)) for s in SEEDS}), pins=registered)
 
 
 def reference(key: str, pins: ModelPins, root: Union[str, Path] = CHECKPOINTS, one_microbatch: bool = True) -> Union[Reference, OfficialFlock]:

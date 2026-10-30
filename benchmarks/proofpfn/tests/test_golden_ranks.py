@@ -34,9 +34,10 @@ def g6_systems(keys: tuple[str, ...] = tuple(G6_KEYS), references: tuple[str, ..
     recorded = fixture('g6_ranks.json.gz')['graphs']['UMLS']['record']['model_sha256']
     systems: list = []
     for key in keys:
-        template = g4_export(key)
-        systems.append(sy.ProofPFNFamily(key=key, arm=G6_KEYS[key][0], checkpoints={s: Path(template.format(seed=s)) for s in (42, 43, 44)},
-                                         pins={s: recorded[key][str(s)] for s in (42, 43, 44)}))
+        template, arm = g4_export(key), G6_KEYS[key][0]
+        exports = mf.FamilyPins(arm=arm, key=key, export=20, weights='decay/ema', export_sha256={s: recorded[key][str(s)] for s in (42, 43, 44)},
+                                loadable=True)
+        systems.append(sy.ProofPFNFamily(key=key, arm=arm, checkpoints={s: Path(template.format(seed=s)) for s in (42, 43, 44)}, pins=exports))
     pins = mf.read_models()
     return systems + [sy.reference(key, pins) for key in references]
 
