@@ -191,26 +191,28 @@ def test_run_record_and_folder_checks(tmp_path):
     checkpoint = read_checkpoint(tmp_path / 'export-1-raw.pt')
     assert checkpoint['provenance']['source'] == 'pretraining' and checkpoint['provenance']['run'] == run
     assert pt.pretrain(config, tmp_path) == result   # a run at its stop does nothing
-    with pytest.raises(ValueError, match='another run'):
+    with pytest.raises(pt.RunInputError, match='another run'):
         pt.pretrain(pt.PretrainConfig('UL', 44, stop_after=1, device='cpu', workers=0), tmp_path)
     stored['provenance']['sources']['synthetic_kg/prepare.py'] = '0' * 64
     (tmp_path / 'run.json').write_text(json.dumps(stored))
-    with pytest.raises(ValueError, match='changed since the run started'):
+    with pytest.raises(pt.RunInputError, match='changed since the run started'):
         pt.pretrain(config, tmp_path)
     assert pt.pretrain(pt.PretrainConfig('UL', 43, stop_after=1, device='cpu', workers=0, allow_code_change=True), tmp_path) == result
 
 
-def test_configuration_checks(monkeypatch):
+def test_configuration_checks(monkeypatch, tmp_path):
     assert pt.PretrainConfig('S', 42).export_updates == [4000, 8000, 16000, 20000, 24000]
     assert pt.PretrainConfig('S', 42, exports=(3,), stop_after=10).export_updates == [3, 24000]
     for bad in (dict(stop_after=0), dict(stop_after=24001), dict(exports=(0,)), dict(exports=(24001,)), dict(workers=-1), dict(save_every=0)):
-        with pytest.raises(ValueError):
+        with pytest.raises(pt.RunInputError):
             pt.PretrainConfig('S', 42, **bad)
     with pytest.raises(KeyError):
         pt.PretrainConfig('S0', 42)
     monkeypatch.delenv(real.SOURCES_ENV, raising=False)
-    with pytest.raises(RuntimeError, match=real.SOURCES_ENV):
+    with pytest.raises(pt.RunInputError, match=real.SOURCES_ENV):
         pt.provenance(pt.PretrainConfig('R', 42, device='cpu'), ARMS['R'])
+    with pytest.raises(pt.RunInputError, match='missing'):
+        pt.provenance(pt.PretrainConfig('R', 42, device='cpu', real_sources=tmp_path), ARMS['R'])
 
 
 def test_learning_rate_schedule():

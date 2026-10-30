@@ -67,6 +67,11 @@ EXPORTS = (4000, 8000, 16000, 20000, 24000)
 SAVE_EVERY = 250
 
 
+class RunInputError(ValueError):
+    """A run that ``pretrain`` refuses for its input: its options, a folder of another run or with changed sources, a
+    world order other than its pin, a foreign training state, or real source graphs that are missing or not pinned."""
+
+
 @dataclass(frozen=True)
 class PretrainConfig:
     """A pretraining run.
@@ -102,11 +107,11 @@ class PretrainConfig:
     def __post_init__(self) -> None:
         arm_preset(self.arm)
         if self.stop_after is not None and not 1 <= self.stop_after <= TOTAL_UPDATES:
-            raise ValueError(f'stop_after must lie in 1..{TOTAL_UPDATES}')
+            raise RunInputError(f'stop_after must lie in 1..{TOTAL_UPDATES}')
         if self.exports is not None and not all(1 <= e <= TOTAL_UPDATES for e in self.exports):
-            raise ValueError(f'every export must lie in 1..{TOTAL_UPDATES}')
+            raise RunInputError(f'every export must lie in 1..{TOTAL_UPDATES}')
         if min(self.save_every, self.worker_threads, self.threads) < 1 or self.workers < 0 or (self.prefetch is not None and self.prefetch < 1):
-            raise ValueError('save_every, threads and prefetch must be positive, workers nonnegative')
+            raise RunInputError('save_every, threads and prefetch must be positive, workers nonnegative')
 
     @property
     def export_updates(self) -> list[int]:
@@ -262,11 +267,17 @@ def _real_sources(prior: PriorConfig, folder: Union[str, Path, None]) -> dict[st
     """The SHA-256 of the real source graphs that a prior reads, checked against their pins (empty without real worlds)."""
     if not any(spec.generator == 'real' for spec in prior.families):
         return {}
-    root = real.source_folder(folder)
+    try:
+        root = real.source_folder(folder)
+    except RuntimeError as error:
+        raise RunInputError(str(error)) from None
+    missing = [name for name in REAL_SOURCE_SHA256 if not (root / name / 'data.pt').is_file()]
+    if missing:
+        raise RunInputError(f'the real source graphs {missing} are missing in {root}')
     found = {name: file_sha256(root / name / 'data.pt') for name in REAL_SOURCE_SHA256}
     differing = [name for name, digest in found.items() if digest != REAL_SOURCE_SHA256[name]]
     if differing:
-        raise ValueError(f'the real source graphs {differing} in {root} differ from their pins')
+        raise RunInputError(f'the real source graphs {differing} in {root} differ from their pins')
     return found
 
 
@@ -377,10 +388,10 @@ def _check_start(folder: Path, record: Mapping[str, Any], sources: Mapping[str, 
     stored = json.loads(path.read_text())
     if stored['run'] != record:
         changed = sorted(k for k in {*stored['run'], *record} if stored['run'].get(k) != record.get(k))
-        raise ValueError(f'{folder} holds another run (it differs in {changed}); choose another folder')
+        raise RunInputError(f'{folder} holds another run (it differs in {changed}); choose another folder')
     changed = sorted(k for k in {*stored['provenance']['sources'], *sources} if stored['provenance']['sources'].get(k) != sources.get(k))
     if changed and not allow_code_change:
-        raise ValueError(f'the sources {changed} changed since the run started; resume with allow_code_change or start a new folder')
+        raise RunInputError(f'the sources {changed} changed since the run started; resume with allow_code_change or start a new folder')
 
 
 def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[Callable[[], bool]] = None) -> PretrainResult:
@@ -395,7 +406,8 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
         Where the run ended.
 
     Raises:
-        ValueError: For an order that differs from the arm's pin, or a folder of another run.
+        RunInputError: For a folder of another run or with changed sources, a world order that differs from the arm's
+            pin, a foreign ``last.pt``, or real source graphs that are missing or differ from their pins.
         RuntimeError: For CUDA without a deterministic cuBLAS workspace setting.
     """
     preset = arm_preset(config.arm)
@@ -407,7 +419,7 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
     digest = order_sha256(order)
     pinned = preset.pinned_order(config.seed)
     if pinned is not None and digest != pinned:
-        raise ValueError(f'the world order of arm {preset.name}, seed {config.seed} has digest {digest}, its pin is {pinned}')
+        raise RunInputError(f'the world order of arm {preset.name}, seed {config.seed} has digest {digest}, its pin is {pinned}')
     record = run_record(config, preset, digest)
     with torch_threads(config.threads), deterministic_execution():
         origin = provenance(config, preset)
@@ -424,7 +436,7 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
         if last.exists():
             state = torch.load(last, map_location='cpu', weights_only=True)
             if state.get('format') != STATE_FORMAT or state.get('run') != record:
-                raise ValueError(f'{last} is not a training state of this run')
+                raise RunInputError(f'{last} is not a training state of this run')
             model.load_state_dict(state['model'])
             optimizer.load_state_dict(state['optimizer'])
             ema = {k: v.to(device) for k, v in state['ema'].items()}

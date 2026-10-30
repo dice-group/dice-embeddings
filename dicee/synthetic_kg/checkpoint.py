@@ -328,7 +328,8 @@ def from_research_export(path: Union[str, Path], arm: Union[str, ArmPreset], wei
         The checkpoint dictionary; ``provenance`` records the export's name, SHA-256, research arm and run record.
 
     Raises:
-        CheckpointError: When a check fails.
+        CheckpointError: When the file does not load as a dictionary of tensors or a check fails.
+        OSError: When the file cannot be read.
     """
     preset = arm_preset(arm)
     if weights not in WEIGHTS:
@@ -336,8 +337,9 @@ def from_research_export(path: Union[str, Path], arm: Union[str, ArmPreset], wei
     path = Path(path)
     try:
         saved = torch.load(path, map_location='cpu', weights_only=True)
-    except pickle.UnpicklingError as error:
-        raise CheckpointError(f'{path.name} does not load with weights_only=True: {error}') from None
+    except (pickle.UnpicklingError, EOFError, RuntimeError) as error:   # not a pickle, empty, or a broken archive
+        first = str(error).split('\n', 1)[0]
+        raise CheckpointError(f'{path.name} does not load with weights_only=True ({type(error).__name__}: {first})') from None
     problems = _research_problems(saved, preset)
     if problems:
         raise CheckpointError(f'{path.name} is not an inert research export of arm {preset.name}: ' + '; '.join(problems))

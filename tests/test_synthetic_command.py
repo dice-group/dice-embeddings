@@ -48,14 +48,28 @@ def test_signals_stop_the_run_after_the_current_update(tmp_path, monkeypatch):
     assert (signal.getsignal(signal.SIGINT), signal.getsignal(signal.SIGTERM)) == handlers
 
 
-def test_wrong_input(tmp_path, capsys):
-    assert command.main(['train', '--arm', 'S', '--seed', '42', '--out', str(tmp_path), '--stop-after', '30000']) == command.EXIT_INPUT
-    assert 'stop_after' in capsys.readouterr().err
+def test_wrong_input(tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch) -> None:
+    def refused(*argv: str) -> str:
+        assert command.main(list(argv)) == command.EXIT_INPUT
+        lines = capsys.readouterr().err.splitlines()
+        assert len(lines) == 1 and lines[0].startswith('error: ')   # one line, no traceback
+        return lines[0]
+
+    assert 'stop_after' in refused('train', '--arm', 'S', '--seed', '42', '--out', str(tmp_path), '--stop-after', '30000')
+    monkeypatch.delenv('PROOFPFN_REAL_SOURCES', raising=False)
+    assert 'PROOFPFN_REAL_SOURCES' in refused('train', '--arm', 'R', '--seed', '42', '--out', str(tmp_path / 'R'), '--device', 'cpu')
+    assert 'missing' in refused('train', '--arm', 'M', '--seed', '42', '--out', str(tmp_path / 'M'), '--device', 'cpu', '--real-sources', str(tmp_path))
     with pytest.raises(SystemExit):
         command.main(['train', '--arm', 'S0', '--seed', '42', '--out', str(tmp_path)])
+    capsys.readouterr()
     torch.save({'model': {}}, tmp_path / 'other.pt')
-    assert command.main(['convert', '--export', str(tmp_path / 'other.pt'), '--arm', 'S', '--out', str(tmp_path / 'x.pt')]) == command.EXIT_INPUT
+    (tmp_path / 'text.pt').write_text('not an export')
+    for export in ('other.pt', 'text.pt', 'missing.pt'):
+        assert export in refused('convert', '--export', str(tmp_path / export), '--arm', 'S', '--out', str(tmp_path / 'x.pt'))
     assert not (tmp_path / 'x.pt').exists()
+    command.main(['train', '--arm', 'UL', '--seed', '43', '--out', str(tmp_path / 'UL'), '--device', 'cpu', '--workers', '0', '--stop-after', '1',
+                  '--exports', '1'])
+    assert 'another run' in refused('train', '--arm', 'UL', '--seed', '44', '--out', str(tmp_path / 'UL'), '--device', 'cpu', '--workers', '0')
 
 
 def test_convert_a_research_export(tmp_path):

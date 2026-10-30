@@ -13,8 +13,9 @@ Examples::
     dicee_pretrain_synthetic convert --export export-24000.pt --arm S --out S-42.pt
 
 The command sets ``CUBLAS_WORKSPACE_CONFIG=:4096:8`` (deterministic cuBLAS) unless it is set. SIGINT and SIGTERM stop a
-run after the current update with ``last.pt``. Exit codes: 0 done, 1 error, 2 wrong input (options, or a research export
-that the converter refuses), 3 stopped by a signal (rerun the same command to resume).
+run after the current update with ``last.pt``. Exit codes: 0 done, 1 error, 2 wrong input (one ``error:`` line: options,
+a folder of another run or with changed sources, real source graphs that are missing or not pinned, a research export
+that the converter cannot read or refuses), 3 stopped by a signal (rerun the same command to resume).
 """
 import argparse
 import logging
@@ -25,7 +26,7 @@ from typing import Any, Optional, Sequence
 from dicee.synthetic_kg.arms import ARMS
 from dicee.synthetic_kg.checkpoint import CheckpointError, from_research_export, save_checkpoint
 from dicee.synthetic_kg.determinism import cublas_workspace
-from dicee.synthetic_kg.pretraining import PretrainConfig, pretrain
+from dicee.synthetic_kg.pretraining import PretrainConfig, RunInputError, pretrain
 
 logger = logging.getLogger(__name__)
 EXIT_INPUT, EXIT_STOPPED = 2, 3
@@ -62,13 +63,6 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _train(args: argparse.Namespace) -> int:
-    try:
-        config = PretrainConfig(args.arm, args.seed, stop_after=args.stop_after, exports=args.exports,
-                                save_every=args.save_every, workers=args.workers, device=args.device, threads=args.threads,
-                                real_sources=args.real_sources, allow_code_change=args.allow_code_change)
-    except ValueError as error:
-        print(f'error: {error}', file=sys.stderr)
-        return EXIT_INPUT
     requested: list[int] = []
 
     def request_stop(number: int, _frame: Any) -> None:
@@ -77,7 +71,13 @@ def _train(args: argparse.Namespace) -> int:
 
     previous = {number: signal.signal(number, request_stop) for number in (signal.SIGINT, signal.SIGTERM)}
     try:
+        config = PretrainConfig(args.arm, args.seed, stop_after=args.stop_after, exports=args.exports,
+                                save_every=args.save_every, workers=args.workers, device=args.device, threads=args.threads,
+                                real_sources=args.real_sources, allow_code_change=args.allow_code_change)
         result = pretrain(config, args.out, stop=lambda: bool(requested))
+    except RunInputError as error:
+        print(f'error: {error}', file=sys.stderr)
+        return EXIT_INPUT
     finally:
         for number, handler in previous.items():
             signal.signal(number, handler)
@@ -88,7 +88,7 @@ def _train(args: argparse.Namespace) -> int:
 def _convert(args: argparse.Namespace) -> int:
     try:
         checkpoint = from_research_export(args.export, args.arm, args.weights)
-    except CheckpointError as error:
+    except (CheckpointError, OSError) as error:
         print(f'error: {error}', file=sys.stderr)
         return EXIT_INPUT
     path = save_checkpoint(checkpoint, args.out)
