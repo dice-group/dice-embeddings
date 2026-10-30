@@ -5,12 +5,14 @@ the setup, the Java steps of a stand-in AnyBURL with their failures and the stop
 Learn is time-bounded and threaded, so its rules differ between runs; the tests with Java check the protocol and the
 format, and Apply with a stored rule file (whose lists do not depend on the threads).
 """
+import dataclasses
 import fcntl
 import gzip
 import json
 import os
 import shutil
 import signal
+import subprocess
 import sys
 from pathlib import Path
 
@@ -217,6 +219,41 @@ def test_a_stopped_step_kills_its_java_process(tmp_path):
         os.kill(int((config.parent / 'java.pid').read_text()), 0)
     with open(tmp_path / 'java.lock') as held:
         fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+def memory_scope() -> tuple[str, ...]:
+    """The memory scope of the Java steps; skips without a working ``systemd-run --user`` (a user session of systemd)."""
+    if shutil.which('systemd-run') is None or subprocess.run([*anyburl.SCOPE, 'true'], capture_output=True, timeout=60).returncode:
+        pytest.skip('needs systemd-run --user')
+    return anyburl.SCOPE
+
+
+def test_a_step_runs_in_the_memory_scope_and_stops_with_this_process(tmp_path):
+    """A Java step in the scope of systemd-run: its cgroup is a scope, its usage is measured, and a stop kills it."""
+    scope = memory_scope()
+    system = fake_java(tmp_path, 'cat /proc/self/cgroup\ncase "$6" in *.Learn) echo $$ > java.pid; exec sleep 60;; esac\n')
+    system = dataclasses.replace(system, scope=scope)
+    config = tmp_path / 'work' / 'config-eval.properties'
+    config.parent.mkdir()
+    config.touch()
+    times = system.run('Eval', config, tmp_path / 'eval.log', tmp_path / 'java.lock')
+    assert times['code'] == 0 and not times['timed_out'] and times['max_rss_mb'] > 0
+    assert '.scope' in (tmp_path / 'eval.log').read_text()   # the step ran in a transient scope unit
+
+    def stop(*_) -> None:   # as the command line's SIGTERM handler, once the JVM runs
+        if (config.parent / 'java.pid').exists():
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            sys.exit(143)
+    previous = signal.signal(signal.SIGALRM, stop)
+    signal.setitimer(signal.ITIMER_REAL, 0.2, 0.2)
+    try:
+        with pytest.raises(SystemExit):
+            system.run('Learn', config, tmp_path / 'learn.log', tmp_path / 'java.lock')
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
+    with pytest.raises(ProcessLookupError):   # stopped and reaped
+        os.kill(int((config.parent / 'java.pid').read_text()), 0)
 
 
 FAKE_ANYBURL = '''#!{python}

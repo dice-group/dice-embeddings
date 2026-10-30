@@ -201,6 +201,15 @@ def test_resume_equals_the_uninterrupted_run(tmp_path):
     assert tensor_digest(adamw_by_name(tmp_path / 'parts', 'HT')) == tensor_digest(adamw_by_name(tmp_path / 'whole', 'HT'))
 
 
+def test_a_run_that_reaches_its_last_update_is_complete(tmp_path, monkeypatch):
+    monkeypatch.setattr(pt, 'TOTAL_UPDATES', 2)   # a schedule of two updates
+    config = pt.PretrainConfig('UL', 42, exports=(1,), device='cpu', workers=0)
+    assert pt.pretrain(config, tmp_path) == pt.PretrainResult('complete', 2, tmp_path)
+    assert sorted(p.name for p in tmp_path.glob('export-*')) == ['export-1-ema.pt', 'export-1-raw.pt', 'export-2-ema.pt', 'export-2-raw.pt']
+    assert state_of(tmp_path)['next'] == 2 and json.loads((tmp_path / 'run.json').read_text())['run']['order_slots'] == 2
+    assert pt.pretrain(config, tmp_path) == pt.PretrainResult('complete', 2, tmp_path)   # a complete run does nothing
+
+
 def test_run_record_and_folder_checks(tmp_path):
     config = pt.PretrainConfig('UL', 43, stop_after=1, exports=(1,), device='cpu', workers=0)
     result = pt.pretrain(config, tmp_path)
