@@ -300,13 +300,13 @@ python -m benchmarks.proofpfn gate --family mys=S:runs/S/{seed}/export-24000-ema
 
 ## External baselines
 
-Three adapters run external baselines on the graphs of the benchmark: KGPFN, MERIT and AnyBURL. Their code,
-checkpoints and runtimes stay outside the repository. Each adapter checks its files against the pins of
-`manifests/models.json` and writes row files in the benchmark's format. Before a run, check the setup with
-`--check`. A graph that fails gets an error record, and the run goes on with the next graph. The three adapters
-reproduce their research runners on their goldens. The MERIT golden holds on an H100 NVL ([Known limits](#known-limits)). The [README](../benchmarks/proofpfn/README.md#external-baselines) documents the setup
-and the settings of each adapter. Official Flock is a native reference system of the benchmark (`flockoff`), not an
-adapter.
+Three adapters run external baselines on the graphs of the benchmark: KGPFN, MERIT and AnyBURL. Their code, checkpoints
+and runtimes stay outside the repository. Each adapter checks its files against the pins of `manifests/models.json` and
+writes row files in the benchmark's format. Before a run, check the setup with `--check`. A graph that fails gets an
+error record, and the run goes on with the next graph. The three adapters reproduce their research runners on their
+goldens. The MERIT golden holds on an H100 NVL ([Known limits](#known-limits)). The
+[README](../benchmarks/proofpfn/README.md#external-baselines) documents the setup and the settings of each adapter.
+Official Flock is a native reference system of the benchmark (`flockoff`), not an adapter.
 
 ## Reproducing the thesis results
 
