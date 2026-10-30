@@ -117,7 +117,10 @@ def setup(code: Optional[PathLike] = None, checkpoints: Optional[PathLike] = Non
     command = python if python is not None else os.environ.get('KGPFN_PYTHON')
     if not command:
         raise AdapterSetupError("KGPFN: give the command that starts KGPFN's Python with --python or $KGPFN_PYTHON")
-    system = KGPFN(code=folder, checkpoints=files, python=tuple(shlex.split(command)), pins=pins, gpu_gb=gpu_gb)
+    words = shlex.split(command)
+    if words and os.sep in words[0]:   # the worker runs in its work folder
+        words[0] = str(Path(words[0]).absolute())
+    system = KGPFN(code=folder, checkpoints=files, python=tuple(words), pins=pins, gpu_gb=gpu_gb)
     with tempfile.TemporaryDirectory(prefix='kgpfn-setup-') as work:
         trial = Path(work) / KEY / 'setup' / 'python'   # the layout <work>/kgpfn/<collection>/<graph> of a worker's folder
         trial.mkdir(parents=True)

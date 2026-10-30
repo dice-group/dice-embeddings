@@ -260,16 +260,18 @@ def test_java_steps_and_their_failures_through_the_command_line(tmp_path, monkey
     java.write_text(FAKE_ANYBURL.format(python=sys.executable))
     java.chmod(0o755)
     manifest = mf.read_manifest(write_manifest(tmp_path / 'tiny.json', tmp_path, {'g': tiny_graph(tmp_path / 'KGs' / 'g')}))
-    command = ['adapter', 'anyburl', '--set', str(tmp_path / 'tiny.json'), '--data-root', str(tmp_path), '--code', str(home), '--models', str(models),
-               '--java', str(java), '--no-scope']
+    monkeypatch.chdir(tmp_path)   # relative options: the Java steps, which run in the work folder, get absolute paths
+    command = ['adapter', 'anyburl', '--set', 'tiny.json', '--data-root', '.', '--code', home.name, '--models', models.name, '--java', './fake-java',
+               '--no-scope']
     monkeypatch.setattr(anyburl, 'STEP_HOURS', 2 / 3600)
 
     def run(out: str, failure: str = '') -> int:
         monkeypatch.setenv('FAKE_ANYBURL', failure)
-        return cli.main([*command, '--out', str(tmp_path / out)])
+        return cli.main([*command, '--out', out])
     assert run('rows') == 0
     meta = json.loads(ev.row_file_path(tmp_path / 'rows', manifest.entry('g'), ['anyburl']).read_text())['anyburl_meta']
     assert meta['native']['agree'] and meta['rules'] == 2 and [meta['times'][s]['code'] for s in ('learn', 'apply', 'eval')] == [1, 0, 0]
+    assert meta['work'] == str(tmp_path / 'rows' / '.work' / 'anyburl' / 'tiny' / 'g')
     for failure, reason in (('learn:heap', 'out of memory (JVM heap -Xmx6G)'), ('apply:killed', 'killed (memory cap MemoryMax=8G of the scope)'),
                             ('eval:slow', 'stopped after')):
         assert run(failure, failure) == 3, failure

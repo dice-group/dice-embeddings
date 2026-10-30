@@ -14,7 +14,7 @@ import numpy as np
 import pytest
 import torch
 
-from benchmarks.proofpfn import adapters
+from benchmarks.proofpfn import adapters, cli
 from benchmarks.proofpfn import evaluate as ev
 from benchmarks.proofpfn import manifests as mf
 from benchmarks.proofpfn.adapters import AdapterSetupError, ExternalStepError, kgpfn, kgpfn_worker
@@ -269,6 +269,22 @@ def test_the_worker_retries_after_cuda_out_of_memory_and_the_rows_follow(tmp_pat
     with pytest.raises(ExternalStepError) as caught:
         kgpfn.evaluate_graph(manifest, entry, tmp_path / 'again', system, root=tmp_path)
     assert caught.value.record['stage'] == 'run' and caught.value.record['attempts'] == 2 and caught.value.record['oom']['batch_size'] == batch // 2
+
+
+def test_relative_paths_through_the_command_line(tmp_path, monkeypatch):
+    """Relative options: the worker, which runs in the work folder, gets absolute paths; the graph gets its row file."""
+    code, ckpt, models = fake_code(tmp_path)
+    (tmp_path / 'worker.py').write_text(FAKE_WORKER)
+    python = tmp_path / 'python'   # the setup's import check runs this Python, a worker run the stand-in worker
+    python.write_text(f'#!/bin/sh\ncase "$2" in -c) exec {sys.executable} "$@";; esac\nexec {sys.executable} {tmp_path / "worker.py"} "$@"\n')
+    python.chmod(0o755)
+    manifest = mf.read_manifest(write_manifest(tmp_path / 'tiny.json', tmp_path, {'g': tiny_graph(tmp_path / 'KGs' / 'g', entities=200)}))
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(kgpfn, 'DUMP_LIMIT', 0)   # the stand-in dumps no scores, so nothing to verify
+    assert cli.main(['adapter', 'kgpfn', '--set', 'tiny.json', '--data-root', '.', '--out', 'rows', '--code', 'KGPFN', '--checkpoints', 'ckpt',
+                     '--python', './python', '--models', 'models.json']) == 0
+    doc = json.loads(ev.row_file_path(tmp_path / 'rows', manifest.entry('g'), ['kgpfn']).read_text())
+    assert doc['kgpfn_meta']['work'] == str(tmp_path / 'rows' / '.work' / 'kgpfn' / 'tiny' / 'g')
 
 
 # ------------------------------------------------------------------------------------------------ probe graphs

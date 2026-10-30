@@ -153,6 +153,7 @@ def setup(code: Optional[PathLike] = None, models: Optional[PathLike] = None, ja
     kr = {k: v for k, v in properties(home / KR_LEARN_FILE).items() if not k.startswith('PATH_') and k != 'WORKER_THREADS'}
     if kr != KR_LEARN:
         raise AdapterSetupError(f'AnyBURL: {KR_LEARN_FILE} holds {kr}, not the KR setting {KR_LEARN}')
+    java = str(Path(java).absolute()) if os.sep in java else java   # the Java steps run in their work folder
     prefix = SCOPE if scope else ()
     if prefix and shutil.which(prefix[0]) is None:
         raise AdapterSetupError(f'AnyBURL: {prefix[0]} is missing, which caps the memory of each Java step (--no-scope runs Java without it)')

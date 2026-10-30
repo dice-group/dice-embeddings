@@ -206,8 +206,11 @@ def group_targets(queries: Queries) -> list[tuple[int, bool, int, int, int, list
 # ------------------------------------------------------------------------------------------------------ rows
 
 def work_folder(work: Optional[PathLike], out: PathLike, adapter: str, entry: GraphEntry) -> Path:
-    """The work folder of a graph: ``<work>/<adapter>/<collection>/<graph>``; ``work`` defaults to ``<out>/.work``."""
-    root = Path(work) if work is not None else Path(out) / '.work'
+    """The absolute work folder of a graph: ``<work>/<adapter>/<collection>/<graph>``; ``work`` defaults to ``<out>/.work``.
+
+    The external steps run in their work folder and a container mounts it, so a relative path would point elsewhere.
+    """
+    root = (Path(work) if work is not None else Path(out) / '.work').absolute()
     return root / adapter / entry.collection / entry.name
 
 
