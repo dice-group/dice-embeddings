@@ -16,6 +16,7 @@ from torch import nn
 from dicee.config import Namespace
 from dicee.models._relation_weights import incidence_counts, pair_channel_weights, pair_counts, relation_count_weights
 from dicee.models.ultra import ULTRA, build_relation_graph, relation_graph
+from dicee.scripts.run import get_default_arguments
 
 # Direct triples of 3 entities and 2 relations; (0, 1) carries both relations.
 DIRECT = torch.tensor([[0, 0, 1], [0, 1, 1], [0, 1, 2], [1, 1, 2]])
@@ -48,6 +49,15 @@ def test_defaults_are_official_ultra():
     assert model.rel_edge_weight is None
     index, types = build_relation_graph(model.edge_index, model.edge_type, model.num_entities, 2 * model.num_direct_relations)
     assert torch.equal(model.rel_edge_index, index) and torch.equal(model.rel_edge_type, types)
+
+
+def test_command_line_flags():
+    args = get_default_arguments(['--ultra_relation_weighting', 'normalized', '--ultra_pair_channels', 'on'])
+    assert (args.ultra_relation_weighting, args.ultra_pair_channels) == ('normalized', 'on')
+    defaults = get_default_arguments([])
+    assert (defaults.ultra_relation_weighting, defaults.ultra_pair_channels) == (Namespace().ultra_relation_weighting, Namespace().ultra_pair_channels)
+    with pytest.raises(SystemExit):
+        get_default_arguments(['--ultra_pair_channels', 'yes'])
 
 
 def test_option_validation():

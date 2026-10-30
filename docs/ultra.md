@@ -57,6 +57,19 @@ when moving an experiment. ULTRA needs the graph to score queries.
 See [KGFM inference speed comparison](kgfm_inference.md) for timings against the
 official implementation.
 
+## Relation-graph options
+
+Two options extend ULTRA's relation graph. Their defaults give official ULTRA.
+
+| Option | Values | Effect |
+|---|---|---|
+| `--ultra_relation_weighting` | `binary` (default), `normalized` | `normalized` scales every relation-graph message by the normalized incidence count of its edge |
+| `--ultra_pair_channels` | `off` (default), `on` | `on` adds two edge types for the entity pairs that two relations share, in the same and in the reverse orientation. The six relation tables get 6 rows. Requires `normalized` |
+
+The options are not part of the state dictionary. A checkpoint that records them in its `model_config` loads only into a
+model with the same options. For example, a PCUltra checkpoint of [ProofPFN](proofpfn.md) loads with
+`--ultra_checkpoint export-24000-ema.pt --ultra_relation_weighting normalized --ultra_pair_channels on`.
+
 For direct model use, import `ULTRA` from `dicee.models`, load weights with
 `load_pretrained(path)`, and attach indexed training triples with `set_graph(...)`.
 Triples follow DICE's `(head, relation, tail)` order.

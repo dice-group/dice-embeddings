@@ -199,8 +199,10 @@ with torch.no_grad():
 - `load_model` checks the checkpoint, builds ULTRA with its `model_config` and loads the weights.
 - `ULTRA(checkpoint['model_config']).load_pretrained(path)` also reads the format.
 - `ULTRA.load_pretrained` refuses a checkpoint whose `model_config` records other options than the model's.
-- The `dicee` command line has no flags for the two options. Its `--ultra_checkpoint` therefore refuses every
-  checkpoint with options other than the defaults.
+- The `dicee` command line loads a checkpoint with `--ultra_checkpoint` and the arm's options
+  `--ultra_relation_weighting` and `--ultra_pair_channels` ([ULTRA](ultra.md#relation-graph-options)).
+- `benchmarks/kgfm_zero_shot.py` takes no ProofPFN checkpoint, unlike the design: a third zero-shot path next to the
+  `dicee` command line and the benchmark has no use in the thesis.
 
 ### Research exports
 
@@ -355,6 +357,4 @@ Golden references (goldens) record what the research code computes at small size
 - The graph files of the blind test sets (fresh-v1 and block 3) are never in the repository. Their manifests follow
   after the frozen read.
 - The real source graphs of arms R and M are not in the repository.
-- The `dicee` command line cannot set the two ULTRA options. Load PCUltra and CountULTRA checkpoints with `load_model`
-  or with the benchmark.
 - AnyBURL learns its rules within a time budget, so two runs can give different rules.
