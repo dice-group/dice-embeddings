@@ -180,7 +180,7 @@ def _check(args: argparse.Namespace) -> int:
 def _run(args: argparse.Namespace) -> int:
     import torch
 
-    from .evaluate import error_path, evaluate_graph, row_file_path, write_json
+    from .evaluate import evaluate_graph, row_file_path, write_error
     manifest, entries = _entries(args)
     systems = _systems(args)
     shard = tuple(int(x) for x in args.shard.split('/') if x.isdigit())
@@ -193,8 +193,8 @@ def _run(args: argparse.Namespace) -> int:
                                                  shard=(shard[0], shard[1]), parts=args.parts, save_minutes=args.save_minutes,
                                                  max_minutes=args.max_minutes)
         except torch.cuda.OutOfMemoryError as error:
-            write_json(error_path(row_file_path(args.out, entry, systems)), dict(key=entry.key, systems=[s.key for s in systems],
-                                                                                 error=str(error).splitlines()[0][:400]))
+            keys = [s.key for s in systems]
+            write_error(row_file_path(args.out, entry, keys), entry, systems=keys, stage='score', error=str(error).splitlines()[0][:400])
             torch.cuda.empty_cache()
             statuses[entry.key] = 'oom'
         print(entry.key, statuses[entry.key], flush=True)
@@ -219,16 +219,13 @@ def _adapter(args: argparse.Namespace, argv: Sequence[str]) -> int:
     if args.name == 'anyburl':
         from .adapters import anyburl
         system: Any = anyburl.setup(args.code, args.models, java=args.java, scope=not args.no_scope)
-        record = dict(home=str(system.home), java=system.version)
     elif args.name == 'kgpfn':
         from .adapters import kgpfn
         system = kgpfn.setup(args.code, args.checkpoints, args.python, args.models, gpu_gb=args.gpu_gb)
-        record = system.record()
     else:   # merit, in MERIT's environment (the child process of run_in_child)
         from .adapters import merit
         system = merit.setup(args.code, args.models, args.checkpoint_root)
-        record = dict(system.record(), imported=system.upstream().files)
-    print(f'{args.name}: {json.dumps(record)}')
+    print(f'{args.name}: {json.dumps(system.record())}')
     if args.check:
         return _check_graphs(manifest, entries, args.data_root, f'adapter {args.name}')
     statuses = {}

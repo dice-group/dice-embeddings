@@ -1,36 +1,19 @@
-"""AnyBURL, trained per graph: the KR 2026 baseline setting (Meilicke et al., "A Simple Baseline for Inductive Knowledge
-Base Completion") with the benchmark's ranks.
+"""AnyBURL, trained per graph, as rows of the benchmark (README, section AnyBURL; PROTOCOL, section External baselines).
 
-Port of the research runner ``anyburl-ref-v1-runtime/anyburl_run.py`` (view ``ag``). AnyBURL is not zero-shot: it
-learns rules on the inference graph (train.txt) of each graph, then ranks its test queries.
+Port of the research runner ``anyburl-ref-v1-runtime/anyburl_run.py`` (view ``ag``). AnyBURL learns rules on the
+inference graph (train.txt) of each graph in the KR 2026 baseline setting (Meilicke et al., "A Simple Baseline for
+Inductive Knowledge Base Completion"), then ranks the test queries:
 
-- Code: ``AnyBURL-23-1x-java11.jar`` (built from the official sources with ``javac --release 11``) below the AnyBURL
-  folder (``--code`` or ``$ANYBURL_HOME``), checked with the sources archive against ``models.json`` (``external``).
-- Input files (``write_inputs``): entity ``i`` and relation ``j`` of the benchmark's sorted vocabularies become ``e<i>``
-  and ``r<j>`` (AnyBURL drops names shorter than two characters and splits rule atoms at ``(`` and ``,``).
-  ``train.txt`` holds the rows of train.txt in file order, ``test.txt`` the ranked facts, ``valid.txt`` the rows of
-  valid.txt plus every test row that is not ranked. Apply filters with its three files, so its filter is train, valid
-  and all test facts, as the benchmark's (asserted); Learn reads train.txt only.
-- Learn: the KR setting of ``suppl/exp/fb237/config-learn.properties`` (asserted): ``THRESHOLD_CORRECT_PREDICTIONS``
-  2, ``THRESHOLD_CORRECT_PREDICTIONS_ZERO`` 2, ``ZERO_RULES_ACTIVE`` true, ``MAX_LENGTH_CYCLIC`` 1, ``SNAPSHOTS_AT`` 30
-  (one rule file after 30 seconds), ``BATCH_TIME`` 1000; ``WORKER_THREADS`` 4 (KR: 7). The rules depend on the time
-  budget and the threads, so two runs can differ.
-- Apply: maxplus (AnyBURL's default), 4 threads, ``TOP_K_OUTPUT`` = min(1000, entities). Eval: AnyBURL's own Eval
-  (``TOP_K`` 1000) for the native check below.
-- Every Java step runs as ``java -Xmx6G`` under ``systemd-run --user --scope -p MemoryMax=8G -p MemorySwapMax=0`` (unless
-  ``scope`` is off), one at a time (a lock file in the work folder), and is stopped after 6 hours.
-
-Ranks (``rebuild``), per ranked fact and direction: the score of a candidate is AnyBURL's printed confidence, ``-inf``
-for a candidate that AnyBURL does not list; the rank is the benchmark's pessimistic filtered rank (``view_ranks``).
-A target that is not listed gets the number of allowed candidates, and so does a listed target tied with the last
-entry of a full list (its tie group may go on past the cut). ``anyburl`` is the rule view, ``anyburl:raw`` the plain
-view. The rebuild also derives AnyBURL's native ranks (list order; only the first 100 positions count; the known answers
-listed before the target are subtracted), whose metrics must agree with AnyBURL's Eval to its four printed decimals
-(recorded in ``anyburl_meta.native``).
-
-Work files (inputs, configurations, logs, the rule file and the gzip-compressed ranking file) stay in
-``<work>/anyburl/<collection>/<graph>/``; ``<work>`` defaults to ``<out>/.work``, a dot folder that the registered
-tables skip.
+- Input files (``write_inputs``): entity ``i`` and relation ``j`` become ``e<i>`` and ``r<j>`` (AnyBURL drops names shorter
+  than two characters and splits rule atoms at ``(`` and ``,``). ``valid.txt`` also holds the test rows that are not
+  ranked, so that Apply's filter is the benchmark's (asserted).
+- Learn: ``KR_LEARN``, the setting of ``suppl/exp/fb237/config-learn.properties`` (checked), with 4 threads: one rule
+  file after 30 seconds. Apply: maxplus with ``TOP_K_OUTPUT`` = min(1000, entities). Eval: AnyBURL's own metrics.
+- Each Java step runs as ``java -Xmx6G`` under ``systemd-run --user --scope -p MemoryMax=8G`` (unless the scope is off),
+  one at a time (a lock file of the work root), and stops after ``STEP_HOURS``.
+- Ranks (``rebuild``): the benchmark's pessimistic filtered rank (``view_ranks``) on AnyBURL's confidences, ``-inf`` for an
+  unlisted candidate. An unlisted target, and a target tied with the last entry of a full list, get the number of
+  allowed candidates. The native ranks of the list order must agree with Eval to its four printed decimals.
 """
 import fcntl
 import gzip
@@ -41,7 +24,7 @@ import shutil
 import subprocess
 import time
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
 
@@ -51,22 +34,9 @@ import torch
 from dicee.evaluation._filtering import FilteredRanker
 
 from ..data import GraphData, Queries, as_triples, load_graph, prepare_queries
-from ..evaluate import write_json
+from ..evaluate import error_path, row_file_path, write_error, write_json
 from ..manifests import REPO, GraphEntry, Manifest, PathLike, file_sha256
-from . import (
-    AdapterSetupError,
-    ExternalStepError,
-    check_file,
-    error_record_path,
-    external_folder,
-    external_pins,
-    group_targets,
-    row_path,
-    view_ranks,
-    work_folder,
-    write_error,
-    write_rows,
-)
+from . import AdapterSetupError, ExternalStepError, check_file, external_folder, external_pins, group_targets, view_ranks, work_folder, write_rows
 
 logger = logging.getLogger(__name__)
 
@@ -107,7 +77,7 @@ def write_properties(path: Path, values: Mapping[str, Any]) -> dict[str, str]:
 
 @dataclass(frozen=True)
 class AnyBURL:
-    """A checked AnyBURL folder and the way its Java steps run.
+    """A checked AnyBURL folder and the way its Java steps run (``setup``).
 
     Attributes:
         home: The AnyBURL folder (jar, sources archive, ``suppl/``).
@@ -121,29 +91,11 @@ class AnyBURL:
     pins: Mapping[str, str]
     java: str = 'java'
     scope: tuple[str, ...] = SCOPE
-    version: str = field(default='', init=False)
+    version: str = ''
 
-    def __post_init__(self) -> None:
-        for name in (JAR, SOURCES):
-            check_file(self.home / name, self.pins[name], 'AnyBURL')
-        if not (self.home / KR_LEARN_FILE).is_file():
-            raise AdapterSetupError(f'AnyBURL: missing {self.home / KR_LEARN_FILE} (the supplementary material of the KR paper)')
-        kr = {k: v for k, v in properties(self.home / KR_LEARN_FILE).items() if not k.startswith('PATH_') and k != 'WORKER_THREADS'}
-        if kr != KR_LEARN:
-            raise AdapterSetupError(f'AnyBURL: {KR_LEARN_FILE} holds {kr}, not the KR setting {KR_LEARN}')
-        try:
-            done = subprocess.run([*self.scope, self.java, '-version'], capture_output=True, text=True, timeout=120)
-        except (OSError, subprocess.TimeoutExpired) as error:
-            raise AdapterSetupError(f'AnyBURL: cannot run {self.java} ({error})') from None
-        lines = done.stderr.strip().splitlines()
-        if done.returncode or not lines:
-            raise AdapterSetupError(f'AnyBURL: {self.java} -version failed: {done.stderr.strip()[:300]}')
-        object.__setattr__(self, 'version', ' | '.join(lines))
-
-    @property
-    def jar(self) -> Path:
-        """The AnyBURL jar."""
-        return self.home / JAR
+    def record(self) -> dict[str, Any]:
+        """The setup for the logs."""
+        return dict(home=str(self.home), java=self.version, scope=list(self.scope))
 
     def run(self, main: str, config: Path, log: Path, lock: Path) -> dict[str, Any]:
         """One AnyBURL step (``Learn``, ``Apply``, ``Eval``) on a configuration file, one Java process at a time.
@@ -153,7 +105,7 @@ class AnyBURL:
         Returns:
             The exit code, wall and CPU seconds, peak resident memory and whether the step was stopped.
         """
-        command = [*self.scope, self.java, *JVM, '-cp', str(self.jar), f'de.unima.ki.anyburl.{main}', str(config)]
+        command = [*self.scope, self.java, *JVM, '-cp', str(self.home / JAR), f'de.unima.ki.anyburl.{main}', str(config)]
         lock.parent.mkdir(parents=True, exist_ok=True)
         with open(lock, 'w') as held, open(log, 'w') as output:
             fcntl.flock(held, fcntl.LOCK_EX)
@@ -176,12 +128,30 @@ class AnyBURL:
 
 
 def setup(code: Optional[PathLike] = None, models: Optional[PathLike] = None, java: str = 'java', scope: bool = True) -> AnyBURL:
-    """The checked AnyBURL folder: ``code``, else ``$ANYBURL_HOME``; pins from ``models.json`` (``external.anyburl``).
+    """The checked AnyBURL folder: ``code``, else ``$ANYBURL_HOME``, with the pins of ``models.json`` (``external.anyburl``).
+
+    Checks the jar and the sources archive against their pins, the KR learning setting, and that Java starts.
 
     Raises:
         AdapterSetupError: For a missing folder, a file that differs from its pin, another learning setting, or no Java.
     """
-    return AnyBURL(home=external_folder(code, VARIABLE, 'AnyBURL'), pins=external_pins(KEY, models), java=java, scope=SCOPE if scope else ())
+    home, pins = external_folder(code, VARIABLE, 'AnyBURL'), external_pins(KEY, models)
+    for name in (JAR, SOURCES):
+        check_file(home / name, pins[name], 'AnyBURL')
+    if not (home / KR_LEARN_FILE).is_file():
+        raise AdapterSetupError(f'AnyBURL: missing {home / KR_LEARN_FILE} (the supplementary material of the KR paper)')
+    kr = {k: v for k, v in properties(home / KR_LEARN_FILE).items() if not k.startswith('PATH_') and k != 'WORKER_THREADS'}
+    if kr != KR_LEARN:
+        raise AdapterSetupError(f'AnyBURL: {KR_LEARN_FILE} holds {kr}, not the KR setting {KR_LEARN}')
+    prefix = SCOPE if scope else ()
+    try:
+        done = subprocess.run([*prefix, java, '-version'], capture_output=True, text=True, timeout=120)
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise AdapterSetupError(f'AnyBURL: cannot run {java} ({error})') from None
+    lines = done.stderr.strip().splitlines()
+    if done.returncode or not lines:
+        raise AdapterSetupError(f'AnyBURL: {java} -version failed: {done.stderr.strip()[:300]}')
+    return AnyBURL(home=home, pins=pins, java=java, scope=prefix, version=' | '.join(lines))
 
 
 def step_failed(step: str, times: Mapping[str, Any], log: Path, why: str) -> ExternalStepError:
@@ -193,26 +163,14 @@ def step_failed(step: str, times: Mapping[str, Any], log: Path, why: str) -> Ext
         why = 'killed (memory cap MemoryMax=8G of the scope)'
     elif times['timed_out']:
         why = f'stopped after {STEP_HOURS} h'
-    return ExternalStepError(dict(step=step, reason=why, **times, log=log.name, log_tail=text.splitlines()[-15:]))
+    return ExternalStepError(dict(stage=step, reason=why, **times, log=log.name, log_tail=text.splitlines()[-15:]))
 
 
 # ---------------------------------------------------------------------------------------------------------- steps
 
-def facts_text(rows: Sequence[tuple[int, int, int]]) -> str:
-    """Id triples as AnyBURL's input lines ``e<h> r<r> e<t>`` (tab-separated)."""
-    return ''.join(f'e{h}\tr{r}\te{t}\n' for h, r, t in rows)
-
-
-def input_rows(graph: GraphData, queries: Queries) -> dict[str, list[tuple[int, int, int]]]:
-    """The rows of AnyBURL's ``train.txt``, ``valid.txt`` (valid plus the unranked test rows) and ``test.txt`` (the ranked facts)."""
-    test = as_triples(graph.test)
-    ranked = set(range(len(test))) if queries.positions is None else set(queries.positions)
-    rest = [fact for i, fact in enumerate(test) if i not in ranked]
-    return {'train.txt': as_triples(graph.train), 'valid.txt': as_triples(graph.valid) + rest, 'test.txt': list(queries.facts)}
-
-
 def write_inputs(work: Path, graph: GraphData, queries: Queries) -> dict[str, str]:
-    """Write AnyBURL's three input files; returns their SHA-256.
+    """Write AnyBURL's ``train.txt``, ``valid.txt`` (valid plus the unranked test rows) and ``test.txt`` (the ranked facts)
+    as lines ``e<h> r<r> e<t>``; returns their SHA-256.
 
     Asserted: each file holds exactly its rows, and AnyBURL's filter (train + valid.txt + test.txt) equals the benchmark's
     (train + valid + all test facts).
@@ -220,9 +178,12 @@ def write_inputs(work: Path, graph: GraphData, queries: Queries) -> dict[str, st
     Raises:
         ValueError: When a file or the filter differs.
     """
-    files = input_rows(graph, queries)
+    test = as_triples(graph.test)
+    ranked = set(range(len(test))) if queries.positions is None else set(queries.positions)
+    files = {'train.txt': as_triples(graph.train), 'valid.txt': as_triples(graph.valid) + [fact for i, fact in enumerate(test) if i not in ranked],
+             'test.txt': list(queries.facts)}
     for name, rows in files.items():
-        (work / name).write_text(facts_text(rows))
+        (work / name).write_text(''.join(f'e{h}\tr{r}\te{t}\n' for h, r, t in rows))
         back = [tuple(int(x[1:]) for x in line.split('\t')) for line in (work / name).read_text().splitlines()]
         if back != rows:
             raise ValueError(f'{name}: the written rows differ')
@@ -421,7 +382,7 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, anyburl
     Raises:
         manifests.ManifestError: When the graph fails its hash check.
     """
-    final = row_path(out, entry, [KEY])
+    final = row_file_path(out, entry, [KEY])
     if final.exists():
         logger.info('%s: exists', entry.name)
         return 'exists'
@@ -439,9 +400,9 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, anyburl
         steps['apply'] = apply(anyburl, folder, k, lock)
         steps['eval'] = native_eval(anyburl, folder, k, lock)
     except ExternalStepError as error:
-        path = write_error(final, dict(graph=entry.name, key=entry.key, **error.args[0], entities=graph.num_entities, train=len(graph.train),
-                                       ranked=len(queries.facts), seconds=time.monotonic() - began, date=time.strftime('%Y-%m-%d %H:%M:%S')))
-        logger.error('%s: AnyBURL %s failed (%s) -> %s', entry.name, error.args[0]['step'], error.args[0]['reason'], path)
+        path = write_error(final, entry, **error.record, entities=graph.num_entities, train=len(graph.train), ranked=len(queries.facts),
+                           seconds=time.monotonic() - began)
+        logger.error('%s: AnyBURL %s -> %s', entry.name, error, path)
         return 'failed'
     rows, native, counts = rebuild(folder / f'preds-{k}', graph, queries, k)
     rebuilt = native_metrics(native)
@@ -464,5 +425,5 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, anyburl
     spec = dict(kind='external', system='AnyBURL', label=LABEL, setting=SETTING)
     write_rows(final, manifest=manifest, entry=entry, graph=graph, queries=queries, key=KEY, spec=spec, protocol=PROTOCOL, rows=rows,
                seconds=time.monotonic() - began, meta_name='anyburl_meta', meta=meta, code=CODE)
-    error_record_path(final).unlink(missing_ok=True)
+    error_path(final).unlink(missing_ok=True)
     return 'done'

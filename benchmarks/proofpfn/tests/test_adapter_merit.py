@@ -101,7 +101,7 @@ def test_systems_write_the_reference_rows(tmp_path):
     manifest, entry = tiny(tmp_path)
     systems = fake_systems(tmp_path)
     assert ev.evaluate_graph(manifest, entry, systems, tmp_path / 'rows', root=tmp_path, device='cpu') == 'done'
-    path = ev.row_file_path(tmp_path / 'rows', entry, systems)
+    path = ev.row_file_path(tmp_path / 'rows', entry, merit.KEYS)
     assert path.parent.name == 'merit1024-merit2025-merit2026-merit4000-merit8000'
     doc = json.loads(path.read_text())
     keys = [k for s in merit.KEYS for k in (s, f'{s}:gt2', f'{s}:raw', f'{s}:raw:gt2')]

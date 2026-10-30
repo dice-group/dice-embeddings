@@ -1,37 +1,31 @@
 """KGPFN scoring worker: runs in KGPFN's own Python environment, started by ``kgpfn.py`` (never imported by the benchmark).
 
-Started as ``<KGPFN python> -B -P <this file> --meta META ...`` with ``PYTHONPATH`` set to the KGPFN code folder (a clone
-of github.com/HKUST-KnowComp/KGPFN), so KGPFN's packages ``pfn``, ``model`` and ``script`` import as in its own scripts;
-``-P`` keeps this file's folder off the module path. It imports only the standard library, numpy, torch, yaml,
-torch_geometric and KGPFN's modules.
+Started as ``<KGPFN python> -B -P <this file> --meta META ...`` with ``PYTHONPATH`` set to the KGPFN code folder, so
+KGPFN's packages ``pfn``, ``model`` and ``script`` import as in its own scripts; ``-P`` keeps this file's folder off the
+module path. It imports only the standard library, numpy, torch, yaml, torch_geometric and KGPFN's modules. The host
+checked the code folder and the checkpoints before (``kgpfn.setup``).
 
 Port of the research runner ``kgpfn-ref-v1-runtime/kgpfn_eval.py`` in its all-graph mode (``--meta``) with the
 answer-blind context and context seed 0:
 
-- Model: ``kgpfn_icl_3g.pth`` (frozen ULTRA-3g structure encoder, TabICL feature transformer), built by KGPFN's
-  ``create_model`` from ``config/script/test.yaml`` plus ``config/kgpfn/kgpfn_icl.yaml`` (context graph 3, context tail),
-  with ``fast_test`` off, ``num_epoch`` 0 and ``init_model`` off. The TabICL yaml is written from the TabICL
-  checkpoint's ``config`` entry as ``script/download.py`` does, loaded with ``weights_only=True``. KGPFN loads its
-  checkpoint with ``strict=False``; every tensor of the model must then equal the checkpoint's, with none left over.
-- Graph: KGPFN's ``TransductiveDataset`` layout: entities and relations numbered by first appearance in train, valid and
-  test (a line splits at tabs if it has one, else at whitespace), train edges plus inverse edges (relation ``r + R``),
-  the relation graph of ``tasks.build_relation_graph``. The parse must hash as the host's (``parse_sha256`` of the meta).
-- Queries: the ranked facts of the meta's ``positions`` (all rows for ``null``), in the order of KGPFN's test loader
-  (``DistributedSampler``, shuffle, seed 0) restricted to them, in batches; each fact is asked as the tail query
-  ``(h, r, ?)`` and the head query as KGPFN's inverse query ``(t, r^-1, ?)``. random, numpy and torch are seeded with 0
-  right before the loop.
-- Context (answer-blind): ``tasks.build_context_relation_aware`` gets the query with its answer replaced by ``-1`` (20
-  positives and the meta's negatives of the query relation from the visible graph); a context that cannot be filled
-  stops the run.
+- Model: ``kgpfn_icl_3g.pth``, built by KGPFN's ``create_model`` from ``config/script/test.yaml`` and
+  ``config/kgpfn/kgpfn_icl.yaml`` (``fast_test`` off, ``num_epoch`` 0, ``init_model`` off), with the TabICL yaml written
+  from the TabICL checkpoint's ``config`` as ``script/download.py`` does. KGPFN loads with ``strict=False``, so every
+  tensor of the model must equal the checkpoint's, with none left over.
+- Graph: KGPFN's ``TransductiveDataset`` layout (entities and relations by first appearance in train, valid and test,
+  inverse edges ``r + R``, ``tasks.build_relation_graph``); the parse must hash as the host's.
+- Queries: the meta's ``positions`` in the order of KGPFN's test loader (``DistributedSampler``, shuffle, seed 0), each
+  as the tail query ``(h, r, ?)`` and KGPFN's inverse query ``(t, r^-1, ?)``; random, numpy and torch seeded with 0
+  right before the loop. The context of ``tasks.build_context_relation_aware`` gets the query with its answer replaced
+  by ``-1`` (answer-blind).
 - Scores: ``script/test_kgpfn.py::_score_all_candidate_tails``. Ranks (``our_ranks``): pessimistic over the allowed
-  candidates (every known answer of train, valid and test except the target is removed), a row with a non-finite score
-  gets the worst rank; the rule view sets the anchor to ``-inf`` unless the base relation is one of the meta's
-  ``reflexive``. KGPFN's native ranks (``tasks.compute_ranking`` on ``tasks.strict_negative_mask``) are compared.
+  candidates; the rule view sets the anchor to ``-inf`` unless the base relation is one of the meta's ``reflexive``.
+  KGPFN's native ranks (``tasks.compute_ranking``) are compared.
 
 Output: one JSON with the per-position ranks (``tail_rank``, ``head_rank``, ``tail_rank_rule``, ``head_rank_rule``, the
-optimistic ranks as a tie diagnostic), counts, settings, the strict-load check, times, GPU memory and provenance. It
-holds no metric, and the log prints none. ``--dump-scores`` also writes the score rows (small graphs, for the host's
-check). Exit code 3: CUDA out of memory (an error JSON is written next to the output).
+optimistic ranks as a tie diagnostic), counts, settings, the strict-load check, times, GPU memory and provenance, but no
+metric. ``--dump-scores`` also writes the score rows (small graphs, for the host's check). Exit code 3: CUDA out of
+memory (an error JSON next to the output).
 """
 import argparse
 import hashlib
@@ -66,18 +60,6 @@ def sha256(path: Path) -> str:
         for block in iter(lambda: handle.read(1 << 22), b''):
             digest.update(block)
     return digest.hexdigest()
-
-
-def code_commit(code: Path) -> str:
-    """The commit checked out in the KGPFN folder, read from ``.git``."""
-    git = code / '.git'
-    head = (git / 'HEAD').read_text().strip()
-    if not head.startswith('ref: '):
-        return head
-    ref = head[5:]
-    if (git / ref).exists():
-        return (git / ref).read_text().strip()
-    return next(line.split()[0] for line in (git / 'packed-refs').read_text().splitlines() if line.endswith(' ' + ref))
 
 
 def read_split(path: Path) -> Split:
@@ -213,13 +195,6 @@ def main(argv: Optional[list[str]] = None) -> int:
         raise SystemExit(f'KGPFN imported from outside {code}: {origins}')
     meta = json.loads(a.meta.read_text())
     checkpoint, tabicl = a.checkpoints / CHECKPOINT, a.checkpoints / TABICL
-    commit = code_commit(code)
-    if commit != meta['pins']['code_commit']:
-        raise SystemExit(f'KGPFN code at {commit}, the pin {meta["pins"]["code_commit"]}')
-    sums = {f.name: sha256(f) for f in (checkpoint, tabicl)}
-    if sums != {CHECKPOINT: meta['pins'][CHECKPOINT], TABICL: meta['pins']['tabicl']}:
-        raise SystemExit(f'checkpoint SHA-256 differ from the pins: {sums}')
-
     a.work.mkdir(parents=True, exist_ok=True)
     tab_cfg = torch.load(tabicl, map_location='cpu', weights_only=True)['config']
     if not isinstance(tab_cfg, dict):
@@ -370,7 +345,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                    context_s=secs['context'], score_s=secs['score'], rank_s=secs['rank']),
         gpu=dict(name=torch.cuda.get_device_name(device), peak_allocated_gb=torch.cuda.max_memory_allocated(device) / 2**30,
                  peak_reserved_gb=torch.cuda.max_memory_reserved(device) / 2**30),
-        provenance=dict(code_commit=commit, checkpoint_sha256=sums, worker_sha256=sha256(Path(__file__)), python=sys.version.split()[0],
+        provenance=dict(worker_sha256=sha256(Path(__file__)), python=sys.version.split()[0],
                         torch=torch.__version__, cuda=torch.version.cuda, tabicl=package_version('tabicl'),
                         torch_geometric=package_version('torch_geometric'), image=os.environ.get('KGPFN_IMAGE'),
                         image_id=os.environ.get('KGPFN_IMAGE_ID'),

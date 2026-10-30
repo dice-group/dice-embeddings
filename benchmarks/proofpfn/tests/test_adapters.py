@@ -17,7 +17,7 @@ from benchmarks.proofpfn import adapters, cli
 from benchmarks.proofpfn import evaluate as ev
 from benchmarks.proofpfn import manifests as mf
 from benchmarks.proofpfn.adapters import AdapterSetupError, anyburl, kgpfn
-from benchmarks.proofpfn.data import load_graph, prepare_queries
+from benchmarks.proofpfn.data import GraphData, Queries, load_graph, prepare_queries
 from dicee.evaluation._filtering import FilteredRanker
 
 from .golden import tiny_graph, write_manifest
@@ -82,6 +82,13 @@ def test_view_ranks_equal_the_research_rank():
         assert adapters.view_ranks(v, target, others, anchor, True, ranker) == (research[1], research[1])
 
 
+def write_rows(final: Path, manifest: mf.Manifest, entry: mf.GraphEntry, graph: GraphData, queries: Queries, key: str, rows: list) -> None:
+    """The row file of the AnyBURL or the KGPFN adapter (``adapters.write_rows``)."""
+    protocol = {'anyburl': anyburl.PROTOCOL, 'kgpfn': kgpfn.PROTOCOL}[key]
+    adapters.write_rows(final, manifest=manifest, entry=entry, graph=graph, queries=queries, key=key, spec=dict(kind='external'),
+                        protocol=protocol, rows=rows, seconds=1.5, meta_name=f'{key}_meta', meta={}, code=anyburl.CODE)
+
+
 @pytest.fixture(scope='module')
 def adapter_rows(tmp_path_factory):
     """Row files of the three adapters on one tiny graph: AnyBURL and KGPFN from lists of random confidences, MERIT from
@@ -101,15 +108,12 @@ def adapter_rows(tmp_path_factory):
     preds.write_text(''.join(f'e{h} r{r} e{t}\nHeads: {listed()}\nTails: {listed()}\n' for h, r, t in queries.facts))
     rows, _, _ = anyburl.rebuild(preds, graph, queries, graph.num_entities)
     out = root / 'rows'
-    common = dict(manifest=manifest, entry=entry, graph=graph, queries=queries, seconds=1.5, code=anyburl.CODE)
-    adapters.write_rows(adapters.row_path(out, entry, ['anyburl']), key='anyburl', spec=dict(kind='external'), protocol=anyburl.PROTOCOL,
-                        rows=rows, meta_name='anyburl_meta', meta={}, **common)
+    write_rows(ev.row_file_path(out, entry, ['anyburl']), manifest, entry, graph, queries, 'anyburl', rows)
     raw = {f'{side}_rank{view}': [0] * len(queries.facts) for side in ('tail', 'head') for view in ('', '_rule')}
     for r in rows:
         side = 'head' if r['head'] else 'tail'
         raw[f'{side}_rank'][r['index']], raw[f'{side}_rank_rule'][r['index']] = r['anyburl:raw'], r['anyburl']
-    adapters.write_rows(adapters.row_path(out, entry, ['kgpfn']), key='kgpfn', spec=dict(kind='external'), protocol=kgpfn.PROTOCOL,
-                        rows=kgpfn.rows_of(raw, queries), meta_name='kgpfn_meta', meta={}, **common)
+    write_rows(ev.row_file_path(out, entry, ['kgpfn']), manifest, entry, graph, queries, 'kgpfn', kgpfn.rows_of(raw, queries))
     systems = fake_systems(root)
     assert ev.evaluate_graph(manifest, entry, systems, out, root=root, device='cpu') == 'done'
     return root, out, entry, systems
@@ -118,7 +122,7 @@ def adapter_rows(tmp_path_factory):
 def test_adapter_row_files(adapter_rows):
     _, out, entry, _ = adapter_rows
     for key in ('anyburl', 'kgpfn'):
-        doc = json.loads(adapters.row_path(out, entry, [key]).read_text())
+        doc = json.loads(ev.row_file_path(out, entry, [key]).read_text())
         assert list(doc) == ['dataset', 'families', 'entities', 'relations', 'reflexive', 'protocol', 'metrics', 'rows', 'seconds', 'allgraph',
                              'metrics_views', f'{key}_meta', 'provenance']
         assert all(list(r) == ['index', 'head', key, f'{key}:raw'] for r in doc['rows'])
@@ -131,13 +135,11 @@ def test_row_writer_refusals(adapter_rows, tmp_path):
     manifest = mf.read_manifest(root / 'tiny.json')
     graph = load_graph(manifest, entry, root)
     queries = prepare_queries(graph, manifest.sample_rule)
-    rows = json.loads(adapters.row_path(out, entry, ['kgpfn']).read_text())['rows']
-    common = dict(manifest=manifest, entry=entry, graph=graph, queries=queries, key='kgpfn', spec={}, protocol='', seconds=1.0,
-                  meta_name='kgpfn_meta', meta={}, code=())
+    rows = json.loads(ev.row_file_path(out, entry, ['kgpfn']).read_text())['rows']
     for bad, message in ((rows[::-1], 'query groups in order'), ([dict(r, kgpfn=0) for r in rows], 'rank outside'),
                          ([{**r, 'extra': 1} for r in rows], 'other keys')):
         with pytest.raises(ValueError, match=message):
-            adapters.write_rows(tmp_path / 'x.json', rows=bad, **common)
+            write_rows(tmp_path / 'x.json', manifest, entry, graph, queries, 'kgpfn', bad)
 
 
 def test_registered_tables_read_the_adapter_rows(adapter_rows, tmp_path):
@@ -158,9 +160,9 @@ def test_registered_tables_read_the_adapter_rows(adapter_rows, tmp_path):
         rows = json.loads(path.read_text())['rows']
         return repr(math.fsum(1.0 / r[key] for r in rows) / len(rows))
     for key in ('anyburl', 'kgpfn'):
-        path = adapters.row_path(out, entry, [key])
+        path = ev.row_file_path(out, entry, [key])
         assert table[key, 0] == mrr(f'{key}:raw', path) and table[f'{key}+rule', 0] == mrr(key, path)
-    path = ev.row_file_path(out, entry, systems)
+    path = ev.row_file_path(out, entry, [s.key for s in systems])
     for system, seed in zip(systems, (1024, 2025, 2026, 4000, 8000)):
         assert table['merit', seed] == mrr(f'{system.key}:raw', path) and table['merit+rule', seed] == mrr(system.key, path)
     meta = json.loads((tmp_path / 'tables' / 'tables.meta.json').read_text())

@@ -199,9 +199,9 @@ def write_json(path: Path, value: Any) -> None:
     atomic_write_bytes(path, json.dumps(value).encode())
 
 
-def row_file_path(out: PathLike, entry: GraphEntry, systems: Sequence[System]) -> Path:
-    """``<out>/<collection>/<keys joined by '-'>/<graph>.json``."""
-    return Path(out) / entry.collection / '-'.join(s.key for s in systems) / f'{entry.name}.json'
+def row_file_path(out: PathLike, entry: GraphEntry, keys: Sequence[str]) -> Path:
+    """``<out>/<collection>/<system keys joined by '-'>/<graph>.json``."""
+    return Path(out) / entry.collection / '-'.join(keys) / f'{entry.name}.json'
 
 
 def part_path(final: Path, shard: tuple[int, int]) -> Path:
@@ -215,6 +215,13 @@ def error_path(final: Path) -> Path:
     return final.parent / '.errors' / final.name
 
 
+def write_error(final: Path, entry: GraphEntry, **record: Any) -> Path:
+    """Write the error record of a graph that could not run (``error_path``) with the graph, host and date; returns its path."""
+    path = error_path(final)
+    write_json(path, dict(graph=entry.name, key=entry.key, **record, host=socket.gethostname(), date=time.strftime('%Y-%m-%d %H:%M:%S')))
+    return path
+
+
 def shard_blocks(groups: int, shards: int) -> list[tuple[int, int]]:
     """``shards`` contiguous blocks ``[a, b)`` of the query groups, of sizes equal up to one group."""
     return [(j * groups // shards, (j + 1) * groups // shards) for j in range(shards)]
@@ -225,17 +232,62 @@ def code_sha256(names: Sequence[str] = CODE_FILES) -> dict[str, str]:
     return {name: file_sha256(REPO / name) for name in names if (REPO / name).is_file()}
 
 
+def graph_record(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries) -> dict[str, Any]:
+    """The graph part of an ``allgraph`` record: the entry's fields, the file hashes and the sample."""
+    return dict(entry.record(), sha256=dict(graph.hashes, manifest=manifest.name), test_rows=queries.test_rows, ranked_facts=len(queries.facts),
+                sampled=queries.positions is not None, sample_rule=SAMPLE_RULES[manifest.sample_rule], positions=queries.positions)
+
+
 def record_of(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, systems: Sequence[System],
               setting: Optional[Mapping[str, Any]], device: torch.device) -> dict[str, Any]:
     """The ``allgraph`` record of a row file (the fields of the research record that the tables read, and the rest)."""
-    record = dict(entry.record(), sha256=dict(graph.hashes, manifest=manifest.name), test_rows=queries.test_rows,
-                  ranked_facts=len(queries.facts), sampled=queries.positions is not None, sample_rule=SAMPLE_RULES[manifest.sample_rule],
-                  positions=queries.positions, families={s.key: s.spec() for s in systems},
+    record = dict(graph_record(manifest, entry, graph, queries), families={s.key: s.spec() for s in systems},
                   model_sha256={s.key: s.model_sha256() for s in systems}, seeds=list(SEEDS),
                   gpu=torch.cuda.get_device_name(device) if device.type == 'cuda' else None, torch=torch.__version__)
     if setting is not None:
         record['flock_official'] = dict(setting)
     return record
+
+
+def provenance_of(manifest: Manifest, code: Sequence[str], **fields: Any) -> dict[str, Any]:
+    """The ``provenance`` record of a row file: the benchmark, the manifest, the code hashes, the versions, the host and
+    ``fields``."""
+    return dict(benchmark='benchmarks.proofpfn', manifest=dict(name=manifest.name, sha256=manifest.sha256), code_sha256=code_sha256(code),
+                python=platform.python_version(), torch=torch.__version__, numpy=np.__version__, host=socket.gethostname(), **fields)
+
+
+def write_row_file(final: Path, entry: GraphEntry, graph: GraphData, queries: Queries, keys: Sequence[str], rows: list[dict[str, Any]], *,
+                   families: Sequence[str], protocol: str, seconds: float, record: Mapping[str, Any], provenance: Mapping[str, Any],
+                   extra: Optional[Mapping[str, Any]] = None) -> None:
+    """Check the complete rows (order, keys, ranges) and write a row file in the layout of the research rows.
+
+    Args:
+        final: The row file.
+        entry: The graph.
+        graph: The loaded graph.
+        queries: Its ranked facts and query groups.
+        keys: The rank keys of a row, in order.
+        rows: The rows, in the order of the query groups.
+        families: The system keys of the row file.
+        protocol: The protocol string.
+        seconds: The wall seconds of the graph.
+        record: The ``allgraph`` record.
+        provenance: The ``provenance`` record.
+        extra: Further entries before ``provenance`` (an adapter's record).
+
+    Raises:
+        ValueError: When the rows are not the query groups in order, have other keys or a rank outside ``1..|E|``.
+    """
+    order = [(queries.index(m), head) for (head, _, _), members in queries.groups for m in members]
+    if [(r['index'], r['head']) for r in rows] != order or len(rows) != 2 * len(queries.facts):
+        raise ValueError(f'{entry.name}: the rows are not the query groups in order')
+    n = graph.num_entities
+    if any(list(r) != ['index', 'head', *keys] for r in rows) or any(not 1 <= r[q] <= n for r in rows for q in keys):
+        raise ValueError(f'{entry.name}: a row has other keys or a rank outside 1..{n}')
+    write_json(final, dict(dataset=entry.name, families=list(families), entities=n, relations=graph.num_relations, reflexive=sorted(queries.reflexive),
+                           protocol=protocol, metrics=metrics_of(rows), rows=rows, seconds=seconds, allgraph=dict(record),
+                           metrics_views=view_metrics(rows), **dict(extra or {}), provenance=dict(provenance)))
+    logger.info('%s: %d rows, %.0f s -> %s', entry.name, len(rows), seconds, final)
 
 
 def identity_of(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, systems: Sequence[System]) -> str:
@@ -249,7 +301,8 @@ def identity_of(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries
 
 def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[System], out: PathLike, *, root: PathLike = REPO,
                    device: Union[str, torch.device] = 'cuda', shard: tuple[int, int] = (1, 1), parts: bool = False,
-                   save_minutes: float = 10.0, max_minutes: float = 0.0, threads: int = THREADS) -> str:
+                   save_minutes: float = 10.0, max_minutes: float = 0.0, threads: int = THREADS,
+                   extra: Optional[Mapping[str, Any]] = None) -> str:
     """Evaluate one graph with the systems and write its row file (or one shard's part file).
 
     Runs under ``deterministic_execution`` with ``threads`` CPU threads; both are restored afterwards. On CUDA,
@@ -267,6 +320,7 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
         save_minutes: Interval of the part file.
         max_minutes: Save and stop after this time (0: no limit).
         threads: CPU threads.
+        extra: Further entries of the row file (an adapter's record, ``write_row_file``).
 
     Returns:
         ``'exists'`` (the row file was there), ``'done'`` (written now), ``'shard-done'`` (this shard is complete and
@@ -279,11 +333,11 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
         systems.SystemCheckError: When a system cannot run on the graph.
     """
     device = torch.device(device)
-    final = row_file_path(out, entry, systems)
+    keys = [s.key for s in systems]
+    final = row_file_path(out, entry, keys)
     if final.exists():
         logger.info('%s: exists', entry.name)
         return 'exists'
-    keys = [s.key for s in systems]
     if len(set(keys)) != len(keys):
         raise InputError(f'system keys must be unique: {keys}')
     i, k = shard
@@ -347,9 +401,9 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
             if use_parts:
                 save(b)
         if not use_parts:
-            _write_row_file(final, manifest, entry, graph, queries, systems, setting, rows, time.monotonic() - began, device, [runs], k)
+            _write_row_file(final, manifest, entry, graph, queries, systems, setting, rows, time.monotonic() - began, device, [runs], k, extra)
             return 'done'
-        return _merge(final, manifest, entry, graph, queries, systems, setting, identity, k, device)
+        return _merge(final, manifest, entry, graph, queries, systems, setting, identity, k, device, extra)
 
 
 def _read_part(path: Path, entry: GraphEntry, keys: list[str], shard: tuple[int, int], groups: int, block: tuple[int, int],
@@ -366,7 +420,7 @@ def _read_part(path: Path, entry: GraphEntry, keys: list[str], shard: tuple[int,
 
 
 def _merge(final: Path, manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, systems: Sequence[System],
-           setting: Optional[Mapping[str, Any]], identity: str, shards: int, device: torch.device) -> str:
+           setting: Optional[Mapping[str, Any]], identity: str, shards: int, device: torch.device, extra: Optional[Mapping[str, Any]]) -> str:
     """Write the row file when all parts of the layout are complete; ``'shard-done'`` while one is open.
 
     Raises:
@@ -381,27 +435,15 @@ def _merge(final: Path, manifest: Manifest, entry: GraphEntry, graph: GraphData,
         return 'shard-done'
     rows = [row for p in stored if p is not None for row in p['rows']]
     _write_row_file(final, manifest, entry, graph, queries, systems, setting, rows, sum(p['seconds'] for p in stored if p is not None),
-                    device, [p['runs'] for p in stored if p is not None], shards)
+                    device, [p['runs'] for p in stored if p is not None], shards, extra)
     return 'done'
 
 
 def _write_row_file(final: Path, manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, systems: Sequence[System],
                     setting: Optional[Mapping[str, Any]], rows: list[dict[str, Any]], seconds: float, device: torch.device,
-                    runs: list[int], shards: int) -> None:
-    """Check the complete rows (order, keys, ranges) and write the row file."""
-    order = [(queries.index(m), head) for (head, _, _), members in queries.groups for m in members]
-    if [(r['index'], r['head']) for r in rows] != order or len(rows) != 2 * len(queries.facts):
-        raise ValueError(f'{entry.name}: the rows are not the query groups in order')
-    keys = row_keys(systems)
-    n = graph.num_entities
-    if any(list(r) != ['index', 'head', *keys] for r in rows) or any(not 1 <= r[q] <= n for r in rows for q in keys):
-        raise ValueError(f'{entry.name}: a row has other keys or a rank outside 1..{n}')
-    provenance = dict(benchmark='benchmarks.proofpfn', protocol=PROTOCOL, manifest=dict(name=manifest.name, sha256=manifest.sha256),
-                      code_sha256=code_sha256(), python=platform.python_version(), torch=torch.__version__, numpy=np.__version__,
-                      device=str(device), deterministic=True, threads=torch.get_num_threads(), host=socket.gethostname(),
-                      shards=shards, runs=runs, checkpoints={s.key: s.provenance() for s in systems if isinstance(s, ProofPFNFamily)})
-    write_json(final, dict(dataset=entry.name, families=[s.key for s in systems], entities=n, relations=graph.num_relations,
-                           reflexive=sorted(queries.reflexive), protocol=PROTOCOL, metrics=metrics_of(rows), rows=rows, seconds=seconds,
-                           allgraph=record_of(manifest, entry, graph, queries, systems, setting, device), metrics_views=view_metrics(rows),
-                           provenance=provenance))
-    logger.info('%s: %d rows, %.0f s -> %s', entry.name, len(rows), seconds, final)
+                    runs: list[int], shards: int, extra: Optional[Mapping[str, Any]]) -> None:
+    """Write the row file of the systems (``write_row_file``)."""
+    provenance = provenance_of(manifest, CODE_FILES, protocol=PROTOCOL, device=str(device), deterministic=True, threads=torch.get_num_threads(),
+                               shards=shards, runs=runs, checkpoints={s.key: s.provenance() for s in systems if isinstance(s, ProofPFNFamily)})
+    write_row_file(final, entry, graph, queries, row_keys(systems), rows, families=[s.key for s in systems], protocol=PROTOCOL, seconds=seconds,
+                   record=record_of(manifest, entry, graph, queries, systems, setting, device), provenance=provenance, extra=extra)

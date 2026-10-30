@@ -1,31 +1,21 @@
-"""KGPFN (arXiv 2605.14907v2), ``kgpfn_icl_3g`` with the answer-blind context and context seed 0, as rows of the benchmark.
+"""KGPFN (arXiv 2605.14907v2), ``kgpfn_icl_3g`` with the answer-blind context and context seed 0, as rows of the benchmark
+(README, section KGPFN; PROTOCOL, section External baselines).
 
 Host side of the research runners ``kgpfn-ref-v1-runtime/kgpfn_ag.py`` (prepare, finalize, verify) and
-``fresh-v1-runtime/fv1_worker.py`` (the run with its retry); the scoring is ``kgpfn_worker.py``, which runs in KGPFN's
-own Python environment.
+``fresh-v1-runtime/fv1_worker.py`` (the run with its retry); the scoring runs in KGPFN's own Python environment
+(``kgpfn_worker.py``). Per graph (``evaluate_graph``):
 
-Setup (``setup``): the KGPFN code folder (``--code`` or ``$KGPFN_CODE``, a clone of github.com/HKUST-KnowComp/KGPFN at the
-pinned commit), the folder of its two checkpoints (``--checkpoints`` or ``$KGPFN_CHECKPOINT_DIR``: ``kgpfn_icl_3g.pth``
-and the TabICL checkpoint, both pinned in ``models.json``, ``external.kgpfn``) and the command that starts KGPFN's
-Python (``--python`` or ``$KGPFN_PYTHON``, split like a shell word list: an interpreter, or a wrapper that runs one in
-KGPFN's container).
-
-Per graph (``evaluate_graph``):
-
-1. Prepare: the graph loads and is hash-checked (``data.load_graph``); the ranked facts, filter and the relations open
-   under the self-loop rule come from ``data.prepare_queries``. The context negatives are KGPFN's 80, else the largest of
-   40 and 20 that fills the context of every ranked query (``unfillable``; 40 is KGPFN's own value for NELLInductive-v1);
-   batch, NBFNet head chunk and candidate chunk follow the entity count (``settings``, memory only). The three split
-   files are copied to ``stage/`` of the work folder (checked by SHA-256), with ``meta.json`` (positions, open relations
-   by name, the SHA-256 of the host's parse, the pins).
-2. Run: ``kgpfn_worker.py`` with ``PYTHONPATH`` = the KGPFN code folder. On CUDA out of memory (exit 3) once more with
-   half the batch and head chunk and twice the candidate chunk; then the graph gets an error record. The batch size
-   changes the context draws, so the record keeps the attempts.
-3. Verify (small graphs: entities x ranked facts <= 2.5 million): both views are recomputed from the dumped scores with
-   the benchmark's ranker (``log_softmax`` in float64, the filter, the rule), and must equal the worker's ranks.
-4. Finalize: rows in the benchmark's order with ``kgpfn`` (rule view) and ``kgpfn:raw``; the row file
-   ``<out>/<collection>/kgpfn/<graph>.json`` with ``kgpfn_meta``. ``seconds`` is the worker's total.
+1. Prepare: the context negatives are KGPFN's 80, else the largest of 40 and 20 that fills the context of every ranked
+   query (``unfillable``). Batch, NBFNet head chunk and candidate chunk follow the entity count (``settings``, memory
+   only). The split files go to ``stage/`` with ``meta.json`` (positions, open relations, parse hashes, pins).
+2. Run: the worker, and after CUDA out of memory (exit 3) once more with half the batch. The batch changes the context
+   draws, so the record keeps the attempts.
+3. Verify (entities x ranked facts up to 2.5 million): both views of the dumped scores, ranked by the benchmark's ranker,
+   must equal the worker's ranks.
+4. Finalize: the row file ``<out>/<collection>/kgpfn/<graph>.json`` with ``kgpfn`` (rule view), ``kgpfn:raw`` and
+   ``kgpfn_meta``.
 """
+import hashlib
 import json
 import logging
 import os
@@ -44,21 +34,18 @@ import torch
 from dicee.evaluation._filtering import FilteredRanker
 
 from ..data import GraphData, Queries, as_triples, load_graph, prepare_queries, read_triples
+from ..evaluate import error_path, row_file_path, write_error
 from ..manifests import REPO, SPLITS, GraphEntry, Manifest, PathLike, file_sha256
 from . import (
     AdapterSetupError,
     ExternalStepError,
     check_commit,
     check_file,
-    error_record_path,
     external_folder,
     external_pins,
     group_targets,
-    row_path,
-    sha256_text,
     view_ranks,
     work_folder,
-    write_error,
     write_rows,
 )
 
@@ -152,7 +139,7 @@ def settings(entities: int) -> tuple[int, int, int]:
 
 def parse_sha256(folder: Path) -> dict[str, str]:
     """The SHA-256 of the host's parse of each split (the triples in file order), which the worker's parse must equal."""
-    return {s: sha256_text('\n'.join('\t'.join(t) for t in read_triples(folder / f'{s}.txt'))) for s in SPLITS}
+    return {s: hashlib.sha256('\n'.join('\t'.join(t) for t in read_triples(folder / f'{s}.txt')).encode('utf-8')).hexdigest() for s in SPLITS}
 
 
 def prepare(system: KGPFN, entry: GraphEntry, graph: GraphData, queries: Queries, folder: Path, source: Path) -> dict[str, Any]:
@@ -296,7 +283,7 @@ def verify(dump: Path, folder: Path, graph: GraphData, queries: Queries, rows: S
 
 def failed(final: Path, entry: GraphEntry, record: Mapping[str, Any]) -> str:
     """Write a graph's error record; returns ``'failed'``."""
-    path = write_error(final, dict(graph=entry.name, key=entry.key, **record, date=time.strftime('%Y-%m-%d %H:%M:%S')))
+    path = write_error(final, entry, **record)
     logger.error('%s: KGPFN failed at %s -> %s', entry.name, record['stage'], path)
     return 'failed'
 
@@ -321,7 +308,7 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, system:
         manifests.ManifestError: When the graph fails its hash check.
         ValueError: When the worker's output is incomplete or of another run.
     """
-    final = row_path(out, entry, [KEY])
+    final = row_file_path(out, entry, [KEY])
     if final.exists():
         logger.info('%s: exists', entry.name)
         return 'exists'
@@ -332,7 +319,7 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, system:
     try:
         meta = prepare(system, entry, graph, queries, folder, manifest.folder(entry, root))
     except ExternalStepError as error:
-        return failed(final, entry, error.args[0])
+        return failed(final, entry, error.record)
     code, attempts = run_worker(system, entry, folder, meta)
     if code:
         oom = folder / 'raw.error.json'
@@ -356,5 +343,5 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, system:
                seconds=raw['times']['total_s'], meta_name='kgpfn_meta', meta=kgpfn_meta, code=CODE)
     for s_name in SPLITS:   # the staged copies of the graph files
         (folder / 'stage' / f'{s_name}.txt').unlink(missing_ok=True)
-    error_record_path(final).unlink(missing_ok=True)
+    error_path(final).unlink(missing_ok=True)
     return 'done'

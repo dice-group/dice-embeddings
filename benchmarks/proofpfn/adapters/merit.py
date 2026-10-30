@@ -1,46 +1,32 @@
-"""MERIT (Gregucci et al., arXiv 2610.15638): its five release checkpoints as reference systems of the benchmark.
+"""MERIT (Gregucci et al., arXiv 2610.15638): its five release checkpoints as reference systems of the benchmark (README,
+section MERIT).
 
 Port of the research harness ``allgraph-v1/ag_merit.py`` with ``merit-ref-v1-runtime/merit_ref.py``. MERIT is ULTRA's
 entity NBFNet conditioned on relation representations from a Transformer over relation tokens, which reads a motif
 tensor of the inference graph:
 
-- Model (``MERIT``): dicee's ``ULTRA`` with MERIT's relation Transformer (``kgfm.models.merit.RelTransformerMERIT``, the
-  configuration of MERIT's inference configs, ``CONFIG``) and motif tensor (``kgfm.tasks.build_motif_tensor``), both
-  from MERIT's own code. The entity tower is dicee's ``EntityNBFNet``: a release checkpoint holds 74 tensors of the
-  relation Transformer and 52 of the entity NBFNet, whose names and shapes equal dicee's ULTRA (checked on loading).
-- Head queries become tail queries of the inverse relation (dicee's convention, as ULTRA and MERIT); MERIT conditions its
-  relation Transformer on that converted relation (``EntityNBFNetMERIT.forward`` of MERIT), where ULTRA uses the
-  direct relation.
-- The motif tensor is built once per graph from the inference graph with both edge directions (relations ``0..R-1``
-  direct, ``R..2R-1`` inverse), as MERIT's evaluation builds it.
-- Random node initialization: the relation Transformer draws Gaussian noise on its tokens. The noise of a query comes
-  from ``torch.manual_seed(merit_seed(0, head, relation))`` inside ``torch.random.fork_rng``, so ranks do not depend on
-  the query order and the global random state stays unchanged.
-- Attention: ``flex`` on CUDA, as MERIT's inference configs (under MERIT's float16 autocast); flex attention does not
-  compile on the CPU with torch 2.5.1, so the CPU runs MERIT's ``mha`` path (smoke tests only).
-- Compiler (``fresh_compiler``): every graph starts with a fresh compiler cache, and a recompilation within a graph is an
-  error. torch 2.5.1 falls back from compiled flex attention to eager attention after eight distinct shapes, which
-  changes the scores.
+- Model (``MERIT``): dicee's ``ULTRA`` with MERIT's own relation Transformer (``kgfm.models.merit.RelTransformerMERIT``
+  with ``CONFIG``, the configuration of MERIT's inference configs) and motif tensor (``kgfm.tasks.build_motif_tensor``).
+  A release checkpoint holds 74 tensors of the relation Transformer and 52 of the entity NBFNet, whose names and shapes
+  equal dicee's ULTRA (checked on loading).
+- A head query is a tail query of the inverse relation (dicee's convention), and MERIT conditions its relation
+  Transformer on that converted relation, where ULTRA uses the direct relation.
+- The motif tensor comes from the inference graph with both edge directions, once per graph.
+- The relation Transformer draws Gaussian noise on its tokens: the noise of a query is seeded with
+  ``merit_seed(0, head, relation)`` inside ``torch.random.fork_rng``, so ranks do not depend on the query order.
+- Attention: ``flex`` on CUDA (under MERIT's float16 autocast); the CPU runs MERIT's ``mha`` path (smoke tests only).
+- Compiler (``fresh_compiler``): a fresh compiler cache per graph, and a recompilation is an error: torch 2.5.1 falls back
+  from compiled flex attention to eager attention after eight shapes, which changes the scores.
 
-The systems ``merit1024``, ``merit2025``, ``merit2026``, ``merit4000`` and ``merit8000`` (checkpoints
-``merit/ckpts/merit/merit_s<seed>.pth`` below the checkpoint root, pinned in ``models.json`` under ``references``) run
-together through ``evaluate.evaluate_graph``, so their row file
-``<out>/<collection>/merit1024-merit2025-merit2026-merit4000-merit8000/<graph>.json`` has the reference keys (``F``,
-``F:gt2``, ``F:raw``, ``F:raw:gt2``) and ``allgraph.model_sha256`` holds ``{"model": sha256}`` per system. The adapter
-adds ``merit_meta`` (upstream hashes, noise seed, configuration, compiler policy).
-
-MERIT's package imports only with its own requirements (torch-scatter, torch-geometric and others, on top of the
-benchmark's). ``run_in_child`` therefore runs the scoring in a child process: its interpreter is ``--python`` or
-``$MERIT_PYTHON`` (default: this one), and its ``PYTHONPATH`` holds the repository and the MERIT folder (``--code`` or
-``$MERIT_HOME``, a clone of github.com/cgregucci/MERIT at the pinned commit).
+The five systems ``merit<S>`` run together through ``evaluate.evaluate_graph``, so their row file has the reference keys
+and the model hash of each checkpoint, plus ``merit_meta``. MERIT's package imports only with its own requirements, so
+``run_in_child`` runs the scoring in a child process in MERIT's environment (``--python`` or ``$MERIT_PYTHON``).
 """
-import json
 import logging
 import os
 import shlex
 import subprocess
 import sys
-import time
 import types
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -57,7 +43,7 @@ from dicee.models.ultra import ULTRA
 from .. import evaluate
 from ..manifests import REPO, GraphEntry, Manifest, PathLike, file_sha256, read_models
 from ..systems import Reference, frozen
-from . import AdapterSetupError, check_commit, check_file, external_folder, external_pins, write_error
+from . import AdapterSetupError, check_commit, check_file, external_folder, external_pins
 
 logger = logging.getLogger(__name__)
 
@@ -221,9 +207,9 @@ class MeritSetup:
         return [MeritReference(key=key, path=self.checkpoints[key], sha256=self.sha256[key], upstream=upstream) for key in KEYS]
 
     def record(self) -> dict[str, Any]:
-        """The setup for the logs."""
+        """The setup for the logs, with the files of MERIT's package that imported (needs MERIT's environment)."""
         return dict(home=str(self.home), code_commit=self.pins['code_commit'], upstream_sha256={k: self.pins[k] for k in UPSTREAM},
-                    checkpoints={k: str(p) for k, p in self.checkpoints.items()})
+                    checkpoints={k: str(p) for k, p in self.checkpoints.items()}, imported=dict(self.upstream().files))
 
 
 def setup(code: Optional[PathLike] = None, models: Optional[PathLike] = None, checkpoint_root: PathLike = REPO / 'checkpoints') -> MeritSetup:
@@ -276,22 +262,16 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, merit: 
     Returns:
         ``'exists'``, ``'done'``, or ``'failed'`` (CUDA ran out of memory; the record is in ``.errors/`` next to the row file).
     """
-    systems = merit.systems()
-    final = evaluate.row_file_path(out, entry, systems)
+    meta = dict(adapter_sha256=file_sha256(Path(__file__)), upstream_sha256=dict(merit.upstream().files), merit_home=str(merit.home),
+                code_commit=merit.pins['code_commit'], noise_seed=NOISE_SEED, config=CONFIG, attention_policy=ATTENTION_POLICY)
     try:
         with fresh_compiler():
-            status = evaluate.evaluate_graph(manifest, entry, systems, out, root=root, device=device)
+            return evaluate.evaluate_graph(manifest, entry, merit.systems(), out, root=root, device=device, extra=dict(merit_meta=meta))
     except torch.cuda.OutOfMemoryError as error:
         torch.cuda.empty_cache()
-        write_error(final, dict(graph=entry.name, key=entry.key, systems=list(KEYS), stage='score', error=str(error).splitlines()[0][:400],
-                                date=time.strftime('%Y-%m-%d %H:%M:%S')))
+        evaluate.write_error(evaluate.row_file_path(out, entry, KEYS), entry, systems=list(KEYS), stage='score',
+                             error=str(error).splitlines()[0][:400])
         return 'failed'
-    if status == 'done':
-        doc = json.loads(final.read_text())
-        doc['merit_meta'] = dict(adapter_sha256=file_sha256(Path(__file__)), upstream_sha256=dict(merit.upstream().files), merit_home=str(merit.home),
-                                 code_commit=merit.pins['code_commit'], noise_seed=NOISE_SEED, config=CONFIG, attention_policy=ATTENTION_POLICY)
-        evaluate.write_json(final, doc)
-    return status
 
 
 def child_command(argv: Sequence[str], merit: MeritSetup, python: Optional[str] = None) -> tuple[list[str], dict[str, str]]:

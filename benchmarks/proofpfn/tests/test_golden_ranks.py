@@ -55,7 +55,7 @@ def clean_rows(tmp_path_factory):
         if not gate.folder(entry, mf.REPO).is_dir():
             pytest.skip(f'{entry.path} is not available')
         assert ev.evaluate_graph(gate, entry, systems, out, device='cuda') == 'done'
-        paths[name] = ev.row_file_path(out, entry, systems)
+        paths[name] = ev.row_file_path(out, entry, [s.key for s in systems])
     return paths
 
 
@@ -129,7 +129,7 @@ def test_seed_ranks_on_the_cpu_equal_the_research_cpu_ranks(tmp_path):
         pytest.skip('KGs/UMLS is not available')
     systems = g6_systems(('gs', 'gcu', 'gul'), references=())
     assert ev.evaluate_graph(gate, entry, systems, tmp_path, device='cpu') == 'done'
-    rows = json.loads(ev.row_file_path(tmp_path, entry, systems).read_text())['rows']
+    rows = json.loads(ev.row_file_path(tmp_path, entry, [s.key for s in systems]).read_text())['rows']
     assert int_digest([[r['index'], int(r['head'])] for r in rows]) == reference['rows_identity']
     for key in ('gs', 'gcu', 'gul'):
         for seed in (42, 43, 44):

@@ -1,49 +1,26 @@
-"""Optional adapters of three external baselines: KGPFN, MERIT and AnyBURL (decision D4 of the ProofPFN cleanup).
+"""Optional adapters of three external baselines: KGPFN, MERIT and AnyBURL.
 
-Each adapter wraps the logic of its research runner and writes row files that the registered ``fv1_tables.py`` reads:
-
-=======  ==================================================  ===============================  ==================
-adapter  research runner                                     row keys                         model hash entry
-=======  ==================================================  ===============================  ==================
-kgpfn    ``kgpfn-ref-v1-runtime/kgpfn_ag.py``,               ``kgpfn``, ``kgpfn:raw``         none
-         ``kgpfn_eval.py``
-merit    ``allgraph-v1/ag_merit.py``,                        ``merit<S>``, ``merit<S>:gt2``,  ``merit<S>``
-         ``merit-ref-v1-runtime/merit_ref.py``               ``merit<S>:raw``,
-                                                             ``merit<S>:raw:gt2``
-anyburl  ``anyburl-ref-v1-runtime/anyburl_run.py``           ``anyburl``, ``anyburl:raw``     none
-=======  ==================================================  ===============================  ==================
-
-``F`` is the rule view (the anchor gets ``-inf`` unless the relation passes the self-loop rule ``share1``) and ``F:raw``
-the plain view; every rank is the benchmark's pessimistic filtered rank (``PROTOCOL.md``). The graphs load and are
-hash-checked by ``data.load_graph``, and the ranked facts, filter and query groups come from ``data.prepare_queries``,
-so a row file has the benchmark's row order and record layout (``allgraph``). Work files, part files and error records
-live in dot folders below the row folder, which ``fv1_tables.py`` skips.
+Each adapter wraps the logic of its research runner and writes row files that the registered ``fv1_tables.py`` reads
+(README, section External baselines; PROTOCOL, section External baselines). The graphs, ranked facts, filter and query
+groups come from ``data``, and the row files from ``evaluate.write_row_file``. Work files stay in
+``<work>/<adapter>/<collection>/<graph>`` (``work_folder``), and an error record in ``.errors/`` next to the row file:
+both are dot folders, which ``fv1_tables.py`` skips.
 
 The external code is never part of this repository. Its folder comes from a command-line option or an environment
-variable (``external_folder``), its files are checked against the pins of ``manifests/models.json`` (``external`` and,
-for MERIT, ``references``), and code that needs another Python environment runs in a child process whose
-``PYTHONPATH`` names the external folder. Tests that need the external code skip without it.
+variable (``external_folder``), and its files are checked against the pins of ``manifests/models.json``.
 """
-import hashlib
-import logging
 import os
-import platform
 import socket
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence
 
-import numpy as np
 import torch
 
 from dicee.evaluation._filtering import FilteredRanker
 
 from ..data import GraphData, Queries
-from ..evaluate import metrics_of, view_metrics, write_json
-from ..manifests import REPO, SAMPLE_RULES, GraphEntry, InputError, Manifest, PathLike, file_sha256, read_models
-
-logger = logging.getLogger(__name__)
-
-ROW_FIELDS = ('index', 'head')
+from ..evaluate import graph_record, provenance_of, write_row_file
+from ..manifests import GraphEntry, InputError, Manifest, PathLike, file_sha256, read_models
 
 
 class AdapterSetupError(InputError):
@@ -51,7 +28,15 @@ class AdapterSetupError(InputError):
 
 
 class ExternalStepError(RuntimeError):
-    """A step of the external system failed on a graph (out of memory, no output); the graph gets an error record."""
+    """A step of the external system failed on a graph (out of memory, no output); the graph gets an error record.
+
+    Attributes:
+        record: The fields of the error record (``stage``, ``reason`` and the step's details).
+    """
+
+    def __init__(self, record: Mapping[str, Any]) -> None:
+        super().__init__(f"{record.get('stage')}: {record.get('reason')}")
+        self.record = dict(record)
 
 
 # ------------------------------------------------------------------------------------------------------ setup
@@ -183,50 +168,26 @@ def group_targets(queries: Queries) -> list[tuple[int, bool, int, int, int, list
 
 # ------------------------------------------------------------------------------------------------------ rows
 
-def row_path(out: PathLike, entry: GraphEntry, keys: Sequence[str]) -> Path:
-    """``<out>/<collection>/<keys joined by '-'>/<graph>.json``, the path rule of ``evaluate.row_file_path``."""
-    return Path(out) / entry.collection / '-'.join(keys) / f'{entry.name}.json'
-
-
-def error_record_path(final: Path) -> Path:
-    """The error record of a graph: ``.errors/<graph>.json`` next to its row file (as ``evaluate.error_path``)."""
-    return final.parent / '.errors' / final.name
-
-
 def work_folder(work: Optional[PathLike], out: PathLike, adapter: str, entry: GraphEntry) -> Path:
     """The work folder of a graph: ``<work>/<adapter>/<collection>/<graph>``; ``work`` defaults to ``<out>/.work``."""
     root = Path(work) if work is not None else Path(out) / '.work'
     return root / adapter / entry.collection / entry.name
 
 
-def code_sha256(*names: str) -> dict[str, str]:
-    """The SHA-256 of files of this repository (paths relative to its root)."""
-    return {name: file_sha256(REPO / name) for name in names if (REPO / name).is_file()}
+def write_rows(final: Path, *, manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, key: str, spec: Mapping[str, Any],
+               protocol: str, rows: list[dict[str, Any]], seconds: float, meta_name: str, meta: Mapping[str, Any], code: Sequence[str]) -> None:
+    """Write the row file of an adapter with one system (``evaluate.write_row_file``).
 
-
-def record_of(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, key: str,
-              spec: Mapping[str, Any]) -> dict[str, Any]:
-    """The ``allgraph`` record of an adapter's row file: the fields of ``evaluate.record_of`` that fit one external system.
-
-    ``model_sha256`` stays empty: the registered tables compare no model hash of KGPFN or AnyBURL.
-    """
-    return dict(entry.record(), sha256=dict(graph.hashes, manifest=manifest.name), test_rows=queries.test_rows,
-                ranked_facts=len(queries.facts), sampled=queries.positions is not None, sample_rule=SAMPLE_RULES[manifest.sample_rule],
-                positions=queries.positions, families={key: dict(spec)}, model_sha256={}, host=socket.gethostname())
-
-
-def write_rows(path: Path, *, manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, key: str,
-               spec: Mapping[str, Any], protocol: str, rows: list[dict[str, Any]], seconds: float, meta_name: str,
-               meta: Mapping[str, Any], code: Sequence[str]) -> dict[str, Any]:
-    """Check an adapter's rows and write its row file (the layout of the benchmark's row files).
+    The rows hold ``key`` (the rule view) and ``key:raw``. The ``allgraph`` record has no model hash: the registered tables
+    compare none of KGPFN and AnyBURL.
 
     Args:
-        path: The row file.
+        final: The row file.
         manifest: The graph set.
         entry: The graph.
         graph: The loaded graph.
         queries: Its ranked facts and query groups.
-        key: The system key; the rows hold ``key`` (rule view) and ``key:raw``.
+        key: The system key.
         spec: The system's record for ``allgraph.families``.
         protocol: The protocol string of the row file.
         rows: The rows, in the order of ``queries.groups``.
@@ -235,39 +196,9 @@ def write_rows(path: Path, *, manifest: Manifest, entry: GraphEntry, graph: Grap
         meta: The adapter's record.
         code: The repository files whose SHA-256 the provenance records.
 
-    Returns:
-        The written document.
-
     Raises:
         ValueError: When the rows are not the query groups in order, have other keys or a rank outside ``1..|E|``.
     """
-    order = [(queries.index(m), head) for (head, _, _), members in queries.groups for m in members]
-    if [(r['index'], r['head']) for r in rows] != order or len(rows) != 2 * len(queries.facts):
-        raise ValueError(f'{entry.name}: the rows are not the query groups in order')
-    keys = [key, f'{key}:raw']
-    n = graph.num_entities
-    if any(list(r) != [*ROW_FIELDS, *keys] for r in rows) or any(not 1 <= r[k] <= n for r in rows for k in keys):
-        raise ValueError(f'{entry.name}: a row has other keys or a rank outside 1..{n}')
-    provenance = dict(benchmark='benchmarks.proofpfn', adapter=key, manifest=dict(name=manifest.name, sha256=manifest.sha256),
-                      code_sha256=code_sha256(*code), python=platform.python_version(), torch=torch.__version__,
-                      numpy=np.__version__, host=socket.gethostname())
-    doc = dict(dataset=entry.name, families=[key], entities=n, relations=graph.num_relations, reflexive=sorted(queries.reflexive),
-               protocol=protocol, metrics=metrics_of(rows), rows=rows, seconds=seconds,
-               allgraph=record_of(manifest, entry, graph, queries, key, spec), metrics_views=view_metrics(rows))
-    doc[meta_name] = dict(meta)
-    doc['provenance'] = provenance
-    write_json(path, doc)
-    logger.info('%s: %d rows -> %s', entry.name, len(rows), path)
-    return doc
-
-
-def write_error(final: Path, record: Mapping[str, Any]) -> Path:
-    """Write the error record of a graph (``.errors/<graph>.json`` next to its row file); returns its path."""
-    path = error_record_path(final)
-    write_json(path, dict(record, host=socket.gethostname()))
-    return path
-
-
-def sha256_text(text: str) -> str:
-    """SHA-256 of a UTF-8 string."""
-    return hashlib.sha256(text.encode('utf-8')).hexdigest()
+    record = dict(graph_record(manifest, entry, graph, queries), families={key: dict(spec)}, model_sha256={}, host=socket.gethostname())
+    write_row_file(final, entry, graph, queries, [key, f'{key}:raw'], rows, families=[key], protocol=protocol, seconds=seconds, record=record,
+                   provenance=provenance_of(manifest, code, adapter=key), extra={meta_name: dict(meta)})

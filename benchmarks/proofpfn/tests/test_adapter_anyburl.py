@@ -16,7 +16,7 @@ import torch
 
 from benchmarks.proofpfn import manifests as mf
 from benchmarks.proofpfn.adapters import AdapterSetupError, anyburl
-from benchmarks.proofpfn.data import GraphData, load_graph, prepare_queries
+from benchmarks.proofpfn.data import GraphData, Queries, load_graph, prepare_queries
 from dicee.synthetic_kg.digests import json_sha256
 
 from .golden import GOLDEN, write_graph, write_manifest
@@ -51,7 +51,7 @@ EXPECT = {  # (index, head): (anyburl, anyburl:raw, native) for k = 1000 (the re
     (2, True): (1, 1, 1), (3, False): (6, 1, 1), (3, True): (6, 6, 0), (4, False): (3, 3, 2), (4, True): (1, 1, 1)}
 
 
-def handmade() -> tuple[GraphData, object]:
+def handmade() -> tuple[GraphData, Queries]:
     graph = GraphData(tuple(f'e{i}' for i in range(6)), ('r0', 'r1'), ids(TRAIN), ids([]), ids(RANKED), {})
     return graph, prepare_queries(graph, 'all')
 
@@ -155,18 +155,26 @@ def test_rebuild_equals_the_research_rebuild_on_a_stored_ranking_file(tmp_path):
     assert anyburl.write_inputs(tmp_path, graph, queries) == record['inputs'] == record['kiowl_inputs']
 
 
-def test_setup_refuses_other_files(tmp_path):
+def fake_home(tmp_path: Path) -> tuple[Path, Path]:
+    """An AnyBURL folder with stand-in files and the KR setting, and a models.json that pins its files."""
     home = tmp_path / 'AnyBURL'
     (home / anyburl.KR_LEARN_FILE).parent.mkdir(parents=True)
     for name in (anyburl.JAR, anyburl.SOURCES):
         (home / name).write_bytes(b'not the release')
     (home / anyburl.KR_LEARN_FILE).write_text(''.join(f'{k} = {v}\n' for k, v in anyburl.KR_LEARN.items()))
+    doc = json.loads((mf.MANIFESTS / 'models.json').read_text())
+    doc['external']['anyburl'] = {name: mf.file_sha256(home / name) for name in (anyburl.JAR, anyburl.SOURCES)}
+    (tmp_path / 'models.json').write_text(json.dumps(doc))
+    return home, tmp_path / 'models.json'
+
+
+def test_setup_refuses_other_files(tmp_path):
+    home, models = fake_home(tmp_path)
     with pytest.raises(AdapterSetupError, match='SHA-256'):
         anyburl.setup(home)
-    pins = {name: mf.file_sha256(home / name) for name in (anyburl.JAR, anyburl.SOURCES)}
     (home / anyburl.KR_LEARN_FILE).write_text('SNAPSHOTS_AT = 10\n')
     with pytest.raises(AdapterSetupError, match='KR setting'):
-        anyburl.AnyBURL(home=home, pins=pins)
+        anyburl.setup(home, models)
 
 
 def installed() -> anyburl.AnyBURL:

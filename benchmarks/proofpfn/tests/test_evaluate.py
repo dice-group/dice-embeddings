@@ -75,7 +75,7 @@ def tiny(tmp_path_factory):
 
 def run(root, manifest, systems, out, **options):
     status = ev.evaluate_graph(manifest, manifest.entry('g'), systems, out, root=root, device='cpu', **options)
-    return status, ev.row_file_path(out, manifest.entry('g'), systems)
+    return status, ev.row_file_path(out, manifest.entry('g'), [s.key for s in systems])
 
 
 def test_row_file(tiny):
@@ -109,7 +109,7 @@ def test_shards_and_resumed_runs_equal_one_run(tiny):
     rows = json.loads(whole.read_text())['rows']
     statuses = [run(root, manifest, systems, root / 'sharded', shard=(i, 3))[0] for i in (2, 3, 1)]
     assert statuses == ['shard-done', 'shard-done', 'done']
-    sharded = json.loads(ev.row_file_path(root / 'sharded', manifest.entry('g'), systems).read_text())
+    sharded = json.loads(run(root, manifest, systems, root / 'sharded')[1].read_text())
     assert sharded['rows'] == rows and sharded['metrics'] == json.loads(whole.read_text())['metrics'] and sharded['provenance']['shards'] == 3
     status, stopped = run(root, manifest, systems, root / 'resumed', parts=True, max_minutes=1e-9)   # stops after the first group
     assert status == 'stopped' and not stopped.exists()
@@ -118,13 +118,13 @@ def test_shards_and_resumed_runs_equal_one_run(tiny):
     assert run(root, manifest, systems, root / 'resumed', parts=True)[0] == 'done'
     resumed = json.loads(stopped.read_text())
     assert resumed['rows'] == rows and resumed['provenance']['runs'] == [2]
-    bad = ev.part_path(ev.row_file_path(root / 'resumed2', manifest.entry('g'), systems), (1, 1))
+    bad = ev.part_path(ev.row_file_path(root / 'resumed2', manifest.entry('g'), [s.key for s in systems]), (1, 1))
     bad.parent.mkdir(parents=True)
     bad.write_text(json.dumps(dict(part, identity='0' * 64)))
     with pytest.raises(mf.InputError, match='another run'):   # a part of other systems or graph files is refused
         run(root, manifest, systems, root / 'resumed2', parts=True)
     assert run(root, manifest, systems, root / 'stale', shard=(1, 2))[0] == 'shard-done'
-    other = ev.part_path(ev.row_file_path(root / 'stale', manifest.entry('g'), systems), (2, 2))
+    other = ev.part_path(ev.row_file_path(root / 'stale', manifest.entry('g'), [s.key for s in systems]), (2, 2))
     other.write_text(json.dumps(dict(complete=True, identity='0' * 64)))   # the stale part of another run blocks the merge
     with pytest.raises(mf.InputError, match='shard-2-of-2.json is a part of another run'):
         run(root, manifest, systems, root / 'stale', shard=(1, 2))
@@ -141,7 +141,7 @@ def test_official_flock_rows_do_not_depend_on_the_sharding(tmp_path):
     status, whole = run(tmp_path, manifest, [flock], tmp_path / 'whole')
     assert status == 'done' and [run(tmp_path, manifest, [flock], tmp_path / 'sharded', shard=(i, 2))[0] for i in (2, 1)] == ['shard-done', 'done']
     doc = json.loads(whole.read_text())
-    assert json.loads(ev.row_file_path(tmp_path / 'sharded', manifest.entry('g'), [flock]).read_text())['rows'] == doc['rows']
+    assert json.loads(ev.row_file_path(tmp_path / 'sharded', manifest.entry('g'), [flock.key]).read_text())['rows'] == doc['rows']
     assert doc['allgraph']['flock_official']['keys'] == {'flockoff': dict(walks=16, passes=16)}
 
 
