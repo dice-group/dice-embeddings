@@ -211,12 +211,12 @@ def part_path(final: Path, shard: tuple[int, int]) -> Path:
 
 
 def error_path(final: Path) -> Path:
-    """The error record of a graph that could not run: ``.errors/<graph>.json`` next to the row file."""
+    """The error record of a failed graph: ``.errors/<graph>.json`` next to the row file."""
     return final.parent / '.errors' / final.name
 
 
 def write_error(final: Path, entry: GraphEntry, **record: Any) -> Path:
-    """Write the error record of a graph that could not run (``error_path``) with the graph, host and date; returns its path."""
+    """Write the error record of a failed graph (``error_path``) with the graph, host and date; returns its path."""
     path = error_path(final)
     write_json(path, dict(graph=entry.name, key=entry.key, **record, host=socket.gethostname(), date=time.strftime('%Y-%m-%d %H:%M:%S')))
     return path

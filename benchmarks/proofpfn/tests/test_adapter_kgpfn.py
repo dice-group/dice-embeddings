@@ -149,7 +149,7 @@ def test_rows_and_outputs_are_checked(tmp_path):
 
 
 def test_worker_command_and_environment(tmp_path, monkeypatch):
-    monkeypatch.setenv('TORCH_EXTENSIONS_DIR', str(tmp_path / 'elsewhere'))   # a container would not see this folder
+    monkeypatch.setenv('TORCH_EXTENSIONS_DIR', str(tmp_path / 'elsewhere'))   # a container does not see this folder
     system = fake_setup(tmp_path)
     folder = tmp_path / 'work' / 'kgpfn' / 'tiny' / 'g'
     command = kgpfn.worker_command(system, mf.GraphEntry.from_json(json.loads(

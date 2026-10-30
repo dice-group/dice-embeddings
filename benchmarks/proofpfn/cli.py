@@ -65,7 +65,7 @@ def _graph_options(sub: argparse.ArgumentParser) -> None:
     sub.add_argument('--view', default=None, help='a view of the manifest (dev121: main, contamination, apart; default: all)')
     sub.add_argument('--graphs', default=None, help='comma list of graph names or keys')
     sub.add_argument('--codes', default=None, help='comma list of audit group codes (E, L, B, S, O, R, C, T)')
-    sub.add_argument('--release', default=None, help='the name of the blind test set that this run may open')
+    sub.add_argument('--release', default=None, help='the name of the blind test set that this run opens')
     sub.add_argument('--data-root', type=Path, default=REPO, help='the folder that the manifest paths are relative to (default: the repository)')
 
 

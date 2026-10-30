@@ -15,8 +15,8 @@ each graph must match before it loads:
   ``ultra-suite-v1/WN18RRInductive_v1``, so it is not a graph of ``dev121``; the gate lists it explicitly.
 
 Blind sets. A manifest with ``"blind": true`` (a confirmatory test set) is opened only with a release flag that names
-it, and only a blind manifest may name a blind folder: a path with a part ``fresh-v1`` or ``lockbox3``, or a folder that
-resolves (links followed) below ``BLIND_FOLDERS`` of the repository. This branch holds no blind manifest.
+it. Any other manifest is refused when it names a blind folder: a path with a part ``fresh-v1`` or ``lockbox3``, or a
+folder that resolves (links followed) below ``BLIND_FOLDERS`` of the repository. This branch holds no blind manifest.
 
 ``models.json`` pins the research exports of the ProofPFN families (seeds 42, 43 and 44) and the reference checkpoints.
 HT's pins come from the research ``models-pcuht.json``, written after HT's training. A family whose pins are ``null``
@@ -209,8 +209,8 @@ class Manifest:
     def folder(self, entry: GraphEntry, root: PathLike) -> Path:
         """The folder of an entry below the data root (a blind folder only for a blind manifest).
 
-        For a development manifest, neither the folder nor its resolved path (links followed) may name a blind folder
-        (``in_blind_folder``), and the resolved path may not lie below a resolved ``BLIND_FOLDERS`` folder.
+        A development manifest is refused when the folder or its resolved path (links followed) names a blind folder
+        (``in_blind_folder``), or when the resolved path lies below a resolved ``BLIND_FOLDERS`` folder.
 
         Raises:
             BlindSetError: For a blind folder named by a development manifest.
