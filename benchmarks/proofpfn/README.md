@@ -55,9 +55,10 @@ The audit excludes grail-WN18RR_v1 as a copy of `ultra-suite-v1/WN18RRInductive_
 `dev121`. Each manifest lists its inputs and their SHA-256 under `sources`. The builders of `tests/test_manifests.py`
 derive the files from them and compare them with the committed files when the inputs are available.
 
-Blind sets. A manifest with `"blind": true` opens only with `--release NAME` naming it, and only such a manifest may name
-a folder below `KGs/fresh-v1` or `KGs/lockbox3`. This branch holds no blind manifest; the fresh-v1 and block-3 manifests
-are added after the frozen read.
+Blind sets. A manifest with `"blind": true` opens only with `--release NAME` naming it. Only such a manifest may name a
+blind folder: a path with a part `fresh-v1` or `lockbox3`, or a folder that resolves (links followed) below
+`KGs/fresh-v1` or `KGs/lockbox3`. This branch holds no blind manifest. The fresh-v1 and block-3 manifests are added
+after the frozen read.
 
 ## Systems and row files
 

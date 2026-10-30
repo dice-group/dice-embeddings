@@ -15,7 +15,8 @@ each graph must match before it loads:
   ``ultra-suite-v1/WN18RRInductive_v1``, so it is not a graph of ``dev121``; the gate lists it explicitly.
 
 Blind sets. A manifest with ``"blind": true`` (a confirmatory test set) is opened only with a release flag that names
-it, and only a blind manifest may name a folder below ``BLIND_FOLDERS``. This branch holds no blind manifest.
+it, and only a blind manifest may name a blind folder: a path with a part ``fresh-v1`` or ``lockbox3``, or a folder that
+resolves (links followed) below ``BLIND_FOLDERS`` of the repository. This branch holds no blind manifest.
 
 ``models.json`` pins the research exports of the ProofPFN families (seeds 42, 43 and 44) and the reference checkpoints.
 HT's pins come from the research ``models-pcuht.json``, written after HT's training. A family whose pins are ``null``
@@ -39,6 +40,8 @@ SPLITS = ('train', 'valid', 'test')
 CONTENT_SPLITS = ('train', 'test')
 SEEDS = (42, 43, 44)
 BLIND_FOLDERS = ('KGs/fresh-v1', 'KGs/lockbox3')
+"""The folders of the blind test sets, relative to the repository root."""
+BLIND_NAMES = tuple(Path(folder).name for folder in BLIND_FOLDERS)
 SAMPLE, SAMPLE_SEED = 1000, 0
 SAMPLE_RULES = {
     'first-1000': ('test rows <= 1000: all rows (fair_eval); else the first occurrence of every distinct test fact in file '
@@ -202,18 +205,24 @@ class Manifest:
     def folder(self, entry: GraphEntry, root: PathLike) -> Path:
         """The folder of an entry below the data root (a blind folder only for a blind manifest).
 
+        For a development manifest, neither the folder nor its resolved path (links followed) may name a blind folder
+        (``in_blind_folder``), and the resolved path may not lie below a resolved ``BLIND_FOLDERS`` folder.
+
         Raises:
             BlindSetError: For a blind folder named by a development manifest.
         """
-        if in_blind_folder(entry.path) and not self.blind:
-            raise BlindSetError(f'{entry.key}: {entry.path} is a blind folder')
-        return Path(root) / entry.path
+        folder = Path(root) / entry.path
+        if not self.blind:
+            resolved = folder.resolve()
+            if in_blind_folder(folder) or in_blind_folder(resolved) or any(resolved.is_relative_to((REPO / b).resolve()) for b in BLIND_FOLDERS):
+                raise BlindSetError(f'{entry.key}: {folder} is a blind folder')
+        return folder
 
 
-def in_blind_folder(path: str) -> bool:
-    """Whether a path relative to the data root lies in a blind folder (``BLIND_FOLDERS``)."""
-    parts = Path(path).parts
-    return any(parts[:len(Path(b).parts)] == Path(b).parts for b in BLIND_FOLDERS)
+def in_blind_folder(path: PathLike) -> bool:
+    """Whether a path names a blind folder: one of its parts is the name of a ``BLIND_FOLDERS`` folder (``fresh-v1``,
+    ``lockbox3``)."""
+    return any(part in BLIND_NAMES for part in Path(path).parts)
 
 
 def read_manifest(source: PathLike, release: Optional[str] = None) -> Manifest:

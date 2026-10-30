@@ -88,6 +88,24 @@ def test_blind_sets_open_only_with_their_release_flag(tmp_path):
     assert mf.in_blind_folder('KGs/fresh-v1/x') and mf.in_blind_folder('KGs/lockbox3/x') and not mf.in_blind_folder('KGs/lockbox4/x')
 
 
+def test_the_blind_guard_compares_resolved_paths(tmp_path, monkeypatch):
+    shifted = write_graph(tmp_path / 'KGs' / 'fresh-v1' / 'g', ['a\tr\tb'], [], ['b\tr\ta'])
+    with pytest.raises(mf.BlindSetError):   # the data root KGs and the path fresh-v1/g
+        mf.read_manifest(write_manifest(tmp_path / 'shifted.json', tmp_path / 'KGs', {'g': shifted}, name='devtest'))
+    blind = write_graph(tmp_path / 'elsewhere' / 'lockbox3' / 'g', ['a\tr\tb'], [], ['b\tr\ta'])
+    secret = write_graph(tmp_path / 'secret' / 'g', ['a\tr\tb'], [], ['b\tr\ta'])
+    (tmp_path / 'KGs' / 'dev').symlink_to(blind.parent)    # names without a blind part that resolve into a blind folder
+    (tmp_path / 'KGs' / 'dev2').symlink_to(secret.parent)
+    folders = {'g': tmp_path / 'KGs' / 'dev' / 'g', 'h': tmp_path / 'KGs' / 'dev2' / 'g'}
+    manifest = mf.read_manifest(write_manifest(tmp_path / 'linked.json', tmp_path, folders, name='devtest'))
+    with pytest.raises(mf.BlindSetError):
+        manifest.folder(manifest.entry('g'), tmp_path)
+    assert manifest.folder(manifest.entry('h'), tmp_path) == folders['h']
+    monkeypatch.setattr(mf, 'BLIND_FOLDERS', (str(tmp_path / 'secret'),))   # a blind folder of the repository by its resolved path
+    with pytest.raises(mf.BlindSetError):
+        manifest.folder(manifest.entry('h'), tmp_path)
+
+
 def test_model_pins():
     pins = mf.read_models()
     assert {arm: f.key for arm, f in pins.families.items()} == REGISTERED_KEYS
