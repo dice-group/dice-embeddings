@@ -238,6 +238,7 @@ GPU and goldens are present. Goldens (`tests/golden/README.md`):
 
 `PROOFPFN_GOLDEN` names the proofpfn-golden folder with the large goldens. Tests that need them skip without it. The
 goldens are bitwise in the recorded environment: Python 3.12.2, torch 2.5.1 (CUDA 11.8 on an RTX 4070 Ti SUPER for
-G6 on the GPU), numpy 1.26.4 and scipy 1.13.0. Elsewhere the GPU test of G6 skips. The registered `fv1_analysis.py`
-refuses every other Python and numpy version, so its fast checks, G8 and its simulations skip there. The table checks,
-the anchors and the pins run everywhere.
+G6 on the GPU) and numpy 1.26.4. Elsewhere the GPU test of G6 skips. G7 does not depend on the scipy version
+([PROTOCOL.md](PROTOCOL.md), section Cells). The registered `fv1_analysis.py` refuses every other Python and numpy
+version, so its fast checks, G8 and its simulations skip there. The table checks, the anchors and the pins run
+everywhere.

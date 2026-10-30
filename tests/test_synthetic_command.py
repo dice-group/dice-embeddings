@@ -81,8 +81,8 @@ def test_sources_refuse_split_files_that_miss_or_differ(tmp_path, capsys):
     assert command.main(options) == command.EXIT_INPUT and 'has no valid.txt, test.txt' in capsys.readouterr().err
     for split in ('valid', 'test'):
         (graph / f'{split}.txt').write_text('b r a\n')
-    assert command.main(options) == command.EXIT_INPUT and 'not the pin' in capsys.readouterr().err
-    assert not (tmp_path / 'sources' / 'WN18RR' / 'data.pt').exists()
+    assert command.main(options) == command.EXIT_INPUT and 'other triples than the research files' in capsys.readouterr().err
+    assert not (tmp_path / 'sources').exists()
 
 
 def test_convert_a_research_export(tmp_path):

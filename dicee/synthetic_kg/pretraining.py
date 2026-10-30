@@ -57,7 +57,7 @@ from .determinism import THREADS, deterministic_execution, require_cublas_worksp
 from .digests import file_sha256
 from .prepare import PreparedWorld, prepare_slot
 from .priors import PriorConfig, Slot, build_order, order_sha256, real
-from .recipe import CONSTANT_UPDATES, DECAY_UPDATES, EMA_DECAY, LEARNING_RATE, MICROBATCH, REAL_SOURCE_SHA256, TOTAL_UPDATES, WEIGHT_DECAY
+from .recipe import CONSTANT_UPDATES, DECAY_UPDATES, EMA_DECAY, LEARNING_RATE, MICROBATCH, TOTAL_UPDATES, WEIGHT_DECAY
 from .streams import hard_target_seed
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,8 @@ SAVE_EVERY = 250
 
 class RunInputError(ValueError):
     """A run that ``pretrain`` refuses for its input: its options, a folder of another run or with changed sources, a
-    world order other than its pin, a foreign training state, or real source graphs that are missing or not pinned."""
+    world order other than its pin, a foreign training state, or real source graphs that are missing or hold other
+    content than the research files."""
 
 
 @dataclass(frozen=True)
@@ -268,21 +269,23 @@ def source_hashes() -> dict[str, str]:
 
 
 def _real_sources(prior: PriorConfig, folder: Union[str, Path, None]) -> dict[str, str]:
-    """The SHA-256 of the real source graphs that a prior reads, checked against their pins (empty without real worlds)."""
+    """The file SHA-256 of the real source graphs that a prior reads (empty without real worlds), after the check of each
+    file against its content pin (``real.read_source``)."""
     if not any(spec.generator == 'real' for spec in prior.families):
         return {}
     try:
         root = real.source_folder(folder)
     except RuntimeError as error:
         raise RunInputError(str(error)) from None
-    missing = [name for name in REAL_SOURCE_SHA256 if not (root / name / 'data.pt').is_file()]
+    missing = [name for name in real.NAMES if not (root / name / 'data.pt').is_file()]
     if missing:
         raise RunInputError(f'the real source graphs {missing} are missing in {root}; dicee_pretrain_synthetic sources builds them')
-    found = {name: file_sha256(root / name / 'data.pt') for name in REAL_SOURCE_SHA256}
-    differing = [name for name, digest in found.items() if digest != REAL_SOURCE_SHA256[name]]
-    if differing:
-        raise RunInputError(f'the real source graphs {differing} in {root} differ from their pins')
-    return found
+    for name in real.NAMES:
+        try:
+            real.read_source(name, root / name / 'data.pt')
+        except ValueError as error:
+            raise RunInputError(str(error)) from None
+    return {name: file_sha256(root / name / 'data.pt') for name in real.NAMES}
 
 
 def run_record(config: PretrainConfig, preset: ArmPreset, digest: str) -> dict[str, Any]:
@@ -429,7 +432,7 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
     Raises:
         RunInputError: For a folder of another run, with changed sources, torch version or GPU, or in use by another
             process, a world order that differs from the arm's pin, a foreign ``last.pt``, or real source graphs that are
-            missing or differ from their pins.
+            missing or hold other content than the research files.
         RuntimeError: For CUDA without a deterministic cuBLAS workspace setting.
     """
     preset = arm_preset(config.arm)

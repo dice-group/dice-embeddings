@@ -8,9 +8,10 @@ of the facts are observed; the queries come from the hidden facts in the task la
 negatives are false in the world.
 
 The source graphs are not part of the code. Their folder holds ``<name>/data.pt`` for each name of
-``recipe.REAL_SOURCE_SHA256`` (the research files, checked against these pins before they load); it is given to
-``real_world``, else read from the environment variable ``PROOFPFN_REAL_SOURCES``. Pretraining passes it to its worker
-processes explicitly. ``build_source`` rebuilds a file from the graph's split files.
+``recipe.REAL_SOURCE_CONTENT_SHA256``; it is given to ``real_world``, else read from the environment variable
+``PROOFPFN_REAL_SOURCES``. Pretraining passes it to its worker processes explicitly. A file pins its content, not its
+bytes (``content_digest``), so that every torch version can build and check it. ``build_source`` rebuilds a file from
+the graph's split files.
 """
 import os
 from pathlib import Path
@@ -22,8 +23,8 @@ import torch
 
 from ...knowledge_graph import KG
 from ..batch import WorldBatch
-from ..digests import file_sha256
-from ..recipe import REAL_SOURCE_SHA256, record_params
+from ..digests import json_sha256, tensor_digest
+from ..recipe import REAL_SOURCE_CONTENT_SHA256, record_params
 from ..streams import REAL_VERSION, world_stream
 from .legacy import template
 from .stage2 import query_world
@@ -34,7 +35,7 @@ if TYPE_CHECKING:
 SOURCES_ENV = 'PROOFPFN_REAL_SOURCES'
 """The environment variable that names the folder of the real source graphs."""
 
-NAMES = tuple(REAL_SOURCE_SHA256)
+NAMES = tuple(REAL_SOURCE_CONTENT_SHA256)
 """The source graphs in the order of the research draw (``rw_prior.NAMES``)."""
 
 NEIGHBOURS = 50
@@ -48,9 +49,10 @@ LAYOUTS: Mapping[str, tuple[tuple[str, ...], bool]] = MappingProxyType({
     'WN18RR': (('splits', 'entities', 'relations'), False),
     'CoDEx-M': (('entities', 'relations', 'splits'), True),
 })
-"""The layout of each pinned ``data.pt``: its key order, and whether its split tensors are row-major. Two research builders
-wrote the files: ``transfer.prepare_target`` (FB15k-237, WN18RR; dicee's column-major arrays) and
-``transfer-reserve-v1-runtime/prepare_codex.py`` (CoDEx-M), with the same ids."""
+"""The layout of each research ``data.pt``: its key order, and whether its split tensors are row-major. Two research
+builders wrote the files: ``transfer.prepare_target`` (FB15k-237, WN18RR; dicee's column-major arrays) and
+``transfer-reserve-v1-runtime/prepare_codex.py`` (CoDEx-M), with the same ids. The content digest holds the key order;
+the memory layout only makes torch 2.5.1 write the research bytes."""
 
 _SOURCES: dict[tuple[str, str], dict[str, Any]] = {}
 
@@ -73,14 +75,58 @@ def source_folder(folder: Union[str, Path, None] = None) -> Path:
     return Path(value)
 
 
+def content_digest(data: Any) -> str:
+    """The content digest of a real source file: the JSON digest of its key order, its split names, its entity and
+    relation names in id order, and the tensor digest of its split tensors (keys ``splits/<split>``: dtype, shape and
+    values). The bytes that ``torch.save`` writes do not enter.
+
+    Args:
+        data: The loaded ``data.pt``.
+
+    Returns:
+        The hex digest.
+
+    Raises:
+        ValueError: When ``data`` is not a dictionary of ``splits`` (tensors), ``entities`` and ``relations`` (names).
+    """
+    try:
+        splits = data['splits']
+        return json_sha256(dict(keys=list(data), splits=list(splits), entities=list(data['entities']), relations=list(data['relations']),
+                                tensors=tensor_digest({f'splits/{split}': splits[split] for split in splits})))
+    except (KeyError, TypeError, AttributeError) as error:
+        raise ValueError(f'not a real source graph ({type(error).__name__}: {error})') from None
+
+
+def read_source(name: str, path: Union[str, Path]) -> dict[str, Any]:
+    """A real source file, loaded with ``weights_only=True`` and checked against the content pin of its graph.
+
+    Args:
+        name: A name of ``NAMES``.
+        path: The ``data.pt`` file.
+
+    Returns:
+        The file's dictionary.
+
+    Raises:
+        ValueError: When the file holds other content than the research file of the graph.
+    """
+    data: dict[str, Any] = torch.load(path, map_location='cpu', weights_only=True)
+    digest = content_digest(data)
+    if digest != REAL_SOURCE_CONTENT_SHA256[name]:
+        raise ValueError(f'{path} holds other content than the research file of {name} (content digest {digest}, the pin '
+                         f'{REAL_SOURCE_CONTENT_SHA256[name]})')
+    return data
+
+
 def build_source(name: str, graph: Union[str, Path], folder: Union[str, Path]) -> Path:
-    """Build the ``data.pt`` of a real source graph from its split files, as the research did, and check it against its pin.
+    """Build the ``data.pt`` of a real source graph from its split files, as the research did, and check its content pin.
 
     dicee's ``KG`` (pandas backend, no reciprocal triples) reads ``train.txt``, ``valid.txt`` and ``test.txt`` and numbers
     the entities and relations by sorted name over all splits. The file holds the splits as int64 id tensors in file
     order (``splits``), the entity names (``entities``) and the relation names (``relations``), in the layout of the
-    pinned file (``LAYOUTS``). ``torch.save`` names the archive inside the file after the file it writes, so the file is
-    written as ``data.pt.tmp``, as the research wrote it, and then renamed.
+    research file (``LAYOUTS``). ``torch.save`` names the archive inside the file after the file it writes, so the file
+    is written as ``data.pt.tmp``, as the research wrote it, and then renamed. With torch 2.5.1 the bytes equal the
+    research file's.
 
     Args:
         name: A name of ``NAMES``.
@@ -91,8 +137,8 @@ def build_source(name: str, graph: Union[str, Path], folder: Union[str, Path]) -
         The file.
 
     Raises:
-        ValueError: For an unknown name, a missing split file, or a file whose SHA-256 differs from the pin (other split
-            files than the research's); nothing is written then.
+        ValueError: For an unknown name, a missing split file, or split files with other content than the research
+            files; nothing is written then.
     """
     if name not in LAYOUTS:
         raise ValueError(f'unknown real source graph {name!r}; expected one of {NAMES}')
@@ -105,14 +151,15 @@ def build_source(name: str, graph: Union[str, Path], folder: Union[str, Path]) -
     # The pandas backend keeps each vocabulary as a DataFrame sorted by name (KG annotates it as a dictionary).
     value = dict(splits={s: t.contiguous() if row_major else t for s, t in splits.items()}, entities=cast(Any, kg.entity_to_idx)['entity'].tolist(),
                  relations=cast(Any, kg.relation_to_idx)['relation'].tolist())
+    data = {key: value[key] for key in keys}
+    digest = content_digest(data)
+    if digest != REAL_SOURCE_CONTENT_SHA256[name]:
+        raise ValueError(f'the split files in {graph} hold other triples than the research files of {name} (content digest '
+                         f'{digest}, the pin {REAL_SOURCE_CONTENT_SHA256[name]})')
     path = Path(folder) / name / 'data.pt'
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name('data.pt.tmp')
-    torch.save({key: value[key] for key in keys}, temporary)
-    digest = file_sha256(temporary)
-    if digest != REAL_SOURCE_SHA256[name]:
-        temporary.unlink()
-        raise ValueError(f'the {name} split files in {graph} give SHA-256 {digest}, not the pin {REAL_SOURCE_SHA256[name]}')
+    torch.save(data, temporary)
     os.replace(temporary, path)
     return path
 
@@ -128,15 +175,12 @@ def load_source(name: str, folder: Union[str, Path, None] = None) -> dict[str, A
         ``train`` (int64 ``[F, 3]``), ``n`` (entities), and the neighbours ``nbr`` of every entity in CSR form with ``ptr``.
 
     Raises:
-        ValueError: When the file's SHA-256 differs from its pin.
+        ValueError: When the file holds other content than the research file (``read_source``).
     """
     path = source_folder(folder) / name / 'data.pt'
     key = (str(path.resolve()), name)
     if key not in _SOURCES:
-        digest = file_sha256(path)
-        if digest != REAL_SOURCE_SHA256[name]:
-            raise ValueError(f'{path} has SHA-256 {digest}; the pin of {name} is {REAL_SOURCE_SHA256[name]}')
-        data = torch.load(path, map_location='cpu', weights_only=True)
+        data = read_source(name, path)
         train = data['splits']['train'].numpy().astype(np.int64)
         n = len(data['entities'])
         order = np.argsort(np.concatenate((train[:, 0], train[:, 2])), kind='stable')

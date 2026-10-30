@@ -35,8 +35,9 @@ pip install -e '.[dev]'                                                         
 - The reference systems of the benchmark read the released checkpoints below `checkpoints/`: TRIX
   (`trix/entity_prediction.pth`), ULTRA-3g (`ultra_3g.pth`) and Flock (`flock/flock_entity.pth`). Their guides list
   the downloads: [ULTRA](ultra.md), [TRIX](trix.md), [Flock](flock.md).
-- The goldens are bitwise in the recorded environment: Python 3.12.2, torch 2.5.1 with AVX-512 CPU kernels and 2
-  threads, numpy 1.26.4 and scipy 1.13.0 ([Testing](#testing)). Elsewhere the training and GPU golden tests skip.
+- The training and GPU goldens are bitwise in the recorded environment: Python 3.12.2, torch 2.5.1 with AVX-512 CPU
+  kernels and 2 threads, numpy 1.26.4 ([Testing](#testing)). Elsewhere these tests skip, and so do the analysis checks
+  of the registered files. The cells and the real source graphs do not depend on the scipy or torch version.
 
 ## Model options
 
@@ -164,11 +165,14 @@ data/real-sources/
   FB15k-237 and WN18RR.
 - CoDEx-M comes from the repository tsafavi/codex at commit `3132e426c2a6b643b70bad679905a3a6270be440`. Copy its
   files `data/triples/codex-m/train.txt`, `valid.txt` and `test.txt` into `KGs/CoDEx-M/`. The train file has the SHA-256
-  `d99c3437ab51690391a26d96976adf6e5494dba7ef6902e77000551bfa566556`.
+  `d99c3437ab51690391a26d96976adf6e5494dba7ef6902e77000551bfa566556` (`tests/test_synthetic_real.py` lists all three).
 - Each `data.pt` holds the splits as id tensors, the entity names and the relation names. The command writes each file
-  as the research builders did and refuses a file whose SHA-256 differs from its pin (`recipe.REAL_SOURCE_SHA256`).
+  as the research builders did. With torch 2.5.1 the bytes equal the research files.
+- A file pins its content, not its bytes: the names, the key order and the split tensors (`real.content_digest`,
+  `recipe.REAL_SOURCE_CONTENT_SHA256`). So every torch version builds and checks the files. The command refuses split
+  files with other triples and writes nothing then.
 - Give the folder to a run with `--real_sources` or with the environment variable `PROOFPFN_REAL_SOURCES`. Before
-  training, the run checks each file against its pin.
+  training, the run checks the content of each file. `run.json` records the SHA-256 of each file.
 - The repository holds none of the three graphs. Check the licence of each graph at its upstream source: FB15k-237
   (Toutanova and Chen, 2015), WN18RR (Dettmers et al., 2018) and CoDEx-M (Safavi and Koutra, 2020).
 

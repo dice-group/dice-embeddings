@@ -16,9 +16,9 @@ Examples::
 
 The command sets ``CUBLAS_WORKSPACE_CONFIG=:4096:8`` (deterministic cuBLAS) unless it is set. SIGINT and SIGTERM stop a
 run after the current update with ``last.pt``. Exit codes: 0 done, 1 error, 2 wrong input (one ``error:`` line: options,
-a folder of another run or with changed sources, real source graphs that are missing or not pinned, a research export
-that the converter cannot read or refuses, split files that miss or do not give a pinned source graph), 3 stopped by a
-signal (rerun the same command to resume).
+a folder of another run or with changed sources, real source graphs that are missing or hold other content than the
+research files, a research export that the converter cannot read or refuses, split files that miss or hold other
+triples than the research files), 3 stopped by a signal (rerun the same command to resume).
 """
 import argparse
 import dataclasses

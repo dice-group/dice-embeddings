@@ -204,13 +204,14 @@ REAL_PARAMS: Mapping[str, Any] = _frozen(dict(  # pt_real (realworlds-v1 with re
     max_entities=20000,           # RW_MAXN: the largest entity target of a subgraph, log-uniform from 400
 ))
 
-REAL_SOURCE_SHA256: Mapping[str, str] = _frozen({   # pcu-training-20261026/plan.json; rw_prior.SOURCES order
-    'FB15k-237': '653525529c02f9b7d88ec66702a27a128024693dbc0ffb0c2336576122ddb1ef',
-    'WN18RR': '19d9dc38e66247a7e6680801eff6c45564efa5b22a49975eff8d64ecac17a4e7',
-    'CoDEx-M': 'aebdfbc3130be64766dc5714ac048d84f985898957c6daae9b46bc29a0d0e218',
+REAL_SOURCE_CONTENT_SHA256: Mapping[str, str] = _frozen({   # rw_prior.SOURCES order
+    'FB15k-237': '1aacee947a9e43f6925d785181a0fa62107cc70eed29fd14ab644056187f3cd6',
+    'WN18RR': '6cd0435ae2fb4f0081a809ecd0d0e2b332d4f907aa63754dffdf578e9c24c9f6',
+    'CoDEx-M': '540e8c88799fb0e8378f9d0eb5b560ed9ba1ddeb51494ebac95038384dc1e8d1',
 })
-"""The pinned SHA-256 of each real source graph's ``data.pt`` (the train splits are read); a world draws its source
-from these names in this order."""
+"""The pinned content digest (``priors.real.content_digest``) of each real source graph's ``data.pt``, the research file
+of ``pcu-training-20261026/plan.json`` (the train splits are read); a world draws its source from these names in this
+order."""
 
 GENERATOR_PARAMS: Mapping[str, Mapping[str, Any]] = _frozen(dict(RECORD_PARAMS, real=REAL_PARAMS))
 """The default parameters of every hook generator."""
