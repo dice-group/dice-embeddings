@@ -95,7 +95,8 @@ def per_key_digests(tensors: dict[str, torch.Tensor]) -> dict[str, str]:
 
 
 def typed(value: Any) -> Any:
-    """JSON with the Python type of every leaf, in the layout of the 3a research dumps (tuples, ints, floats kept apart)."""
+    """JSON with the Python type of every leaf, in the layout of the research dump of the recipe (tuples, ints and floats
+    kept apart)."""
     if isinstance(value, dict):
         return {str(k): typed(v) for k, v in value.items()}
     if isinstance(value, (list, tuple)):
