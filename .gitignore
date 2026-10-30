@@ -188,6 +188,8 @@ Experiments/
 !/benchmarks/plus_h/*.json
 !/benchmarks/ultraquery/*.json
 !/benchmarks/cqa/tests/*.json
+!/benchmarks/proofpfn/manifests/*.json
+!/benchmarks/proofpfn/tests/golden/**/*.json
 /results/
 .benchmark-downloads/
 .fetch-*/

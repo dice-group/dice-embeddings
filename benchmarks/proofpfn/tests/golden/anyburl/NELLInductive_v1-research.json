@@ -1,0 +1,33 @@
+{
+ "about": "Research anyburl_run.py (unchanged copy, SHA-256 in runner_sha256) on the ranking file NELLInductive_v1-preds-225.gz: rebuild() rows and native ranks as JSON digests (golden README section 1), its counts and reflexive relations, and write_inputs() of the research code. The ranking file comes from AnyBURL Apply with NELLInductive_v1-rules-30 (30 s Learn of the clean adapter on 30 October 2026, local machine); kiowl_inputs: the input hashes of the kiowl row.",
+ "graph": "ultra-suite-v1/NELLInductive_v1",
+ "k": 225,
+ "runner_sha256": "1d113495930123cef89951ee7b38b108a8f7d603b3622d78a1cf8bd38d6c5310",
+ "rules_sha256": "bb52f8c70090c6af478b9e9a988852a4d8ad91a83bae1ebfb5cf6e738801a153",
+ "preds_content_sha256": "823310edfbfacd3349df1b5e0884275b23880a6821eac12568ba54c789a3efb1",
+ "rows_digest": "0cd9255a589203de9e74a33db0d3596edd77c6f58cbede34cabd279ccc4cf661",
+ "native_digest": "4865d520c96cf66af74c2d7c1ba8669faea30753d2590bfbdd097fef8f4efc5b",
+ "counts": {
+  "queries": 402,
+  "unlisted": 0,
+  "cut_ties": 0,
+  "empty": 0,
+  "full": 0,
+  "filtered_listed": 0,
+  "anchor_listed": 0,
+  "gated_self": 0,
+  "unsorted": 0
+ },
+ "reflexive": [],
+ "positions": null,
+ "inputs": {
+  "train.txt": "a6fbab75230b9df7aee51059437729860493d63427d814ee7a83984a08fc8026",
+  "valid.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "test.txt": "458ebb7cfbd6b91f57540151b5c4111ecd7d7bdafa2cc8e6106beb97c140eaa2"
+ },
+ "kiowl_inputs": {
+  "train.txt": "a6fbab75230b9df7aee51059437729860493d63427d814ee7a83984a08fc8026",
+  "valid.txt": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "test.txt": "458ebb7cfbd6b91f57540151b5c4111ecd7d7bdafa2cc8e6106beb97c140eaa2"
+ }
+}

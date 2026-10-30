@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - KG-ICL (`KGICL`): official checkpoints in pure PyTorch with seeded, batch-independent prompt graphs, deterministic fused Triton inference, parity fixtures against the pinned official code with five upstream defects corrected, zero-shot benchmarks, and pinned +H and UltraQuery adapter recipes
 - Complex query answering (`dicee.query_answering`): CQD beam search over KGEs and KGFMs with learned score adapters, negated query types, native UltraQuery, GNN-QE, QTO, CQD, CQD-Hybrid, ConE and CLMPT checked against their upstream implementations, and resumable filtered evaluation with exact expected ranks under ties
 - Reproducible UltraQuery and +H benchmarks (`python -m benchmarks.cqa`): frozen studies verified against the pinned upstream implementations, a pinned Docker runtime, paired adapter, answer-filter and inference-graph ablations
+- ProofPFN (`dicee.synthetic_kg`): ULTRA pretrained on worlds of a synthetic prior, with presets of seven arms, resumable runs and its own checkpoint format ([guide](docs/proofpfn.md))
+- `dicee_pretrain_synthetic`: the command that pretrains an arm, converts research exports into checkpoints and builds the real source graphs of arms R and M
+- ProofPFN benchmark (`python -m benchmarks.proofpfn`): frozen graph and model manifests, zero-shot ranks by the research protocol, query cells and the N validity gate
+- Adapters of KGPFN, MERIT and AnyBURL for the ProofPFN benchmark, each equal to its research runner on its golden (MERIT's check ranks on an H100 NVL), and its six registered fresh-v1 analysis files, byte-identical to their freeze anchors
+- Golden tests against the research code: bitwise world orders, worlds, initial weights, first training updates, exports, ranks, query cells and gate values
 
 ### Changed
 - KGFM inference accelerated (fused kernels, query reuse, Flock execution)
@@ -28,6 +33,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Regression bounds updated for the new embedding initialization (AConEx, CoKE)
 - DeCaL initialization delegates embedding setup to dedicated methods (part of #427)
 - CI ratchets the mypy error count instead of `continue-on-error`
+- ULTRA options `ultra_relation_weighting` (`binary`, `normalized`) and `ultra_pair_channels` (`off`, `on`), also flags of the `dicee` command line: count-weighted relation-graph messages and two entity-pair edge types. The defaults keep official ULTRA. `load_pretrained` refuses a checkpoint whose `model_config` records other options, and `attach_graph` a relation graph built for other options
+- `GraphKGE`: `internal_graph` builds the inference graph without a model, and `attach_graph` attaches a prepared graph. `set_graph` and `load_graph` attach through `attach_graph`. `forward_query_facts` scores query facts on the whole attached graph. `load_checkpoint` loads the weights of a checkpoint dictionary; `load_pretrained` reads its file once and delegates to it
 
 ### Fixed
 - Label smoothing in `LabelSmoothingLoss.forward`, `KvsAll`, `AllvsAll` and `KvsSample` targets

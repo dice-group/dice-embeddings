@@ -1,0 +1,358 @@
+"""Seeded streams of the synthetic prior, with the exact version strings of the research code.
+
+A stream maps a text key to an integer: the first 8 bytes of the key's SHA-256, big-endian, unless its function says
+otherwise. The version strings are part of the keys. They name the research generators and must not change, because
+they fix the world order, the worlds and the initial weights of every run. Each stream kind has one function here;
+generators never hash keys themselves.
+"""
+import hashlib
+from typing import Literal
+
+from .recipe import STATISTICAL_SHARE, STRUCTURED_SHARE
+
+MIXTURE_VERSION = 'prior-fix-v1'
+"""``pt_common.VERSION``: the family draw of every update."""
+
+CAPACITY_VERSION = 'capacity-prior-v1'
+"""``cp_prior.VERSION``: the capacity-prior streams, among them the initial weights."""
+
+STATISTICAL_VERSION = 'statworlds-v1'
+"""``st_prior.VERSION``: statistical stage-2 worlds and the stage-2 routing."""
+
+STRUCTURED_VERSION = 'structured-worlds-v1'
+"""``sw_prior.VERSION``: structured stage-2 worlds and the stage-2 routing."""
+
+
+def sha256_int(key: str, byteorder: Literal['big', 'little'] = 'big') -> int:
+    """The first 8 bytes of SHA-256 of ``key`` (UTF-8) as an unsigned integer.
+
+    Args:
+        key: The stream key, version string included.
+        byteorder: Byte order of the 8 bytes; every stream here is big-endian except the hard target's.
+
+    Returns:
+        An integer in ``[0, 2**64)``.
+    """
+    return int.from_bytes(hashlib.sha256(key.encode()).digest()[:8], byteorder)
+
+
+def world_stream(version: str, seed: int, index: int, name: str) -> int:
+    """The per-world stream ``'<version>:<seed>:<index>:<name>'`` of a world generator.
+
+    Args:
+        version: The generator's research version string.
+        seed: The run seed.
+        index: The world's stream index.
+        name: The purpose of the stream inside the generator.
+
+    Returns:
+        The stream integer.
+    """
+    return sha256_int(f'{version}:{seed}:{index}:{name}')
+
+
+# ----------------------------------------------------------------------------------------------- world order
+
+def mixture_draw(seed: int, order_name: str, index: int) -> float:
+    """The uniform number in ``[0, 1)`` that picks the family of update ``index`` (``pt_common.draw``).
+
+    Args:
+        seed: The run seed.
+        order_name: The order name of the prior.
+        index: The 0-based update.
+
+    Returns:
+        The stream integer divided by ``2**64``.
+    """
+    return sha256_int(f'{MIXTURE_VERSION}:mix:{seed}:{order_name}:{index}') / 2 ** 64
+
+
+# ----------------------------------------------------------------------------------------------- initial weights
+
+def capacity_stream(seed: int, name: str) -> int:
+    """The capacity-prior stream ``'capacity-prior-v1:<seed>:<name>'`` (``cp_prior.stream``).
+
+    Args:
+        seed: The run seed.
+        name: The purpose of the stream.
+
+    Returns:
+        The stream integer.
+    """
+    return sha256_int(f'{CAPACITY_VERSION}:{seed}:{name}')
+
+
+HARD_TARGET_VERSION = 'pt_hard'
+"""``pt_hard``: the answer that the hard target of arm HT draws for each query of an update."""
+
+
+def hard_target_seed(seed: int, update: int) -> int:
+    """The seed of the CPU generator that draws the hard targets of one update (``pt_hard.generator``).
+
+    Args:
+        seed: The run seed.
+        update: The 0-based update.
+
+    Returns:
+        The first 8 bytes of SHA-256 of ``'pt_hard:<seed>:<update>'``, little-endian.
+    """
+    return sha256_int(f'{HARD_TARGET_VERSION}:{seed}:{update}', 'little')
+
+
+def initial_seed(seed: int) -> int:
+    """The ``torch.manual_seed`` value of a run's initial weights (``cp_common.create`` with the width tag ``d64`` of
+    every ported arm).
+
+    Args:
+        seed: The run seed.
+
+    Returns:
+        ``capacity_stream(seed, 'initial:d64') % (2**63 - 1)``.
+    """
+    return capacity_stream(seed, 'initial:d64') % (2 ** 63 - 1)
+
+
+# ----------------------------------------------------------------------------------------------- stage-2 routing
+
+def statistical_stream(seed: int, index: int, name: str) -> int:
+    """A stream of the statistical generator (``st_prior.stream``).
+
+    Args:
+        seed: The run seed.
+        index: The stage-2 stream index.
+        name: The purpose of the stream.
+
+    Returns:
+        The stream integer.
+    """
+    return world_stream(STATISTICAL_VERSION, seed, index, name)
+
+
+def structured_stream(seed: int, index: int, name: str) -> int:
+    """A stream of the structured generator (``sw_prior.stream``).
+
+    Args:
+        seed: The run seed.
+        index: The stage-2 stream index.
+        name: The purpose of the stream.
+
+    Returns:
+        The stream integer.
+    """
+    return world_stream(STRUCTURED_VERSION, seed, index, name)
+
+
+def is_statistical(seed: int, index: int) -> bool:
+    """Whether a stage-2 index is a statistical world (``st_prior.is_statistical``).
+
+    Args:
+        seed: The run seed.
+        index: The stage-2 stream index.
+
+    Returns:
+        ``True`` with probability ``STATISTICAL_SHARE``.
+    """
+    return statistical_stream(seed, index, 'family') / 2 ** 64 < STATISTICAL_SHARE
+
+
+def is_structured(seed: int, index: int) -> bool:
+    """Whether a non-statistical stage-2 index is a structured world (``sw_prior.is_structured``).
+
+    Args:
+        seed: The run seed.
+        index: The stage-2 stream index.
+
+    Returns:
+        ``True`` with probability ``STRUCTURED_SHARE``.
+    """
+    return structured_stream(seed, index, 'family') / 2 ** 64 < STRUCTURED_SHARE
+
+
+def stage2_family(seed: int, index: int) -> str:
+    """The family of a stage-2 index by the generators' own rule (``op_worlds.family`` for source ``'s2'``).
+
+    Args:
+        seed: The run seed.
+        index: The stage-2 stream index.
+
+    Returns:
+        ``'statistical'``, ``'structured'`` or ``'plain'``.
+    """
+    if is_statistical(seed, index):
+        return 'statistical'
+    return 'structured' if is_structured(seed, index) else 'plain'
+
+
+# ----------------------------------------------------------------------------------------------- legacy generator
+# The legacy generator has streams of three layouts, two of them with an 8-byte BLAKE2b digest.
+
+WORLD_FIRST_VERSION = 'world-first-v1'
+"""The prefix of ``world_first.stream`` (world-first version 1): the control worlds of the legacy generator."""
+
+JOINT_WORLDS_STREAM_VERSION = 'joint-worlds-v1'
+"""``worlds.STREAM_VERSION`` of joint-worlds-v2: the rule worlds, their batches and the source schedule."""
+
+SOURCE_SCHEDULE_VERSION = 'joint-retention-v1'
+"""``joint-scaling common.SCHEDULE_VERSION``: which legacy indices are control worlds."""
+
+PAIR_SLOT_VERSION = 'pair-affinity-training-v1'
+"""``pair_batches.VERSION``: which rule worlds get the pair-affinity rewiring."""
+
+OBSERVATION_MASK_VERSION = 'role-observation-v1'
+"""``oc_common.VERSION``: the targeted observation masks of the legacy batches."""
+
+RULE_PROGRAM_VERSION = 'rule-program-v1'
+"""``program.VERSION``: which rule worlds get new rule programs, and the programs."""
+
+PAIR_AFFINITY_VERSION = 'pair-affinity-v1'
+"""``affinity.VERSION`` (pair-affinity-v2 runtime): the latent pair affinities and the rewiring."""
+
+
+def blake2b_int(key: str) -> int:
+    """The 8-byte BLAKE2b digest of ``key`` (UTF-8) as a big-endian unsigned integer.
+
+    Args:
+        key: The stream key, version string included.
+
+    Returns:
+        An integer in ``[0, 2**64)``.
+    """
+    return int.from_bytes(hashlib.blake2b(key.encode(), digest_size=8).digest(), 'big')
+
+
+def world_first_stream(seed: int, name: str, value: object) -> int:
+    """A stream of the control worlds: ``'world-first-v1:<seed>:<name>:<value>'`` with BLAKE2b (``world_first.stream``).
+
+    Args:
+        seed: A run seed or a world's own seed.
+        name: The purpose of the stream.
+        value: Formatted with ``str``, so a tuple appears in Python's notation, for example ``('train', 3)``.
+
+    Returns:
+        The stream integer.
+    """
+    return blake2b_int(f'{WORLD_FIRST_VERSION}:{seed}:{name}:{value}')
+
+
+def joint_world_stream(seed: int, name: str) -> int:
+    """A stream of the rule worlds: ``'joint-worlds-v1:<seed>:<name>'`` with BLAKE2b (joint-worlds-v2 ``worlds.stream``).
+
+    Args:
+        seed: A run seed, a world seed or a batch's sampling seed.
+        name: The purpose of the stream.
+
+    Returns:
+        The stream integer.
+    """
+    return blake2b_int(f'{JOINT_WORLDS_STREAM_VERSION}:{seed}:{name}')
+
+
+def source_schedule_stream(seed: int, block: int) -> int:
+    """The shuffle of the source schedule's block of five legacy indices (``joint-scaling common.source_arm``).
+
+    Args:
+        seed: The run seed.
+        block: The block of five sampler indices.
+
+    Returns:
+        The stream integer.
+    """
+    return joint_world_stream(seed, f'{SOURCE_SCHEDULE_VERSION}:block:{block}')
+
+
+def pair_slot_stream(seed: int, index: int) -> int:
+    """The rank of a rule-world index among the candidates of the pair-affinity rewiring (``pair_batches.selected``).
+
+    Args:
+        seed: The run seed.
+        index: The sampler index.
+
+    Returns:
+        The stream integer.
+    """
+    return joint_world_stream(seed, f'{PAIR_SLOT_VERSION}:slot:{index}')
+
+
+def observation_mask_stream(sampling_seed: int) -> int:
+    """The anchor order of the targeted observation mask of a legacy batch (``oc_prior.masks``).
+
+    Args:
+        sampling_seed: The seed of the batch's query sample.
+
+    Returns:
+        The stream integer.
+    """
+    return joint_world_stream(sampling_seed, f'{OBSERVATION_MASK_VERSION}:targeted')
+
+
+def rule_program_stream(seed: int, name: str) -> int:
+    """A rule-program stream ``'rule-program-v1:<seed>:<name>'`` with SHA-256 (``program.seed_for``).
+
+    Args:
+        seed: A run seed or a world's own seed.
+        name: The purpose of the stream.
+
+    Returns:
+        The stream integer.
+    """
+    return sha256_int(f'{RULE_PROGRAM_VERSION}:{seed}:{name}')
+
+
+def pair_affinity_stream(seed: int, name: str) -> int:
+    """A pair-affinity stream ``'pair-affinity-v1:<seed>:<name>'`` with SHA-256 (``affinity.seed_for``).
+
+    Args:
+        seed: A world's own seed.
+        name: The purpose of the stream.
+
+    Returns:
+        The stream integer.
+    """
+    return sha256_int(f'{PAIR_AFFINITY_VERSION}:{seed}:{name}')
+
+
+# ----------------------------------------------------------------------------------------------- record families
+# The record families draw from world_stream with these versions.
+
+CATEGORICAL2_VERSION = 'prior-fix-v2f'
+"""``pf_prior2f.VERSION``: categorical2 worlds."""
+
+ATTR2_VERSION = 'attr-v2'
+"""``pf_attr2.VERSION``: attr2 worlds."""
+
+REC1_VERSION = 'rec-v1'
+"""``pf_rec1.VERSION``: rec1 worlds."""
+
+LIST1_VERSION = 'list-v2'
+"""``pf_list1.VERSION``: list1 worlds."""
+
+
+# ----------------------------------------------------------------------------------------------- real worlds
+
+REAL_VERSION = 'realworlds-v1'
+"""``rw_prior.VERSION``: real subgraph worlds (through world_stream)."""
+
+
+# ----------------------------------------------------------------------------------------------- structural null
+
+NULL_VERSION = 'step5-null-v2'
+"""``s5_swap.VERSION``: the structural null; seeds its undirected swaps and labels null worlds."""
+
+NULL_DIRECTED_VERSION = 'step5-null-v1'
+"""``s5_swap.DIRECTED``: seeds the directed swaps of the structural null."""
+
+
+def null_stream(family: str, seed: int, index: int, directed: bool) -> int:
+    """A stream of the structural null: ``'<tag>:<family>:<seed>:<index>'`` with SHA-256 (``s5_swap.swap_seed``).
+
+    Args:
+        family: The generator of the nulled world (``'rec1'``, ``'attr2'``, ``'list1'`` or ``'categorical2'``).
+        seed: The run seed.
+        index: The world's stream index.
+        directed: ``True`` for the directed swaps (tag ``NULL_DIRECTED_VERSION``), ``False`` for the undirected swaps
+            of symmetric relations (tag ``NULL_VERSION``).
+
+    Returns:
+        The stream integer.
+    """
+    return sha256_int(f'{NULL_DIRECTED_VERSION if directed else NULL_VERSION}:{family}:{seed}:{index}')

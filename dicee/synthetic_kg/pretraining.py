@@ -1,0 +1,518 @@
+"""ProofPFN pretraining: ULTRA trained on one generated world per update, from an arm's initial weights.
+
+A run is an arm (``arms.ARMS``) and a seed. Update ``i`` trains on the world of slot ``i`` of the arm's world order
+(``priors.build_order``, 24,000 slots), prepared by worker processes (``prepare.prepare_slot``). One update:
+
+- per task of the world (in the world's order): attach the task's prepared graph to the model; the tail queries, then
+  the head queries, in chunks of ``MICROBATCH``; the scores of all entities through the model's scoring path in
+  training mode (``GraphKGE.forward_query_facts``, which keeps every graph edge); the context answers masked to
+  ``-inf``; ``log_softmax``; the target is the RB-W row ``soft`` or, for the hard target, a one-hot answer drawn from
+  it (``hard_target``, with the update's own generator, ``streams.hard_target_seed``); the loss ``-sum(target * logp)``
+  averaged over the chunk; backward of ``loss * rows / queries``;
+- the gradient norm over the tensors with a gradient, one AdamW step (weight decay 0.01, default betas and eps, no
+  clipping); the learning rate is ``LEARNING_RATE`` for 20,000 updates, then linear to 0 over 4,000 (``learning_rate``);
+- the EMA (decay ``EMA_DECAY``) of every floating tensor of the state, from update 0.
+
+The logged loss of an update is the research float loop ``value += number * size / queries`` over the chunks, in
+chunk order. The update draws no global random number (the hard target has its own generator), so the run depends only
+on its configuration, its device and torch's thread count, not on the number of workers.
+
+Files of a run folder: ``run.json`` (the run record and its provenance), ``export-<N>-raw.pt`` and ``export-<N>-ema.pt``
+(``proofpfn-checkpoint-v1`` checkpoints, ``checkpoint.load_model``), ``last.pt`` (the training state: model, AdamW
+state, EMA, history; every ``save_every`` updates and at the end), ``progress.json``, and ``.lock``, which a run holds
+exclusively while it trains. A run whose folder holds a ``last.pt`` resumes from it; the result equals the uninterrupted
+run on the same torch version and device.
+
+This is the research trainer (``prior-fix-v1-runtime/pt_train.py`` with ``pt_ladder``, ``pt_ultra``, ``pt_hard`` and
+``statworlds-scale-v1-runtime/fast_pipeline``) for the ported arms, without its adapters, screens, restarts and skips.
+dicee's trainers are not used: an update trains on its own generated graph, which their datasets do not express.
+"""
+import json
+import logging
+import math
+import os
+import signal
+import sys
+import time
+import warnings
+from collections import deque
+from concurrent.futures import Future, ProcessPoolExecutor
+from contextlib import closing, contextmanager
+from dataclasses import dataclass
+from multiprocessing import get_context
+from pathlib import Path
+from typing import Any, Callable, Generator, Iterator, Mapping, NamedTuple, Optional, Sequence, Union
+
+import numpy
+import torch
+
+from .. import __version__ as DICEE_VERSION
+from ..models import _inference, _relation_weights, graph_model, ultra
+from ..models._inference import to_device
+from ..models.ultra import ULTRA
+from .arms import ArmPreset, arm_preset, initial_model
+from .checkpoint import atomic_save, atomic_write_bytes, make_checkpoint, save_checkpoint
+from .determinism import THREADS, deterministic_execution, device_problem, torch_threads
+from .digests import file_sha256
+from .prepare import PreparedWorld, prepare_slot
+from .priors import PriorConfig, Slot, build_order, order_sha256, real
+from .recipe import CONSTANT_UPDATES, DECAY_UPDATES, EMA_DECAY, LEARNING_RATE, MICROBATCH, TOTAL_UPDATES, WEIGHT_DECAY
+from .streams import hard_target_seed
+
+logger = logging.getLogger(__name__)
+
+RUN_FORMAT = 'proofpfn-pretraining-v1'
+STATE_FORMAT = 'proofpfn-training-state-v1'
+EXPORTS = (4000, 8000, 16000, 20000, 24000)
+"""The default export updates (raw and EMA weights); the last update, ``TOTAL_UPDATES``, is always exported."""
+SAVE_EVERY = 250
+
+
+class RunInputError(ValueError):
+    """A run that ``pretrain`` refuses for its input: its options or device, a folder of another run or with changed
+    sources, a world order other than its pin, a foreign training state, or real source graphs that are missing or hold
+    other content than the research files."""
+
+
+@dataclass(frozen=True)
+class PretrainConfig:
+    """A pretraining run.
+
+    Attributes:
+        arm: The arm name (``'S'``, ``'R'``, ``'M'``, ``'N'``, ``'HT'``, ``'CU'``, ``'UL'``).
+        seed: The run seed.
+        stop_after: Stop after this update with ``last.pt`` (rerun to resume); ``None`` runs to ``TOTAL_UPDATES``.
+        exports: The export updates; ``None``: ``EXPORTS``. ``TOTAL_UPDATES`` is always exported.
+        save_every: ``last.pt`` every this many updates.
+        workers: Worker processes that generate and prepare the worlds ahead; 0 prepares them in this process.
+        prefetch: Worlds in flight; ``None``: twice the workers.
+        worker_threads: Torch threads of a worker.
+        device: The training device.
+        threads: Torch threads of the training process (CPU results depend on it).
+        real_sources: The folder of the real source graphs (arms R and M); ``None`` reads ``PROOFPFN_REAL_SOURCES``.
+        allow_code_change: Resume although the sources that the run binds, the torch version or the GPU changed since the
+            run started (the result then can differ from the uninterrupted run).
+    """
+
+    arm: str
+    seed: int
+    stop_after: Optional[int] = None
+    exports: Optional[tuple[int, ...]] = None
+    save_every: int = SAVE_EVERY
+    workers: int = 4
+    prefetch: Optional[int] = None
+    worker_threads: int = 1
+    device: str = 'cuda'
+    threads: int = THREADS
+    real_sources: Union[str, Path, None] = None
+    allow_code_change: bool = False
+
+    def __post_init__(self) -> None:
+        arm_preset(self.arm)
+        if self.stop_after is not None and not 1 <= self.stop_after <= TOTAL_UPDATES:
+            raise RunInputError(f'stop_after must lie in 1..{TOTAL_UPDATES}')
+        if self.exports is not None and not all(1 <= e <= TOTAL_UPDATES for e in self.exports):
+            raise RunInputError(f'every export must lie in 1..{TOTAL_UPDATES}')
+        if min(self.save_every, self.worker_threads, self.threads) < 1 or self.workers < 0 or (self.prefetch is not None and self.prefetch < 1):
+            raise RunInputError('save_every, threads and prefetch must be positive, workers nonnegative')
+
+    @property
+    def export_updates(self) -> list[int]:
+        """The export updates, sorted."""
+        return sorted({*(EXPORTS if self.exports is None else self.exports), TOTAL_UPDATES})
+
+
+class PretrainResult(NamedTuple):
+    """The end of a call of ``pretrain``.
+
+    Attributes:
+        status: ``'complete'`` (the last update is done), ``'stopped-after'`` (at ``stop_after``) or ``'stopped'`` (by
+            the ``stop`` callback).
+        done: The updates done.
+        folder: The run folder.
+    """
+
+    status: str
+    done: int
+    folder: Path
+
+
+# ------------------------------------------------------------------------------------------------------ the update
+
+def learning_rate(update: int) -> float:
+    """The learning rate of an update: ``LEARNING_RATE`` for ``CONSTANT_UPDATES``, then linear to 0 over ``DECAY_UPDATES``.
+
+    Args:
+        update: The 0-based update.
+
+    Returns:
+        The learning rate.
+    """
+    return LEARNING_RATE if update < CONSTANT_UPDATES else LEARNING_RATE * (1 - (update - CONSTANT_UPDATES) / DECAY_UPDATES)
+
+
+def hard_target(soft: torch.Tensor, generator: torch.Generator) -> torch.Tensor:
+    """One-hot rows of the shape of ``soft``: in each row one answer, drawn on the CPU with probability ``soft[row]``.
+
+    Args:
+        soft: RB-W target rows.
+        generator: The update's CPU generator.
+
+    Returns:
+        The one-hot targets on the device and in the dtype of ``soft``.
+
+    Raises:
+        ValueError: When a row does not sum to 1.
+    """
+    probs = soft.detach().float().cpu()
+    sums = probs.sum(-1)
+    if not bool(((sums > 0.999) & (sums < 1.001)).all()):
+        raise ValueError('an RB-W target row does not sum to 1')
+    index = torch.multinomial(probs, 1, generator=generator).flatten()
+    hard = torch.zeros_like(soft)
+    hard[torch.arange(len(index), device=soft.device), index.to(soft.device)] = 1.0
+    return hard
+
+
+def _backward(model: ULTRA, prepared: PreparedWorld, generator: Optional[torch.Generator]) -> float:
+    """Accumulate the gradients of the update's loss; returns the logged loss."""
+    total = prepared.num_queries
+    device, dtype = model.device, next(model.parameters()).dtype
+    losses = []
+    for task in prepared.tasks.values():
+        task.graph.attach(model)
+        queries = to_device(task.queries, device)
+        soft = to_device(task.soft, device).to(dtype=dtype)
+        context = to_device(task.context_mask, device)
+        for head in (False, True):
+            rows_of_direction = (task.head_prediction == head).nonzero().flatten().tolist()
+            for start in range(0, len(rows_of_direction), MICROBATCH):
+                rows = rows_of_direction[start:start + MICROBATCH]
+                place = to_device(torch.tensor(rows, dtype=torch.long), device)
+                scores = model.forward_query_facts(queries[place], head)
+                observed = context[place]
+                target = soft[place] if generator is None else hard_target(soft[place], generator)
+                if generator is not None and bool((target.bool() & observed).any()):
+                    raise ValueError('a drawn answer is a context answer')
+                logp = scores.masked_fill(observed, float('-inf')).log_softmax(-1)
+                loss = -torch.where(target > 0, target * logp, torch.zeros_like(logp)).sum(-1).mean()
+                (loss * len(rows) / total).backward()
+                losses.append((len(rows), loss.detach()))
+                del scores, logp, loss
+    numbers = torch.stack([loss for _, loss in losses]).tolist()
+    value = 0.0
+    for (size, _), number in zip(losses, numbers):
+        if not math.isfinite(number):
+            raise FloatingPointError('the loss is not finite')
+        value += number * size / total
+    return value
+
+
+def update(model: ULTRA, optimizer: torch.optim.Optimizer, prepared: PreparedWorld, generator: Optional[torch.Generator] = None) -> dict[str, float]:
+    """One pretraining update on a prepared world; the caller sets the learning rate.
+
+    Args:
+        model: ULTRA in training mode, with the options of the preparation.
+        optimizer: Its AdamW.
+        prepared: The prepared world.
+        generator: The update's CPU generator for the hard target (``streams.hard_target_seed``); ``None`` trains on the
+            RB-W rows.
+
+    Returns:
+        ``loss`` (the logged loss), ``grad_norm`` and ``seconds``.
+
+    Raises:
+        FloatingPointError: For a loss, gradient norm or parameter that is not finite.
+    """
+    if not model.training:
+        raise ValueError('pretraining scores in training mode')
+    started = time.monotonic()
+    optimizer.zero_grad(set_to_none=True)
+    loss = _backward(model, prepared, generator)
+    norm = torch.stack([p.grad.detach().norm() for p in model.parameters() if p.grad is not None]).norm()
+    if not torch.isfinite(norm):
+        raise FloatingPointError('the gradient norm is not finite')
+    optimizer.step()
+    if not bool(torch.stack([torch.isfinite(p).all() for p in model.parameters()]).all()):
+        raise FloatingPointError('a parameter is not finite after the step')
+    return dict(loss=loss, grad_norm=float(norm), seconds=time.monotonic() - started)
+
+
+@torch.no_grad()
+def ema_update(ema: Mapping[str, torch.Tensor], model: torch.nn.Module) -> None:
+    """Move the EMA of every floating tensor of the model's state towards its value: ``ema = d * ema + (1 - d) * value``
+    with ``d = EMA_DECAY``.
+
+    Args:
+        ema: The EMA tensors by state key, updated in place.
+        model: The trained model.
+    """
+    for key, value in model.state_dict().items():
+        if value.dtype.is_floating_point:
+            ema[key].mul_(EMA_DECAY).add_(value.detach(), alpha=1 - EMA_DECAY)
+
+
+# ------------------------------------------------------------------------------------------------------ the run
+
+def source_hashes() -> dict[str, str]:
+    """The SHA-256 of the sources that define the updates: ``dicee/synthetic_kg``, the ULTRA model files and the inference
+    helpers that the training path calls (``models/_inference.py``).
+
+    Returns:
+        The digest of each file by its path below ``dicee``.
+    """
+    package = Path(__file__).resolve().parent
+    root = package.parent
+    files = sorted(package.rglob('*.py')) + [Path(m.__file__).resolve() for m in (ultra, graph_model, _relation_weights, _inference) if m.__file__]
+    return {path.relative_to(root).as_posix(): file_sha256(path) for path in files}
+
+
+def _real_sources(prior: PriorConfig, folder: Union[str, Path, None]) -> dict[str, str]:
+    """The file SHA-256 of the real source graphs that a prior reads (empty without real worlds), after the check of each
+    file against its content pin (``real.read_source``)."""
+    if not any(spec.generator == 'real' for spec in prior.families):
+        return {}
+    try:
+        root = real.source_folder(folder)
+    except RuntimeError as error:
+        raise RunInputError(str(error)) from None
+    missing = [name for name in real.NAMES if not (root / name / 'data.pt').is_file()]
+    if missing:
+        raise RunInputError(f'the real source graphs {missing} are missing in {root}; dicee_pretrain_synthetic sources builds them')
+    for name in real.NAMES:
+        try:
+            real.read_source(name, root / name / 'data.pt')
+        except ValueError as error:
+            raise RunInputError(str(error)) from None
+    return {name: file_sha256(root / name / 'data.pt') for name in real.NAMES}
+
+
+def run_record(config: PretrainConfig, preset: ArmPreset, digest: str) -> dict[str, Any]:
+    """What determines the updates of a run (a resumed run must have the same record).
+
+    Args:
+        config: The run configuration.
+        preset: Its arm.
+        digest: The digest of the arm's world order.
+
+    Returns:
+        A JSON-safe dictionary.
+    """
+    prior = preset.prior
+    families = [dict(name=s.name, generator=s.generator, first=s.first, params={k: list(v) if isinstance(v, tuple) else v for k, v in s.params},
+                     null_swap_budget=s.null_swap_budget) for s in prior.families]
+    return dict(format=RUN_FORMAT, arm=preset.name, research_arm=preset.research_arm, seed=config.seed, order_sha256=digest,
+                order_slots=TOTAL_UPDATES, prior=dict(mix=prior.mix, order_name=prior.order_name, families=families),
+                model_config=preset.model_config(), target=preset.target, constant_updates=CONSTANT_UPDATES, decay_updates=DECAY_UPDATES,
+                learning_rate=LEARNING_RATE, weight_decay=WEIGHT_DECAY, ema_decay=EMA_DECAY, microbatch=MICROBATCH,
+                device=torch.device(config.device).type, threads=config.threads, deterministic=True)
+
+
+def provenance(config: PretrainConfig, preset: ArmPreset) -> dict[str, Any]:
+    """Where the run's results come from: versions, device, the source and data hashes.
+
+    Args:
+        config: The run configuration.
+        preset: Its arm.
+
+    Returns:
+        A JSON-safe dictionary.
+    """
+    device = torch.device(config.device)
+    cuda = device.type == 'cuda'
+    return dict(dicee=DICEE_VERSION, python=sys.version.split()[0], torch=str(torch.__version__), numpy=str(numpy.__version__),
+                device=str(device), gpu=torch.cuda.get_device_name(device) if cuda else None, cuda=torch.version.cuda if cuda else None,
+                cudnn=torch.backends.cudnn.version() if cuda else None, cublas_workspace_config=os.environ.get('CUBLAS_WORKSPACE_CONFIG'),
+                sources=source_hashes(), real_sources=_real_sources(preset.prior, config.real_sources))
+
+
+def _write_json(path: Path, value: Any) -> None:
+    atomic_write_bytes(path, (json.dumps(value, indent=1) + '\n').encode())
+
+
+def _worker_init(threads: int) -> None:
+    """Worker processes leave stopping to the training process, use few torch threads, and omit torch's notice that its
+    sparse CSR support, which the relation graph uses, is in beta."""
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    signal.signal(signal.SIGTERM, signal.SIG_IGN)
+    torch.set_num_threads(threads)
+    warnings.filterwarnings('ignore', message='Sparse CSR tensor support is in beta state', category=UserWarning)
+
+
+def prepared_worlds(seed: int, slots: Sequence[Slot], prior: PriorConfig, options: Mapping[str, str], workers: int = 4,
+                    prefetch: Optional[int] = None, worker_threads: int = 1,
+                    real_sources: Union[str, Path, None] = None) -> Generator[PreparedWorld, None, None]:
+    """The prepared worlds of the slots, in slot order, generated ahead by a pool of spawned worker processes.
+
+    At most ``prefetch`` worlds are in flight. A generator error in a worker is raised here (the run stops on it).
+
+    Args:
+        seed: The run seed.
+        slots: The order slots.
+        prior: The prior of the order.
+        options: ``ultra_relation_weighting`` and ``ultra_pair_channels`` of the model.
+        workers: Worker processes; 0 prepares the worlds in this process.
+        prefetch: Worlds in flight; ``None``: twice the workers.
+        worker_threads: Torch threads of a worker.
+        real_sources: The folder of the real source graphs, passed to every job (``priors.world``).
+
+    Yields:
+        One prepared world per slot.
+    """
+    if workers == 0:
+        for slot in slots:
+            yield prepare_slot(seed, slot, prior, options, real_sources)
+        return
+    ahead = prefetch if prefetch is not None else 2 * workers
+    pool = ProcessPoolExecutor(workers, mp_context=get_context('spawn'), initializer=_worker_init, initargs=(worker_threads,))
+    try:
+        pending: deque[Future[PreparedWorld]] = deque()
+        remaining = iter(slots)
+        for slot in remaining:
+            pending.append(pool.submit(prepare_slot, seed, slot, prior, dict(options), real_sources))
+            if len(pending) >= ahead:
+                break
+        while pending:
+            prepared = pending.popleft().result()
+            following = next(remaining, None)
+            if following is not None:
+                pending.append(pool.submit(prepare_slot, seed, following, prior, dict(options), real_sources))
+            yield prepared
+    finally:
+        pool.shutdown(wait=True, cancel_futures=True)
+
+
+def _cpu(state: Mapping[str, torch.Tensor]) -> dict[str, torch.Tensor]:
+    return {k: v.detach().cpu().clone() for k, v in state.items()}
+
+
+@contextmanager
+def _folder_lock(folder: Path) -> Iterator[None]:
+    """Hold the lock file ``.lock`` of a run folder exclusively; the operating system releases it when the process ends.
+
+    The lock needs ``fcntl`` (Linux or macOS). Its import stays here, so that the module imports on every system.
+
+    Raises:
+        RunInputError: When another process holds it.
+    """
+    import fcntl
+    with (folder / '.lock').open('a') as handle:
+        try:
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RunInputError(f'another process trains into {folder}') from None
+        yield
+
+
+def _check_start(folder: Path, record: Mapping[str, Any], origin: Mapping[str, Any], allow_code_change: bool) -> None:
+    """Refuse to continue a run folder whose run record differs, or whose bound sources, torch version or GPU changed."""
+    path = folder / 'run.json'
+    if not path.exists():
+        return
+    stored = json.loads(path.read_text())
+    if stored['run'] != record:
+        changed = sorted(k for k in {*stored['run'], *record} if stored['run'].get(k) != record.get(k))
+        raise RunInputError(f'{folder} holds another run (it differs in {changed}); choose another folder')
+    before, sources = stored['provenance'], origin['sources']
+    changed = sorted(k for k in {*before['sources'], *sources} if before['sources'].get(k) != sources.get(k))
+    changed += [f'{key} ({before.get(key)} -> {origin[key]})' for key in ('torch', 'gpu') if before.get(key) != origin[key]]
+    if changed and not allow_code_change:
+        raise RunInputError(f'{changed} changed since the run started; resume with allow_code_change or start a new folder')
+
+
+def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[Callable[[], bool]] = None) -> PretrainResult:
+    """Train an arm on its world order, or resume its run from ``last.pt``.
+
+    Args:
+        config: The run.
+        out_dir: The run folder.
+        stop: Called after every update; when it returns ``True`` the run saves ``last.pt`` and stops (rerun to resume).
+
+    Returns:
+        Where the run ended.
+
+    Raises:
+        RunInputError: For a folder of another run, with changed sources, torch version or GPU, or in use by another
+            process, a world order that differs from the arm's pin, a foreign ``last.pt``, or real source graphs that are
+            missing or hold other content than the research files, or a device that this machine lacks or that runs CUDA
+            without a deterministic cuBLAS workspace setting.
+    """
+    preset = arm_preset(config.arm)
+    folder = Path(out_dir)
+    problem = device_problem(config.device)
+    if problem:
+        raise RunInputError(problem)
+    device = torch.device(config.device)
+    order = build_order(config.seed, preset.prior)
+    digest = order_sha256(order)
+    pinned = preset.pinned_order(config.seed)
+    if pinned is not None and digest != pinned:
+        raise RunInputError(f'the world order of arm {preset.name}, seed {config.seed} has digest {digest}, its pin is {pinned}')
+    record = run_record(config, preset, digest)
+    origin = provenance(config, preset)
+    folder.mkdir(parents=True, exist_ok=True)
+    with _folder_lock(folder), torch_threads(config.threads), deterministic_execution():
+        _check_start(folder, record, origin, config.allow_code_change)
+        if not (folder / 'run.json').exists():
+            _write_json(folder / 'run.json', dict(run=record, provenance=origin))
+        model = initial_model(preset, config.seed).to(device)
+        optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+        ema = {k: v.detach().clone() for k, v in model.state_dict().items()}
+        history: list[dict[str, Any]] = []
+        start = 0
+        last = folder / 'last.pt'
+        if last.exists():
+            state = torch.load(last, map_location='cpu', weights_only=True)
+            if state.get('format') != STATE_FORMAT or state.get('run') != record:
+                raise RunInputError(f'{last} is not a training state of this run')
+            model.load_state_dict(state['model'])
+            optimizer.load_state_dict(state['optimizer'])
+            ema = {k: v.to(device) for k, v in state['ema'].items()}
+            history, start = list(state['history']), int(state['next'])
+            logger.info('resuming %s from update %d', folder, start)
+        end = TOTAL_UPDATES if config.stop_after is None else config.stop_after
+        exports = set(config.export_updates)
+        checkpoint_provenance = dict(source='pretraining', run=record, **origin)
+
+        def save_state(done: int) -> None:
+            atomic_save(dict(format=STATE_FORMAT, run=record, next=done, model=_cpu(model.state_dict()), optimizer=optimizer.state_dict(),
+                             ema=_cpu(ema), history=history), last)
+
+        done, stopped = start, False
+        began = time.monotonic()
+        sources = real.source_folder(config.real_sources) if origin['real_sources'] else None
+        worlds = prepared_worlds(config.seed, order[start:end], preset.prior, preset.model_config(), config.workers, config.prefetch,
+                                 config.worker_threads, sources)
+        with closing(worlds):
+            for i, prepared in enumerate(worlds, start):
+                if tuple(prepared.slot) != tuple(order[i]):
+                    raise RuntimeError(f'update {i} got the world of slot {tuple(prepared.slot)}, not {tuple(order[i])}')
+                lr = learning_rate(i)
+                for group in optimizer.param_groups:
+                    group['lr'] = lr
+                generator = torch.Generator().manual_seed(hard_target_seed(config.seed, i)) if preset.target == 'hard' else None
+                metrics = update(model, optimizer, prepared, generator)
+                ema_update(ema, model)
+                done = i + 1
+                slot, meta = prepared.slot, prepared.meta
+                history.append(dict(update=done, family=slot.family, source=slot.source, index=slot.stream_index, lr=lr, loss=metrics['loss'],
+                                    grad_norm=metrics['grad_norm'], seconds=metrics['seconds'], n_entities=meta['n_entities'],
+                                    n_context=meta['n_context'], program_slot=bool(meta.get('program_slot'))))
+                del prepared
+                if done in exports:
+                    for weights, values in (('raw', model.state_dict()), ('ema', ema)):
+                        save_checkpoint(make_checkpoint(values, arm=preset, seed=config.seed, updates=done, weights=weights, order_sha256=digest,
+                                                        provenance=checkpoint_provenance), folder / f'export-{done}-{weights}.pt')
+                stopping = stop is not None and done < end and stop()
+                if done % config.save_every == 0 or done == end or stopping:
+                    save_state(done)
+                if done % 50 == 0 or done == end or stopping:
+                    logger.info('update %d of %d (%s %s %d): loss %.6f, gradient norm %.4f, learning rate %.3g, %.0f s',
+                                done, TOTAL_UPDATES, slot.family, slot.source, slot.stream_index, metrics['loss'], metrics['grad_norm'], lr,
+                                time.monotonic() - began)
+                    _write_json(folder / 'progress.json', dict(done=done, total=TOTAL_UPDATES, last=history[-1], seconds=time.monotonic() - began))
+                if stopping:
+                    stopped = True
+                    break
+    status = 'stopped' if stopped else 'complete' if done >= TOTAL_UPDATES else 'stopped-after'
+    return PretrainResult(status, done, folder)

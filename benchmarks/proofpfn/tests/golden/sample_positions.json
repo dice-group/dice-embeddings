@@ -1,0 +1,93 @@
+{
+ "about": "The first-1000 sample of the research harness on sampled development graphs: allgraph-v1/ag_eval.sample_positions on the test split of the research loader inductive-benchmark-v1-runtime/ib_eval.load_dataset, unchanged, from the snapshot work tree. positions_sha256: SHA-256 of the positions as int64 little-endian, in order.",
+ "research_sha256": {
+  "allgraph-v1/ag_eval.py": "8a414148ba0a271e0d88ad8eb47a3fc109409408d776e3bb3eaae617e49cef70",
+  "inductive-benchmark-v1-runtime/ib_eval.py": "57e5518d5ec696c1e2a25208bada56c23efdfa587b8efb5f35906cf52befef8d"
+ },
+ "graphs": {
+  "FB15k-237": {
+   "manifest": "dev121",
+   "key": "FB15k-237",
+   "test_rows": 20466,
+   "ranked": 1000,
+   "entities": 14541,
+   "relations": 237,
+   "sha256": {
+    "train.txt": "6e4c2782169af21e9743f3b1d200886f5d595bf6bc504ec1351720949c5cdfae",
+    "valid.txt": "cf6309010852f6a8d47a45df830a426415d1ee6f7a3970a8376ff1fb81db4a5c",
+    "test.txt": "5711cf41623ceb4eacc50eb6108a3ca6565c7492e3caaf82a3e355cc660d1574"
+   },
+   "positions_sha256": "ce3c4a4235acb7ed6c48051f178832acead31f2e6477a0f735233409878afa57",
+   "first": [
+    2,
+    7,
+    8,
+    37,
+    49
+   ],
+   "last": [
+    20344,
+    20351,
+    20353,
+    20382,
+    20428
+   ]
+  },
+  "YAGO3-10": {
+   "manifest": "dev121",
+   "key": "YAGO3-10",
+   "test_rows": 5000,
+   "ranked": 1000,
+   "entities": 123182,
+   "relations": 37,
+   "sha256": {
+    "train.txt": "afb9b51c68d1c997e85655477045b4c5146cd2a6b50b6eea5373383f35dcb12a",
+    "valid.txt": "c9018b77ec77e99f8d48bc3258d404f10b2049a6c7b4ac6eb663697e799dc6f5",
+    "test.txt": "003887ca8a34c90fcaf9b0250b1c30a4b5f617f80f8cf0aeab9723333061598a"
+   },
+   "positions_sha256": "554eb697ee54b9853130fa790fa1ef39b8894fb721eaa98a8a0991a2b9b164e4",
+   "first": [
+    0,
+    1,
+    2,
+    9,
+    12
+   ],
+   "last": [
+    4985,
+    4990,
+    4995,
+    4997,
+    4998
+   ]
+  },
+  "FB15k": {
+   "manifest": "dev121",
+   "key": "FB15k",
+   "test_rows": 59071,
+   "ranked": 1000,
+   "entities": 14951,
+   "relations": 1345,
+   "sha256": {
+    "train.txt": "f9cdfd2685f6483bd3a499d433919b15d62f0715c6cf18b2ca30c2aa5c47a704",
+    "valid.txt": "471929cde9cf74b1caa8348c2b601c8010d6b2f2a56bae49b4ebfd14c9bce855",
+    "test.txt": "5b60b4de325482c3368e22d0b7452d465b09a610fea0ce3768d8b1e8b5a7e42a"
+   },
+   "positions_sha256": "598342b63320867d81fa46b4cad5e1fcb924cc0435ba5ecfb970cff1484377c0",
+   "first": [
+    4,
+    15,
+    74,
+    99,
+    154
+   ],
+   "last": [
+    59041,
+    59052,
+    59053,
+    59057,
+    59065
+   ]
+  }
+ }
+}

@@ -1,0 +1,2065 @@
+{
+ "format": "proofpfn-graph-manifest-v1",
+ "name": "t1",
+ "about": "T1, the standard zero-shot suite p0-suite-v1 (built under the official ULTRA conventions): 54 graphs in the groups trans, ind_e and ind_er, every test row ranked in both directions. File SHA-256 and counts from the suite manifest; the suite id is the key of the official Flock walk table; size from the audit entry of the same folder.",
+ "blind": false,
+ "sample_rule": "all",
+ "sources": {
+  "K/p0-suite-v1/manifest.json": "cabe63343f2ac5880325df8238feaee10de2357f84e34a6d9c1c31e46bc60286",
+  "K/graph-audit-v1/graphs.json": "2b813453f3c1188f10beb5781bc5222b6feac2d01201f6926dad63f0f4d6c098"
+ },
+ "graphs": [
+  {
+   "key": "t1/CoDExSmall",
+   "name": "CoDExSmall",
+   "path": "KGs/ultra-suite-v1/CoDExSmall",
+   "collection": "t1",
+   "view": "trans",
+   "code": null,
+   "group": "trans",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "CoDExSmall",
+   "size": {
+    "entities": 2034,
+    "inference_edges": 32888
+   },
+   "sha256": {
+    "train": "c9c2b3d3a6d1c30c58994816d69e84dde89fa86d78a070eb4f9e8dadad67690e",
+    "valid": "43a9abfefb2f2154ef05a0efacffecaa023a18fa460692d59731f94cbe3d84cd",
+    "test": "e78d3f6985ce4c8fde739a64c208234ed95d97fe798a1d68c333115d5e358d67"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 2034,
+    "relations": 42,
+    "relations_inference": 42,
+    "inference_rows": 32888,
+    "inference_unique": 32888,
+    "valid_rows": 1827,
+    "test_rows": 1828,
+    "test_unique": 1828,
+    "filter_unique": 36543,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/CoDExLarge",
+   "name": "CoDExLarge",
+   "path": "KGs/ultra-suite-v1/CoDExLarge",
+   "collection": "t1",
+   "view": "trans",
+   "code": null,
+   "group": "trans",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "CoDExLarge",
+   "size": {
+    "entities": 77951,
+    "inference_edges": 551193
+   },
+   "sha256": {
+    "train": "064f837414fc86a370f2724351f1aab3506dc62b4104f5cb47b744d55e1ae4e5",
+    "valid": "50fc3f93ee305b1b7b834deb4fabdb67bb547f4783f4acac2d533976f625cbb0",
+    "test": "d6b23c8764a1c1d4b550e2587179bcc7a4ed867ac7923c950295dd177205abc9"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 77951,
+    "relations": 69,
+    "relations_inference": 69,
+    "inference_rows": 551193,
+    "inference_unique": 551193,
+    "valid_rows": 30622,
+    "test_rows": 30622,
+    "test_unique": 30622,
+    "filter_unique": 612437,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/NELL995",
+   "name": "NELL995",
+   "path": "KGs/ultra-suite-v1/NELL995",
+   "collection": "t1",
+   "view": "trans",
+   "code": null,
+   "group": "trans",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "NELL995",
+   "size": {
+    "entities": 74432,
+    "inference_edges": 149678
+   },
+   "sha256": {
+    "train": "bbd48432f60e94e6ae91a05b163a4bd2eae2e00e3a6cee215f991764a6f5e262",
+    "valid": "ac6a06503ff011fdbe93879598726c9e340861b15e89264ee85b7bf38116a571",
+    "test": "d949193a95e3c9fb4547990039ddc951091a5250b1b19dc43b5bae6149bc0c03"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 74536,
+    "relations": 200,
+    "relations_inference": 200,
+    "inference_rows": 149678,
+    "inference_unique": 149678,
+    "valid_rows": 543,
+    "test_rows": 2818,
+    "test_unique": 2818,
+    "filter_unique": 153039,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/YAGO310",
+   "name": "YAGO310",
+   "path": "KGs/YAGO3-10",
+   "collection": "t1",
+   "view": "trans",
+   "code": null,
+   "group": "trans",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "YAGO310",
+   "size": {
+    "entities": 123143,
+    "inference_edges": 1079040
+   },
+   "sha256": {
+    "train": "afb9b51c68d1c997e85655477045b4c5146cd2a6b50b6eea5373383f35dcb12a",
+    "valid": "c9018b77ec77e99f8d48bc3258d404f10b2049a6c7b4ac6eb663697e799dc6f5",
+    "test": "003887ca8a34c90fcaf9b0250b1c30a4b5f617f80f8cf0aeab9723333061598a"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 123182,
+    "relations": 37,
+    "relations_inference": 37,
+    "inference_rows": 1079040,
+    "inference_unique": 1079040,
+    "valid_rows": 5000,
+    "test_rows": 5000,
+    "test_unique": 5000,
+    "filter_unique": 1089040,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 18,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WDsinger",
+   "name": "WDsinger",
+   "path": "KGs/ultra-suite-v1/WDsinger",
+   "collection": "t1",
+   "view": "trans",
+   "code": null,
+   "group": "trans",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WDsinger",
+   "size": {
+    "entities": 10282,
+    "inference_edges": 15906
+   },
+   "sha256": {
+    "train": "d59c30c7c8a0c67535675981b1e1759cc794fd31284ed58d7850b950c9d8ce45",
+    "valid": "22e6912af8881cfa066064b4b905216bbbc48231415aa0f8c2c016ca76c37b29",
+    "test": "1914c6089c7cdfd0fa15136b2d5531637c97add9fce9aa8749afa50946f76f17"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 10282,
+    "relations": 135,
+    "relations_inference": 131,
+    "inference_rows": 16142,
+    "inference_unique": 15906,
+    "valid_rows": 2163,
+    "test_rows": 2203,
+    "test_unique": 2192,
+    "filter_unique": 20122,
+    "test_rows_in_inference": 64,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 1
+   },
+   "tail_only_view": true
+  },
+  {
+   "key": "t1/NELL23k",
+   "name": "NELL23k",
+   "path": "KGs/ultra-suite-v1/NELL23k",
+   "collection": "t1",
+   "view": "trans",
+   "code": null,
+   "group": "trans",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "NELL23k",
+   "size": {
+    "entities": 22925,
+    "inference_edges": 25445
+   },
+   "sha256": {
+    "train": "2260fd04cd6b1fe72c3341713af4d6544b0706379bcda05578af276982316206",
+    "valid": "da0cd39c10a852f8c32fb0f1d02362bac9d1167e1c11f7e5aa82b4d757ad3b8e",
+    "test": "661d8b7b9960da3fa2d0f19c3f23c989af291401ba0d1e6686b3ba36fd3acfdb"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 22925,
+    "relations": 200,
+    "relations_inference": 200,
+    "inference_rows": 25445,
+    "inference_unique": 25445,
+    "valid_rows": 4961,
+    "test_rows": 4952,
+    "test_unique": 4952,
+    "filter_unique": 35358,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": true
+  },
+  {
+   "key": "t1/FB15k237_10",
+   "name": "FB15k237_10",
+   "path": "KGs/ultra-suite-v1/FB15k237_10",
+   "collection": "t1",
+   "view": "trans",
+   "code": null,
+   "group": "trans",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "FB15k237_10",
+   "size": {
+    "entities": 11512,
+    "inference_edges": 27211
+   },
+   "sha256": {
+    "train": "ee333dbb0be153243dea6d1ad370a7f4e10638696610ee18db5ce3fedfb573e6",
+    "valid": "d6812a2cb60aa27eee2382c38aa0083a5591398d34b50a050b9668ceb5172432",
+    "test": "02b1df4afb65a6bb2e5e7126827092363793c6b5e00738e87f8b05bf4344460d"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 11512,
+    "relations": 237,
+    "relations_inference": 237,
+    "inference_rows": 27211,
+    "inference_unique": 27211,
+    "valid_rows": 15624,
+    "test_rows": 18150,
+    "test_unique": 18150,
+    "filter_unique": 60985,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": true
+  },
+  {
+   "key": "t1/FB15k237_20",
+   "name": "FB15k237_20",
+   "path": "KGs/ultra-suite-v1/FB15k237_20",
+   "collection": "t1",
+   "view": "trans",
+   "code": null,
+   "group": "trans",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "FB15k237_20",
+   "size": {
+    "entities": 13166,
+    "inference_edges": 54423
+   },
+   "sha256": {
+    "train": "23e4c3eb51e61970a37c7ceebb0cbbdce3a52e0c3a402f518b9efb75b6c01dd8",
+    "valid": "2240410d1eeb8b328b1dc2fcff3ae4ab3f3d6ffe76a585b4a7a4300815de9019",
+    "test": "96afa5b69176cda5c59497ec6fd9f848f62ecc808a9fd4df690183cd23fd7751"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 13166,
+    "relations": 237,
+    "relations_inference": 237,
+    "inference_rows": 54423,
+    "inference_unique": 54423,
+    "valid_rows": 16963,
+    "test_rows": 19776,
+    "test_unique": 19776,
+    "filter_unique": 91162,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": true
+  },
+  {
+   "key": "t1/FB15k237_50",
+   "name": "FB15k237_50",
+   "path": "KGs/ultra-suite-v1/FB15k237_50",
+   "collection": "t1",
+   "view": "trans",
+   "code": null,
+   "group": "trans",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "FB15k237_50",
+   "size": {
+    "entities": 14149,
+    "inference_edges": 136057
+   },
+   "sha256": {
+    "train": "3faab17ef0e791ba4a6785b751f4962ab520bedb0c0946e2be50bdc7047a9fbc",
+    "valid": "9e7007260cbfb570af389a4189b19645362928d3b7c4516573cfd2c9d69a156f",
+    "test": "a0a9799ede3771f231a0bfae55a48bda47340914c898fac19811992a47f9629a"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 14149,
+    "relations": 237,
+    "relations_inference": 237,
+    "inference_rows": 136057,
+    "inference_unique": 136057,
+    "valid_rows": 17449,
+    "test_rows": 20324,
+    "test_unique": 20324,
+    "filter_unique": 173830,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": true
+  },
+  {
+   "key": "t1/Hetionet",
+   "name": "Hetionet",
+   "path": "KGs/ultra-suite-v1/Hetionet",
+   "collection": "t1",
+   "view": "trans",
+   "code": null,
+   "group": "trans",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "Hetionet",
+   "size": {
+    "entities": 44907,
+    "inference_edges": 2025177
+   },
+   "sha256": {
+    "train": "ff9a99285c58316a9b00c11ac22490bf1b6edf11ef5edc0c9b5bb04c87ceadea",
+    "valid": "43d4c83e9873739708d5436b2d32dafb6caa9524742cfe04bab45c16b7bfbe34",
+    "test": "d9d8e2a4fd1e22ce5e734df39b9688845fa3ce7864a80693998888a636ff4a34"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 45158,
+    "relations": 24,
+    "relations_inference": 24,
+    "inference_rows": 2025177,
+    "inference_unique": 2025177,
+    "valid_rows": 112510,
+    "test_rows": 112510,
+    "test_unique": 112510,
+    "filter_unique": 2250197,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 132,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/ConceptNet100k",
+   "name": "ConceptNet100k",
+   "path": "KGs/ultra-suite-v1/ConceptNet100k",
+   "collection": "t1",
+   "view": "trans",
+   "code": null,
+   "group": "trans",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "ConceptNet100k",
+   "size": {
+    "entities": 78088,
+    "inference_edges": 99997
+   },
+   "sha256": {
+    "train": "39fa8410d9dce3a2662e412b0a6c9c5706e935280160c838d6b3b1af18a1c1b5",
+    "valid": "a9eb17da1b09f1fa232eee7db5e586e7ad51a43bc66cf97aadf774db3e0ca259",
+    "test": "72bd9e719a3dd5a78ab7efcefe0b5dff5afb9ac70e8636792e3088970f06d2ee"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 78334,
+    "relations": 34,
+    "relations_inference": 34,
+    "inference_rows": 100000,
+    "inference_unique": 99997,
+    "valid_rows": 1200,
+    "test_rows": 1200,
+    "test_unique": 1200,
+    "filter_unique": 102397,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 96,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/DBpedia100k",
+   "name": "DBpedia100k",
+   "path": "KGs/ultra-suite-v1/DBpedia100k",
+   "collection": "t1",
+   "view": "trans",
+   "code": null,
+   "group": "trans",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "DBpedia100k",
+   "size": {
+    "entities": 99604,
+    "inference_edges": 597482
+   },
+   "sha256": {
+    "train": "e8628e2ee2ec29c01e60ecbe0cc184bacbef26d8bb5a8f8cabc5a92403586a17",
+    "valid": "cd3e807022d66f229c0638a3061cd6e01f2da56beb912cce7ee264f35bf9d118",
+    "test": "d399d502371e096da9032925c1e1e1fef48e80f182a0657c285ced609fc76452"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 99604,
+    "relations": 470,
+    "relations_inference": 470,
+    "inference_rows": 597572,
+    "inference_unique": 597482,
+    "valid_rows": 50000,
+    "test_rows": 50000,
+    "test_unique": 50000,
+    "filter_unique": 697458,
+    "test_rows_in_inference": 10,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/AristoV4",
+   "name": "AristoV4",
+   "path": "KGs/ultra-suite-v1/AristoV4",
+   "collection": "t1",
+   "view": "trans",
+   "code": null,
+   "group": "trans",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "AristoV4",
+   "size": {
+    "entities": 42016,
+    "inference_edges": 242567
+   },
+   "sha256": {
+    "train": "22300858e039701b37f6a17600000e08b43c1b7a3f717ac329363af8ef11d63d",
+    "valid": "32c081dbba896a7a8966786533c712a007942e27dbf35a48c70bec90dd64c61a",
+    "test": "298c3f7d079865346bdc348579a43f525d4ea22d45f40c2e551559c0d722d194"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 44949,
+    "relations": 1605,
+    "relations_inference": 1593,
+    "inference_rows": 242567,
+    "inference_unique": 242567,
+    "valid_rows": 20000,
+    "test_rows": 20000,
+    "test_unique": 20000,
+    "filter_unique": 282567,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 1579,
+    "test_relations_unseen": 7
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/FB15k237Inductive_v1",
+   "name": "FB15k237Inductive_v1",
+   "path": "KGs/ultra-suite-v1/FB15k237Inductive_v1",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "FB15k237Inductive:v1",
+   "size": {
+    "entities": 1093,
+    "inference_edges": 1993
+   },
+   "sha256": {
+    "train": "bf7d6e409ce5c2c1521e426dc0e5f498305df73dfe19446ff8fd8f93160af936",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "91137b9dfb3f0ecb0d41ef5ed4106dcec29c8923658c071254d4a1394f3a409d"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 1093,
+    "relations": 142,
+    "relations_inference": 142,
+    "inference_rows": 1993,
+    "inference_unique": 1993,
+    "valid_rows": 0,
+    "test_rows": 411,
+    "test_unique": 411,
+    "filter_unique": 2404,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/FB15k237Inductive_v2",
+   "name": "FB15k237Inductive_v2",
+   "path": "KGs/ultra-suite-v1/FB15k237Inductive_v2",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "FB15k237Inductive:v2",
+   "size": {
+    "entities": 1660,
+    "inference_edges": 4145
+   },
+   "sha256": {
+    "train": "b9da8600b4132aff61138790f4a75bba314d65147874a954c108e7948398d444",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "862a163f1c06e1b9ee481df71e41ec3042d6d39b6b89bab4cc6d426f8a3da02c"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 1660,
+    "relations": 172,
+    "relations_inference": 172,
+    "inference_rows": 4145,
+    "inference_unique": 4145,
+    "valid_rows": 0,
+    "test_rows": 947,
+    "test_unique": 947,
+    "filter_unique": 5092,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/FB15k237Inductive_v3",
+   "name": "FB15k237Inductive_v3",
+   "path": "KGs/ultra-suite-v1/FB15k237Inductive_v3",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "FB15k237Inductive:v3",
+   "size": {
+    "entities": 2501,
+    "inference_edges": 7406
+   },
+   "sha256": {
+    "train": "c288ef422a48e536151a2b2d591ff1f79b0fb6aa95ba744276fb515926142a06",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "ae4cc8a915b61ddb4d6f6217b20a1cb48febf4618153fbc76afd205da5027e7d"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 2501,
+    "relations": 183,
+    "relations_inference": 183,
+    "inference_rows": 7406,
+    "inference_unique": 7406,
+    "valid_rows": 0,
+    "test_rows": 1731,
+    "test_unique": 1731,
+    "filter_unique": 9137,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/FB15k237Inductive_v4",
+   "name": "FB15k237Inductive_v4",
+   "path": "KGs/ultra-suite-v1/FB15k237Inductive_v4",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "FB15k237Inductive:v4",
+   "size": {
+    "entities": 3051,
+    "inference_edges": 11714
+   },
+   "sha256": {
+    "train": "fcc795558e52c5c3d71d361b3a1884d7690a52a2ebd692c9e1b3aadd85c02479",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "98eeff9655fe170e568c7189fb41d1575cdf5e8793f4bb4045a6e60fc183570b"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 3051,
+    "relations": 200,
+    "relations_inference": 200,
+    "inference_rows": 11714,
+    "inference_unique": 11714,
+    "valid_rows": 0,
+    "test_rows": 2840,
+    "test_unique": 2840,
+    "filter_unique": 14554,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WN18RRInductive_v1",
+   "name": "WN18RRInductive_v1",
+   "path": "KGs/ultra-suite-v1/WN18RRInductive_v1",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WN18RRInductive:v1",
+   "size": {
+    "entities": 922,
+    "inference_edges": 1618
+   },
+   "sha256": {
+    "train": "0e2c81bb902c25fed84a389850fde67ce4d00a71f197055f1014471a8086ce8b",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "3871194ea99a42cdad9f6a463ce1ad58dadc4919029383b32e3f362516029c64"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 922,
+    "relations": 8,
+    "relations_inference": 8,
+    "inference_rows": 1618,
+    "inference_unique": 1618,
+    "valid_rows": 0,
+    "test_rows": 373,
+    "test_unique": 373,
+    "filter_unique": 1991,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WN18RRInductive_v2",
+   "name": "WN18RRInductive_v2",
+   "path": "KGs/ultra-suite-v1/WN18RRInductive_v2",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WN18RRInductive:v2",
+   "size": {
+    "entities": 2757,
+    "inference_edges": 4011
+   },
+   "sha256": {
+    "train": "d7543cc51866eed70edc253459cc3ce02815d231f91c43267f76fc5a5ffe8dd2",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "ee507767aee484e536de298f78a6ba1e026c95a4bda3abbe45b62e556590e26b"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 2757,
+    "relations": 10,
+    "relations_inference": 10,
+    "inference_rows": 4011,
+    "inference_unique": 4011,
+    "valid_rows": 0,
+    "test_rows": 852,
+    "test_unique": 852,
+    "filter_unique": 4863,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WN18RRInductive_v3",
+   "name": "WN18RRInductive_v3",
+   "path": "KGs/ultra-suite-v1/WN18RRInductive_v3",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WN18RRInductive:v3",
+   "size": {
+    "entities": 5084,
+    "inference_edges": 6327
+   },
+   "sha256": {
+    "train": "8e272e02608b2cc1615d2aaa71c2a29c64b44b76c55d02366a99125c4e046eee",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "e2806a9d6a29c713070302875d555529f4672b105f518c8f86027bcccb3c57b9"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 5084,
+    "relations": 11,
+    "relations_inference": 11,
+    "inference_rows": 6327,
+    "inference_unique": 6327,
+    "valid_rows": 0,
+    "test_rows": 1143,
+    "test_unique": 1143,
+    "filter_unique": 7470,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WN18RRInductive_v4",
+   "name": "WN18RRInductive_v4",
+   "path": "KGs/ultra-suite-v1/WN18RRInductive_v4",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WN18RRInductive:v4",
+   "size": {
+    "entities": 7084,
+    "inference_edges": 12334
+   },
+   "sha256": {
+    "train": "308afecfbf988c2241a9a73c5a1f5e4277703f937955c56b1a4adc208463b079",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "76ebc6b430b21dbc99c518a05488d3fa4a5e1a2d89ac0c2c35d361461bcb4e4a"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 7084,
+    "relations": 9,
+    "relations_inference": 9,
+    "inference_rows": 12334,
+    "inference_unique": 12334,
+    "valid_rows": 0,
+    "test_rows": 2823,
+    "test_unique": 2823,
+    "filter_unique": 15157,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/NELLInductive_v1",
+   "name": "NELLInductive_v1",
+   "path": "KGs/ultra-suite-v1/NELLInductive_v1",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "NELLInductive:v1",
+   "size": {
+    "entities": 225,
+    "inference_edges": 833
+   },
+   "sha256": {
+    "train": "90bc25d8644503bc2bc196c412400db0b27c4fa837db319682e06aba719ea5ee",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "68c9ce738ec47cdcca8f2d355eabafe80d7d13208f9988ff2df11bfd7776964e"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 225,
+    "relations": 14,
+    "relations_inference": 14,
+    "inference_rows": 833,
+    "inference_unique": 833,
+    "valid_rows": 0,
+    "test_rows": 201,
+    "test_unique": 201,
+    "filter_unique": 1034,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/NELLInductive_v2",
+   "name": "NELLInductive_v2",
+   "path": "KGs/ultra-suite-v1/NELLInductive_v2",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "NELLInductive:v2",
+   "size": {
+    "entities": 2086,
+    "inference_edges": 4586
+   },
+   "sha256": {
+    "train": "362f5c32c54b792a44f5e9f915b0dbde89450e58f669a72c786d3d69751237ba",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "0c614c6be13793a6f3d0e2d11ca993e5f2378d3ff51ebe38bcf4952d59b94902"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 2086,
+    "relations": 79,
+    "relations_inference": 79,
+    "inference_rows": 4586,
+    "inference_unique": 4586,
+    "valid_rows": 0,
+    "test_rows": 935,
+    "test_unique": 935,
+    "filter_unique": 5521,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/NELLInductive_v3",
+   "name": "NELLInductive_v3",
+   "path": "KGs/ultra-suite-v1/NELLInductive_v3",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "NELLInductive:v3",
+   "size": {
+    "entities": 3566,
+    "inference_edges": 8048
+   },
+   "sha256": {
+    "train": "d735cc2ca9942ca933851447107545ba3a16121eacb43bf52fc1bb52c96b8148",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "d61ce7b34537ccc47ce4518211b567fa8a015d254a44546cd38a6d1acea7664a"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 3566,
+    "relations": 122,
+    "relations_inference": 122,
+    "inference_rows": 8048,
+    "inference_unique": 8048,
+    "valid_rows": 0,
+    "test_rows": 1620,
+    "test_unique": 1620,
+    "filter_unique": 9668,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/NELLInductive_v4",
+   "name": "NELLInductive_v4",
+   "path": "KGs/ultra-suite-v1/NELLInductive_v4",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "NELLInductive:v4",
+   "size": {
+    "entities": 2795,
+    "inference_edges": 7073
+   },
+   "sha256": {
+    "train": "1e4532214a42a109df272d2370bd06143dd308349358a6e7746d96ba120d9ace",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "d36fb52b89f5e047267950451eb9d756e7c1e263998a3966c70c7562ea91003f"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 2795,
+    "relations": 61,
+    "relations_inference": 61,
+    "inference_rows": 7073,
+    "inference_unique": 7073,
+    "valid_rows": 0,
+    "test_rows": 1447,
+    "test_unique": 1447,
+    "filter_unique": 8520,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/ILPC2022_small",
+   "name": "ILPC2022_small",
+   "path": "KGs/inductive/ilpc-small",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "ILPC2022:small",
+   "size": {
+    "entities": 6653,
+    "inference_edges": 20960
+   },
+   "sha256": {
+    "train": "21f9f731c3128b50f8392ce1aa0a5d0bd5c24fa16f141e3110e32b63049189c2",
+    "valid": "a11e244f066e8bad85ec6e684e1249bf6e5c2ae98b3e02c4a6e15f476ebfa908",
+    "test": "c256b4a5359649a708047d5c429e484ba808c7b28c2f7c91844fcb4a0e962b01"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 6653,
+    "relations": 43,
+    "relations_inference": 43,
+    "inference_rows": 20960,
+    "inference_unique": 20960,
+    "valid_rows": 2908,
+    "test_rows": 2902,
+    "test_unique": 2902,
+    "filter_unique": 26770,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/ILPC2022_large",
+   "name": "ILPC2022_large",
+   "path": "KGs/inductive/ilpc-large",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "ILPC2022:large",
+   "size": {
+    "entities": 29246,
+    "inference_edges": 77044
+   },
+   "sha256": {
+    "train": "e9f59ca42e329422b8046a44f780415ee61e88ec73eef735b4b10f1a44f12877",
+    "valid": "8c598721d316430bf406d223025b7b28a5dc7f23b277ae83f11d1265fac4aa81",
+    "test": "a02b6513e0bc38d51e9a0b429b7c66dded5f600e02c6be83c812e488aab566e5"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 29246,
+    "relations": 64,
+    "relations_inference": 63,
+    "inference_rows": 77044,
+    "inference_unique": 77044,
+    "valid_rows": 10179,
+    "test_rows": 10184,
+    "test_unique": 10184,
+    "filter_unique": 97407,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/HM_1k",
+   "name": "HM_1k",
+   "path": "KGs/inductive-fresh/hm-1k",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "HM:1k",
+   "size": {
+    "entities": 9899,
+    "inference_edges": 18417
+   },
+   "sha256": {
+    "train": "de41f7777ffccc3cc4618745ce35d73e5d89ea2887e120304f9d80da4ef09c89",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "f05f2c99e9f5a0768f444122c6cadab329cae8bd161ff9c9ee821bb5e81c80a0"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 9899,
+    "relations": 11,
+    "relations_inference": 11,
+    "inference_rows": 18638,
+    "inference_unique": 18417,
+    "valid_rows": 0,
+    "test_rows": 476,
+    "test_unique": 476,
+    "filter_unique": 18893,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/HM_3k",
+   "name": "HM_3k",
+   "path": "KGs/inductive-fresh/hm-3k",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "HM:3k",
+   "size": {
+    "entities": 19218,
+    "inference_edges": 37755
+   },
+   "sha256": {
+    "train": "bc5a15a78b1f2799fb0a045734a123bf70192c14fbe53b6c236bcd66d1e50612",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "abbbd215969bd7a11c19a4a78947f5076e22e969f6f4212ac354859432c32fff"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 19218,
+    "relations": 11,
+    "relations_inference": 11,
+    "inference_rows": 38285,
+    "inference_unique": 37755,
+    "valid_rows": 0,
+    "test_rows": 1349,
+    "test_unique": 1349,
+    "filter_unique": 39104,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/HM_5k",
+   "name": "HM_5k",
+   "path": "KGs/inductive-fresh/hm-5k",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "HM:5k",
+   "size": {
+    "entities": 23792,
+    "inference_edges": 47651
+   },
+   "sha256": {
+    "train": "bcc512fd6188faf3d8de14dc8bece15c4ee0757f950725cfdc430b6e7baa97bb",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "3b8fb508d61691f2f6b3b9a22ecbf0c9c87b81d6fa62c962aebe812c190461aa"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 23792,
+    "relations": 11,
+    "relations_inference": 11,
+    "inference_rows": 48425,
+    "inference_unique": 47651,
+    "valid_rows": 0,
+    "test_rows": 2124,
+    "test_unique": 2124,
+    "filter_unique": 49775,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/HM_indigo",
+   "name": "HM_indigo",
+   "path": "KGs/ultra-suite-v1/HM_indigo",
+   "collection": "t1",
+   "view": "ind_e",
+   "code": null,
+   "group": "ind_e",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "HM:indigo",
+   "size": {
+    "entities": 14755,
+    "inference_edges": 249266
+   },
+   "sha256": {
+    "train": "71b819ad99f3e0d50a49ba9ffc9628b23c38a73b8849121970adac04187793bc",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "ef9a0f0150ae065b2ba1e94e7a027ee58f955dc7afaf99e93594a3e1775b5a2a"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 14775,
+    "relations": 229,
+    "relations_inference": 229,
+    "inference_rows": 250195,
+    "inference_unique": 249266,
+    "valid_rows": 0,
+    "test_rows": 14904,
+    "test_unique": 14904,
+    "filter_unique": 263511,
+    "test_rows_in_inference": 659,
+    "test_rows_unseen_entity": 37,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/FBIngram_25",
+   "name": "FBIngram_25",
+   "path": "KGs/inductive/ingram-FB-25",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "FBIngram:25",
+   "size": {
+    "entities": 4097,
+    "inference_edges": 17147
+   },
+   "sha256": {
+    "train": "cffeb071476b93815586fe4b5ad47d0794ac5b0a8a4b1a58aa755d6d6ae0b065",
+    "valid": "ac22cc5fb62b4b91b6537669955918506b14eddbbdb8bf3dff4d171a62d15c64",
+    "test": "4ccf923453b0faa4eec6ccf9ea0bf25ce3acceba3ec42f50b9ff53e430e204fa"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 4097,
+    "relations": 216,
+    "relations_inference": 216,
+    "inference_rows": 17147,
+    "inference_unique": 17147,
+    "valid_rows": 5716,
+    "test_rows": 5716,
+    "test_unique": 5716,
+    "filter_unique": 28579,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/FBIngram_50",
+   "name": "FBIngram_50",
+   "path": "KGs/inductive/ingram-FB-50",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "FBIngram:50",
+   "size": {
+    "entities": 4445,
+    "inference_edges": 11636
+   },
+   "sha256": {
+    "train": "72fd6f1d2bb023516407b71b7f7448afef8576702f40867c28047e1559195fd3",
+    "valid": "addaf267721f091aafefca9316aa114119eca795ba5b159db5c22216cf6e0fd2",
+    "test": "e1547288bbea96401d09d00355da4e35f1769009b6794995ce2e2e3333395bd2"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 4445,
+    "relations": 205,
+    "relations_inference": 205,
+    "inference_rows": 11636,
+    "inference_unique": 11636,
+    "valid_rows": 3879,
+    "test_rows": 3879,
+    "test_unique": 3879,
+    "filter_unique": 19394,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/FBIngram_75",
+   "name": "FBIngram_75",
+   "path": "KGs/inductive/ingram-FB-75",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "FBIngram:75",
+   "size": {
+    "entities": 2792,
+    "inference_edges": 9316
+   },
+   "sha256": {
+    "train": "09af46b80118bcb6002b4e0cd0b153bfbc46183c96476e0f72e426b23a4634f5",
+    "valid": "8c1f174528ebb312c4f817ec84308cc3d7621f80dae8c0fe4fec1dc62b07f26c",
+    "test": "c8ef69bbe9f8aeff6e2ea0229a44428df54f275e2f3fafafbb95f43cce04ff02"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 2792,
+    "relations": 186,
+    "relations_inference": 186,
+    "inference_rows": 9316,
+    "inference_unique": 9316,
+    "valid_rows": 3106,
+    "test_rows": 3106,
+    "test_unique": 3106,
+    "filter_unique": 15528,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/FBIngram_100",
+   "name": "FBIngram_100",
+   "path": "KGs/inductive/ingram-FB-100",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "FBIngram:100",
+   "size": {
+    "entities": 2624,
+    "inference_edges": 6987
+   },
+   "sha256": {
+    "train": "78f40c0180438e8ebe66e1666885c7cbb96258a6779c7c8b27dc9649d8208601",
+    "valid": "7b624f4baaded900a522ab40810a8f05c94851ff953263a74cc4cbe9ee4524fa",
+    "test": "98d3da0ca2c7137cecd83f5f27f214d9bab8f00eccc5046fc0ff353abeccfc5a"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 2624,
+    "relations": 77,
+    "relations_inference": 77,
+    "inference_rows": 6987,
+    "inference_unique": 6987,
+    "valid_rows": 2329,
+    "test_rows": 2329,
+    "test_unique": 2329,
+    "filter_unique": 11645,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WKIngram_25",
+   "name": "WKIngram_25",
+   "path": "KGs/inductive/ingram-WK-25",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WKIngram:25",
+   "size": {
+    "entities": 3228,
+    "inference_edges": 3391
+   },
+   "sha256": {
+    "train": "da1b02104fe9d351383b6a17b303d5aaa1ec2da599b77438d6e971dc16185d66",
+    "valid": "5a41c6cc5cfad009b3201908bd243044920b358bd3d2314b9ceca52fd4891819",
+    "test": "9491ba3fbd7fe7d8e6854e9a9944797d20c1366f7eb6ad28ebecc9dcd0d8ad00"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 3228,
+    "relations": 74,
+    "relations_inference": 74,
+    "inference_rows": 3391,
+    "inference_unique": 3391,
+    "valid_rows": 1130,
+    "test_rows": 1131,
+    "test_unique": 1131,
+    "filter_unique": 5652,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WKIngram_50",
+   "name": "WKIngram_50",
+   "path": "KGs/inductive/ingram-WK-50",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WKIngram:50",
+   "size": {
+    "entities": 9328,
+    "inference_edges": 9672
+   },
+   "sha256": {
+    "train": "1dd6c875754bf46d76a145fa90a2134fc2d45a69741b71a88a3bcf9c53cd1559",
+    "valid": "b2f63f9da80069d2453a804bb388cf401732be8f4ac9e38ab0c0a77550915826",
+    "test": "a7742b4f5b3c0b121077da181354e160b379374f6589f22661dcd5474c3abf0c"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 9328,
+    "relations": 93,
+    "relations_inference": 93,
+    "inference_rows": 9672,
+    "inference_unique": 9672,
+    "valid_rows": 3224,
+    "test_rows": 3225,
+    "test_unique": 3225,
+    "filter_unique": 16121,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WKIngram_75",
+   "name": "WKIngram_75",
+   "path": "KGs/inductive/ingram-WK-75",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WKIngram:75",
+   "size": {
+    "entities": 2722,
+    "inference_edges": 3430
+   },
+   "sha256": {
+    "train": "5b759dd362a0e67746296a6e336c064007feb937b648b60998f2bebe6c8d31a0",
+    "valid": "007f67b42c37c8c56fe7be7cc8e77a5b58918cd14a6828c8fd4fad09ce7bedd5",
+    "test": "0ca70e7f6a10bf41a7f3a5895936c54b0f7694db3a7d1337eea29bd9779655ed"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 2722,
+    "relations": 65,
+    "relations_inference": 65,
+    "inference_rows": 3430,
+    "inference_unique": 3430,
+    "valid_rows": 1143,
+    "test_rows": 1144,
+    "test_unique": 1144,
+    "filter_unique": 5717,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WKIngram_100",
+   "name": "WKIngram_100",
+   "path": "KGs/inductive/ingram-WK-100",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WKIngram:100",
+   "size": {
+    "entities": 12136,
+    "inference_edges": 13487
+   },
+   "sha256": {
+    "train": "39ae655328629114377dc1eae8bc6973699d1928ab3a3a758ca12462ec7e3c0a",
+    "valid": "ef6f62e0e65f4fd942ab01cedd3142513e4de34ca6bc318e839f79e16c272c4a",
+    "test": "243b4b05313dce83a26bdebabde7308bc77b390b1430b216a795abbf20a13c16"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 12136,
+    "relations": 37,
+    "relations_inference": 37,
+    "inference_rows": 13487,
+    "inference_unique": 13487,
+    "valid_rows": 4496,
+    "test_rows": 4496,
+    "test_unique": 4496,
+    "filter_unique": 22479,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/NLIngram_0",
+   "name": "NLIngram_0",
+   "path": "KGs/inductive/ingram-NL-0",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "NLIngram:0",
+   "size": {
+    "entities": 2026,
+    "inference_edges": 2287
+   },
+   "sha256": {
+    "train": "6b6257779ff6aded428d64b3b70620e85bc67cbaec9dd385bd785bce904a1fbf",
+    "valid": "d4c3e30d3d782663daaaf0e6c5fb690ba5db77e5220805c5efc6b3c84e0d4c20",
+    "test": "011b8161eab4a8daee93f9e45b3f745fcfd7ef4f9e1320dffdb28da27d625f32"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 2026,
+    "relations": 112,
+    "relations_inference": 112,
+    "inference_rows": 2287,
+    "inference_unique": 2287,
+    "valid_rows": 763,
+    "test_rows": 763,
+    "test_unique": 763,
+    "filter_unique": 3813,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/NLIngram_25",
+   "name": "NLIngram_25",
+   "path": "KGs/inductive/ingram-NL-25",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "NLIngram:25",
+   "size": {
+    "entities": 2146,
+    "inference_edges": 2230
+   },
+   "sha256": {
+    "train": "23e288c0b916f10f4c8208fc669701228070e48933c56107f08a16bfc625b1be",
+    "valid": "6c1318bd6e71921e06c9fb31e3546a691a51cbf8b2fefdfc6d6bb6a5feeb145b",
+    "test": "f29d434e03b0523fecfbd0eb9cd611083e96d7261b8449d0b081e9cce4d0cde1"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 2146,
+    "relations": 120,
+    "relations_inference": 120,
+    "inference_rows": 2230,
+    "inference_unique": 2230,
+    "valid_rows": 743,
+    "test_rows": 744,
+    "test_unique": 744,
+    "filter_unique": 3717,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/NLIngram_50",
+   "name": "NLIngram_50",
+   "path": "KGs/inductive/ingram-NL-50",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "NLIngram:50",
+   "size": {
+    "entities": 2335,
+    "inference_edges": 2576
+   },
+   "sha256": {
+    "train": "9c22f71be0711e9fadba6588b0a966222353352a08bd681588f369e6dfdb2d20",
+    "valid": "cf3e702a87eb28254909f2f5d92298676619eda3f4d5235c9aa003650b338050",
+    "test": "e61280a0ff3d228d4785aeffdc919c5526fab34e5e23054abb4d500245d65c54"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 2335,
+    "relations": 119,
+    "relations_inference": 119,
+    "inference_rows": 2576,
+    "inference_unique": 2576,
+    "valid_rows": 859,
+    "test_rows": 859,
+    "test_unique": 859,
+    "filter_unique": 4294,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/NLIngram_75",
+   "name": "NLIngram_75",
+   "path": "KGs/inductive/ingram-NL-75",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "NLIngram:75",
+   "size": {
+    "entities": 1578,
+    "inference_edges": 1818
+   },
+   "sha256": {
+    "train": "91b8e1d02aafc2522c6e4b98f7f5a51744a531c40f7d8155332ae5fecd2d4c61",
+    "valid": "59e4621678dd7c15af59b79d057f1333fee08e8de78ce79b3f0a063b9a2d5c8c",
+    "test": "a4390ce759fd864e09b53e97c774b1be5da29132fb0e1c7a36e28246a01fab38"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 1578,
+    "relations": 116,
+    "relations_inference": 116,
+    "inference_rows": 1818,
+    "inference_unique": 1818,
+    "valid_rows": 606,
+    "test_rows": 607,
+    "test_unique": 607,
+    "filter_unique": 3031,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/NLIngram_100",
+   "name": "NLIngram_100",
+   "path": "KGs/inductive/ingram-NL-100",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "NLIngram:100",
+   "size": {
+    "entities": 1709,
+    "inference_edges": 2378
+   },
+   "sha256": {
+    "train": "15a8c2279787e7f34b970dc2ad6e795a2fd87b64b3a98c9d1671b81970dcdddf",
+    "valid": "039547e15c5aa4d0d7e5fd6514482c1fdba4ee6143091ebf7b90c4f0f2a291aa",
+    "test": "26e7a862aa409d51c9abdd95a0064ca8942a2d49daa106c6446b0ed306f17df2"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 1709,
+    "relations": 53,
+    "relations_inference": 53,
+    "inference_rows": 2378,
+    "inference_unique": 2378,
+    "valid_rows": 793,
+    "test_rows": 793,
+    "test_unique": 793,
+    "filter_unique": 3964,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WikiTopicsMT1_tax",
+   "name": "WikiTopicsMT1_tax",
+   "path": "KGs/inductive-fresh/wikitopics-MT1-tax",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WikiTopicsMT1:tax",
+   "size": {
+    "entities": 10000,
+    "inference_edges": 16526
+   },
+   "sha256": {
+    "train": "44cf2a07ca0d1ba23afb6883a7c361329c2d091ab439157e181b45e0ed452d3f",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "29042f006aae3145511879f7179d42b1f64439b416dd6cd2b8766e7ed4b26f7e"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 10000,
+    "relations": 9,
+    "relations_inference": 9,
+    "inference_rows": 16526,
+    "inference_unique": 16526,
+    "valid_rows": 0,
+    "test_rows": 1834,
+    "test_unique": 1834,
+    "filter_unique": 18360,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WikiTopicsMT1_health",
+   "name": "WikiTopicsMT1_health",
+   "path": "KGs/inductive-fresh/wikitopics-MT1-health",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WikiTopicsMT1:health",
+   "size": {
+    "entities": 10000,
+    "inference_edges": 14110
+   },
+   "sha256": {
+    "train": "b5dea75ea6b2f822b036df720b5e94a0c239132b878e0d0b62860fb509b44d9b",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "61c393f3ab522f1fe273103f71821a377655d9f5ce505d0ec482279610818625"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 10000,
+    "relations": 7,
+    "relations_inference": 7,
+    "inference_rows": 14110,
+    "inference_unique": 14110,
+    "valid_rows": 0,
+    "test_rows": 1566,
+    "test_unique": 1566,
+    "filter_unique": 15676,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WikiTopicsMT2_org",
+   "name": "WikiTopicsMT2_org",
+   "path": "KGs/inductive-fresh/wikitopics-MT2-org",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WikiTopicsMT2:org",
+   "size": {
+    "entities": 10000,
+    "inference_edges": 21976
+   },
+   "sha256": {
+    "train": "a4b6bf0906c605ac9c94abdef30227b0f4384eb47fdb3dac9a3f9a7f8b8cda67",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "c730972e335c1016ec8231c9b7ad521e9c47a4b59214583a884c64225a0196a9"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 10000,
+    "relations": 11,
+    "relations_inference": 11,
+    "inference_rows": 21976,
+    "inference_unique": 21976,
+    "valid_rows": 0,
+    "test_rows": 2441,
+    "test_unique": 2441,
+    "filter_unique": 24417,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WikiTopicsMT2_sci",
+   "name": "WikiTopicsMT2_sci",
+   "path": "KGs/inductive-fresh/wikitopics-MT2-sci",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WikiTopicsMT2:sci",
+   "size": {
+    "entities": 10000,
+    "inference_edges": 14852
+   },
+   "sha256": {
+    "train": "7903b2711d5cf0eb17c3f324b4f38042d8e2400142eae0bdfb3a42e29f0d8dd3",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "1a8f2a13c0e5436ba2560b04dcf54aeee3198cd4bfa4c453e54b66a16b11a253"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 10000,
+    "relations": 16,
+    "relations_inference": 16,
+    "inference_rows": 14852,
+    "inference_unique": 14852,
+    "valid_rows": 0,
+    "test_rows": 1650,
+    "test_unique": 1650,
+    "filter_unique": 16502,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WikiTopicsMT3_art",
+   "name": "WikiTopicsMT3_art",
+   "path": "KGs/inductive-fresh/wikitopics-MT3-art",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WikiTopicsMT3:art",
+   "size": {
+    "entities": 10000,
+    "inference_edges": 28023
+   },
+   "sha256": {
+    "train": "b67ac9308081c8c1cc6b341e993a5f7490d84bb42fe69ef0b5c34dbbbe872144",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "9f44aedbb4346b8edb21fdd70992144cf01c011691042196f7112837d7294685"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 10000,
+    "relations": 45,
+    "relations_inference": 45,
+    "inference_rows": 28023,
+    "inference_unique": 28023,
+    "valid_rows": 0,
+    "test_rows": 3113,
+    "test_unique": 3113,
+    "filter_unique": 31136,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WikiTopicsMT3_infra",
+   "name": "WikiTopicsMT3_infra",
+   "path": "KGs/inductive-fresh/wikitopics-MT3-infra",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WikiTopicsMT3:infra",
+   "size": {
+    "entities": 10000,
+    "inference_edges": 21646
+   },
+   "sha256": {
+    "train": "e4fafad9f5d561a1bebce8e2033c50bfddb170688c4bd246b35be3699e0cc53a",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "9bba1a1549878ebb2dda3788c112c911ce5df64f46d9a7aa1780ad015ed8a13c"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 10000,
+    "relations": 27,
+    "relations_inference": 27,
+    "inference_rows": 21646,
+    "inference_unique": 21646,
+    "valid_rows": 0,
+    "test_rows": 2405,
+    "test_unique": 2405,
+    "filter_unique": 24051,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WikiTopicsMT4_sci",
+   "name": "WikiTopicsMT4_sci",
+   "path": "KGs/inductive-fresh/wikitopics-MT4-sci",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WikiTopicsMT4:sci",
+   "size": {
+    "entities": 10000,
+    "inference_edges": 12516
+   },
+   "sha256": {
+    "train": "177d125acc4692c2d95f86c6a7c0a5ce456a6e2900c7eb76b6e44a70658e9c36",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "feb8e25c895f5ba4d23628c51a03da2b5d23a8493f7714edaa52749f507a77b9"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 10000,
+    "relations": 42,
+    "relations_inference": 42,
+    "inference_rows": 12516,
+    "inference_unique": 12516,
+    "valid_rows": 0,
+    "test_rows": 1388,
+    "test_unique": 1388,
+    "filter_unique": 13904,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/WikiTopicsMT4_health",
+   "name": "WikiTopicsMT4_health",
+   "path": "KGs/inductive-fresh/wikitopics-MT4-health",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "WikiTopicsMT4:health",
+   "size": {
+    "entities": 10000,
+    "inference_edges": 15337
+   },
+   "sha256": {
+    "train": "e66131b3a32103a61bd411ba37afc67b235b513f31fa280cd287989dc0e24da7",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "cf3e38e0c1949e7de7edabd2e3b3b2acea8420ecbeb80c136b08ae7a5038f860"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 10000,
+    "relations": 20,
+    "relations_inference": 20,
+    "inference_rows": 15337,
+    "inference_unique": 15337,
+    "valid_rows": 0,
+    "test_rows": 1703,
+    "test_unique": 1703,
+    "filter_unique": 17040,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/Metafam",
+   "name": "Metafam",
+   "path": "KGs/inductive-fresh/mtdea-Metafam",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "Metafam",
+   "size": {
+    "entities": 656,
+    "inference_edges": 7257
+   },
+   "sha256": {
+    "train": "94eff17a6d0021f251376a96b07886bb074994d05bfdcee382ca71dd2b0998d9",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "2fd7517fc81c9263aa629f3423ca00e736b29c47eaf64c7454d8fc3736005ec3"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 656,
+    "relations": 28,
+    "relations_inference": 28,
+    "inference_rows": 7257,
+    "inference_unique": 7257,
+    "valid_rows": 0,
+    "test_rows": 184,
+    "test_unique": 184,
+    "filter_unique": 7441,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 0,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  },
+  {
+   "key": "t1/FBNELL",
+   "name": "FBNELL",
+   "path": "KGs/inductive-fresh/mtdea-FBNELL",
+   "collection": "t1",
+   "view": "ind_er",
+   "code": null,
+   "group": "ind_er",
+   "verdict": null,
+   "weight": 0.0,
+   "origin_class": null,
+   "suite_id": "FBNELL",
+   "size": {
+    "entities": 4747,
+    "inference_edges": 10685
+   },
+   "sha256": {
+    "train": "114333594fdf0453175b9c4b93d59539e4c9c7509863887f8abcc42cb954c0a6",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "2cd380e953f7d3eea3daae38a397288f75b9640f459316060a78f2b9cf116b76"
+   },
+   "content_sha256": {},
+   "counts": {
+    "entities": 4752,
+    "relations": 183,
+    "relations_inference": 183,
+    "inference_rows": 10685,
+    "inference_unique": 10685,
+    "valid_rows": 0,
+    "test_rows": 597,
+    "test_unique": 597,
+    "filter_unique": 11282,
+    "test_rows_in_inference": 0,
+    "test_rows_unseen_entity": 5,
+    "test_relations_unseen": 0
+   },
+   "tail_only_view": false
+  }
+ ]
+}

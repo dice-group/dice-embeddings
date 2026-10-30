@@ -1,0 +1,98 @@
+{
+ "format": "proofpfn-graph-manifest-v1",
+ "name": "gate",
+ "about": "The gate graphs of the exact-rank goldens G6 and G7: UMLS, NELLInductive_v1 and grail-WN18RR_v1. The audit excludes grail-WN18RR_v1 (X2: a copy of ultra-suite-v1/WN18RRInductive_v1), so it is listed here and not in dev121. File SHA-256 as the golden runs hashed the files; content hashes from the audit inventory.",
+ "blind": false,
+ "sample_rule": "first-1000",
+ "sources": {
+  "K/graph-audit-v1/graphs.json": "2b813453f3c1188f10beb5781bc5222b6feac2d01201f6926dad63f0f4d6c098",
+  "K/graph-audit-v1/stats/inventory.json": "5a07b9d84f2e485e6ec612ea027f973622591966e5ce631e6bf15743ed90af4b",
+  "golden/small/g6_ranks.json.gz (allgraph.sha256 of the research rows)": "8d137562cab30fdbe648122b9cc3f1f76565ad9be9d36ef8feac290a4382f8e7"
+ },
+ "graphs": [
+  {
+   "key": "UMLS",
+   "name": "UMLS",
+   "path": "KGs/UMLS",
+   "collection": "top",
+   "view": "gate",
+   "code": "T",
+   "group": "T (reported apart)",
+   "verdict": "keep-flag",
+   "weight": 0.0,
+   "origin_class": "published",
+   "suite_id": null,
+   "size": {
+    "entities": 135,
+    "inference_edges": 5216
+   },
+   "sha256": {
+    "train": "873ef4925516b83e7f6f8cc02b4be51d848828710a7f65a956f0ac4a9e452f35",
+    "valid": "025c98f8a4891e2a6582ec5b40ee0d904031edad9c52554522f4b7904820c98e",
+    "test": "a7eb529a3d2810fcc96341ccc97c625a5e202f8389673aa6bd317eeebbb79014"
+   },
+   "content_sha256": {
+    "train": "de6801fd5ca13372b5a0f314462fac674346badc292462c58e2f2852c147534f",
+    "test": "cc119a3289e7f3a4f389b9f9e42d76e36a305f48ae5292315cfd0488083a2e14"
+   },
+   "counts": null,
+   "tail_only_view": null
+  },
+  {
+   "key": "ultra-suite-v1/NELLInductive_v1",
+   "name": "NELLInductive_v1",
+   "path": "KGs/ultra-suite-v1/NELLInductive_v1",
+   "collection": "ultra-suite-v1",
+   "view": "gate",
+   "code": "E",
+   "group": "E",
+   "verdict": "keep-flag",
+   "weight": 0.005952380952380952,
+   "origin_class": "published",
+   "suite_id": "NELLInductive:v1",
+   "size": {
+    "entities": 225,
+    "inference_edges": 833
+   },
+   "sha256": {
+    "train": "90bc25d8644503bc2bc196c412400db0b27c4fa837db319682e06aba719ea5ee",
+    "valid": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "test": "68c9ce738ec47cdcca8f2d355eabafe80d7d13208f9988ff2df11bfd7776964e"
+   },
+   "content_sha256": {
+    "train": "1f74950ee88cfd3d9e5a07bfdedc6e2af842602a317cc579e773adc3968556c5",
+    "test": "5ee2dd97c9ef7b3f776a268d6937bd56f87dd83fbd0f2157fbab33bbff657262"
+   },
+   "counts": null,
+   "tail_only_view": null
+  },
+  {
+   "key": "inductive/grail-WN18RR_v1",
+   "name": "grail-WN18RR_v1",
+   "path": "KGs/inductive/grail-WN18RR_v1",
+   "collection": "inductive",
+   "view": "gate",
+   "code": null,
+   "group": null,
+   "verdict": "exclude",
+   "weight": 0.0,
+   "origin_class": "published",
+   "suite_id": "WN18RRInductive:v1",
+   "size": {
+    "entities": 922,
+    "inference_edges": 1618
+   },
+   "sha256": {
+    "train": "7d1b73c5994e9aa816b34e33ee10707656803ba6b8a0f6066cae7ddc04f87553",
+    "valid": "cfa28b9d75dbab17ea82a9443a5bf8acb738e60267cc63f8a221b38967e1d238",
+    "test": "6df8c00a2e0cf1a4b484ac638c081198926fcbc411ce2e12ccc79d432eead269"
+   },
+   "content_sha256": {
+    "train": "d937c0c5443874d959e6116372590f2fd3be0f1ff6e3c49d5cb8e991c5dd41ca",
+    "test": "cb8305231c82ee85cf61ebb444d75175b925ffed2eb79ed9c30423ee77300cbc"
+   },
+   "counts": null,
+   "tail_only_view": null
+  }
+ ]
+}

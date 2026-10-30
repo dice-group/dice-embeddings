@@ -1,0 +1,77 @@
+{
+ "about": "Raw ranks of the five MERIT release checkpoints by merit-ref-v1-runtime/merit_check.py on whole test splits (tail and head query of every test row, index = position in test.txt), as int64 digests per graph, system and direction (golden README section 1). merit_gate_check.py compares the raw ranks of the research harness rows (ag_merit.py) with them.",
+ "source": "K/merit-ref-v1/check/<graph>.json, written on kiowl on 25 October 2026 (device cuda, torch 2.5.1+cu124, noise seed 0)",
+ "upstream_sha256": {
+  "kgfm/tasks.py": "f2493b73a81758d606e91bcb4cb0619583bb3e613e9b8251a65ac90a01f0a46a",
+  "kgfm/models/merit.py": "9196661807cc57d3b2e0747d979f14a21302988b67a0f8b56474ad740c262020"
+ },
+ "checkpoint_sha256": {
+  "merit1024": "956dc8f9b349187003d147d799289c593a5ca5688e97dd4f1a2465e9aeadb523",
+  "merit2025": "644d2db65a1f9b89110fb4c67cff8d27d9af1b69f4bf120a799cf065bd82dbd0",
+  "merit2026": "9dd705c631e73c4f34924ed62a85769d3313b5d6241c254db28f6a6bacd82b45",
+  "merit4000": "ed3e44e7a89d6b35be46d5a603ac0a8ddfa3c9bfb1d96730ba85c76ef11f5e7a",
+  "merit8000": "dab42f819d5f13c015a8c88446c2526993d0a9c8da7a7b756fbcf9ae5ac676d5"
+ },
+ "graphs": {
+  "FB15k237Inductive_v1": {
+   "manifest": "dev121",
+   "key": "ultra-suite-v1/FB15k237Inductive_v1",
+   "test_rows": 411,
+   "entities": 1093,
+   "relations": 142
+  },
+  "NELLInductive_v1": {
+   "manifest": "gate",
+   "key": "ultra-suite-v1/NELLInductive_v1",
+   "test_rows": 201,
+   "entities": 225,
+   "relations": 14
+  }
+ },
+ "digests": {
+  "FB15k237Inductive_v1": {
+   "merit1024": {
+    "tail": "99ae46262153a71de504ecdc1580dde4e33795df96dacb02d5a8f24b1e02903b",
+    "head": "382dfe4db63c8c3214f6eb7b9fc7bf0fbac663e4f17c6e916fd0e97249d9c491"
+   },
+   "merit2025": {
+    "tail": "13048f1f5755684e0ea61e751530d7afa21abe2e79262e448bf41650292394d0",
+    "head": "5f0cdd1e72cf66080680a4b0a2e49d7c235074e4dc106aa32be482c5134ffa70"
+   },
+   "merit2026": {
+    "tail": "e49637f22f78e8f18cdb9c44d22dd9908a2fbd37acf2c4081cba2e2e6077915d",
+    "head": "260c87da018b243bb6befa6668389fd14134fa3f5ad068a8ef8deebb2911cbfb"
+   },
+   "merit4000": {
+    "tail": "f4f5993df89700bcf761d7f3750a40a45c5f017e8e40cb8a06c349557fc3a390",
+    "head": "c522d3ce7bc6f76dc20aa307f33c05c51aac7df27baff603978fa637d014f3dd"
+   },
+   "merit8000": {
+    "tail": "d7817c70e5fad016c3f0567583f8bd2e8368bba8b44834010803ea87a53d6737",
+    "head": "af8cb5350e0d44be404160502ddc3cab76d18ee7ccaa2432b7dfe35ca058a5d0"
+   }
+  },
+  "NELLInductive_v1": {
+   "merit1024": {
+    "tail": "3ad818b1f56731ca88854fdffa02ad95c530cde65fb0ea3e88acee4747851a14",
+    "head": "0fe38788c82d1de9f217c84aaa4f59081ef236ac47c2b2689e48be7235561155"
+   },
+   "merit2025": {
+    "tail": "1116d4b70e3d939ac78aa4e2eb069b4fac9be86dcd47fd084cfa7cdb8dcd76d6",
+    "head": "ca25ee113b8cf49a0e8d627f79e39bdfb2a22a27ce3df35a9d85260e6498d0b0"
+   },
+   "merit2026": {
+    "tail": "707de113d192da624fb93a5ed0cb7b4db57045ab778424fffb753c7aafaaf0bf",
+    "head": "d7fa5ed7add68cce0f1ee89facd287f3ed2ceadb9e28dc59b5485109e9a6910a"
+   },
+   "merit4000": {
+    "tail": "9a9587a02fedc1a7216c663e663394a446a6a4b972a0474d4eba9f7b44580e8c",
+    "head": "4872e901175a176e82915fbac151fbd3dc37a664d1c2ada8e359c6f8c2dff988"
+   },
+   "merit8000": {
+    "tail": "98f550e5c6bbc8175db703aa2fc4604205733056ef43df1ad3afaa524ce91966",
+    "head": "7490693226cb39a0d8e95675475adb2f1284f05d69670a92db78e3ff0a81531a"
+   }
+  }
+ }
+}
