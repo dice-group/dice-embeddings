@@ -15,7 +15,7 @@ from torch import nn
 
 from dicee.config import Namespace
 from dicee.models._relation_weights import incidence_counts, pair_channel_weights, pair_counts, relation_count_weights
-from dicee.models.ultra import ULTRA, build_relation_graph, weighted_relation_graph
+from dicee.models.ultra import ULTRA, build_relation_graph, relation_graph
 
 # Direct triples of 3 entities and 2 relations; (0, 1) carries both relations.
 DIRECT = torch.tensor([[0, 0, 1], [0, 1, 1], [0, 1, 2], [1, 1, 2]])
@@ -134,8 +134,6 @@ def test_unit_weights_give_ultra_relation_reasoning(training):
         weighted = model.relation_model(model.rel_edge_index, model.rel_edge_type, 6, queries,
                                         edge_weight=torch.ones(len(model.rel_edge_type)))
     assert torch.equal(plain, weighted)
-    with pytest.raises(ValueError, match='match'):
-        model.relation_model(model.rel_edge_index, model.rel_edge_type, 6, queries, edge_weight=torch.ones(3))
 
 
 @pytest.mark.parametrize('pair', ['off', 'on'])
@@ -194,14 +192,14 @@ def test_relation_graphs_equal_the_research_worker():
             graph = {k.split('/', 2)[2]: v for k, v in prepared.items() if k.startswith(f'{task}/graph/')}
             n, nr = int(content[f'{task}/num_entities']), int(content[f'{task}/num_relations'])
             assert int(graph['num_direct']) == nr
-            index, types, weight = weighted_relation_graph(graph['graph_triples'], n, nr, pair_channels=True)
+            index, types, weight, _ = relation_graph(graph['graph_triples'], n, nr, 'normalized', 'on')
             assert torch.equal(index, graph['rel_edge_index']), (name, task)
             assert torch.equal(types, graph['rel_edge_type']), (name, task)
-            assert weight.dtype == torch.float64 and torch.equal(weight, graph['edge_weight']), (name, task)
+            assert weight is not None and weight.dtype == torch.float64 and torch.equal(weight, graph['edge_weight']), (name, task)
             model = ULTRA(dict(ultra_dim=8, ultra_num_layers=1, ultra_relation_weighting='normalized', ultra_pair_channels='on'))
             model.set_graph(content[f'{task}/context'], n, nr)
             assert torch.equal(model.graph_triples, graph['graph_triples']) and torch.equal(model.relation_id_map, graph['relation_id_map'])
-            assert torch.equal(model.rel_edge_index, index) and torch.equal(model.rel_edge_weight, weight.float())
+            assert model.rel_edge_weight is not None and torch.equal(model.rel_edge_index, index) and torch.equal(model.rel_edge_weight, weight.float())
             checked += 1
     assert checked == 24
 

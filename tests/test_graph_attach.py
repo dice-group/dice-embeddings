@@ -56,6 +56,11 @@ def test_attach_checks_its_inputs():
         ultra(ultra_relation_weighting='normalized', ultra_pair_channels='on').attach_graph(graph, mapping, 5, 3, num_direct, counts)
     with pytest.raises(ValueError, match='edge types must lie in 0..3'):
         ultra(ultra_relation_weighting='normalized').attach_graph(graph, mapping, 5, 3, num_direct, counts._replace(edge_type=counts.edge_type + 2))
+    assert counts.edge_weight is not None
+    with pytest.raises(ValueError, match='must match'):
+        ultra(ultra_relation_weighting='normalized').attach_graph(graph, mapping, 5, 3, num_direct, counts._replace(edge_weight=counts.edge_weight[:3]))
+    with pytest.raises(ValueError, match='int64'):
+        ultra().attach_graph(graph.int(), mapping, 5, 3, num_direct)
     with pytest.raises(ValueError, match='requires'):
         relation_graph(graph, 5, 3, 'binary', 'on')
     with pytest.raises(ValueError, match='outside'):

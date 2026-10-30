@@ -96,6 +96,16 @@ class RelationalConv(nn.Module):
 
         Training and inference use the same operations, without the fused inference kernels: gather, multiply by the
         relation row, multiply by the weight, index_add onto the boundary, linear, layer norm, ReLU, residual.
+
+        Args:
+            states: The relation states ``[B, R, dim]``.
+            boundary: The boundary condition ``[B, R, dim]``.
+            edge_index: The relation-graph edges ``[2, M]``; row 0 receives the message of row 1.
+            edge_type: The edge types ``[M]``, rows of the relation table.
+            edge_weight: The weight of each edge ``[M]``.
+
+        Returns:
+            The next relation states ``[B, R, dim]``.
         """
         relations = self.relation.weight.unsqueeze(0).expand(states.shape[0], -1, -1)
         messages = states[:, edge_index[1]] * relations[:, edge_type]
@@ -114,8 +124,6 @@ class RelNBFNet(nn.Module):
 
     def forward(self, edge_index, edge_type, num_relations, query, edge_weight: Optional[torch.Tensor] = None):
         """Relation representations of the query relations; ``edge_weight`` scales each relation-graph message."""
-        if edge_weight is not None and edge_weight.shape != edge_type.shape:
-            raise ValueError('Relation-graph edge weights must match the relation-graph edges')
         first_layer = cast(RelationalConv, self.layers[0])
         boundary = first_layer.linear.weight.new_zeros(len(query), num_relations, self.dim)
         boundary[torch.arange(len(query), device=query.device), query] = 1
@@ -168,8 +176,8 @@ def build_relation_graph(edge_index, edge_type, num_entities, num_relations):
     return torch.cat(edges, 1), torch.cat(types)
 
 
-def weighted_relation_graph(graph_triples: torch.Tensor, num_entities: int, num_direct: int,
-                            pair_channels: bool = False) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
+def _weighted_relation_graph(graph_triples: torch.Tensor, num_entities: int, num_direct: int,
+                             pair_channels: bool) -> tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
     """The relation graph with the normalized incidence count of each edge, optionally with the entity-pair channels.
 
     The edges of types 0 to 3 are ``build_relation_graph``'s, in its order; with ``pair_channels`` the pair edges of
@@ -200,6 +208,25 @@ def weighted_relation_graph(graph_triples: torch.Tensor, num_entities: int, num_
     return rel_edge_index, rel_edge_type, weight.to(rel_edge_index.device)
 
 
+def check_options(relation_weighting: str, pair_channels: str) -> None:
+    """Refuse unknown or incompatible values of ULTRA's two relation-graph options.
+
+    Args:
+        relation_weighting: ``ultra_relation_weighting``.
+        pair_channels: ``ultra_pair_channels``.
+
+    Raises:
+        ValueError: For a value outside ``RELATION_WEIGHTINGS`` or ``PAIR_CHANNELS``, or pair channels without count
+            weighting.
+    """
+    if relation_weighting not in RELATION_WEIGHTINGS:
+        raise ValueError('ultra_relation_weighting must be binary or normalized')
+    if pair_channels not in PAIR_CHANNELS:
+        raise ValueError('ultra_pair_channels must be off or on')
+    if pair_channels == 'on' and relation_weighting != 'normalized':
+        raise ValueError("ultra_pair_channels='on' requires ultra_relation_weighting='normalized'")
+
+
 class RelationGraph(NamedTuple):
     """ULTRA's relation graph: the edges between relations, their types and, with count weighting, their float64 weights.
 
@@ -220,9 +247,9 @@ def relation_graph(graph_triples: torch.Tensor, num_entities: int, num_direct: i
                    pair_channels: str = 'off') -> RelationGraph:
     """The relation graph of ULTRA with these options, as ``ULTRA.set_graph`` builds it.
 
-    ``'binary'`` gives ``build_relation_graph``'s support without weights; ``'normalized'`` gives
-    ``weighted_relation_graph`` with the pair channels when ``pair_channels`` is ``'on'``. The result can be computed in
-    another process and attached with ``ULTRA.attach_graph``.
+    ``'binary'`` gives ``build_relation_graph``'s support without weights; ``'normalized'`` adds the float64 weights of
+    the normalized incidence counts, and with ``pair_channels`` ``'on'`` the pair edges of types 4 and 5. The result can
+    be computed in another process and attached with ``ULTRA.attach_graph``.
 
     Args:
         graph_triples: Internal graph triples with technical inverses (``GraphKGE.internal_graph``).
@@ -234,14 +261,11 @@ def relation_graph(graph_triples: torch.Tensor, num_entities: int, num_direct: i
     Returns:
         The relation graph on the device of ``graph_triples``.
     """
-    if relation_weighting not in RELATION_WEIGHTINGS or pair_channels not in PAIR_CHANNELS:
-        raise ValueError(f'unknown ULTRA options {relation_weighting!r}, {pair_channels!r}')
-    if pair_channels == 'on' and relation_weighting != 'normalized':
-        raise ValueError("ultra_pair_channels='on' requires ultra_relation_weighting='normalized'")
+    check_options(relation_weighting, pair_channels)
     if relation_weighting == 'binary':
         edge_index, edge_type = build_relation_graph(graph_triples[:, [0, 2]].T, graph_triples[:, 1], num_entities, 2 * num_direct)
         return RelationGraph(edge_index, edge_type, None)
-    return RelationGraph(*weighted_relation_graph(graph_triples, num_entities, num_direct, pair_channels == 'on'), pair_channels)
+    return RelationGraph(*_weighted_relation_graph(graph_triples, num_entities, num_direct, pair_channels == 'on'), pair_channels)
 
 
 class ULTRA(GraphKGE):
@@ -251,7 +275,7 @@ class ULTRA(GraphKGE):
 
     - ``ultra_relation_weighting``: ``'binary'`` (default) uses the binary support of the relation graph.
       ``'normalized'`` multiplies every relation-graph message by the normalized incidence count of its edge
-      (``weighted_relation_graph``); the relation reasoner then runs the weighted layers in plain PyTorch.
+      (``relation_graph``); the relation reasoner then runs the weighted layers in plain PyTorch.
     - ``ultra_pair_channels``: ``'on'`` adds the two entity-pair edge types 4 and 5 with their weights, so the relation
       tables of the relation reasoner get 6 rows. Requires ``'normalized'``. The six tables are drawn after all of
       ULTRA's tensors, and their rows 0 to 3 are ULTRA's rows, so the other tensors equal official ULTRA's under the
@@ -275,12 +299,7 @@ class ULTRA(GraphKGE):
             raise ValueError('ULTRA dimensions and layers must be positive')
         self.relation_weighting = args.get('ultra_relation_weighting', 'binary')
         self.pair_channels = args.get('ultra_pair_channels', 'off')
-        if self.relation_weighting not in RELATION_WEIGHTINGS:
-            raise ValueError('ultra_relation_weighting must be binary or normalized')
-        if self.pair_channels not in PAIR_CHANNELS:
-            raise ValueError('ultra_pair_channels must be off or on')
-        if self.pair_channels == 'on' and self.relation_weighting != 'normalized':
-            raise ValueError("ultra_pair_channels='on' requires ultra_relation_weighting='normalized'")
+        check_options(self.relation_weighting, self.pair_channels)
         self.relation_model = RelNBFNet(self.dim, self.num_layers)
         self.entity_model = EntityNBFNet(self.dim, self.num_layers)
         if self.pair_channels == 'on':

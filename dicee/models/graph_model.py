@@ -183,9 +183,9 @@ class GraphKGE(BaseKGE):
         Returns:
             The model.
         """
-        if (graph_triples.ndim != 2 or graph_triples.shape[1] != 3 or not len(graph_triples)
-                or tuple(relation_id_map.shape) != (num_relations,) or not 1 <= num_direct_relations <= num_relations):
-            raise ValueError(f'{self.name} requires internal graph triples [E, 3] and a relation map of the vocabulary')
+        if (graph_triples.ndim != 2 or graph_triples.shape[1] != 3 or not len(graph_triples) or tuple(relation_id_map.shape) != (num_relations,)
+                or graph_triples.dtype != torch.long or relation_id_map.dtype != torch.long or not 1 <= num_direct_relations <= num_relations):
+            raise ValueError(f'{self.name} requires int64 internal graph triples [E, 3] and an int64 relation map of the vocabulary')
         self.num_entities, self.num_relations = int(num_entities), int(num_relations)
         self.num_direct_relations = int(num_direct_relations)
         self.graph_triples = to_device(graph_triples, self.device)

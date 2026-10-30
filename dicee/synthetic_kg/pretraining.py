@@ -33,6 +33,7 @@ import os
 import signal
 import sys
 import time
+import warnings
 from collections import deque
 from concurrent.futures import Future, ProcessPoolExecutor
 from contextlib import closing, contextmanager
@@ -315,10 +316,12 @@ def _write_json(path: Path, value: Any) -> None:
 
 
 def _worker_init(threads: int) -> None:
-    """Worker processes leave stopping to the training process and use few torch threads."""
+    """Worker processes leave stopping to the training process, use few torch threads, and omit torch's notice that its
+    sparse CSR support, which the relation graph uses, is in beta."""
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     signal.signal(signal.SIGTERM, signal.SIG_IGN)
     torch.set_num_threads(threads)
+    warnings.filterwarnings('ignore', message='Sparse CSR tensor support is in beta state', category=UserWarning)
 
 
 def prepared_worlds(seed: int, slots: Sequence[Slot], prior: PriorConfig, options: Mapping[str, str], workers: int = 4,
