@@ -4,10 +4,13 @@ the row file, and, with ``$ANYBURL_HOME``, the Java steps.
 Learn is time-bounded and threaded, so its rules differ between runs; the tests with Java check the protocol and the
 format, and Apply with a stored rule file (whose lists do not depend on the threads).
 """
+import fcntl
 import gzip
 import json
 import os
 import shutil
+import signal
+import sys
 from pathlib import Path
 
 import numpy as np
@@ -175,6 +178,34 @@ def test_setup_refuses_other_files(tmp_path):
     (home / anyburl.KR_LEARN_FILE).write_text('SNAPSHOTS_AT = 10\n')
     with pytest.raises(AdapterSetupError, match='KR setting'):
         anyburl.setup(home, models)
+
+
+def fake_java(folder: Path, script: str) -> anyburl.AnyBURL:
+    """AnyBURL with a stand-in ``java`` (a shell script) that runs without the memory scope."""
+    java = folder / 'java'
+    java.write_text('#!/bin/sh\n' + script)
+    java.chmod(0o755)
+    return anyburl.AnyBURL(home=folder, pins={}, java=str(java), scope=(), version='a stand-in')
+
+
+def test_a_stopped_step_kills_its_java_process(tmp_path):
+    """A signal while a Java step runs (the command line exits on SIGTERM) kills and reaps the JVM before the lock is free."""
+    system = fake_java(tmp_path, 'echo $$ > java.pid\nexec sleep 60\n')
+    config = tmp_path / 'work' / 'config-learn.properties'
+    config.parent.mkdir()
+    config.touch()
+    previous = signal.signal(signal.SIGALRM, lambda *_: sys.exit(143))
+    signal.setitimer(signal.ITIMER_REAL, 1.0)
+    try:
+        with pytest.raises(SystemExit):
+            system.run('Learn', config, tmp_path / 'learn.log', tmp_path / 'java.lock')
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
+    with pytest.raises(ProcessLookupError):   # killed and reaped
+        os.kill(int((config.parent / 'java.pid').read_text()), 0)
+    with open(tmp_path / 'java.lock') as held:
+        fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
 
 
 def installed() -> anyburl.AnyBURL:
