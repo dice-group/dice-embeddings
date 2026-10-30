@@ -15,6 +15,8 @@
   self-loops (``ib_rule_eval.open_relations``).
 - GT2 inputs (``gt2_inputs``): per direction and relation, the candidates unseen in the query role of train.txt and
   the Good-Turing estimate ``(n1 + 0.5) / (N + 1)`` (``lockbox-v6-runtime/fair_eval.gt_inputs``).
+- Mean-tie rank (``rank_of``): the rank of the cells and of the N gate, with the banned candidates excluded and ties at
+  their mean rank (``realsrc-v1/xrel/xr_diag.rank_of``), on purpose not the pessimistic rank of the evaluation.
 
 dicee's ``KG`` is not used: its pandas reader turns tokens such as ``NA`` and ``null`` into missing values, which
 merges distinct entities (``tests/test_data.py`` shows it); the research loader keeps every token.
@@ -23,7 +25,7 @@ import random
 from collections import Counter, OrderedDict, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Sequence
+from typing import Iterable, Optional, Sequence
 
 import numpy as np
 import torch
@@ -234,3 +236,20 @@ def prepare_queries(graph: GraphData, sample_rule: str) -> Queries:
 def inference_stats(train: torch.Tensor) -> tuple[int, int]:
     """``(|V|, |E|)`` of an inference graph: its distinct entities (heads and tails) and its distinct triples."""
     return int(torch.unique(train[:, [0, 2]]).numel()), int(torch.unique(train, dim=0).shape[0])
+
+
+def rank_of(score: np.ndarray, target: int, banned: Iterable[int]) -> float:
+    """The filtered rank of the target with the banned candidates excluded and ties at their mean rank.
+
+    Args:
+        score: The scores over all entities.
+        target: The target entity.
+        banned: The candidates that leave the ranking (the other true answers, the anchor).
+
+    Returns:
+        ``1 + #{s > s[target]} + (#{s == s[target]} - 1) / 2`` over the candidates that are not banned.
+    """
+    s = score.astype(np.float64).copy()
+    s[list(banned)] = -np.inf
+    v = s[target]
+    return 1.0 + float((s > v).sum()) + 0.5 * float((s == v).sum() - 1)

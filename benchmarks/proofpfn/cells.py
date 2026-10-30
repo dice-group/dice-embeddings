@@ -14,7 +14,7 @@ with the predictors of ``realsrc-v1/xrel/xr_diag.py``:
   heads of q; ``r2_at`` is the score of the answer; the samples draw from the same ``rng``, relation by relation;
 - ``PEER`` votes for e through the peers x' that share a value v of another relation a with x, weighted by
   ``1 / deg_a(v)``; ``rank_peer`` is the filtered rank of the answer with the anchor excluded and ties at their mean
-  rank (``rank_of``; on purpose a different rule from the pessimistic ranks of the evaluation).
+  rank (``data.rank_of``; on purpose a different rule from the pessimistic ranks of the evaluation).
 
 The predictors POP, VOTE and CF of ``xr_diag`` are not ported: no output holds them, and they draw no random numbers.
 
@@ -34,7 +34,7 @@ from scipy import sparse  # type: ignore[import-untyped]
 
 from dicee.synthetic_kg.checkpoint import atomic_write_bytes
 
-from .data import GraphData, load_graph
+from .data import GraphData, load_graph, rank_of
 from .manifests import REPO, SPLITS, GraphEntry, Manifest, ManifestError, PathLike, file_sha256
 
 SEED = 0
@@ -134,14 +134,6 @@ def rules_r2(g: ObservedGraph, q: int, rng: random.Random) -> list[tuple[float, 
         if tot:
             bodies.append((hit / tot, b1, b2))
     return [b for b in bodies if b[0] > 0]
-
-
-def rank_of(score: np.ndarray, target: int, banned: Iterable[int]) -> float:
-    """The filtered rank of the target with the banned candidates excluded and ties at their mean rank."""
-    s = score.astype(np.float64).copy()
-    s[list(banned)] = -np.inf
-    v = s[target]
-    return 1.0 + float((s > v).sum()) + 0.5 * float((s == v).sum() - 1)
 
 
 def peer_scores(g: ObservedGraph, anchor: int, q: int) -> np.ndarray:
@@ -244,7 +236,7 @@ def write_queries(manifest: Manifest, entries: Sequence[GraphEntry], out: PathLi
             inputs[entry.name] = {f'{s}.txt': graph.hashes[f'{s}.txt'] for s in SPLITS}
     temporary.replace(out)
     meta = dict(manifest=manifest.name, manifest_sha256=manifest.sha256, seed=SEED, graphs=counts, out_sha256=file_sha256(out),
-                inputs=inputs, code_sha256={'benchmarks/proofpfn/cells.py': file_sha256(Path(__file__))})
+                inputs=inputs, code_sha256={f'benchmarks/proofpfn/{name}': file_sha256(Path(__file__).with_name(name)) for name in ('cells.py', 'data.py')})
     atomic_write_bytes(out.with_name(out.name + '.meta.json'), (json.dumps(meta, indent=1, sort_keys=True) + '\n').encode())
     return meta
 

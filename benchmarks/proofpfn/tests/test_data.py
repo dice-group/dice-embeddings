@@ -56,6 +56,12 @@ def test_query_groups_known_sets_and_rules():
     assert D.inference_stats(torch.tensor([[0, 0, 1], [0, 0, 1], [2, 1, 1]])) == (3, 2)
 
 
+def test_rank_of_takes_the_mean_of_ties():
+    score = np.array([3.0, 1.0, 1.0, 1.0, 0.5])
+    assert D.rank_of(score, 1, {0}) == 2.0          # tied with 2 and 3: the mean of ranks 1 to 3
+    assert D.rank_of(score, 4, set()) == 5.0 and D.rank_of(score, 0, {1, 2, 3}) == 1.0
+
+
 def test_load_graph_checks_the_manifest(tmp_path):
     folder = write_graph(tmp_path / 'g', ['a\tr\tb', 'b\tr\tc'], ['c\tr\ta'], ['b\tr\ta'])
     manifest = mf.read_manifest(write_manifest(tmp_path / 'm.json', tmp_path, {'g': folder}))

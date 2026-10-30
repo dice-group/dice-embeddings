@@ -36,6 +36,7 @@ _optional_deps = [
     "zstandard>=0.21.0",
     "requests>=2.32.3",
     "scikit-learn>=1.2.2",
+    "scipy>=1.10.0",
 ]
 
 # Development dependencies
@@ -44,6 +45,7 @@ _dev_deps = [
     "ruff>=0.0.284",
     "mypy>=1.0.0",
     "scikit-learn>=1.2.2",
+    "scipy>=1.10.0",
 ]
 
 # Documentation dependencies

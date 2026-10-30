@@ -13,7 +13,7 @@ preparation and scores:
   over all entities through the training-mode path of pretraining (``GraphKGE.forward_query_facts`` in training
   mode on the prepared graph, deterministic execution).
 - Metric: per query the reciprocal of the rank of the answer among all entities with the query's other true answers in
-  the world's truth and the anchor removed, ties at their mean (``cells.rank_of``); per world the mean.
+  the world's truth and the anchor removed, ties at their mean (``data.rank_of``); per world the mean.
 - Comparison per family (``compare``): MRR(model) = the mean over the family's worlds of the per-world MRR; D = the mean
   over A's seeds minus the mean over B's seeds; SE = sqrt(SE_world^2 + SE_seed^2), with SE_world = the SD over worlds
   of the per-world seed-mean difference / sqrt(worlds) and SE_seed = sqrt(var(A's seed MRRs) / n_A + var(B's) / n_B).
@@ -36,7 +36,7 @@ from dicee.synthetic_kg.prepare import PreparedWorld, answers_by_anchor, prepare
 from dicee.synthetic_kg.priors import Slot, world
 from dicee.synthetic_kg.streams import stage2_family
 
-from .cells import rank_of
+from .data import rank_of
 from .systems import ProofPFNFamily
 
 FAMILIES = ('rec1', 'attr2', 'list1', 'categorical2', 'plain')

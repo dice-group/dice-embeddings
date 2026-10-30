@@ -31,7 +31,7 @@ pip install -e '.[dev]'                                                         
 - The install provides the console script `dicee_pretrain_synthetic`.
 - In a clone without an install, run `python -m dicee.scripts.pretrain_synthetic` from the repository root instead.
 - The benchmark runs as `python -m benchmarks.proofpfn` from the repository root.
-- The benchmark's `cells` command needs scipy. The `dev` extra installs it through scikit-learn.
+- The benchmark's `cells` command needs scipy. The `dev` extra installs it.
 - The reference systems of the benchmark read the released checkpoints below `checkpoints/`: TRIX
   (`trix/entity_prediction.pth`), ULTRA-3g (`ultra_3g.pth`) and Flock (`flock/flock_entity.pth`). Their guides list
   the downloads: [ULTRA](ultra.md), [TRIX](trix.md), [Flock](flock.md).
