@@ -27,7 +27,6 @@ This is the research trainer (``prior-fix-v1-runtime/pt_train.py`` with ``pt_lad
 ``statworlds-scale-v1-runtime/fast_pipeline``) for the ported arms, without its adapters, screens, restarts and skips.
 dicee's trainers are not used: an update trains on its own generated graph, which their datasets do not express.
 """
-import fcntl
 import json
 import logging
 import math
@@ -391,9 +390,12 @@ def _cpu(state: Mapping[str, torch.Tensor]) -> dict[str, torch.Tensor]:
 def _folder_lock(folder: Path) -> Iterator[None]:
     """Hold the lock file ``.lock`` of a run folder exclusively; the operating system releases it when the process ends.
 
+    The lock needs ``fcntl`` (Linux or macOS). Its import stays here, so that the module imports on every system.
+
     Raises:
         RunInputError: When another process holds it.
     """
+    import fcntl
     with (folder / '.lock').open('a') as handle:
         try:
             fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)

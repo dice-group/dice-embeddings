@@ -28,7 +28,8 @@ pip install -e '.[dev]' --extra-index-url https://download.pytorch.org/whl/cpu  
 pip install -e '.[dev]'                                                          # with CUDA
 ```
 
-- The install provides the console script `dicee_pretrain_synthetic`.
+- The install provides the console script `dicee_pretrain_synthetic`. Its command `train` runs on Linux and macOS: the
+  lock of a run folder uses `fcntl`.
 - In a clone without an install, run `python -m dicee.scripts.pretrain_synthetic` from the repository root instead.
 - The benchmark runs as `python -m benchmarks.proofpfn` from the repository root.
 - The benchmark's `cells` command needs scipy. The `dev` extra installs it.
