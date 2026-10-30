@@ -81,10 +81,10 @@ gave it the contamination view.
 ## External baselines
 
 The adapters (`adapters/`, README section External baselines) rank the same test facts in both directions with the same
-filter and the same self-loop rule. The KGPFN and AnyBURL adapters reproduce their research runners on their goldens
-(the probe ranks, the rank rebuild). The MERIT adapter is unverified until `test_check_graph_ranks_equal_the_research_ranks`
-passes on an H100 NVL in MERIT's environment (torch 2.5.1+cu124, torch-scatter 2.1.2, torch-geometric 2.4.0, easydict,
-jinja2 and PyYAML).
+filter and the same self-loop rule. The three adapters reproduce their research runners on their goldens: the KGPFN
+probe ranks, the AnyBURL rank rebuild and the MERIT check ranks. The MERIT check ranks hold on an H100 NVL in MERIT's
+environment (torch 2.5.1+cu124, torch-scatter 2.1.2, torch-geometric 2.4.0, easydict, jinja2 and PyYAML), where
+`test_check_graph_ranks_equal_the_research_ranks` passed.
 
 | Adapter | Scores | Ranks | Research |
 |---|---|---|---|

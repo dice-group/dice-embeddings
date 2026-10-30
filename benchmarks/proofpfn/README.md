@@ -159,19 +159,30 @@ checkpoints. Check the terms of each upstream project before you copy or publish
 
 ### MERIT
 
-- The MERIT adapter is unverified: it never ran with MERIT's code. It is verified when
-  `test_check_graph_ranks_equal_the_research_ranks` (`tests/test_adapter_merit.py`) passes on an H100 NVL. Its tests
-  without MERIT's code use a stand-in relation model.
+- The adapter reproduces its research runner. On 30 October 2026, `test_check_graph_ranks_equal_the_research_ranks`
+  (`tests/test_adapter_merit.py`) passed on kiowl's NVIDIA H100 NVL in the environment below: the raw ranks of the five
+  systems on both check graphs equal `merit-ref-v1/check`. The check ranks hold for this GPU type only, so the test
+  skips on other GPUs. The tests without MERIT's code use a stand-in relation model.
 - Code: a clone of github.com/cgregucci/MERIT at `480e0e4dd0c8919b14bc69fa621b2e1072b4b00d` (`--code` or `$MERIT_HOME`).
   The adapter uses its `kgfm/models/merit.py` (`RelTransformerMERIT`) and `kgfm/tasks.py` (`build_motif_tensor`), both
   pinned. Checkpoints: the five release checkpoints `merit/ckpts/merit/merit_s{1024,2025,2026,4000,8000}.pth` of the
   release asset `ckpts.zip`, below `--checkpoint-root` (default `checkpoints/`).
 - Runtime: MERIT's environment, the benchmark's requirements with torch 2.5.1+cu124, torch-scatter 2.1.2,
-  torch-geometric 2.4.0, easydict, jinja2 and PyYAML (MERIT's `requirements.txt`). The adapter checks the setup, then
-  runs the scoring in a child process: `--python` or `$MERIT_PYTHON` (default: the current interpreter), with the
-  repository and the MERIT folder on its `PYTHONPATH`. The child stops after 6 hours per graph of the run. `--device`
-  (default `cuda`) is the scoring device. The CPU runs MERIT's `mha` attention instead of compiled flex attention
-  (smoke tests only).
+  torch-geometric 2.4.0, easydict, jinja2 and PyYAML (MERIT's `requirements.txt`). These commands built the environment
+  of the check (Python 3.11.2, torch 2.5.1+cu124 with CUDA 12.4 and Triton 3.1.0, numpy 1.26.4, scipy 1.13.0,
+  torch-scatter 2.1.2+pt25cu124, torch-geometric 2.4.0, easydict 1.13, Jinja2 3.1.6, PyYAML 6.0.3):
+
+  ```bash
+  python3.11 -m venv merit
+  merit/bin/pip install torch==2.5.1 --extra-index-url https://download.pytorch.org/whl/cu124   # plus the benchmark's requirements
+  merit/bin/pip install --no-deps torch-scatter==2.1.2 -f https://data.pyg.org/whl/torch-2.5.1+cu124.html
+  merit/bin/pip install torch-geometric==2.4.0 easydict jinja2 pyyaml
+  ```
+
+- The adapter checks the setup, then runs the scoring in a child process: `--python` or `$MERIT_PYTHON` (default: the
+  current interpreter; above `merit/bin/python`), with the repository and the MERIT folder on its `PYTHONPATH`. The
+  child stops after 6 hours per graph of the run. `--device` (default `cuda`) is the scoring device. The CPU runs
+  MERIT's `mha` attention instead of compiled flex attention (smoke tests only).
 - Settings: dicee's ULTRA entity tower with MERIT's relation Transformer and motif tensor. Noise seed 0, the noise of a
   query seeded by its head entity and converted relation. A fresh compiler cache per graph, and a recompilation is an
   error. The five systems share one row file and the benchmark's views (`F`, `F:gt2`, `F:raw`, `F:raw:gt2`).
@@ -237,7 +248,7 @@ GPU and goldens are present. Goldens (`tests/golden/README.md`):
 | sample | the `first-1000` sample of FB15k-237, YAGO3-10 and FB15k equals the research `ag_eval.sample_positions` | the three graphs |
 | AnyBURL rebuild | the rows and native ranks of a stored ranking file of NELLInductive_v1 equal the research `rebuild`, and Apply with the stored rule file gives them again | the gate graph, for Apply also `$ANYBURL_HOME` and Java 11 |
 | KGPFN probe ranks | the worker's ranks of three probe graphs equal the research runner's on the same GPU type | `$KGPFN_CODE`, `$KGPFN_CHECKPOINT_DIR`, `$KGPFN_PYTHON`, a GPU of the fixture |
-| MERIT check ranks | the raw ranks of the five systems on two graphs equal `merit-ref-v1/check` | `$MERIT_HOME`, `$MERIT_PYTHON`, an H100 NVL |
+| MERIT check ranks | the raw ranks of the five systems on two graphs equal `merit-ref-v1/check` | `$MERIT_HOME`, `$MERIT_PYTHON` (MERIT's environment), an H100 NVL |
 
 `PROOFPFN_GOLDEN` names the proofpfn-golden folder with the large goldens. Tests that need them skip without it. The
 goldens are bitwise in the recorded environment: Python 3.12.2, torch 2.5.1 (CUDA 11.8 on an RTX 4070 Ti SUPER for

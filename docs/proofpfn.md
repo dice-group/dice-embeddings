@@ -303,9 +303,8 @@ python -m benchmarks.proofpfn gate --family mys=S:runs/S/{seed}/export-24000-ema
 Three adapters run external baselines on the graphs of the benchmark: KGPFN, MERIT and AnyBURL. Their code,
 checkpoints and runtimes stay outside the repository. Each adapter checks its files against the pins of
 `manifests/models.json` and writes row files in the benchmark's format. Before a run, check the setup with
-`--check`. A graph that fails gets an error record, and the run goes on with the next graph. The KGPFN and AnyBURL
-adapters reproduce their research runners on their goldens. The MERIT adapter is unverified
-([Known limits](#known-limits)). The [README](../benchmarks/proofpfn/README.md#external-baselines) documents the setup
+`--check`. A graph that fails gets an error record, and the run goes on with the next graph. The three adapters
+reproduce their research runners on their goldens. The MERIT golden holds on an H100 NVL ([Known limits](#known-limits)). The [README](../benchmarks/proofpfn/README.md#external-baselines) documents the setup
 and the settings of each adapter. Official Flock is a native reference system of the benchmark (`flockoff`), not an
 adapter.
 
@@ -396,10 +395,10 @@ Golden references (goldens) record what the research code computes at small size
 
 ## Known limits
 
-- The MERIT adapter is unverified: it never ran with MERIT's code. It is verified when
-  `test_check_graph_ranks_equal_the_research_ranks` passes on an H100 NVL. It needs MERIT's environment: torch
-  2.5.1+cu124, torch-scatter 2.1.2, torch-geometric 2.4.0, easydict, jinja2 and PyYAML. Without it, the adapter cannot
-  run and its tests with MERIT's code skip.
+- The MERIT adapter needs MERIT's environment: torch 2.5.1+cu124, torch-scatter 2.1.2, torch-geometric 2.4.0, easydict,
+  jinja2 and PyYAML ([README](../benchmarks/proofpfn/README.md#merit)). Without it, the adapter does not run and its
+  tests with MERIT's code skip. Its check ranks hold on an NVIDIA H100 NVL, where
+  `test_check_graph_ranks_equal_the_research_ranks` passed. On other GPUs the test skips.
 - CUDA results can differ between GPU types. The GPU goldens hold for the RTX 4070 Ti SUPER only. KGPFN's scores, and
   so some of its ranks, differ between GPU types.
 - The graph files of the blind test sets (fresh-v1 and block 3) are never in the repository. Their manifests follow
