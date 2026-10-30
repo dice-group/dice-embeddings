@@ -1,6 +1,7 @@
 """The checkpoint format, its loader and the converter of research exports.
 
-G5 (g5_cpu.json.gz, g5_gpu.json.gz): the clean raw and EMA states of 41 research exports of all seven arms. G3
+G5 (g5_cpu.json.gz, g5_gpu.json.gz): the clean raw and EMA states of 41 research exports of all seven arms; an export
+in the research layout, built in the test, checks the converter without them. G3
 (g3_init.json.gz): the initial adapter tensors, which the exports' frozen adapters must still equal. Scores
 (umls_research_scores.json, recorded from the research models): converted exports of S, CU and UL on UMLS score like
 the research models; the benchmark tests compare their ranks (G6). The export files are large goldens (PROOFPFN_GOLDEN).
@@ -13,10 +14,27 @@ import pytest
 import torch
 
 from dicee.models.ultra import ULTRA
-from dicee.synthetic_kg.arms import ARMS, initial_model
-from dicee.synthetic_kg.checkpoint import FORMAT, KEYS, CheckpointError, check_checkpoint, from_research_export, load_model, make_checkpoint, read_checkpoint, save_checkpoint
+from dicee.synthetic_kg.arms import ARMS, initial_model, research_record
+from dicee.synthetic_kg.checkpoint import (
+    ADAPTER_OUTPUTS,
+    CONTEXT_MARKER,
+    FORMAT,
+    KEYS,
+    RESEARCH_ADAPTERS,
+    RESEARCH_ARM,
+    RESEARCH_FORMAT,
+    WEIGHTS,
+    CheckpointError,
+    check_checkpoint,
+    from_research_export,
+    load_model,
+    make_checkpoint,
+    read_checkpoint,
+    save_checkpoint,
+)
 from dicee.synthetic_kg.determinism import THREADS, deterministic_execution, torch_threads
 from dicee.synthetic_kg.digests import file_sha256, tensor_digest
+from dicee.synthetic_kg.recipe import CONSTANT_UPDATES, DECAY_UPDATES, EMA_DECAY, LEARNING_RATE, MICROBATCH, WEIGHT_DECAY
 from tests.proofpfn_fixtures import GOLDEN_GPU, fixture, golden_large, require_gpu_golden_environment
 
 ARM_OF = {arm.research_arm: arm.name for arm in ARMS.values()}
@@ -153,6 +171,57 @@ def test_converter_refuses_exports_that_are_not_inert_or_not_the_arms(tmp_path):
         from_research_export(changed(tmp_path, 'S', lambda saved: saved['run'].update(order_sha256='0' * 64)), 'S')
     with pytest.raises(CheckpointError, match='weights'):
         from_research_export(export_path('S'), 'S', 'swa')
+
+
+# ------------------------------------------------------------------------------- the converter on a built export
+
+def built_export(arm: str, seed: int = 42) -> dict:
+    """A research-format export of an arm's initial weights (``pt_train.export`` layout), with the inert research parts:
+    zero adapter output layers, the three markers and, for CountULTRA, zero pair rows of the relation tables."""
+    preset = ARMS[arm]
+    state = initial_model(arm, seed).state_dict()
+    state = {k: torch.cat((v, v.new_zeros(2, v.shape[1]))) if k.endswith('.relation.weight') and len(v) == 4 else v for k, v in state.items()}
+    adapters = {k: torch.zeros(3, 2) if k in ADAPTER_OUTPUTS else torch.ones(3, 2) for k in RESEARCH_ADAPTERS}
+    markers = {'_count_model_mode': torch.tensor([1, 1]), '_pair_model_mode': torch.tensor([1, int(preset.pair_channels == 'on')]),
+               '_context_mode': torch.tensor(CONTEXT_MARKER)}
+    weights = {name: {k: v.clone() for k, v in {**state, **adapters, **markers}.items()} for name in WEIGHTS}
+    run = dict(research_record(preset), format=RESEARCH_FORMAT, seed=seed, start='random', n1=CONSTANT_UPDATES, n2=DECAY_UPDATES,
+               loss='rbw-ce-full', lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, ema_decay=EMA_DECAY, microbatch=MICROBATCH,
+               nondeterministic=False, model_kind='RoleFreqModel', order_sha256=preset.pinned_order(seed), arm=preset.research_arm)
+    config = dict(preset.model_config(), context_mode='joint', context_injection_layer=2)
+    return dict(seed=seed, updates=0, real_training_updates=0, model_config=config, model_kind='RoleFreqModel',
+                arms={RESEARCH_ARM: weights}, run=run)
+
+
+@pytest.mark.parametrize('arm', ['S', 'CU'])
+def test_a_built_export_converts_and_each_change_is_refused(arm, tmp_path):
+    saved = built_export(arm)
+    torch.save(saved, tmp_path / 'export.pt')
+    for weights in WEIGHTS:
+        model = from_research_export(tmp_path / 'export.pt', arm, weights)['model']
+        assert tensor_digest(model) == tensor_digest(initial_model(arm, 42).state_dict())
+
+    def output(s):
+        s['arms']['decay']['ema']['context_adapter.2.weight'][0, 0] = 1.0
+
+    def trained(s):
+        s['arms']['decay']['raw']['role_adapter.0.weight'][0, 0] = 2.0
+
+    def marker(s):
+        s['arms']['decay']['raw']['_context_mode'][2] = 1
+
+    def pair_row(s):
+        s['arms']['decay']['raw']['relation_model.layers.0.relation.weight'][4, 0] = 1e-6
+
+    changes = [(output, 'adapter output'), (trained, 'trained'), (marker, 'marker'), (lambda s: s['run'].update(warm_restart=1000), 'warm_restart'),
+               (lambda s: s['run'].update(order_sha256='0' * 64), 'order digest'), (lambda s: s.update(real_training_updates=5), 'random start'),
+               (lambda s: s.update(model_kind='ULTRA'), 'model_kind'), (lambda s: s.pop('run'), 'missing')]
+    for change, message in changes + ([(pair_row, 'pair rows')] if arm == 'CU' else []):
+        changed = built_export(arm)
+        change(changed)
+        torch.save(changed, tmp_path / 'changed.pt')
+        with pytest.raises(CheckpointError, match=message):
+            from_research_export(tmp_path / 'changed.pt', arm)
 
 
 # ------------------------------------------------------------------------------------------- scores on UMLS
