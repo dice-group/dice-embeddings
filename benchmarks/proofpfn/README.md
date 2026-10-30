@@ -222,12 +222,12 @@ Ruff does not check the six files (`extend-exclude` in `pyproject.toml`), and py
 
 ## Tests and goldens
 
-`python -m pytest benchmarks/proofpfn` runs the tests: a few minutes on the CPU, plus about 9 minutes for G6 where its
+`python -m pytest benchmarks/proofpfn` runs the tests: a few minutes on the CPU, plus about 7 minutes for G6 where its
 GPU and goldens are present. Goldens (`tests/golden/README.md`):
 
 | Golden | Test | Needs |
 |---|---|---|
-| G6, ranks | every key on the gate graphs equals the research rows: families S, CU, UL, HT of the G4 exports and the three references (about 9 minutes), and the per-seed raw ranks of S, CU and UL on UMLS on the CPU | `PROOFPFN_GOLDEN` (the exports), and for the GPU CUDA on the golden GPU (RTX 4070 Ti SUPER) with `CUBLAS_WORKSPACE_CONFIG` |
+| G6, ranks | every key on the gate graphs equals the research rows: families S, CU, UL, HT of the G4 exports and the three references (about 7 minutes), and the per-seed raw ranks of S, CU and UL on UMLS on the CPU | `PROOFPFN_GOLDEN` (the exports), and for the GPU CUDA on the golden GPU (RTX 4070 Ti SUPER) with `CUBLAS_WORKSPACE_CONFIG` |
 | G7, cells | `queries.csv` of the gate graphs byte-identical | the gate graphs |
 | G8, chain | simulated rows -> registered `fv1_tables.py` -> registered `fv1_analysis.py`, every output byte-identical | Python 3.12.2 with numpy 1.26.4 |
 | G9, gate | the per-world MRRs, D, SE and the reading of the research gate on the G4 exports of S and N at update 20 | `PROOFPFN_GOLDEN` (the exports) |

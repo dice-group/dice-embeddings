@@ -2,7 +2,7 @@
 
 The clean runner ranks UMLS, NELLInductive_v1 and grail-WN18RR_v1 with the families S, CU, UL and HT (the G4 research
 exports at update 20 of seeds 42, 43, 44, converted on load, under the golden's test keys gs, gcu, gul, ght) and the
-references TRIX, ULTRA-3g and official Flock, on the GPU of the golden run in deterministic mode (about 9 minutes). Every
+references TRIX, ULTRA-3g and official Flock, on the GPU of the golden run in deterministic mode (about 7 minutes). Every
 key's int64 digest, the row identity, the key order and the metrics must equal the research rows. The test skips without
 CUDA, on another GPU, without ``CUBLAS_WORKSPACE_CONFIG`` or without the large goldens (``PROOFPFN_GOLDEN``).
 
