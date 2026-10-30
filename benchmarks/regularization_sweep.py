@@ -56,6 +56,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--experiments_dir", type=Path, default=Path("Experiments"))
     p.add_argument("--gpu", default="0", help="Value for CUDA_VISIBLE_DEVICES.")
     p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--num_epochs", type=int, default=100)
+    p.add_argument("--embedding_dim", type=int, default=32)
+    p.add_argument("--lr", type=float, default=0.1)
+    p.add_argument("--batch_size", type=int, default=1024)
+    p.add_argument("--trainer", default="PL", help="dicee trainer, e.g. PL or torchCPUTrainer.")
     return p.parse_args()
 
 
@@ -85,12 +90,12 @@ def main() -> None:
                     args.optim = "Adam"
                     args.scoring_technique = "KvsAll"
                     args.dataset_dir = str(cli.kg_root / db)
-                    args.num_epochs = 100
-                    args.embedding_dim = 32
-                    args.batch_size = 1024
-                    args.lr = 0.1
+                    args.num_epochs = cli.num_epochs
+                    args.embedding_dim = cli.embedding_dim
+                    args.batch_size = cli.batch_size
+                    args.lr = cli.lr
                     args.eval_model = "test"
-                    args.trainer = "PL"
+                    args.trainer = cli.trainer
                     args.random_seed = cli.seed
 
                     test = Execute(args).start()["Test"]
