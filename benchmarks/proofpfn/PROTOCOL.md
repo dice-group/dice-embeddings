@@ -27,7 +27,7 @@ merges distinct entities (`tests/test_data.py`).
 |---|---|---|---|
 | models | built on the CPU, `query_batch_size` 1 (official Flock: its passes), `set_graph(train)` on the CPU, then moved to the device, evaluation mode, no gradients | `lb5_eval.attach`, `e3_eval.attach` | `systems.attach` |
 | scores | one call per query group and model: `forward_k_vs_all([[h, r]])` for a tail query, `forward_k_vs_all_heads([[r, t]])` for a head query (the first member's anchor), scores asserted finite | `ci_evaluate.query_scores` | `evaluate.query_scores` |
-| execution | `deterministic_execution()` (deterministic algorithms, float32 matmul precision `highest`, no cuDNN TF32) with `CUBLAS_WORKSPACE_CONFIG=:4096:8`; two CPU threads | `ag_eval.main` | `evaluate.evaluate_graph` |
+| execution | `deterministic_execution()` (deterministic algorithms, float32 matmul precision `highest`, no cuDNN TF32, or `fp32_precision = 'ieee'` on every backend of a torch with per-backend settings) with `CUBLAS_WORKSPACE_CONFIG=:4096:8`; two CPU threads | `ag_eval.main` | `evaluate.evaluate_graph` |
 | model view | `log_softmax(scores.double())` | `fair_eval.evaluate` | `evaluate._group_rows` |
 | family view `F` | the mean of the three seeds' model views (`torch.stack(...).mean(0)`); a reference's view is its model's | `fair_eval.evaluate` | `evaluate._group_views` |
 | rule view | the anchor gets `-inf` unless at least 1% of the relation's train facts are self-loops (`share1`) | `ib_rule_eval.open_relations` | `data.reflexive_relations` |

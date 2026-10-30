@@ -182,7 +182,8 @@ data/real-sources/
 ### Devices and determinism
 
 - Every update runs under `determinism.deterministic_execution`: deterministic algorithms, float32 matmul precision
-  `highest` and no TF32 in cuDNN.
+  `highest` and no TF32 in cuDNN. A torch with per-backend precision settings gets `fp32_precision = 'ieee'` on every
+  backend.
 - Deterministic cuBLAS needs `CUBLAS_WORKSPACE_CONFIG=:4096:8` before CUDA starts. The command sets it when it is
   unset.
 - The updates do not depend on the number of workers. An update draws no global random number.

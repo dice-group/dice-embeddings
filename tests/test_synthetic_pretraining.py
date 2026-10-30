@@ -20,10 +20,11 @@ from pathlib import Path
 import pytest
 import torch
 
+from dicee.models._inference import float32_precision_backends
 from dicee.synthetic_kg import pretraining as pt
 from dicee.synthetic_kg.arms import ARMS, initial_model
 from dicee.synthetic_kg.checkpoint import from_research_export, load_model, read_checkpoint
-from dicee.synthetic_kg.determinism import CUBLAS_HINT, device_problem
+from dicee.synthetic_kg.determinism import CUBLAS_HINT, deterministic_execution, device_problem
 from dicee.synthetic_kg.digests import tensor_digest
 from dicee.synthetic_kg.priors import real
 from tests.proofpfn_fixtures import fixture, golden_large, require_cpu_training_golden_environment, require_gpu_golden_environment
@@ -266,6 +267,35 @@ def test_devices_that_this_machine_lacks_are_refused(tmp_path, monkeypatch):
     monkeypatch.setattr(torch.cuda, 'device_count', lambda: 1)
     monkeypatch.setenv('CUBLAS_WORKSPACE_CONFIG', ':0:0')
     assert device_problem('cuda') == CUBLAS_HINT and device_problem('cuda:0') == CUBLAS_HINT
+
+
+def test_deterministic_execution_sets_ieee_precision_and_restores_the_settings():
+    """IEEE float32 precision inside the block, the previous settings after it. With per-backend settings the block reads
+    no legacy flag: torch refuses them once cuDNN's convolution and RNN settings differ, as here."""
+    backends = float32_precision_backends()
+    if not backends:   # torch 2.5.1: the legacy flags only
+        before = torch.get_float32_matmul_precision(), torch.backends.cudnn.allow_tf32
+        with deterministic_execution():
+            assert torch.are_deterministic_algorithms_enabled()
+            assert (torch.get_float32_matmul_precision(), torch.backends.cudnn.allow_tf32) == ('highest', False)
+        assert (torch.get_float32_matmul_precision(), torch.backends.cudnn.allow_tf32) == before
+        return
+    cudnn = torch.backends.cudnn
+    conv = getattr(type(cudnn), 'conv', None)
+    rnn = getattr(type(cudnn), 'rnn', None) or getattr(cudnn, 'rnn', None)   # the lookup of float32_precision_backends
+    if not (hasattr(conv, 'fp32_precision') and hasattr(rnn, 'fp32_precision')):
+        pytest.skip('this torch has no separate settings for the convolutions and RNNs of cuDNN')
+    before = [backend.fp32_precision for backend in backends]
+    try:
+        conv.fp32_precision, rnn.fp32_precision = 'ieee', 'tf32'
+        mixed = [backend.fp32_precision for backend in backends]
+        with deterministic_execution():
+            assert torch.are_deterministic_algorithms_enabled()
+            assert all(backend.fp32_precision == 'ieee' for backend in backends)
+        assert [backend.fp32_precision for backend in backends] == mixed
+    finally:
+        for backend, value in reversed(tuple(zip(backends, before, strict=True))):
+            backend.fp32_precision = value
 
 
 def test_learning_rate_schedule():

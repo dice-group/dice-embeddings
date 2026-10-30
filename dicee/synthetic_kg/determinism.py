@@ -7,9 +7,11 @@ the research runs used ``THREADS``.
 """
 import os
 from contextlib import contextmanager
-from typing import Iterator, Optional
+from typing import Any, Iterator, Optional, Sequence
 
 import torch
+
+from ..models._inference import float32_precision_backends
 
 CUBLAS_WORKSPACES = (':4096:8', ':16:8')
 CUBLAS_HINT = 'set CUBLAS_WORKSPACE_CONFIG=:4096:8 before CUDA starts for deterministic CUDA execution'
@@ -86,17 +88,31 @@ def device_problem(device: str) -> Optional[str]:
 def deterministic_execution() -> Iterator[None]:
     """Deterministic algorithms, float32 matmul precision ``'highest'`` and no cuDNN TF32 inside the block.
 
-    The previous settings, warn-only mode included, are restored on exit.
+    A torch with per-backend precision settings gets ``fp32_precision = 'ieee'`` on every backend instead, and the
+    block never reads the legacy flags: torch refuses them once cuDNN's convolution and RNN settings differ. Older torch
+    (the recorded 2.5.1) has only the legacy flags. The previous settings, warn-only mode included, are restored on exit.
     """
     enabled = torch.are_deterministic_algorithms_enabled()
     warn_only = torch.is_deterministic_algorithms_warn_only_enabled()
-    precision, tf32 = torch.get_float32_matmul_precision(), torch.backends.cudnn.allow_tf32
+    backends = float32_precision_backends()
+    if backends:
+        previous: list[Any] = [backend.fp32_precision for backend in backends]
+    else:
+        previous = [torch.get_float32_matmul_precision(), torch.backends.cudnn.allow_tf32]
     torch.use_deterministic_algorithms(True)
-    torch.set_float32_matmul_precision('highest')
-    torch.backends.cudnn.allow_tf32 = False
+    _set_precision(backends, ['ieee'] * len(backends) if backends else ['highest', False])
     try:
         yield
     finally:
         torch.use_deterministic_algorithms(enabled, warn_only=warn_only)
-        torch.set_float32_matmul_precision(precision)
-        torch.backends.cudnn.allow_tf32 = tf32
+        _set_precision(backends, previous)
+
+
+def _set_precision(backends: Sequence[Any], values: Sequence[Any]) -> None:
+    """Set one ``fp32_precision`` per backend, or without backends the matmul precision and cuDNN's TF32 flag."""
+    if backends:
+        for backend, value in reversed(tuple(zip(backends, values, strict=True))):
+            backend.fp32_precision = value
+    else:
+        torch.set_float32_matmul_precision(values[0])
+        torch.backends.cudnn.allow_tf32 = values[1]
