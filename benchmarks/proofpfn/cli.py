@@ -6,13 +6,18 @@ Commands:
     run         rank the graphs with the systems and write one row file per graph (``evaluate.evaluate_graph``)
     cells       the query cells of the graphs (``queries.csv``, ``cells.write_queries``)
     fv1-models  the ``--models`` file of the registered ``fv1_tables.py`` from ``models.json``
+    adapter     an external baseline (``kgpfn``, ``merit``, ``anyburl``) on the graphs: one row file per graph (``adapters``)
 
 A family is ``--family [KEY=]ARM:TEMPLATE``: ARM is S, R, M, N, HT, CU or UL; TEMPLATE is the checkpoint or research
 export path with ``{seed}`` (seeds 42, 43, 44); KEY defaults to the arm's registered key, whose pins every file must
 match. References: ``--references trix,ultra3g,flockoff`` (checkpoints below ``--checkpoint-root``).
 
-Exit codes: 0 done; 2 wrong input (graph, system, hash, pins); 3 a graph ran out of CUDA memory (its error record is in
-``.errors/`` of the row folder); 76 stopped at ``--max-minutes`` (the part file is saved); 143 stopped by SIGTERM.
+An adapter takes its external code from ``--code`` or its environment variable (``$KGPFN_CODE``, ``$MERIT_HOME``,
+``$ANYBURL_HOME``); ``--check`` checks the setup, the pins and the graphs without a run.
+
+Exit codes: 0 done; 2 wrong input (graph, system, hash, pins, adapter setup); 3 a graph ran out of CUDA memory or an
+adapter's external step failed on it (its error record is in ``.errors/`` of the row folder); 76 stopped at
+``--max-minutes`` (the part file is saved); 143 stopped by SIGTERM.
 """
 import argparse
 import json
@@ -27,6 +32,8 @@ from .manifests import REPO, BlindSetError, ManifestError, read_manifest, read_m
 
 logger = logging.getLogger(__name__)
 EXIT_INPUT, EXIT_OOM, EXIT_PARTIAL, EXIT_TERM = 2, 3, 76, 143
+EXIT_FAILED = EXIT_OOM   # a graph failed in an adapter's external step
+ADAPTERS = ('kgpfn', 'merit', 'anyburl')
 
 
 def parse_family(spec: str, models: Any) -> tuple[str, str, str]:
@@ -77,6 +84,28 @@ def build_parser() -> argparse.ArgumentParser:
     fv1 = commands.add_parser('fv1-models')
     fv1.add_argument('--models', type=Path, default=None)
     fv1.add_argument('--out', type=Path, required=True)
+    adapter = commands.add_parser('adapter', help='run an external baseline (README, section External baselines)')
+    adapter.add_argument('name', choices=ADAPTERS)
+    adapter.add_argument('--set', required=True, help='a manifest name (dev121, t1, gate) or a manifest file')
+    adapter.add_argument('--view', default=None)
+    adapter.add_argument('--graphs', default=None, help='comma list of graph names or keys')
+    adapter.add_argument('--codes', default=None, help='comma list of audit group codes')
+    adapter.add_argument('--release', default=None, help='the name of the blind test set that this run may open')
+    adapter.add_argument('--data-root', type=Path, default=REPO, help='the folder that the manifest paths are relative to')
+    adapter.add_argument('--out', type=Path, required=True, help='the output root of the row files')
+    adapter.add_argument('--code', type=Path, default=None, help='the external code folder (default: $KGPFN_CODE, $MERIT_HOME, $ANYBURL_HOME)')
+    adapter.add_argument('--work', type=Path, default=None, help='the work root (default: <out>/.work)')
+    adapter.add_argument('--models', type=Path, default=None, help='the pins (default: manifests/models.json)')
+    adapter.add_argument('--check', action='store_true', help='check the setup, the pins and the graphs; run nothing')
+    adapter.add_argument('--python', default=None, help="kgpfn: the command that starts KGPFN's Python ($KGPFN_PYTHON); "
+                                                        "merit: the Python of MERIT's environment ($MERIT_PYTHON, default: this one)")
+    adapter.add_argument('--checkpoints', type=Path, default=None, help="kgpfn: the folder of KGPFN's two checkpoints ($KGPFN_CHECKPOINT_DIR)")
+    adapter.add_argument('--gpu-gb', type=float, default=0.0, help='kgpfn: cap of the CUDA allocator in GB (0: none)')
+    adapter.add_argument('--checkpoint-root', type=Path, default=REPO / 'checkpoints', help='merit: the root of merit/ckpts/merit/')
+    adapter.add_argument('--device', default='cuda', help='merit: the scoring device')
+    adapter.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)   # merit: this process runs in MERIT's environment
+    adapter.add_argument('--java', default='java', help='anyburl: the Java 11 executable')
+    adapter.add_argument('--no-scope', action='store_true', help='anyburl: run Java without the systemd-run memory scope')
     return parser
 
 
@@ -148,6 +177,43 @@ def _cells(args: argparse.Namespace) -> int:
     return 0
 
 
+def _adapter(args: argparse.Namespace, argv: Sequence[str]) -> int:
+    manifest, entries = _entries(args)
+    if args.name == 'merit' and not args.worker:   # the scoring runs in a child process with MERIT's folder on its path
+        from .adapters import merit
+        return merit.run_in_child(argv, code=args.code, models=args.models, checkpoint_root=args.checkpoint_root, python=args.python)
+    if args.name == 'anyburl':
+        from .adapters import anyburl
+        system: Any = anyburl.setup(args.code, args.models, java=args.java, scope=not args.no_scope)
+        record = dict(home=str(system.home), java=system.version)
+    elif args.name == 'kgpfn':
+        from .adapters import kgpfn
+        system = kgpfn.setup(args.code, args.checkpoints, args.python, args.models, gpu_gb=args.gpu_gb)
+        record = system.record()
+    else:   # merit, in MERIT's environment (the child process of run_in_child)
+        from .adapters import merit
+        system = merit.setup(args.code, args.models, args.checkpoint_root)
+        record = dict(system.record(), imported=system.upstream().files)
+    print(f'{args.name}: {json.dumps(record)}')
+    if args.check:
+        from .data import load_graph, prepare_queries
+        for entry in entries:
+            queries = prepare_queries(load_graph(manifest, entry, args.data_root), manifest.sample_rule)
+            print(f'{entry.key:45s} ranked {len(queries.facts):5d} query groups {len(queries.groups):6d} ok')
+        print(f'check passed ({len(entries)} graphs, adapter {args.name})')
+        return 0
+    statuses = {}
+    for entry in entries:
+        if args.name == 'anyburl':
+            statuses[entry.key] = anyburl.evaluate_graph(manifest, entry, args.out, system, root=args.data_root, work=args.work)
+        elif args.name == 'kgpfn':
+            statuses[entry.key] = kgpfn.evaluate_graph(manifest, entry, args.out, system, root=args.data_root, work=args.work)
+        else:
+            statuses[entry.key] = merit.evaluate_graph(manifest, entry, args.out, system, root=args.data_root, device=args.device)
+        print(entry.key, statuses[entry.key], flush=True)
+    return EXIT_FAILED if 'failed' in statuses.values() else 0
+
+
 def _fv1_models(args: argparse.Namespace) -> int:
     args.out.write_text(json.dumps(read_models(args.models).fv1_models(), indent=1, sort_keys=True) + '\n')
     print(f'-> {args.out}')
@@ -156,6 +222,7 @@ def _fv1_models(args: argparse.Namespace) -> int:
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     """Run a command; returns the exit code."""
+    argv = list(sys.argv[1:] if argv is None else argv)
     args = build_parser().parse_args(argv)
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(name)s: %(message)s')
     workspace = os.environ.get('CUBLAS_WORKSPACE_CONFIG')
@@ -167,6 +234,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             for entry in _entries(args)[1]:
                 print(entry.key)
             return 0
+        if args.command == 'adapter':
+            return _adapter(args, argv)
         commands = dict(check=_check, run=_run, cells=_cells)
         commands['fv1-models'] = _fv1_models
         return commands[args.command](args)
