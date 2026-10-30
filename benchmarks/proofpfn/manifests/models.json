@@ -155,9 +155,21 @@
  },
  "external": {
   "kgpfn": {
+   "code_commit": "4f1bc61dcc998cf0672deaca148899b505797af6",
    "kgpfn_icl_3g.pth": "1ce0a3c238f3876548c7ea7b22620b2c569363b6e183d21bc8d22907127236a1",
-   "source": "kgpfn-ref-v1-runtime/kgpfn_eval.py, lines 74 and 75",
+   "source": "kgpfn-ref-v1-runtime/kgpfn_eval.py, lines 73 to 75 (code commit and checkpoints); tabicl: tabicl-regressor-v2-20260212.ckpt",
    "tabicl": "0db9cb538f114e79026bf08f45f41ad8dd7ad2de2aaca9a5ca8cd3bd9748ae7a"
+  },
+  "merit": {
+   "code_commit": "480e0e4dd0c8919b14bc69fa621b2e1072b4b00d",
+   "kgfm/models/merit.py": "9196661807cc57d3b2e0747d979f14a21302988b67a0f8b56474ad740c262020",
+   "kgfm/tasks.py": "f2493b73a81758d606e91bcb4cb0619583bb3e613e9b8251a65ac90a01f0a46a",
+   "source": "merit-ref-v1-runtime/merit_ref.py (MERIT_HOME at commit 480e0e4d) and the upstream hashes of merit-ref-v1/check/*.json; the checkpoints are the references merit<seed>"
+  },
+  "anyburl": {
+   "AnyBURL-23-1x-java11.jar": "5e97fe98eb240e8702c95ba7b7b297969e15aa99ee27ae60215a38224e0b49a3",
+   "AnyBURL-23-1x-sources.zip": "ef9857ffa918e93ac99884447e9ec1ddca987803af478f4c02d872136c35fd13",
+   "source": "anyburl_meta.jar_sha256 and sources_sha256 of the research rows (allgraph-v1/rows-anyburl)"
   }
  }
 }
