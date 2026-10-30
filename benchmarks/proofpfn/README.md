@@ -174,7 +174,7 @@ python -B benchmarks/proofpfn/registered/fv1_analysis.py analyse --mrr TABLES/mr
   --ranks TABLES/ranks.csv --gates gates.json --dropped dropped.json --manifest MANIFEST --cost TABLES/cost.csv --out result.json
 ```
 
-Ruff does not check them (`registered/ruff.toml`) and pytest does not collect their test scripts (`conftest.py`);
+Ruff does not check them (`extend-exclude` in `pyproject.toml`) and pytest does not collect their test scripts (`conftest.py`);
 `tests/test_registered.py` checks their SHA-256, runs their fast checks as subprocesses and, with `PROOFPFN_SIMULATE=1`,
 their simulations (about 9 minutes).
 

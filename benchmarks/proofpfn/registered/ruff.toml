@@ -1,5 +1,0 @@
-# The six registered analysis files are freeze anchors (README.md in this folder): any edit breaks their SHA-256,
-# so ruff never checks them, also when a file is named on the command line.
-extend = "../../../pyproject.toml"
-extend-exclude = ["*.py"]
-force-exclude = true

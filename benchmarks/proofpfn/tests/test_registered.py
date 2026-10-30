@@ -52,9 +52,13 @@ def test_files_equal_their_freeze_anchors():
 
 
 def test_lint_and_test_collection_leave_the_files_alone():
-    ruff = (REGISTERED / 'ruff.toml').read_text()
-    assert 'extend-exclude = ["*.py"]' in ruff and 'force-exclude = true' in ruff
     assert "collect_ignore_glob = ['registered/*']" in (REGISTERED.parent / 'conftest.py').read_text()
+    ruff = shutil.which('ruff')
+    if ruff is None:
+        pytest.skip('ruff is not installed')
+    named = subprocess.run([ruff, 'check', '--no-cache', *sorted(str(REGISTERED / name) for name in ANCHORS)], cwd=REPO,
+                           capture_output=True, text=True)
+    assert named.returncode == 0 and 'No Python files found' in named.stderr, named.stdout + named.stderr
 
 
 def test_registered_systems_have_the_keys_of_the_model_pins():

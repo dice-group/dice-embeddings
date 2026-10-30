@@ -44,6 +44,10 @@ ignore_missing_imports = true
 [tool.ruff]
 line-length = 200
 target-version = "py311"
+# The registered analysis files of the ProofPFN benchmark are freeze anchors: an edit breaks their SHA-256. Ruff skips
+# them in a folder walk and, with force-exclude, also when a command line names them.
+extend-exclude = ["benchmarks/proofpfn/registered/fv1_*.py", "benchmarks/proofpfn/registered/test_fv1_*.py"]
+force-exclude = true
 
 [tool.ruff.lint]
 # Enable pycodestyle (E), Pyflakes (F), isort (I), and Ruff-specific (RUF) rules
