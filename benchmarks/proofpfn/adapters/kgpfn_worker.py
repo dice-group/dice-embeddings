@@ -64,11 +64,8 @@ def sha256(path: Path) -> str:
     Returns:
         The hex digest.
     """
-    digest = hashlib.sha256()
     with open(path, 'rb') as handle:
-        for block in iter(lambda: handle.read(1 << 22), b''):
-            digest.update(block)
-    return digest.hexdigest()
+        return hashlib.file_digest(handle, 'sha256').hexdigest()
 
 
 def read_split(path: Path) -> Split:
