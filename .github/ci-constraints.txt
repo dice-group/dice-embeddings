@@ -1,0 +1,2 @@
+# Official wheel bypasses intermittent HTTP 503 responses from the docdata index.
+docdata @ https://files.pythonhosted.org/packages/20/d6/ffc73563941fea7bc2bc5c0afe425d5b24a2a4c2348693125cb061fe4425/docdata-0.0.5-py3-none-any.whl#sha256=7e54713b4fe8d87b6483cafa83a6f119344a4f3163799de08b8cb97436a215be

@@ -11,7 +11,7 @@ from typing import cast
 import torch
 from torch import nn
 
-from ._inference import candidate_features, candidate_slice, conditioned_linear, conditioned_score, inference_only
+from ._inference import candidate_features, candidate_slice, conditioned_linear, conditioned_score, host_ids, inference_only, to_device
 from .graph_model import GraphKGE, RelationGraphKGE
 from .ultra import RelationalConv
 
@@ -141,7 +141,9 @@ class TRIX(TRIXBase):
     def _first_relation_step(self, query_relations):
         weight = next(self.parameters())
         boundary = weight.new_zeros(len(query_relations), 2 * self.num_direct_relations, self.dim)
-        boundary[torch.arange(len(query_relations), device=query_relations.device), query_relations] = 1
+        # A device scalar avoids a host copy (and stream synchronization) per call.
+        boundary.index_put_((torch.arange(len(query_relations), device=query_relations.device), query_relations),
+                            boundary.new_ones(()))
         # All entities initially have the same label. Project a single label
         # per query and broadcast it *after* the MLP, retaining the graph layout.
         entities = weight.new_ones(len(query_relations), 1, self.dim)
@@ -160,12 +162,12 @@ class TRIX(TRIXBase):
         if token != self._initial_cache_token:
             self._initial_cache.clear()
             self._initial_cache_token = token
-        ids = query_relations.tolist()
+        ids = host_ids(query_relations)
         missing = list(dict.fromkeys(q for q in ids if q not in self._initial_cache))
         values = {q: self._initial_cache[q] for q in set(ids) if q in self._initial_cache}
         for start in range(0, len(missing), self.query_batch_size):
             keys = missing[start:start + self.query_batch_size]
-            hidden = self._first_relation_step(query_relations.new_tensor(keys))
+            hidden = self._first_relation_step(to_device(torch.tensor(keys), query_relations.device))
             values.update((key, value.clone()) for key, value in zip(keys, hidden))
         for key in dict.fromkeys(ids):
             self._initial_cache[key] = values[key]
@@ -182,7 +184,7 @@ class TRIX(TRIXBase):
             features, query = self.entity_model_1.features(edges, num_entities, hidden, heads, relations, split=True)
             entities = conditioned_linear(self.relation_model.node_mlp, features, query)
             boundary = weight.new_zeros(len(heads), 2 * self.num_direct_relations, self.dim)
-            boundary[torch.arange(len(heads), device=heads.device), query_relations] = 1
+            boundary.index_put_((torch.arange(len(heads), device=heads.device), query_relations), boundary.new_ones(()))
             for i in (1, 2):
                 hidden = self.relation_model.step(i, hidden, boundary, self.relation_graph, entities)
             return hidden
