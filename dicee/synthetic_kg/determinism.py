@@ -1,8 +1,9 @@
 """Deterministic execution for pretraining and evaluation, as the research runs used it.
 
 CUDA results of the graph models differ between two calls unless deterministic algorithms are on, and deterministic
-cuBLAS needs ``CUBLAS_WORKSPACE_CONFIG=:4096:8`` (or ``:16:8``) in the environment before CUDA starts. The command line
-sets it; ``require_cublas_workspace`` checks it.
+cuBLAS needs ``CUBLAS_WORKSPACE_CONFIG=:4096:8`` (or ``:16:8``) in the environment before CUDA starts. The command lines
+set it with ``cublas_workspace``; ``require_cublas_workspace`` checks it. CPU results depend on the torch thread count:
+the research runs used ``THREADS``.
 """
 import os
 from contextlib import contextmanager
@@ -11,6 +12,40 @@ from typing import Iterator
 import torch
 
 CUBLAS_WORKSPACES = (':4096:8', ':16:8')
+
+THREADS = 2
+"""The torch thread count of the research runs on the CPU, in training and in evaluation."""
+
+
+@contextmanager
+def torch_threads(threads: int) -> Iterator[None]:
+    """Run the block with ``threads`` torch threads; the previous count is restored.
+
+    Args:
+        threads: The torch thread count inside the block.
+    """
+    previous = torch.get_num_threads()
+    torch.set_num_threads(threads)
+    try:
+        yield
+    finally:
+        torch.set_num_threads(previous)
+
+
+@contextmanager
+def cublas_workspace() -> Iterator[None]:
+    """Run the block with ``CUBLAS_WORKSPACE_CONFIG=:4096:8`` when the variable is unset, and unset it afterwards.
+
+    A set value stays as it is. Call it before CUDA starts.
+    """
+    unset = 'CUBLAS_WORKSPACE_CONFIG' not in os.environ
+    if unset:
+        os.environ['CUBLAS_WORKSPACE_CONFIG'] = CUBLAS_WORKSPACES[0]
+    try:
+        yield
+    finally:
+        if unset:
+            os.environ.pop('CUBLAS_WORKSPACE_CONFIG', None)
 
 
 def require_cublas_workspace() -> None:

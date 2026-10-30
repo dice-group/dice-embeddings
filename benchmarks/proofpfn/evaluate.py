@@ -43,9 +43,8 @@ import os
 import platform
 import socket
 import time
-from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator, Mapping, Optional, Sequence, Union
+from typing import Any, Mapping, Optional, Sequence, Union
 
 import numpy as np
 import torch
@@ -53,7 +52,7 @@ import torch
 from dicee.evaluation._filtering import FilteredRanker
 from dicee.models.graph_model import GraphKGE
 from dicee.synthetic_kg.arms import SEEDS
-from dicee.synthetic_kg.determinism import deterministic_execution, require_cublas_workspace
+from dicee.synthetic_kg.determinism import THREADS, deterministic_execution, require_cublas_workspace, torch_threads
 
 from .data import GraphData, Queries, load_graph, prepare_queries
 from .manifests import REPO, SAMPLE_RULES, GraphEntry, Manifest, PathLike, file_sha256
@@ -66,7 +65,6 @@ PROTOCOL = ('proofpfn benchmark v1: inference = train.txt; candidates = every en
             'rule view share1; GT2 lambda 0.5')
 PART_FORMAT = 'proofpfn-rows-part-v1'
 GT2_LAMBDA = 0.5
-THREADS = 2
 CODE_FILES = ('benchmarks/proofpfn/data.py', 'benchmarks/proofpfn/evaluate.py', 'benchmarks/proofpfn/manifests.py',
               'benchmarks/proofpfn/systems.py', 'dicee/evaluation/_filtering.py', 'dicee/models/flock.py',
               'dicee/models/flock_walks.py', 'dicee/models/graph_model.py', 'dicee/models/trix.py', 'dicee/models/ultra.py',
@@ -225,17 +223,6 @@ def shard_blocks(groups: int, shards: int) -> list[tuple[int, int]]:
 def code_sha256() -> dict[str, str]:
     """The SHA-256 of the benchmark modules and the dicee files on the scoring path."""
     return {name: file_sha256(REPO / name) for name in CODE_FILES if (REPO / name).is_file()}
-
-
-@contextmanager
-def torch_threads(threads: int) -> Iterator[None]:
-    """Run with ``threads`` CPU threads; the previous count is restored."""
-    previous = torch.get_num_threads()
-    torch.set_num_threads(threads)
-    try:
-        yield
-    finally:
-        torch.set_num_threads(previous)
 
 
 def record_of(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, systems: Sequence[System],

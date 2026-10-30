@@ -15,6 +15,7 @@ import torch
 from dicee.models.ultra import ULTRA
 from dicee.synthetic_kg.arms import ARMS
 from dicee.synthetic_kg.batch import World, WorldBatch
+from dicee.synthetic_kg.determinism import THREADS, torch_threads
 from dicee.synthetic_kg.prepare import PreparedWorld, context_answers, prepare_slot, prepare_task, prepare_world, rbw_answers
 from dicee.synthetic_kg.priors import Slot, real, world
 from tests.proofpfn_fixtures import per_key_digests
@@ -26,11 +27,9 @@ DEGREE = '/graph/degree'
 
 
 @pytest.fixture(autouse=True)
-def two_threads():
-    previous = torch.get_num_threads()
-    torch.set_num_threads(2)
-    yield
-    torch.set_num_threads(previous)
+def research_threads():
+    with torch_threads(THREADS):
+        yield
 
 
 def prepared_tensors(prepared: PreparedWorld) -> dict[str, torch.Tensor]:

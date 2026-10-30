@@ -17,7 +17,7 @@ import torch
 from dicee.models.ultra import ULTRA
 from dicee.synthetic_kg.arms import ARMS, initial_model
 from dicee.synthetic_kg.checkpoint import FORMAT, KEYS, CheckpointError, check_checkpoint, from_research_export, load_model, make_checkpoint, read_checkpoint, save_checkpoint
-from dicee.synthetic_kg.determinism import CUBLAS_WORKSPACES, deterministic_execution
+from dicee.synthetic_kg.determinism import CUBLAS_WORKSPACES, THREADS, deterministic_execution, torch_threads
 from dicee.synthetic_kg.digests import file_sha256, tensor_digest
 from tests.proofpfn_fixtures import fixture, golden_large
 
@@ -28,11 +28,9 @@ UMLS = Path(__file__).resolve().parents[1] / 'KGs' / 'UMLS'
 
 
 @pytest.fixture(autouse=True)
-def two_threads():
-    previous = torch.get_num_threads()
-    torch.set_num_threads(2)
-    yield
-    torch.set_num_threads(previous)
+def research_threads():
+    with torch_threads(THREADS):
+        yield
 
 
 def checkpoint_of(arm: str, seed: int = 42, **changes) -> dict:
@@ -62,7 +60,7 @@ def test_checkpoint_round_trip(tmp_path):
 def test_checkpoint_checks(tmp_path):
     with pytest.raises(CheckpointError, match='keys and shapes'):
         make_checkpoint(initial_model('S', 42).state_dict(), arm='CU', seed=42, updates=0, weights='raw',
-                        order_sha256=ARMS['CU'].pinned_order(42), provenance={})
+                        order_sha256=str(ARMS['CU'].pinned_order(42)), provenance={})
     with pytest.raises(CheckpointError, match='order_sha256'):
         checkpoint_of('S', order_sha256=ARMS['M'].pinned_order(42))
     with pytest.raises(CheckpointError, match='weights'):
@@ -123,7 +121,7 @@ def export_path(arm: str, seed: int = 42) -> Path:
     return golden_large(f'g4/golden-runs/{ARMS[arm].research_arm}/training/{seed}/export-20.pt')
 
 
-def changed(tmp_path, arm: str, change) -> Path:
+def changed(tmp_path: Path, arm: str, change) -> Path:
     saved = torch.load(export_path(arm), map_location='cpu', weights_only=True)
     change(saved)
     torch.save(saved, tmp_path / 'changed.pt')

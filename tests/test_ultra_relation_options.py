@@ -17,6 +17,7 @@ from dicee.config import Namespace
 from dicee.models._relation_weights import incidence_counts, pair_channel_weights, pair_counts, relation_count_weights
 from dicee.models.ultra import ULTRA, build_relation_graph, relation_graph
 from dicee.scripts.run import get_default_arguments
+from dicee.synthetic_kg.determinism import THREADS, torch_threads
 
 # Direct triples of 3 entities and 2 relations; (0, 1) carries both relations.
 DIRECT = torch.tensor([[0, 0, 1], [0, 1, 1], [0, 1, 2], [1, 1, 2]])
@@ -24,11 +25,9 @@ FACTS = torch.tensor([[0, 0, 1], [0, 0, 2], [1, 1, 2], [2, 0, 3], [3, 1, 0], [3,
 
 
 @pytest.fixture(autouse=True)
-def two_threads():
-    previous = torch.get_num_threads()
-    torch.set_num_threads(2)
-    yield
-    torch.set_num_threads(previous)
+def research_threads():
+    with torch_threads(THREADS):
+        yield
 
 
 def small(**options) -> ULTRA:

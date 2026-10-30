@@ -23,7 +23,6 @@ adapter's external step failed on it (its error record is in ``.errors/`` of the
 import argparse
 import json
 import logging
-import os
 import signal
 import sys
 from pathlib import Path
@@ -252,18 +251,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     argv = list(sys.argv[1:] if argv is None else argv)
     args = build_parser().parse_args(argv)
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(name)s: %(message)s')
-    workspace = os.environ.get('CUBLAS_WORKSPACE_CONFIG')
-    if workspace is None:   # deterministic cuBLAS needs it before CUDA starts
-        os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
     previous = signal.signal(signal.SIGTERM, lambda *_: sys.exit(EXIT_TERM))
     try:
         if args.command == 'list':
             for entry in _entries(args)[1]:
                 print(entry.key)
             return 0
-        if args.command == 'adapter':
-            return _adapter(args, argv)
-        commands = dict(check=_check, run=_run, cells=_cells, gate=_gate)
+        if args.command in ('run', 'gate', 'adapter'):   # the commands that can start CUDA, which needs the setting first
+            from dicee.synthetic_kg.determinism import cublas_workspace
+            with cublas_workspace():
+                return _adapter(args, argv) if args.command == 'adapter' else (_run if args.command == 'run' else _gate)(args)
+        commands = dict(check=_check, cells=_cells)
         commands['fv1-models'] = _fv1_models
         return commands[args.command](args)
     except (ManifestError, BlindSetError, KeyError, ValueError) as error:
@@ -271,5 +269,3 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         return EXIT_INPUT
     finally:
         signal.signal(signal.SIGTERM, previous)
-        if workspace is None:
-            del os.environ['CUBLAS_WORKSPACE_CONFIG']

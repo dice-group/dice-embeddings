@@ -18,13 +18,13 @@ that the converter refuses), 3 stopped by a signal (rerun the same command to re
 """
 import argparse
 import logging
-import os
 import signal
 import sys
 from typing import Any, Optional, Sequence
 
 from dicee.synthetic_kg.arms import ARMS
 from dicee.synthetic_kg.checkpoint import CheckpointError, from_research_export, save_checkpoint
+from dicee.synthetic_kg.determinism import cublas_workspace
 from dicee.synthetic_kg.pretraining import PretrainConfig, pretrain
 
 logger = logging.getLogger(__name__)
@@ -101,14 +101,8 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     """Run a command; returns the exit code."""
     args = build_parser().parse_args(argv)
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(name)s: %(message)s')
-    workspace = os.environ.get('CUBLAS_WORKSPACE_CONFIG')
-    if workspace is None:   # deterministic cuBLAS needs it before CUDA starts
-        os.environ['CUBLAS_WORKSPACE_CONFIG'] = ':4096:8'
-    try:
+    with cublas_workspace():
         return _train(args) if args.command == 'train' else _convert(args)
-    finally:
-        if workspace is None:
-            del os.environ['CUBLAS_WORKSPACE_CONFIG']
 
 
 if __name__ == '__main__':

@@ -30,7 +30,7 @@ import torch
 from dicee.models.ultra import ULTRA
 from dicee.synthetic_kg.arms import ARMS, SEEDS
 from dicee.synthetic_kg.batch import World
-from dicee.synthetic_kg.determinism import deterministic_execution, require_cublas_workspace
+from dicee.synthetic_kg.determinism import THREADS, deterministic_execution, require_cublas_workspace, torch_threads
 from dicee.synthetic_kg.prepare import PreparedWorld, answers_by_anchor, prepare_world
 from dicee.synthetic_kg.priors import Slot, world
 from dicee.synthetic_kg.streams import stage2_family
@@ -47,7 +47,6 @@ PLAIN_FIRST, PLAIN_END = 120_000, 130_000
 WORLD_SEED = 42
 PER_FAMILY = 100
 CHUNK = 2
-THREADS = 2
 
 
 def heldout_slots(family: str, count: int = PER_FAMILY) -> list[Slot]:
@@ -117,21 +116,16 @@ def score(models: Mapping[str, Mapping[str, ULTRA]], families: Sequence[str] = F
     mrr: dict[str, dict[str, dict[str, list[float]]]] = {arm: {name: defaultdict(list) for name in group} for arm, group in models.items()}
     queries: dict[str, list[int]] = defaultdict(list)
     options = sorted({(m.relation_weighting, m.pair_channels) for group in models.values() for m in group.values()})
-    threads = torch.get_num_threads()
-    torch.set_num_threads(THREADS)
-    try:
-        with deterministic_execution():
-            for family in families:
-                for slot in heldout_slots(family, per_family):
-                    generated = world(WORLD_SEED, slot, ARMS['S'].prior)
-                    prepared = {option: prepare_world(generated, slot, *option) for option in options}
-                    for arm, group in models.items():
-                        for name, model in group.items():
-                            ranks = reciprocal_ranks(model, generated, prepared[model.relation_weighting, model.pair_channels])
-                            mrr[arm][name][family].append(float(ranks.mean()))
-                    queries[family].append(len(ranks))
-    finally:
-        torch.set_num_threads(threads)
+    with torch_threads(THREADS), deterministic_execution():
+        for family in families:
+            for slot in heldout_slots(family, per_family):
+                generated = world(WORLD_SEED, slot, ARMS['S'].prior)
+                prepared = {option: prepare_world(generated, slot, *option) for option in options}
+                for arm, group in models.items():
+                    for name, model in group.items():
+                        ranks = reciprocal_ranks(model, generated, prepared[model.relation_weighting, model.pair_channels])
+                        mrr[arm][name][family].append(float(ranks.mean()))
+                queries[family].append(len(ranks))
     return dict(mrr={arm: {name: dict(values) for name, values in group.items()} for arm, group in mrr.items()}, queries=dict(queries))
 
 

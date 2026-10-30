@@ -36,11 +36,11 @@ import time
 import warnings
 from collections import deque
 from concurrent.futures import Future, ProcessPoolExecutor
-from contextlib import closing, contextmanager
+from contextlib import closing
 from dataclasses import dataclass
 from multiprocessing import get_context
 from pathlib import Path
-from typing import Any, Callable, Generator, Iterator, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Any, Callable, Generator, Mapping, NamedTuple, Optional, Sequence, Union
 
 import numpy
 import torch
@@ -51,7 +51,7 @@ from ..models._inference import to_device
 from ..models.ultra import ULTRA
 from .arms import ArmPreset, arm_preset, initial_model
 from .checkpoint import atomic_save, make_checkpoint, save_checkpoint
-from .determinism import deterministic_execution, require_cublas_workspace
+from .determinism import THREADS, deterministic_execution, require_cublas_workspace, torch_threads
 from .digests import file_sha256
 from .prepare import PreparedWorld, prepare_slot
 from .priors import PriorConfig, Slot, build_order, order_sha256, real
@@ -95,7 +95,7 @@ class PretrainConfig:
     prefetch: Optional[int] = None
     worker_threads: int = 1
     device: str = 'cuda'
-    threads: int = 2
+    threads: int = THREADS
     real_sources: Union[str, Path, None] = None
     allow_code_change: bool = False
 
@@ -367,18 +367,6 @@ def prepared_worlds(seed: int, slots: Sequence[Slot], prior: PriorConfig, option
         pool.shutdown(wait=True, cancel_futures=True)
 
 
-@contextmanager
-def _run_environment(config: PretrainConfig) -> Iterator[None]:
-    """Torch threads and deterministic execution of a run; both restored afterwards."""
-    threads = torch.get_num_threads()
-    torch.set_num_threads(config.threads)
-    try:
-        with deterministic_execution():
-            yield
-    finally:
-        torch.set_num_threads(threads)
-
-
 def _cpu(state: Mapping[str, torch.Tensor]) -> dict[str, torch.Tensor]:
     return {k: v.detach().cpu().clone() for k, v in state.items()}
 
@@ -423,7 +411,7 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
     if pinned is not None and digest != pinned:
         raise ValueError(f'the world order of arm {preset.name}, seed {config.seed} has digest {digest}, its pin is {pinned}')
     record = run_record(config, preset, digest)
-    with _run_environment(config):
+    with torch_threads(config.threads), deterministic_execution():
         origin = provenance(config, preset)
         _check_start(folder, record, origin['sources'], config.allow_code_change)
         folder.mkdir(parents=True, exist_ok=True)

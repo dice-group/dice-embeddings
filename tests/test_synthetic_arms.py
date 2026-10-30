@@ -8,6 +8,7 @@ import pytest
 import torch
 
 from dicee.synthetic_kg.arms import ARMS, SEEDS, arm_preset, initial_model, research_record
+from dicee.synthetic_kg.determinism import THREADS, torch_threads
 from dicee.synthetic_kg.digests import tensor_digest
 from dicee.synthetic_kg.priors import build_order, order_sha256
 from tests.proofpfn_fixtures import fixture, per_key_digests, research_prior
@@ -18,11 +19,9 @@ INIT_OF = {'S': 'S', 'R': 'S', 'M': 'S', 'N': 'S', 'HT': 'S', 'CU': 'CU', 'UL': 
 
 
 @pytest.fixture(autouse=True)
-def two_threads():
-    previous = torch.get_num_threads()
-    torch.set_num_threads(2)
-    yield
-    torch.set_num_threads(previous)
+def research_threads():
+    with torch_threads(THREADS):
+        yield
 
 
 @pytest.mark.parametrize('name', sorted(ARMS))
