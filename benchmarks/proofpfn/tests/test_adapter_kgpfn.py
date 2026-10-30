@@ -139,13 +139,16 @@ def test_rows_and_outputs_are_checked(tmp_path):
                                 strict_load=dict(missing=[], shape_mismatch=[], value_mismatch=[], unexpected=[]), counts=dict(nonfinite_rows=0),
                                 provenance=dict(imported=imported))
     kgpfn.check_output(good, work / 'meta.json', imported)
-    for change, message in ((dict(status='partial'), 'partial'), (dict(context_mode='native'), 'native'),
-                            (dict(settings=dict(meta_sha256='0')), 'another meta'),
-                            (dict(strict_load=dict(good['strict_load'], missing=['x'])), 'exactly'), (dict(counts=dict(nonfinite_rows=2)), 'non-finite'),
-                            (dict(provenance=dict(imported=dict(imported, **{'pfn/tasks.py': '0' * 64}))), r"other files than the pins.*\['pfn/tasks.py'\]"),
-                            (dict(provenance=dict(imported=dict(imported, **{'pfn/extra.py': '0' * 64}))), 'pfn/extra.py')):
-        with pytest.raises(ValueError, match=message):   # AdapterSetupError is a ValueError too
+    for change, error, message in ((dict(status='partial'), ValueError, 'partial'), (dict(context_mode='native'), ValueError, 'native'),
+                                   (dict(settings=dict(meta_sha256='0')), ValueError, 'another meta'),
+                                   (dict(strict_load=dict(good['strict_load'], missing=['x'])), ValueError, 'exactly'),
+                                   (dict(counts=dict(nonfinite_rows=2)), ValueError, 'non-finite'),
+                                   (dict(provenance=dict(imported=dict(imported, **{'pfn/tasks.py': '0' * 64}))), AdapterSetupError,
+                                    r"other files than the pins.*\['pfn/tasks.py'\]"),
+                                   (dict(provenance=dict(imported=dict(imported, **{'pfn/extra.py': '0' * 64}))), AdapterSetupError, 'pfn/extra.py')):
+        with pytest.raises(error, match=message) as caught:
             kgpfn.check_output(dict(good, **change), work / 'meta.json', imported)
+        assert type(caught.value) is error   # the command line stops a run at an AdapterSetupError and goes on after a ValueError
 
 
 def test_worker_command_and_environment(tmp_path, monkeypatch):

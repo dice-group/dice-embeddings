@@ -300,7 +300,6 @@ def test_java_steps_and_their_failures_through_the_command_line(tmp_path, monkey
     monkeypatch.chdir(tmp_path)   # relative options: the Java steps, which run in the work folder, get absolute paths
     command = ['adapter', 'anyburl', '--set', 'tiny.json', '--data-root', '.', '--code', home.name, '--models', models.name, '--java', './fake-java',
                '--no-scope']
-    monkeypatch.setattr(anyburl, 'STEP_HOURS', 2 / 3600)
 
     def run(out: str, failure: str = '') -> int:
         monkeypatch.setenv('FAKE_ANYBURL', failure)
@@ -311,6 +310,8 @@ def test_java_steps_and_their_failures_through_the_command_line(tmp_path, monkey
     assert meta['work'] == str(tmp_path / 'rows' / '.work' / 'anyburl' / 'tiny' / 'g')
     for failure, reason in (('learn:heap', 'out of memory (JVM heap -Xmx6G)'), ('apply:killed', 'killed (memory cap MemoryMax=8G of the scope)'),
                             ('eval:slow', 'stopped after')):
+        if failure == 'eval:slow':   # a time limit of 2 s for the slow step only
+            monkeypatch.setattr(anyburl, 'STEP_HOURS', 2 / 3600)
         assert run(failure, failure) == 3, failure
         record = json.loads(ev.error_path(ev.row_file_path(tmp_path / failure, manifest.entry('g'), ['anyburl'])).read_text())
         assert (record['stage'], record['adapter']) == (failure.split(':')[0], 'anyburl') and record['reason'].startswith(reason), record

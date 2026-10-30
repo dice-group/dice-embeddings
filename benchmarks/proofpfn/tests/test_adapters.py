@@ -197,8 +197,13 @@ def test_call_stops_a_process_at_its_timeout_and_with_this_process(tmp_path, mon
     stubborn.write_text('import os, pathlib, signal, time\nsignal.signal(signal.SIGTERM, signal.SIG_IGN)\n'
                         'pathlib.Path("pid").write_text(str(os.getpid()))\ntime.sleep(60)\n')
     monkeypatch.setattr(adapters, 'STOP_SECONDS', 0.5)
-    previous = signal.signal(signal.SIGALRM, lambda *_: sys.exit(143))   # as the command line's SIGTERM handler
-    signal.setitimer(signal.ITIMER_REAL, 1.0)
+
+    def interrupt(*_) -> None:   # as the command line's SIGTERM handler, once the child ignores SIGTERM
+        if (tmp_path / 'pid').exists():
+            signal.setitimer(signal.ITIMER_REAL, 0)
+            sys.exit(143)
+    previous = signal.signal(signal.SIGALRM, interrupt)
+    signal.setitimer(signal.ITIMER_REAL, 0.2, 0.2)
     try:
         with pytest.raises(SystemExit):
             adapters.call([sys.executable, str(stubborn)], timeout=60, cwd=tmp_path)
