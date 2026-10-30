@@ -1,16 +1,21 @@
-"""The real subgraph worlds (``priors.real``) of arms R and M against golden G2, and the checks of their sources.
+"""The real subgraph worlds (``priors.real``) of arms R and M against golden G2, and their source graphs.
 
 The golden checks read the source graphs from ``PROOFPFN_REAL_SOURCES`` (a folder with ``<name>/data.pt``) and skip
-when it is unset.
+when it is unset. The rebuild of the source graphs reads the split files below ``KGs/`` and skips without them.
 """
 import os
+from pathlib import Path
 
 import pytest
 import torch
 
 from dicee.synthetic_kg.arms import ARMS
+from dicee.synthetic_kg.digests import file_sha256
 from dicee.synthetic_kg.priors import FamilySpec, Slot, real, world
+from dicee.synthetic_kg.recipe import REAL_SOURCE_SHA256
 from tests.synthetic_worlds import check_world, golden_names
+
+KGS = Path(__file__).resolve().parents[1] / 'KGs'
 
 
 def require_real_sources():
@@ -44,6 +49,28 @@ def test_real_sources_are_checked_against_their_pins(tmp_path, monkeypatch):
     with pytest.raises(ValueError, match='the pin of WN18RR'):
         real.load_source('WN18RR', tmp_path)
     assert real.NAMES == ('FB15k-237', 'WN18RR', 'CoDEx-M')
+
+
+@pytest.mark.slow
+@pytest.mark.parametrize('name', real.NAMES)
+def test_sources_rebuild_from_their_split_files(name, tmp_path):
+    graph = KGS / name
+    if not all((graph / f'{split}.txt').is_file() for split in ('train', 'valid', 'test')):
+        pytest.skip(f'{graph} holds no split files (KGs.zip holds FB15k-237 and WN18RR; docs/proofpfn.md names the CoDEx-M source)')
+    assert real.build_source(name, graph, tmp_path) == tmp_path / name / 'data.pt'
+    assert file_sha256(tmp_path / name / 'data.pt') == REAL_SOURCE_SHA256[name]
+
+
+def test_a_source_with_other_split_files_is_refused(tmp_path):
+    graph = tmp_path / 'graph'
+    graph.mkdir()
+    for split, rows in (('train', 'a r b\nb r c\n'), ('valid', 'a r c\n'), ('test', 'c r a\n')):
+        (graph / f'{split}.txt').write_text(rows)
+    with pytest.raises(ValueError, match='not the pin'):
+        real.build_source('WN18RR', graph, tmp_path / 'sources')
+    assert list((tmp_path / 'sources' / 'WN18RR').iterdir()) == []
+    with pytest.raises(ValueError, match='unknown real source graph'):
+        real.build_source('YAGO3-10', graph, tmp_path / 'sources')
 
 
 def test_real_family_parameters():

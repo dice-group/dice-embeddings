@@ -10,15 +10,17 @@ negatives are false in the world.
 The source graphs are not part of the code. Their folder holds ``<name>/data.pt`` for each name of
 ``recipe.REAL_SOURCE_SHA256`` (the research files, checked against these pins before they load); it is given to
 ``real_world``, else read from the environment variable ``PROOFPFN_REAL_SOURCES``. Pretraining passes it to its worker
-processes explicitly.
+processes explicitly. ``build_source`` rebuilds a file from the graph's split files.
 """
 import os
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Union
+from types import MappingProxyType
+from typing import TYPE_CHECKING, Any, Mapping, Union, cast
 
 import numpy as np
 import torch
 
+from ...knowledge_graph import KG
 from ..batch import WorldBatch
 from ..digests import file_sha256
 from ..recipe import REAL_SOURCE_SHA256, record_params
@@ -41,6 +43,15 @@ NEIGHBOURS = 50
 MIN_FACTS, DRAWS = 500, 10
 """A subgraph needs this many facts, or the entity set is drawn again, at most ``DRAWS`` times."""
 
+LAYOUTS: Mapping[str, tuple[tuple[str, ...], bool]] = MappingProxyType({
+    'FB15k-237': (('splits', 'entities', 'relations'), False),
+    'WN18RR': (('splits', 'entities', 'relations'), False),
+    'CoDEx-M': (('entities', 'relations', 'splits'), True),
+})
+"""The layout of each pinned ``data.pt``: its key order, and whether its split tensors are row-major. Two research builders
+wrote the files: ``transfer.prepare_target`` (FB15k-237, WN18RR; dicee's column-major arrays) and
+``transfer-reserve-v1-runtime/prepare_codex.py`` (CoDEx-M), with the same ids."""
+
 _SOURCES: dict[tuple[str, str], dict[str, Any]] = {}
 
 
@@ -60,6 +71,47 @@ def source_folder(folder: Union[str, Path, None] = None) -> Path:
     if not value:
         raise RuntimeError(f'the real worlds need the folder of their source graphs: pass it or set {SOURCES_ENV}')
     return Path(value)
+
+
+def build_source(name: str, graph: Union[str, Path], folder: Union[str, Path]) -> Path:
+    """Build the ``data.pt`` of a real source graph from its split files, as the research did, and check it against its pin.
+
+    dicee's ``KG`` (pandas backend, no reciprocal triples) reads ``train.txt``, ``valid.txt`` and ``test.txt`` and numbers
+    the entities and relations by sorted name over all splits. The file holds the splits as int64 id tensors in file
+    order (``splits``), the entity names (``entities``) and the relation names (``relations``), in the layout of the
+    pinned file (``LAYOUTS``). ``torch.save`` names the archive inside the file after the file it writes, so the file is
+    written as ``data.pt.tmp``, as the research wrote it, and then renamed.
+
+    Args:
+        name: A name of ``NAMES``.
+        graph: The folder with the graph's split files.
+        folder: The real-source folder; the file is ``<folder>/<name>/data.pt``.
+
+    Returns:
+        The file.
+
+    Raises:
+        ValueError: For an unknown name, or a file whose SHA-256 differs from the pin (other split files than the
+            research's); nothing is written then.
+    """
+    if name not in LAYOUTS:
+        raise ValueError(f'unknown real source graph {name!r}; expected one of {NAMES}')
+    keys, row_major = LAYOUTS[name]
+    kg = KG(dataset_dir=str(graph), add_reciprocal=False, eval_model='test', training_technique='NegSample', separator=r'\s+', backend='pandas')
+    splits = {s: torch.as_tensor(getattr(kg, f'{s}_set').astype('int64')) for s in ('train', 'valid', 'test')}
+    # The pandas backend keeps each vocabulary as a DataFrame sorted by name (KG annotates it as a dictionary).
+    value = dict(splits={s: t.contiguous() if row_major else t for s, t in splits.items()}, entities=cast(Any, kg.entity_to_idx)['entity'].tolist(),
+                 relations=cast(Any, kg.relation_to_idx)['relation'].tolist())
+    path = Path(folder) / name / 'data.pt'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name('data.pt.tmp')
+    torch.save({key: value[key] for key in keys}, temporary)
+    digest = file_sha256(temporary)
+    if digest != REAL_SOURCE_SHA256[name]:
+        temporary.unlink()
+        raise ValueError(f'the {name} split files in {graph} give SHA-256 {digest}, not the pin {REAL_SOURCE_SHA256[name]}')
+    os.replace(temporary, path)
+    return path
 
 
 def load_source(name: str, folder: Union[str, Path, None] = None) -> dict[str, Any]:
