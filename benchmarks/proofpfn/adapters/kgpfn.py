@@ -299,17 +299,17 @@ def verify(dump: Path, folder: Path, graph: GraphData, queries: Queries, rows: S
     Raises:
         ValueError: When the dump does not cover the rows.
     """
-    data = np.load(dump)
     order = {name: i for i, name in enumerate(worker_entities(folder / 'stage'))}
     permutation = torch.tensor([order[name] for name in graph.entities])   # benchmark id -> worker id
     want = {(r['index'], r['head']): (r[KEY], r[RAW]) for r in rows}
     queries_of = {(queries.index(m), head): (r, anchor, target, others) for m, head, r, anchor, target, others in group_targets(queries)}
     ranker = FilteredRanker(tie_policy='pessimistic')
     got = {}
-    for position, head, scores in zip(data['index'].tolist(), data['head'].tolist(), data['scores']):
-        r, anchor, target, others = queries_of[position, head]
-        view = torch.log_softmax(torch.from_numpy(scores).double()[permutation], 0)
-        got[position, head] = view_ranks(view, target, others, anchor, r in queries.reflexive, ranker)
+    with np.load(dump) as data:
+        for position, head, scores in zip(data['index'].tolist(), data['head'].tolist(), data['scores']):
+            r, anchor, target, others = queries_of[position, head]
+            view = torch.log_softmax(torch.from_numpy(scores).double()[permutation], 0)
+            got[position, head] = view_ranks(view, target, others, anchor, r in queries.reflexive, ranker)
     if set(got) != set(want):
         raise ValueError('the dumped scores do not cover the rows')
     return sum(got[q] != want[q] for q in want)

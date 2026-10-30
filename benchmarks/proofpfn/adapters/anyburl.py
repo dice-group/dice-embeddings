@@ -204,7 +204,8 @@ def learn(anyburl: AnyBURL, work: Path, lock: Path) -> dict[str, Any]:
     stored = re.findall(r'>>> stored (\d+) rules', log.read_text(errors='replace'))
     if times['code'] not in (0, 1) or not stored or not rules.is_file():
         raise step_failed('learn', times, log, 'no rule file')
-    count = sum(1 for _ in rules.open())
+    with rules.open() as handle:
+        count = sum(1 for _ in handle)
     if count != int(stored[-1]):
         raise step_failed('learn', times, log, f'rule file has {count} lines, Learn stored {stored[-1]}')
     return dict(times, config=used, rules=count, rules_sha256=file_sha256(rules))

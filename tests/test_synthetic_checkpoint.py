@@ -20,6 +20,7 @@ from dicee.synthetic_kg.checkpoint import (
     KEYS,
     WEIGHTS,
     CheckpointError,
+    atomic_write_bytes,
     check_checkpoint,
     from_research_export,
     load_model,
@@ -65,6 +66,14 @@ def test_checkpoint_round_trip(tmp_path):
     assert tensor_digest(direct.state_dict()) == tensor_digest(checkpoint['model'])
     with pytest.raises(ValueError, match='saved with'):
         ULTRA(ARMS['UL'].model_config()).load_pretrained(path)
+
+
+def test_a_failed_atomic_write_leaves_no_temporary_file(tmp_path):
+    (tmp_path / 'target').mkdir()   # os.replace cannot put a file in place of a folder that holds a file
+    (tmp_path / 'target' / 'kept').touch()
+    with pytest.raises(OSError):
+        atomic_write_bytes(tmp_path / 'target', b'data')
+    assert sorted(p.name for p in tmp_path.iterdir()) == ['target']
 
 
 def test_checkpoint_checks(tmp_path):

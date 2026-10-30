@@ -155,7 +155,7 @@ def atomic_write_bytes(path: Union[str, Path], data: bytes) -> Path:
     """Write bytes atomically: into a hidden temporary file next to the target, then rename it.
 
     A reader sees the old file or the new one, never a part. The temporary name carries the process id, so two processes
-    never write into the same temporary file.
+    never write into the same temporary file. A failed write removes it.
 
     Args:
         path: The target file; its folder is created.
@@ -167,8 +167,12 @@ def atomic_write_bytes(path: Union[str, Path], data: bytes) -> Path:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f'.{path.name}.{os.getpid()}.tmp')
-    temporary.write_bytes(data)
-    os.replace(temporary, path)
+    try:
+        temporary.write_bytes(data)
+        os.replace(temporary, path)
+    except BaseException:
+        temporary.unlink(missing_ok=True)
+        raise
     return path
 
 
