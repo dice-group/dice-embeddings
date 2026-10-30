@@ -45,7 +45,7 @@ def _accept(k1: np.ndarray, k2: np.ndarray, ok: np.ndarray, room: int) -> np.nda
     return idx
 
 
-def swap_relation(H: np.ndarray, T: np.ndarray, n: int, rng: np.random.Generator, budget: float, dom_mask: np.ndarray,
+def _swap_relation(H: np.ndarray, T: np.ndarray, n: int, rng: np.random.Generator, budget: float, dom_mask: np.ndarray,
                   ran_mask: np.ndarray) -> tuple[np.ndarray, int, bool]:
     """Directed swaps of one relation's facts ``(H, T)``; the heads stay in their slots (``s5_swap.swap_relation``).
 
@@ -83,7 +83,7 @@ def swap_relation(H: np.ndarray, T: np.ndarray, n: int, rng: np.random.Generator
     return T, accepted, accepted >= target
 
 
-def swap_undirected(H: np.ndarray, T: np.ndarray, n: int, rng: np.random.Generator, budget: float,
+def _swap_undirected(H: np.ndarray, T: np.ndarray, n: int, rng: np.random.Generator, budget: float,
                     mask: np.ndarray) -> tuple[np.ndarray, np.ndarray, int, bool]:
     """Swaps of a symmetric relation as unordered pairs; each matched {a, b}, {c, d} proposes {a, c}, {b, d} or {a, d},
     {c, b} by a fair coin (``s5_swap.swap_undirected``).
@@ -162,11 +162,11 @@ def swap_truth(facts: np.ndarray, domains: Sequence[np.ndarray], ranges: Sequenc
         dom_mask[np.asarray(domains[r], dtype=np.int64)] = True
         ran_mask = np.zeros(n, dtype=bool)
         ran_mask[np.asarray(ranges[r], dtype=np.int64)] = True
-        T2, count, done = swap_relation(H, T, n, rng, budget, dom_mask, ran_mask)
+        T2, count, done = _swap_relation(H, T, n, rng, budget, dom_mask, ran_mask)
         old_keys = np.unique(H * n + T)
         H2 = H
         if len(H) and np.array_equal(old_keys, np.unique(T * n + H)):   # symmetric: the directed draws above are discarded
-            H2, T2, count, done = swap_undirected(H, T, n, urng, budget, dom_mask & ran_mask)
+            H2, T2, count, done = _swap_undirected(H, T, n, urng, budget, dom_mask & ran_mask)
             out[slots, 0] = H2
         out[slots, 2] = T2
         total += len(H)

@@ -143,12 +143,28 @@ def structured_stream(seed: int, index: int, name: str) -> int:
 
 
 def is_statistical(seed: int, index: int) -> bool:
-    """Whether stage-2 index ``index`` is a statistical world (``st_prior.is_statistical``)."""
+    """Whether a stage-2 index is a statistical world (``st_prior.is_statistical``).
+
+    Args:
+        seed: The run seed.
+        index: The stage-2 stream index.
+
+    Returns:
+        ``True`` with probability ``STATISTICAL_SHARE``.
+    """
     return statistical_stream(seed, index, 'family') / 2 ** 64 < STATISTICAL_SHARE
 
 
 def is_structured(seed: int, index: int) -> bool:
-    """Whether a non-statistical stage-2 index is a structured world (``sw_prior.is_structured``)."""
+    """Whether a non-statistical stage-2 index is a structured world (``sw_prior.is_structured``).
+
+    Args:
+        seed: The run seed.
+        index: The stage-2 stream index.
+
+    Returns:
+        ``True`` with probability ``STRUCTURED_SHARE``.
+    """
     return structured_stream(seed, index, 'family') / 2 ** 64 < STRUCTURED_SHARE
 
 
@@ -232,27 +248,66 @@ def joint_world_stream(seed: int, name: str) -> int:
 
 
 def source_schedule_stream(seed: int, block: int) -> int:
-    """The shuffle of the source schedule's block of five legacy indices (``joint-scaling common.source_arm``)."""
+    """The shuffle of the source schedule's block of five legacy indices (``joint-scaling common.source_arm``).
+
+    Args:
+        seed: The run seed.
+        block: The block of five sampler indices.
+
+    Returns:
+        The stream integer.
+    """
     return joint_world_stream(seed, f'{SOURCE_SCHEDULE_VERSION}:block:{block}')
 
 
 def pair_slot_stream(seed: int, index: int) -> int:
-    """The rank of a rule-world index among the candidates of the pair-affinity rewiring (``pair_batches.selected``)."""
+    """The rank of a rule-world index among the candidates of the pair-affinity rewiring (``pair_batches.selected``).
+
+    Args:
+        seed: The run seed.
+        index: The sampler index.
+
+    Returns:
+        The stream integer.
+    """
     return joint_world_stream(seed, f'{PAIR_SLOT_VERSION}:slot:{index}')
 
 
 def observation_mask_stream(sampling_seed: int) -> int:
-    """The anchor order of the targeted observation mask of a legacy batch (``oc_prior.masks``)."""
+    """The anchor order of the targeted observation mask of a legacy batch (``oc_prior.masks``).
+
+    Args:
+        sampling_seed: The seed of the batch's query sample.
+
+    Returns:
+        The stream integer.
+    """
     return joint_world_stream(sampling_seed, f'{OBSERVATION_MASK_VERSION}:targeted')
 
 
 def rule_program_stream(seed: int, name: str) -> int:
-    """A rule-program stream ``'rule-program-v1:<seed>:<name>'`` with SHA-256 (``program.seed_for``)."""
+    """A rule-program stream ``'rule-program-v1:<seed>:<name>'`` with SHA-256 (``program.seed_for``).
+
+    Args:
+        seed: A run seed or a world's own seed.
+        name: The purpose of the stream.
+
+    Returns:
+        The stream integer.
+    """
     return sha256_int(f'{RULE_PROGRAM_VERSION}:{seed}:{name}')
 
 
 def pair_affinity_stream(seed: int, name: str) -> int:
-    """A pair-affinity stream ``'pair-affinity-v1:<seed>:<name>'`` with SHA-256 (``affinity.seed_for``)."""
+    """A pair-affinity stream ``'pair-affinity-v1:<seed>:<name>'`` with SHA-256 (``affinity.seed_for``).
+
+    Args:
+        seed: A world's own seed.
+        name: The purpose of the stream.
+
+    Returns:
+        The stream integer.
+    """
     return sha256_int(f'{PAIR_AFFINITY_VERSION}:{seed}:{name}')
 
 

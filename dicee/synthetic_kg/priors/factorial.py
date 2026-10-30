@@ -103,7 +103,16 @@ def derive(base: Iterable[Triple], rules: tuple[Rule, ...], limit: Optional[int]
 
 
 def proof_leaves(fact: Triple, base: frozenset[Triple], proofs: Proofs) -> frozenset[Triple]:
-    """The base facts that the recorded witness of ``fact`` expands to (``generator.proof_leaves``)."""
+    """The base facts that the recorded witness of a fact expands to (``generator.proof_leaves``).
+
+    Args:
+        fact: A fact of the closure.
+        base: The base facts.
+        proofs: The witnesses of ``derive``.
+
+    Returns:
+        The base facts of the witness tree.
+    """
     leaves, pending, visited = set(), [fact], set()
     while pending:
         current = pending.pop()
@@ -146,7 +155,7 @@ class Episode:
     background_relation: int
 
 
-def validate_world(ep: Episode) -> None:
+def _validate_world(ep: Episode) -> None:
     """Refuse an episode whose truth is not its closure, or whose observation is empty or not true (``validate_world``).
 
     Raises:
@@ -160,7 +169,7 @@ def validate_world(ep: Episode) -> None:
         raise ValueError('empty context or out-of-vocabulary fact')
 
 
-def fact_map(entities: Sequence[int], relations: Sequence[int]) -> Callable[[Triple], Triple]:
+def _fact_map(entities: Sequence[int], relations: Sequence[int]) -> Callable[[Triple], Triple]:
     """The map of a fact to its new ids: entity ``e`` becomes ``entities[e]``, relation ``r`` becomes ``relations[r]``."""
     def fact(q: Triple) -> Triple:
         return entities[q[0]], relations[q[1]], entities[q[2]]
@@ -168,9 +177,9 @@ def fact_map(entities: Sequence[int], relations: Sequence[int]) -> Callable[[Tri
     return fact
 
 
-def remap_episode(ep: Episode, entities: list[int], relations: list[int]) -> Episode:
+def _remap_episode(ep: Episode, entities: list[int], relations: list[int]) -> Episode:
     """The episode under new entity and relation ids (``redundancy._remap``)."""
-    fact = fact_map(entities, relations)
+    fact = _fact_map(entities, relations)
 
     def facts(values: Iterable[Triple]) -> frozenset[Triple]:
         return frozenset(map(fact, values))
@@ -237,8 +246,18 @@ def sample_groups(positives: list[Triple], truth: frozenset[Triple], num_entitie
 
 
 def task_quotas(index: int, total: int) -> dict[str, tuple[int, int]]:
-    """Groups and tail groups of the two tasks of legacy index ``index``: the rule task takes the extra tail query of an
-    odd half (``training.make_batches``; the same split in ``pair_batches``, ``program`` and ``prior_factorial``)."""
+    """The query groups and tail groups of the two tasks of a legacy world (``training.make_batches``; the same split in
+    ``pair_batches``, ``program`` and ``prior_factorial``).
+
+    Each task gets half the groups. When a half is odd, the rule task of an odd index takes its extra tail query.
+
+    Args:
+        index: The sampler index.
+        total: The query groups of the world.
+
+    Returns:
+        ``{'rule': (groups, tail groups), 'base': (groups, tail groups)}``.
+    """
     rules = total // 2
     rule_tails = rules // 2 + (index % 2 if rules % 2 else 0)
     return {'rule': (rules, rule_tails), 'base': (total - rules, total // 2 - rule_tails)}
@@ -260,7 +279,7 @@ def _remap_grids(groups: list[dict], fact: Callable[[Triple], Triple], relations
     return out
 
 
-def first_world(seed: int, index: int) -> tuple[Episode, list[dict]]:
+def _first_world(seed: int, index: int) -> tuple[Episode, list[dict]]:
     """A world-first world of the training split with its candidate grids (``world_first.generate_world``), with the
     world sizes ``recipe.WORLD``.
 
@@ -330,15 +349,15 @@ def first_world(seed: int, index: int) -> tuple[Episode, list[dict]]:
     # The research drew a masked view of the context from ``obs`` here, for its world record only.
     entities = rng.sample(range(next_node), next_node)
     relations = rng.sample(range(nr), nr)
-    ep = remap_episode(Episode(world_seed, next_node, nr, rules, frozenset(base), truth, frozenset(context), frozenset(support),
+    ep = _remap_episode(Episode(world_seed, next_node, nr, rules, frozenset(base), truth, frozenset(context), frozenset(support),
                                frozenset(support), noise), entities, relations)
-    validate_world(ep)
+    _validate_world(ep)
     groups = [{**block, 'bundles': [{**b, 'correct': tuple(b['order']) == ep.rules[block['rule']].body} for b in block['bundles']]}
-              for block in _remap_grids(blocks, fact_map(entities, relations), relations)]
+              for block in _remap_grids(blocks, _fact_map(entities, relations), relations)]
     return ep, groups
 
 
-def family_rules(family: str) -> tuple[Rule, ...]:
+def _family_rules(family: str) -> tuple[Rule, ...]:
     """The rules of a logical family of the factorial schedule (``prior_mechanisms.family_rules``)."""
     rules = {'composition_split': (Rule((0, 1), 4), Rule((0, 1, 2), 5)), 'composition_repeated': (Rule((0, 0), 4), Rule((0, 0, 0), 4)),
              'transitivity': (Rule((0, 0), 0),), 'inverse': (Rule((0,), 4, True),), 'symmetry': (Rule((0,), 0, True),)}
@@ -347,7 +366,7 @@ def family_rules(family: str) -> tuple[Rule, ...]:
     return rules[family]
 
 
-def family_world(family: str, seed: int, index: int, blocks: int) -> tuple[Episode, list[dict]]:
+def _family_world(family: str, seed: int, index: int, blocks: int) -> tuple[Episode, list[dict]]:
     """A world of balanced endpoint grids of one logical family, split ``test`` (``prior_mechanisms.family_world``).
 
     Returns:
@@ -359,7 +378,7 @@ def family_world(family: str, seed: int, index: int, blocks: int) -> tuple[Episo
     world_seed = world_first_stream(seed, 'mechanism-family-world', ('test', index))
     rng = random.Random(world_seed)
     obs = random.Random(world_first_stream(world_seed, 'mechanism-family-observation', 0))
-    rules = family_rules(family)
+    rules = _family_rules(family)
     lengths = (1, 1) if family in ('inverse', 'symmetry') else (2, 3)
     endpoints = rng.sample(range(96), 12 * blocks)
     base: set[Triple] = set()
@@ -411,27 +430,27 @@ def family_world(family: str, seed: int, index: int, blocks: int) -> tuple[Episo
     context.update(support)
     ep = Episode(world_seed, next_node, 10, rules, frozenset(base), truth, frozenset(context), frozenset(support), frozenset(support), 9)
     entities, relations = rng.sample(range(next_node), next_node), rng.sample(range(10), 10)
-    ep = remap_episode(ep, entities, relations)
-    remapped = _remap_grids(groups, fact_map(entities, relations))
+    ep = _remap_episode(ep, entities, relations)
+    remapped = _remap_grids(groups, _fact_map(entities, relations))
     for group_value in remapped:
         for bundle in group_value['bundles']:
             if (bundle['triple'] in ep.truth) != bundle['correct']:
                 raise ValueError('a controlled family has an accidentally true endpoint pair; no resampling')
-    validate_world(ep)
+    _validate_world(ep)
     return ep, remapped
 
 
-def source_world(seed: int, index: int, family: str) -> tuple[Episode, list[dict]]:
+def _source_world(seed: int, index: int, family: str) -> tuple[Episode, list[dict]]:
     """The observed source world of a family (``prior_factorial.source_world``, split ``train``).
 
     Returns:
         The episode and its grid blocks.
     """
     if family == 'current':
-        return first_world(world_first_stream(seed, 'factorial-original-v1', 'train'), index)
+        return _first_world(world_first_stream(seed, 'factorial-original-v1', 'train'), index)
     if family not in FACTORIAL_FAMILIES:
         raise ValueError(f'unknown family {family!r}')
-    ep, groups = family_world(family, world_first_stream(seed, 'factorial-fresh-family-v1', 'train'), index, WORLD.blocks_per_rule)
+    ep, groups = _family_world(family, world_first_stream(seed, 'factorial-fresh-family-v1', 'train'), index, WORLD.blocks_per_rule)
     planted = {q for block in groups for b in block['bundles'] for path in b['paths'] for q in path}
     context = set(ep.context - planted)
     obs = random.Random(world_first_stream(ep.seed, 'factorial-family-observations-v1', 'train'))
@@ -445,11 +464,11 @@ def source_world(seed: int, index: int, family: str) -> tuple[Episode, list[dict
                 context.update(q for q, keep in zip(path, mask) if keep or block['demonstration'])
     context.update(ep.support)
     observed = replace(ep, context=frozenset(context))
-    validate_world(observed)
+    _validate_world(observed)
     return observed, groups
 
 
-def add_sparse_demonstrations(ep: Episode, groups: list[dict]) -> tuple[Episode, list[dict]]:
+def _add_sparse_demonstrations(ep: Episode, groups: list[dict]) -> tuple[Episode, list[dict]]:
     """Isolated example paths, three correct and three wrong per demonstration block (``add_sparse_demonstrations``).
 
     Raises:
@@ -511,14 +530,14 @@ class FactorialWorld:
     witnesses: dict[Triple, tuple[tuple[Triple, ...], ...]]
 
 
-def scheduled_family(seed: int, index: int) -> str:
+def _scheduled_family(seed: int, index: int) -> str:
     """The family of training world ``index``: five ``current`` and the five logical families per ten worlds."""
     values = ['current'] * 5 + list(FACTORIAL_FAMILIES)
     random.Random(world_first_stream(seed, 'factorial-family-schedule-v1', ('train', index // 10))).shuffle(values)
     return values[index % 10]
 
 
-def scheduled_topology(seed: int, index: int) -> str:
+def _scheduled_topology(seed: int, index: int) -> str:
     """``'core'`` or ``'attached'``: each family half and half within twenty training worlds (``topology_mix``).
 
     Raises:
@@ -527,7 +546,7 @@ def scheduled_topology(seed: int, index: int) -> str:
     block = index // 20
     positions: dict[str, list[int]] = defaultdict(list)
     for offset in range(20):
-        positions[scheduled_family(seed, 20 * block + offset)].append(offset)
+        positions[_scheduled_family(seed, 20 * block + offset)].append(offset)
     values = [''] * 20
     for family, indices in sorted(positions.items()):
         if len(indices) % 2:
@@ -538,7 +557,7 @@ def scheduled_topology(seed: int, index: int) -> str:
     return values[index % 20]
 
 
-def factorial_world(attached: bool, family: str, sparse: tuple[Episode, list[dict]], ids: tuple[list[int], list[int]]) -> FactorialWorld:
+def _factorial_world(attached: bool, family: str, sparse: tuple[Episode, list[dict]], ids: tuple[list[int], list[int]]) -> FactorialWorld:
     """The factorial treatment of a source world with sparse demonstrations (``prior_factorial.make_world``, arm
     ``both`` with ``attached``, else ``rules``).
 
@@ -570,14 +589,14 @@ def factorial_world(attached: bool, family: str, sparse: tuple[Episode, list[dic
         raise ValueError('the irrelevant augmentation changed an original label')
     result = replace(ep, num_relations=ep.num_relations + 1, base=ep.base | extra, truth=truth, context=ep.context | extra,
                      background_relation=new_relation)
-    fact = fact_map(*ids)
-    result = remap_episode(result, *ids)
-    validate_world(result)
+    fact = _fact_map(*ids)
+    result = _remap_episode(result, *ids)
+    _validate_world(result)
     return FactorialWorld(result, tuple(sorted(fact(q) for q in witnesses)), tuple(sorted(fact(q) for q in base_pool)), family,
                           {fact(q): tuple(tuple(fact(e) for e in p) for p in paths) for q, paths in witnesses.items()})
 
 
-def observation_dose(world: FactorialWorld, source: tuple[Episode, list[dict]], sparse: tuple[Episode, list[dict]],
+def _observation_dose(world: FactorialWorld, source: tuple[Episode, list[dict]], sparse: tuple[Episode, list[dict]],
                      ids: tuple[list[int], list[int]]) -> FactorialWorld:
     """Hide every sparse example after the first of its kind and add as many background edges in the core
     (``demo_context.layout``, ``_background`` and ``transform`` with view ``dose``).
@@ -587,7 +606,7 @@ def observation_dose(world: FactorialWorld, source: tuple[Episode, list[dict]], 
     """
     before, groups = source
     after, expanded = sparse
-    entities, fact = ids[0], fact_map(*ids)
+    entities, fact = ids[0], _fact_map(*ids)
     private = {q[2] for g in groups for b in g['bundles'] for p in b['paths'] for q in p[:-1]}
     core = sorted(entities[i] for i in range(before.num_entities) if i not in private)
     sparse_nodes = range(before.num_entities, after.num_entities)
@@ -624,7 +643,7 @@ def observation_dose(world: FactorialWorld, source: tuple[Episode, list[dict]], 
     return replace(world, episode=result, base_pool=pool)
 
 
-def second_matching(groups: list[dict], seed: int) -> tuple[dict[Triple, Triple], frozenset[Triple]]:
+def _second_matching(groups: list[dict], seed: int) -> tuple[dict[Triple, Triple], frozenset[Triple]]:
     """Relabel the path slots of one disjoint matching per grid to the correct order (``cardinality_prior.second_matching``).
 
     Raises:
@@ -658,7 +677,7 @@ def second_matching(groups: list[dict], seed: int) -> tuple[dict[Triple, Triple]
     return replacements, frozenset(promoted)
 
 
-def multiple_matchings(original: FactorialWorld, groups: list[dict]) -> FactorialWorld:
+def _multiple_matchings(original: FactorialWorld, groups: list[dict]) -> FactorialWorld:
     """The world with two true matchings per grid (``cardinality_prior.variants``, arm ``multiple``).
 
     The research also built the arms ``observed`` and ``multiple_observed``, whose checks follow from those of
@@ -668,7 +687,7 @@ def multiple_matchings(original: FactorialWorld, groups: list[dict]) -> Factoria
         ValueError: When the relabelled paths miss a positive, change the geometry or the observation, or a world fails
             its validation.
     """
-    mapping, promoted = second_matching(groups, original.episode.seed)
+    mapping, promoted = _second_matching(groups, original.episode.seed)
 
     def fact(q: Triple) -> Triple:
         return mapping.get(q, q)
@@ -690,13 +709,13 @@ def multiple_matchings(original: FactorialWorld, groups: list[dict]) -> Factoria
     multiple = replace(original, episode=changed, base_pool=tuple(sorted(fact(q) for q in original.base_pool)),
                        witnesses={q: tuple(tuple(map(fact, path)) for path in paths) for q, paths in original.witnesses.items()})
     for world in (original, multiple):
-        validate_world(world.episode)
+        _validate_world(world.episode)
         if not set(world.base_pool) <= world.episode.context:
             raise ValueError('the common base target pool is not observed')
     return multiple
 
 
-def endpoint_reuse(world: FactorialWorld) -> FactorialWorld:
+def _endpoint_reuse(world: FactorialWorld) -> FactorialWorld:
     """Sixteen copies whose head-only and tail-only nodes merge across copies (``endpoint_prior.construct``, arm
     ``concentrated``: five copies share their endpoints, three keep their own, separately for heads and tails).
 
@@ -730,7 +749,7 @@ def endpoint_reuse(world: FactorialWorld) -> FactorialWorld:
     witnesses: dict[Triple, tuple[tuple[Triple, ...], ...]] = {q: (tuple(sorted(proof_leaves(q, context, observed_proofs))),) for q in sorted(rule_pool)}
     result_ep = replace(ep, num_entities=len(values), base=base, truth=truth, context=context, support=facts(ep.support),
                         protected=facts(ep.protected))
-    validate_world(result_ep)
+    _validate_world(result_ep)
     base_pool = tuple(sorted(facts(world.base_pool)))
     if not (set(base_pool) <= context & base and len(rule_pool) >= 30 and len(base_pool) >= 30):
         raise ValueError('the endpoint-reuse world needs 30 observed rule and base targets')
@@ -738,25 +757,40 @@ def endpoint_reuse(world: FactorialWorld) -> FactorialWorld:
 
 
 def control_world(seed: int, index: int) -> FactorialWorld:
-    """The control world of legacy index ``index`` (``endpoint_prior.make_world(cfg, index, 'concentrated')``).
+    """The control world of a sampler index (``endpoint_prior.make_world(cfg, index, 'concentrated')``).
 
     The research rebuilt the source world and its sparse demonstrations in three layers; they are built once here.
+
+    Args:
+        seed: The run seed.
+        index: The sampler index.
+
+    Returns:
+        The world after all six layers (module docstring).
     """
-    attached = scheduled_topology(seed, index) == 'attached'
-    family = scheduled_family(seed, index)
-    source = source_world(seed, index, family)
-    sparse = add_sparse_demonstrations(source[0], source[1])
+    attached = _scheduled_topology(seed, index) == 'attached'
+    family = _scheduled_family(seed, index)
+    source = _source_world(seed, index, family)
+    sparse = _add_sparse_demonstrations(source[0], source[1])
     ep = sparse[0]
     ids = random.Random(world_first_stream(ep.seed, 'factorial-final-ids-v1', 0))
     permutation = (ids.sample(range(ep.num_entities), ep.num_entities), ids.sample(range(ep.num_relations + 1), ep.num_relations + 1))
-    world = factorial_world(attached, family, sparse, permutation)
-    world = observation_dose(world, source, sparse, permutation)
-    return endpoint_reuse(multiple_matchings(world, _remap_grids(source[1], fact_map(*permutation))))
+    world = _factorial_world(attached, family, sparse, permutation)
+    world = _observation_dose(world, source, sparse, permutation)
+    return _endpoint_reuse(_multiple_matchings(world, _remap_grids(source[1], _fact_map(*permutation))))
 
 
 def control_batches(world: FactorialWorld, seed: int, index: int) -> dict[str, LegacyBatch]:
     """The two tasks of a control world (``prior_factorial.batches``): rule targets from the rule pool, base targets
     from the base pool, each task's own targets removed from its context.
+
+    Args:
+        world: The control world.
+        seed: The run seed.
+        index: The sampler index.
+
+    Returns:
+        ``'rule'`` and ``'base'`` with the research RecipeBatch fields.
 
     Raises:
         ValueError: For a pool below the batch size, or a rule target that lost every planted witness.

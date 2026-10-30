@@ -47,6 +47,12 @@ _SOURCES: dict[tuple[str, str], dict[str, Any]] = {}
 def source_folder(folder: Union[str, Path, None] = None) -> Path:
     """The folder of the real source graphs: ``folder``, else ``$PROOFPFN_REAL_SOURCES``.
 
+    Args:
+        folder: The folder, or ``None``.
+
+    Returns:
+        The folder.
+
     Raises:
         RuntimeError: When neither is given.
     """
@@ -85,7 +91,7 @@ def load_source(name: str, folder: Union[str, Path, None] = None) -> dict[str, A
     return _SOURCES[key]
 
 
-def entity_set(src: dict[str, Any], rng: np.random.Generator, target: int) -> np.ndarray:
+def _entity_set(src: dict[str, Any], rng: np.random.Generator, target: int) -> np.ndarray:
     """A connected entity set of ``target`` entities by breadth-first expansion (``rw_prior.entity_set``).
 
     Returns:
@@ -139,7 +145,7 @@ def real_world(seed: int, index: int, spec: 'FamilySpec', folder: Union[str, Pat
     train = src['train']
     for _ in range(DRAWS):
         target = int(np.exp(rng.uniform(np.log(400), np.log(P['max_entities']))))
-        chosen = entity_set(src, rng, target)
+        chosen = _entity_set(src, rng, target)
         facts_array = train[chosen[train[:, 0]] & chosen[train[:, 2]]]
         facts_array = facts_array[facts_array[:, 0] != facts_array[:, 2]]
         if len(facts_array) >= MIN_FACTS:

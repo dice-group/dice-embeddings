@@ -52,7 +52,7 @@ def test_reading_of_amendment_a1():
 def test_heldout_slots():
     assert gt.heldout_slots('rec1', 3) == [Slot('rec1', 'hook', 8_810_000 + k) for k in range(3)]
     assert gt.heldout_slots('categorical2', 1) == [Slot('categorical2', 'hook', 7_700_000)]
-    assert [s.index for s in gt.heldout_slots('plain', 2)] == [120_000, 120_002]   # G9's plain worlds
+    assert [s.stream_index for s in gt.heldout_slots('plain', 2)] == [120_000, 120_002]   # G9's plain worlds
     for bad in (('plain', 101), ('rec1', 0), ('structured', 1)):
         with pytest.raises(ValueError):
             gt.heldout_slots(*bad)

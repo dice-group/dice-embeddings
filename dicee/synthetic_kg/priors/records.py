@@ -225,8 +225,12 @@ def _taxonomy(rng: np.random.Generator, n: int, P: dict[str, Any]) -> tuple[list
     return anc, counts, parents
 
 
-def record_world_latent(rng: np.random.Generator, P: dict[str, Any]) -> LatentWorld:
+def rec1_world(rng: np.random.Generator, P: dict[str, Any]) -> LatentWorld:
     """The latent world of rec1 (``pf_rec1.latent_world``): tables, columns, chains, references and inherited columns.
+
+    Args:
+        rng: The world generator.
+        P: The family's parameters.
 
     Returns:
         The latent world; the metadata holds the regime, strength, table and row counts, the mean fidelity and the
@@ -377,6 +381,10 @@ def _pick(cdf_rows: np.ndarray, u: np.ndarray) -> np.ndarray:
 
 def list_world(rng: np.random.Generator, P: dict[str, Any]) -> LatentWorld:
     """The latent world of list1 (``pf_list1.latent_world``): anchors, item lists from communities, hubs, attributes and links.
+
+    Args:
+        rng: The world generator.
+        P: The family's parameters.
 
     Returns:
         The latent world; the metadata holds the regime, strength, the sizes and the counts of relation kinds.
@@ -592,7 +600,7 @@ def record_world(seed: int, index: int, spec: 'FamilySpec') -> tuple[dict[str, W
         frng = np.random.default_rng(stream('fidelity')) if spec.generator == 'attr2' else None
         n, nr, facts, domains, ranges, info = categorical_world(rng, P, frng)
     else:
-        latent: Callable[[np.random.Generator, dict[str, Any]], LatentWorld] = record_world_latent if spec.generator == 'rec1' else list_world
+        latent: Callable[[np.random.Generator, dict[str, Any]], LatentWorld] = rec1_world if spec.generator == 'rec1' else list_world
         n, nr, facts, domains, ranges, info = latent(rng, P)
     summary: dict[str, Any] = {}
     if spec.null_swap_budget is not None:

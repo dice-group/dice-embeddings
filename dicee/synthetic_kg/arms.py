@@ -64,12 +64,23 @@ class ArmPreset:
             raise ValueError(f'unknown target {self.target!r}')
 
     def model_config(self) -> dict[str, Any]:
-        """The ULTRA options of the arm (the ``model_config`` of its checkpoints)."""
+        """The ULTRA options of the arm.
+
+        Returns:
+            The ``model_config`` of the arm's checkpoints.
+        """
         return dict(ultra_dim=ULTRA_DIM, ultra_num_layers=ULTRA_LAYERS, ultra_relation_weighting=self.relation_weighting,
                     ultra_pair_channels=self.pair_channels)
 
     def pinned_order(self, seed: int) -> Optional[str]:
-        """The research digest of the arm's order for ``seed``, or ``None`` for an unpinned seed."""
+        """The research digest of the arm's world order.
+
+        Args:
+            seed: The run seed.
+
+        Returns:
+            The digest, or ``None`` for an unpinned seed.
+        """
         return dict(self.order_sha256).get(seed)
 
 
@@ -112,7 +123,13 @@ ARMS: Mapping[str, ArmPreset] = MappingProxyType({preset.name: preset for preset
 
 
 def arm_preset(arm: Union[str, ArmPreset]) -> ArmPreset:
-    """The preset of an arm name (a preset passes through).
+    """The preset of an arm.
+
+    Args:
+        arm: The arm name; a preset passes through.
+
+    Returns:
+        The preset.
 
     Raises:
         KeyError: For an unknown arm name.

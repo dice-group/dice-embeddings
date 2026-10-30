@@ -84,7 +84,7 @@ class RuleWorld:
     signatures: tuple[tuple[int, int], ...]
 
 
-def observe(truth: frozenset[Triple], seed: int) -> frozenset[Triple]:
+def _observe(truth: frozenset[Triple], seed: int) -> frozenset[Triple]:
     """Observe each fact with one probability U(0.5, 0.9), at most ``OBSERVATION_CAP`` facts (``worlds.observe``)."""
     rng = np.random.default_rng(seed)
     fraction = float(rng.uniform(.5, .9))
@@ -95,7 +95,7 @@ def observe(truth: frozenset[Triple], seed: int) -> frozenset[Triple]:
     return frozenset(kept)
 
 
-def rule_world(seed: int) -> RuleWorld:
+def _rule_world(seed: int) -> RuleWorld:
     """A sparse rule world (``worlds.generate('sparse', seed)``): 256 to 768 typed entities, 10 to 14 relations, five
     rules (two unary reversals, chains of two and three, and a chain over a derived relation); ids permuted before the
     closure and the observation."""
@@ -139,11 +139,11 @@ def rule_world(seed: int) -> RuleWorld:
         remapped_signatures[new] = signatures[old]
     truth, _ = derive(base_ids, rules, MAX_FACTS)
     observation_seed = joint_world_stream(seed, 'observation')
-    return RuleWorld(seed, n, nr, base_ids, truth, rules, observe(truth, observation_seed), observation_seed, tuple(remapped_types),
+    return RuleWorld(seed, n, nr, base_ids, truth, rules, _observe(truth, observation_seed), observation_seed, tuple(remapped_types),
                      tuple(remapped_signatures))
 
 
-def affinity_rewiring(source: RuleWorld) -> RuleWorld:
+def _affinity_rewiring(source: RuleWorld) -> RuleWorld:
     """Degree- and type-preserving swaps of each relation's base pairs toward latent pair affinities, then the new
     closure and observation (``affinity.transform(world, 'affinity')``: 20 Metropolis proposals per fact, beta 2)."""
     z = np.random.default_rng(pair_affinity_stream(source.seed, 'latent')).normal(size=(source.n, 4))
@@ -175,10 +175,10 @@ def affinity_rewiring(source: RuleWorld) -> RuleWorld:
         facts.difference_update(q for q in source.base if q[1] == r)
         facts.update((h, r, t) for h, t in pairs)
     truth, _ = derive(facts, source.rules, MAX_FACTS)
-    return replace(source, base=frozenset(facts), truth=truth, context=observe(truth, source.observation_seed))
+    return replace(source, base=frozenset(facts), truth=truth, context=_observe(truth, source.observation_seed))
 
 
-def alternatives(signatures: tuple[tuple[int, int], ...], available: set[int], target: tuple[int, int]) -> list[tuple[tuple[int, ...], bool]]:
+def _alternatives(signatures: tuple[tuple[int, int], ...], available: set[int], target: tuple[int, int]) -> list[tuple[tuple[int, ...], bool]]:
     """Every typed rule body over ``available`` relations that ends in the ``target`` signature: chains of length 1 to 3,
     then reversed unary bodies (``program.alternatives``)."""
     options = []
@@ -194,7 +194,7 @@ def alternatives(signatures: tuple[tuple[int, int], ...], available: set[int], t
     return options
 
 
-def rule_programs(source: RuleWorld) -> RuleWorld:
+def _rule_programs(source: RuleWorld) -> RuleWorld:
     """New typed rule programs (1 to 3 bodies) for every derived relation of a rule world, on its unchanged base
     (``program.transform``); a head is dropped when its typed fact bound would pass ``MAX_FACTS``."""
     rng = random.Random(rule_program_stream(source.seed, 'program'))
@@ -210,7 +210,7 @@ def rule_programs(source: RuleWorld) -> RuleWorld:
         additional = sizes[signature[0]] * sizes[signature[1]]
         if bound + additional > MAX_FACTS:
             continue
-        candidates = alternatives(source.signatures, available, signature)
+        candidates = _alternatives(source.signatures, available, signature)
         if not candidates:
             continue
         chosen: list[tuple[tuple[int, ...], bool]] = []
@@ -223,13 +223,24 @@ def rule_programs(source: RuleWorld) -> RuleWorld:
         available.add(head)
         bound += additional
     truth, _ = derive(source.base, tuple(rules), MAX_FACTS)
-    return replace(source, rules=tuple(rules), truth=truth, context=observe(truth, source.observation_seed))
+    return replace(source, rules=tuple(rules), truth=truth, context=_observe(truth, source.observation_seed))
 
 
 # ----------------------------------------------------------------------------------------------- source selection
 
 def source_arm(seed: int, index: int) -> str:
-    """``'control'`` for one sampler index in each block of five, else ``'joint'`` (``source_arm(..., 'replay20')``)."""
+    """The source of a sampler index: a control world for one index in each block of five (``source_arm(..., 'replay20')``).
+
+    Args:
+        seed: The run seed.
+        index: The sampler index, from ``SCHEDULE_FORK``.
+
+    Returns:
+        ``'control'`` or ``'joint'``.
+
+    Raises:
+        ValueError: For an index before the schedule.
+    """
     if index < SCHEDULE_FORK:
         raise ValueError(f'the source schedule starts at sampler index {SCHEDULE_FORK}')
     choices = ['joint'] * 4 + ['control']
@@ -239,7 +250,15 @@ def source_arm(seed: int, index: int) -> str:
 
 
 def pair_selected(seed: int, index: int) -> bool:
-    """Whether a rule world gets the pair-affinity rewiring: two of the eight per ten sampler indices (``pair_batches.selected``)."""
+    """Whether a rule world gets the pair-affinity rewiring: two of the eight per ten sampler indices (``pair_batches.selected``).
+
+    Args:
+        seed: The run seed.
+        index: The sampler index.
+
+    Returns:
+        ``True`` for a selected rule world.
+    """
     if source_arm(seed, index) != 'joint':
         return False
     block = index // 10 * 10
@@ -248,7 +267,15 @@ def pair_selected(seed: int, index: int) -> bool:
 
 
 def program_selected(seed: int, position: int) -> bool:
-    """Whether a rule world gets new rule programs: four of the eight per ten legacy positions (``program.selected``)."""
+    """Whether a rule world gets new rule programs: four of the eight per ten legacy positions (``program.selected``).
+
+    Args:
+        seed: The run seed.
+        position: The legacy position.
+
+    Returns:
+        ``True`` for a selected rule world.
+    """
     block = position // 10 * 10
     offsets = [j for j in range(block, block + 10) if source_arm(seed, SAMPLER_OFFSET + j) == 'joint']
     return position in sorted(offsets, key=lambda j: rule_program_stream(seed, f'slot:{j}'))[:4]
@@ -261,7 +288,7 @@ def _pools(world: RuleWorld) -> dict[str, list[Triple]]:
     return {'rule': sorted(world.context - world.base), 'base': sorted(world.context & world.base)}
 
 
-def check_pools(world: RuleWorld) -> None:
+def _check_pools(world: RuleWorld) -> None:
     """Refuse a rule world with fewer observed targets than the batch size in a task (the research's only failure of
     the batches of a world that a later layer replaces).
 
@@ -273,7 +300,7 @@ def check_pools(world: RuleWorld) -> None:
             raise ValueError(f'{task}: {len(pool)} observed targets; require {QUERIES}; no resampling')
 
 
-def rule_batches(world: RuleWorld, index: int, joint_exclusion: bool) -> dict[str, LegacyBatch]:
+def _rule_batches(world: RuleWorld, index: int, joint_exclusion: bool) -> dict[str, LegacyBatch]:
     """The two tasks of a rule world: 30 targets per task drawn, 15 kept by the split of ``task_quotas``; the context of
     a task lacks its own targets, or every target of both tasks with ``joint_exclusion`` (the rewired worlds).
 
@@ -329,7 +356,7 @@ def _frequent(row: tuple[int, int, float]) -> bool:
     return row[0] >= MIN_ROLE_COUNT and row[2] >= ROLE_QUANTILE
 
 
-def targeted_context(batch: LegacyBatch) -> frozenset[Triple]:
+def _targeted_context(batch: LegacyBatch) -> frozenset[Triple]:
     """The context without the observed answers of up to three frequent anchors (``oc_prior.masks``, arm ``targeted``).
 
     Anchors are tried in a shuffled order; one is taken when its removal keeps at most a fifth of the context removed,
@@ -396,16 +423,16 @@ def template(seed: int, index: int) -> Template:
     if source_arm(seed, sampler) == 'control':
         batches = control_batches(control_world(seed, sampler), seed, sampler)
     else:
-        world = rule_world(joint_world_stream(seed, f'train-world:{sampler}'))
+        world = _rule_world(joint_world_stream(seed, f'train-world:{sampler}'))
         pair = pair_selected(seed, sampler)
         if pair:
-            check_pools(world)
-            world = affinity_rewiring(world)
+            _check_pools(world)
+            world = _affinity_rewiring(world)
         if program:
-            check_pools(world)
-            world = rule_programs(world)
-        batches = rule_batches(world, sampler, pair)
-    batch = {task: WorldBatch(b.groups, b.head_prediction, targeted_context(b), b.truth, b.num_entities, b.num_relations)
+            _check_pools(world)
+            world = _rule_programs(world)
+        batches = _rule_batches(world, sampler, pair)
+    batch = {task: WorldBatch(b.groups, b.head_prediction, _targeted_context(b), b.truth, b.num_entities, b.num_relations)
              for task, b in batches.items()}
     provenance = {task: dict(sampling_seed=b.sampling_seed, requested_positives=b.requested_positives) for task, b in batches.items()}
     return Template(batch, provenance, program)
@@ -413,6 +440,10 @@ def template(seed: int, index: int) -> Template:
 
 def plain(seed: int, index: int) -> tuple[dict[str, WorldBatch], dict[str, Any]]:
     """A ``plain`` world of the stage-1 stream (``op_worlds.world(seed, 's1', index)``): the template itself.
+
+    Args:
+        seed: The run seed.
+        index: The stage-1 index.
 
     Returns:
         The batch and ``{'family': 'plain', 'program_slot': ..., 'recipe_batch': ...}``.

@@ -12,5 +12,7 @@ Modules:
     checkpoint: the checkpoint format, its loader and the converter of research exports.
     determinism: deterministic execution for pretraining and evaluation.
 
-The package imports no submodule here, so that ``import dicee.synthetic_kg.<module>`` loads only what it needs.
+The package imports no submodule here. A submodule import still imports the package ``dicee`` first, with all its
+models and trainers: on the reference machine a spawned pretraining worker spends about 2 s and 0.6 GB on it before its
+first world.
 """

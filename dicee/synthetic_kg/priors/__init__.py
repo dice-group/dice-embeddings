@@ -20,6 +20,10 @@ from typing import Any, NamedTuple, Optional, Sequence, Union
 from ..batch import World, WorldBatch, check_batch, world_sizes
 from ..recipe import GENERATOR_PARAMS, RECORD_PARAMS, STAGE1_WORLDS, STAGE2_OFFSET, TOTAL_UPDATES
 from ..streams import mixture_draw, stage2_family
+from .legacy import plain
+from .real import real_world
+from .records import record_world
+from .stage2 import stage2_world
 
 BUILTIN_FAMILIES = ('plain', 'structured', 'statistical')
 """Families of the built-in streams; every other family of a mixture needs a ``FamilySpec``."""
@@ -35,11 +39,11 @@ RESERVED_HOOK = ((130_000, 160_000), (500_000, 501_000))
 
 
 class Slot(NamedTuple):
-    """The world of one update: its family, its stream source (``'s1'``, ``'s2'`` or ``'hook'``) and stream index."""
+    """The world of one update: its family, its stream source (``'s1'``, ``'s2'`` or ``'hook'``) and its stream index."""
 
     family: str
     source: str
-    index: int  # type: ignore[assignment]  # the stream index; the field shadows tuple.index
+    stream_index: int
 
 
 @dataclass(frozen=True)
@@ -150,7 +154,14 @@ class PriorConfig:
         return parse_mix(self.mix)
 
     def family(self, name: str) -> Optional[FamilySpec]:
-        """The spec of a hook family, or ``None`` for a built-in family."""
+        """The spec of a family.
+
+        Args:
+            name: A family of the mixture.
+
+        Returns:
+            The spec of a hook family, ``None`` for a built-in family.
+        """
         return next((spec for spec in self.families if spec.name == name), None)
 
 
@@ -191,7 +202,7 @@ def family_sequence(seed: int, prior: PriorConfig, total: int = TOTAL_UPDATES) -
     return out
 
 
-def reserved(index: int, ranges: Sequence[tuple[int, int]]) -> bool:
+def _reserved(index: int, ranges: Sequence[tuple[int, int]]) -> bool:
     """Whether a stream index lies in one of the half-open ranges."""
     return any(low <= index < high for low, high in ranges)
 
@@ -210,7 +221,7 @@ def stage2_indices(seed: int, family: str, count: int) -> list[int]:
     out: list[int] = []
     index = STAGE2_OFFSET
     while len(out) < count:
-        if not reserved(index, RESERVED_STAGE2) and stage2_family(seed, index) == family:
+        if not _reserved(index, RESERVED_STAGE2) and stage2_family(seed, index) == family:
             out.append(index)
         index += 1
     return out
@@ -229,7 +240,7 @@ def hook_indices(first: int, count: int) -> list[int]:
     out: list[int] = []
     index = first
     while len(out) < count:
-        if not reserved(index, RESERVED_HOOK):
+        if not _reserved(index, RESERVED_HOOK):
             out.append(index)
         index += 1
     return out
@@ -306,8 +317,9 @@ def world(seed: int, slot: Slot, prior: PriorConfig, real_sources: Union[str, Pa
     """
     spec = prior.family(slot.family)
     sources = ('hook',) if spec is not None else ('s1', 's2') if slot.family == 'plain' else ('s2',)
-    stage1 = slot.source == 's1' and slot.index >= STAGE1_WORLDS
-    if slot.family not in prior.shares or slot.source not in sources or slot.index < 0 or stage1 or (slot.source == 's2' and slot.index < STAGE2_OFFSET):
+    stage1 = slot.source == 's1' and slot.stream_index >= STAGE1_WORLDS
+    if (slot.family not in prior.shares or slot.source not in sources or slot.stream_index < 0 or stage1
+            or (slot.source == 's2' and slot.stream_index < STAGE2_OFFSET)):
         raise ValueError(f'slot {tuple(slot)} does not belong to this prior')
     try:
         batch, meta = _generate(seed, slot, spec, real_sources)
@@ -325,19 +337,13 @@ def world(seed: int, slot: Slot, prior: PriorConfig, real_sources: Union[str, Pa
 def _generate(seed: int, slot: Slot, spec: Optional[FamilySpec], real_sources: Union[str, Path, None]) -> tuple[dict[str, WorldBatch], dict[str, Any]]:
     """Dispatch to the family generator: ``(task name -> WorldBatch, generator metadata)``.
 
-    The generators live in the modules of this package, imported here at call time: ``legacy`` (stage 1, ``'s1'``),
-    ``stage2`` (``'s2'``: structured, statistical and stage-2 plain worlds), ``records`` (categorical2, rec1, attr2,
-    list1, with the structural null of ``null``) and ``real`` (real subgraph worlds).
+    The generators live in the modules of this package: ``legacy`` (stage 1, ``'s1'``), ``stage2`` (``'s2'``:
+    structured, statistical and stage-2 plain worlds), ``records`` (categorical2, rec1, attr2, list1, with the structural
+    null of ``null``) and ``real`` (real subgraph worlds).
     """
     if spec is None:
-        if slot.source == 's1':
-            from .legacy import plain
-            return plain(seed, slot.index)
-        from .stage2 import stage2_world
-        return stage2_world(seed, slot.index)
+        return plain(seed, slot.stream_index) if slot.source == 's1' else stage2_world(seed, slot.stream_index)
     if spec.generator == 'real':
-        from .real import real_world
-        return real_world(seed, slot.index, spec, real_sources)
-    from .records import record_world
-    return record_world(seed, slot.index, spec)
+        return real_world(seed, slot.stream_index, spec, real_sources)
+    return record_world(seed, slot.stream_index, spec)
 

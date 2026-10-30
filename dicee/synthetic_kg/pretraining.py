@@ -131,7 +131,14 @@ class PretrainResult(NamedTuple):
 # ------------------------------------------------------------------------------------------------------ the update
 
 def learning_rate(update: int) -> float:
-    """The learning rate of a 0-based update: ``LEARNING_RATE`` for ``CONSTANT_UPDATES``, then linear to 0 over ``DECAY_UPDATES``."""
+    """The learning rate of an update: ``LEARNING_RATE`` for ``CONSTANT_UPDATES``, then linear to 0 over ``DECAY_UPDATES``.
+
+    Args:
+        update: The 0-based update.
+
+    Returns:
+        The learning rate.
+    """
     return LEARNING_RATE if update < CONSTANT_UPDATES else LEARNING_RATE * (1 - (update - CONSTANT_UPDATES) / DECAY_UPDATES)
 
 
@@ -225,7 +232,12 @@ def update(model: ULTRA, optimizer: torch.optim.Optimizer, prepared: PreparedWor
 @torch.no_grad()
 def ema_update(ema: Mapping[str, torch.Tensor], model: torch.nn.Module) -> None:
     """Move the EMA of every floating tensor of the model's state towards its value: ``ema = d * ema + (1 - d) * value``
-    with ``d = EMA_DECAY``."""
+    with ``d = EMA_DECAY``.
+
+    Args:
+        ema: The EMA tensors by state key, updated in place.
+        model: The trained model.
+    """
     for key, value in model.state_dict().items():
         if value.dtype.is_floating_point:
             ema[key].mul_(EMA_DECAY).add_(value.detach(), alpha=1 - EMA_DECAY)
@@ -234,7 +246,11 @@ def ema_update(ema: Mapping[str, torch.Tensor], model: torch.nn.Module) -> None:
 # ------------------------------------------------------------------------------------------------------ the run
 
 def source_hashes() -> dict[str, str]:
-    """SHA-256 of the sources that define the updates: ``dicee/synthetic_kg`` and the ULTRA model files, by path below ``dicee``."""
+    """The SHA-256 of the sources that define the updates: ``dicee/synthetic_kg`` and the ULTRA model files.
+
+    Returns:
+        The digest of each file by its path below ``dicee``.
+    """
     package = Path(__file__).resolve().parent
     root = package.parent
     files = sorted(package.rglob('*.py')) + [Path(m.__file__).resolve() for m in (ultra, graph_model, _relation_weights) if m.__file__]
@@ -450,7 +466,7 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
                 ema_update(ema, model)
                 done = i + 1
                 slot, meta = prepared.slot, prepared.meta
-                history.append(dict(update=done, family=slot.family, source=slot.source, index=slot.index, lr=lr, loss=metrics['loss'],
+                history.append(dict(update=done, family=slot.family, source=slot.source, index=slot.stream_index, lr=lr, loss=metrics['loss'],
                                     grad_norm=metrics['grad_norm'], seconds=metrics['seconds'], n_entities=meta['n_entities'],
                                     n_context=meta['n_context'], program_slot=bool(meta.get('program_slot'))))
                 del prepared
@@ -463,7 +479,7 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
                     save_state(done)
                 if done % 50 == 0 or done == end or stopping:
                     logger.info('update %d of %d (%s %s %d): loss %.6f, gradient norm %.4f, learning rate %.3g, %.0f s',
-                                done, TOTAL_UPDATES, slot.family, slot.source, slot.index, metrics['loss'], metrics['grad_norm'], lr,
+                                done, TOTAL_UPDATES, slot.family, slot.source, slot.stream_index, metrics['loss'], metrics['grad_norm'], lr,
                                 time.monotonic() - began)
                     _write_json(folder / 'progress.json', dict(done=done, total=TOTAL_UPDATES, last=history[-1], seconds=time.monotonic() - began))
                 if stopping:

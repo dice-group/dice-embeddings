@@ -100,7 +100,7 @@ def query_world(layout: Template, facts: Sequence[Triple], domains: Sequence[Ite
 
 # ----------------------------------------------------------------------------------------------- statistical worlds
 
-def similarity_world(rng: np.random.Generator) -> tuple[int, int, list[Triple], list[np.ndarray], list[np.ndarray]]:
+def _similarity_world(rng: np.random.Generator) -> tuple[int, int, list[Triple], list[np.ndarray], list[np.ndarray]]:
     """Facts from latent similarity (``st_prior.latent_world``): 400 to 5,000 entities in 4 to 30 clusters with d = 16
     vectors and a popularity bias; per relation, heads of random domain clusters pick 1 + Poisson(lam) tails of random
     range clusters by softmax((<e_h, w_r, e_t> / 4 + beta * b_t) / tau).
@@ -155,7 +155,7 @@ def statistical(seed: int, index: int) -> tuple[dict[str, WorldBatch], dict[str,
     """
     layout = template(seed, index)
     rng = np.random.default_rng(statistical_stream(seed, index, 'world'))
-    n, nr, facts, domains, ranges = similarity_world(rng)
+    n, nr, facts, domains, ranges = _similarity_world(rng)
     batch, observed = query_world(layout, facts, [d.tolist() for d in domains], [r.tolist() for r in ranges], n, nr, rng,
                                   lambda name: statistical_stream(seed, index, name), (0.7, 0.9))
     return batch, dict(family='statistical', program_slot=layout.program_slot, entities=n, relations_total=nr, context=observed,
@@ -164,7 +164,7 @@ def statistical(seed: int, index: int) -> tuple[dict[str, WorldBatch], dict[str,
 
 # ----------------------------------------------------------------------------------------------- structured worlds
 
-def attribute_block(n0: int, original: np.ndarray, rng: np.random.Generator) -> tuple[int, list, list, dict, np.ndarray]:
+def _attribute_block(n0: int, original: np.ndarray, rng: np.random.Generator) -> tuple[int, list, list, dict, np.ndarray]:
     """Subjects in latent clusters with 2 to 6 attribute relations and 1 to 3 homophilous link relations; up to half of
     the original entities hold attributes too (``sw_prior.attribute_block``).
 
@@ -219,7 +219,7 @@ def attribute_block(n0: int, original: np.ndarray, rng: np.random.Generator) -> 
     return ent - n0, kinds, facts, value_sets, holders
 
 
-def self_relations(pools: list[np.ndarray], rng: np.random.Generator) -> tuple[list, list]:
+def _self_relations(pools: list[np.ndarray], rng: np.random.Generator) -> tuple[list, list]:
     """1 or 2 relations where many entities of one pool relate to themselves, plus a few other edges (``sw_prior.self_relations``)."""
     facts, kinds = [], []
     for s in range(int(rng.integers(1, 3))):
@@ -237,7 +237,7 @@ def self_relations(pools: list[np.ndarray], rng: np.random.Generator) -> tuple[l
     return kinds, facts
 
 
-def background(n0: int, original: np.ndarray, context_size: int, rng: np.random.Generator) -> tuple[int, list, list]:
+def _background_block(n0: int, original: np.ndarray, context_size: int, rng: np.random.Generator) -> tuple[int, list, list]:
     """A many-relation background of LogUniform(1, 6) times the context, on the original and new entities (``sw_prior.background``)."""
     factor = float(np.exp(rng.uniform(0.0, np.log(6.0))))
     budget = int((factor - 1.0) * context_size / 0.7)
@@ -283,9 +283,9 @@ def structured(seed: int, index: int) -> tuple[dict[str, WorldBatch], dict[str, 
     rng = np.random.default_rng(structured_stream(seed, index, 'world'))
     original = np.arange(n)
     context_size = max(len(b.context) for b in batch.values())
-    n_attr, attr_kinds, attr_facts, value_sets, holders = attribute_block(n, original, rng)
-    n_bg, bg_kinds, bg_facts = background(n + n_attr, original, context_size, rng)
-    self_kinds, self_facts = self_relations([original, holders, np.arange(n + n_attr, n + n_attr + n_bg) if n_bg else holders], rng)
+    n_attr, attr_kinds, attr_facts, value_sets, holders = _attribute_block(n, original, rng)
+    n_bg, bg_kinds, bg_facts = _background_block(n + n_attr, original, context_size, rng)
+    self_kinds, self_facts = _self_relations([original, holders, np.arange(n + n_attr, n + n_attr + n_bg) if n_bg else holders], rng)
     kinds = attr_kinds + self_kinds + bg_kinds
     rel_id = {k: nr + i for i, k in enumerate(kinds)}
     n_all, nr_all = n + n_attr + n_bg, nr + len(kinds)
@@ -355,7 +355,15 @@ def structured(seed: int, index: int) -> tuple[dict[str, WorldBatch], dict[str, 
 
 
 def stage2_world(seed: int, index: int) -> tuple[dict[str, WorldBatch], dict[str, Any]]:
-    """The world of stage-2 index ``index`` (``st_prior.structured``): statistical, structured or plain by its hashes."""
+    """The world of a stage-2 index (``st_prior.structured``): statistical, structured or plain by its hashes.
+
+    Args:
+        seed: The run seed.
+        index: The stage-2 index.
+
+    Returns:
+        The batch and its metadata.
+    """
     if is_statistical(seed, index):
         return statistical(seed, index)
     return structured(seed, index)

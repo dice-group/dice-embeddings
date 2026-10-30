@@ -51,7 +51,11 @@ class PreparedGraph:
     relation_graph: RelationGraph
 
     def attach(self, model: ULTRA) -> None:
-        """Attach the graph to a model with the options of the preparation (``GraphKGE.attach_graph``)."""
+        """Attach the graph to a model (``GraphKGE.attach_graph``).
+
+        Args:
+            model: ULTRA with the options of the preparation.
+        """
         model.attach_graph(self.graph_triples, self.relation_id_map, self.num_entities, self.num_relations, self.num_direct,
                            self.relation_graph)
 
