@@ -94,18 +94,25 @@ def check_file(path: PathLike, sha256: str, what: str) -> str:
 def git_head(folder: PathLike) -> str:
     """The commit checked out in a git folder, read from ``.git`` without running git.
 
+    ``.git`` is the git folder, or the file ``gitdir: <path>`` of a worktree or a submodule; a worktree keeps its branch
+    refs in the common git folder that its ``commondir`` names.
+
     Raises:
         AdapterSetupError: When the folder holds no readable git checkout.
     """
     git = Path(folder) / '.git'
     try:
+        if git.is_file():
+            git = (Path(folder) / git.read_text().strip().removeprefix('gitdir:').strip()).resolve()
         head = (git / 'HEAD').read_text().strip()
         if not head.startswith('ref: '):
             return head
         ref = head[5:]
-        if (git / ref).is_file():
-            return (git / ref).read_text().strip()
-        return next(line.split()[0] for line in (git / 'packed-refs').read_text().splitlines() if line.endswith(' ' + ref))
+        common = (git / (git / 'commondir').read_text().strip()).resolve() if (git / 'commondir').is_file() else git
+        for base in (git, common):
+            if (base / ref).is_file():
+                return (base / ref).read_text().strip()
+        return next(line.split()[0] for line in (common / 'packed-refs').read_text().splitlines() if line.endswith(' ' + ref))
     except (OSError, StopIteration) as error:
         raise AdapterSetupError(f'{folder}: no git checkout ({error!r})') from None
 

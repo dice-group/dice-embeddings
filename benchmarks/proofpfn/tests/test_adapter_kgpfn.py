@@ -5,6 +5,7 @@ The worker module imports KGPFN only inside ``main``, so its rank function runs 
 """
 import json
 import os
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -172,6 +173,35 @@ def test_setup_refusals(tmp_path):
         (ckpt / name).write_bytes(b'x')
     with pytest.raises(AdapterSetupError, match='SHA-256'):
         kgpfn.setup(code, ckpt, 'python3.12')
+
+
+def fake_code(tmp_path: Path) -> tuple[Path, Path, Path]:
+    """A KGPFN folder with stand-in modules, its two checkpoints and a models.json that pins them: ``(code, checkpoints, models)``."""
+    code, ckpt = tmp_path / 'KGPFN', tmp_path / 'ckpt'
+    (code / '.git').mkdir(parents=True)
+    (code / '.git' / 'HEAD').write_text('f' * 40 + '\n')
+    for name in ('pfn/__init__.py', 'pfn/tasks.py', 'pfn/util.py', 'script/test_kgpfn.py'):
+        (code / name).parent.mkdir(exist_ok=True)
+        (code / name).write_text('')
+    ckpt.mkdir()
+    for name in (kgpfn.CHECKPOINT, kgpfn.TABICL):
+        (ckpt / name).write_bytes(name.encode())
+    doc = json.loads((mf.MANIFESTS / 'models.json').read_text())
+    doc['external']['kgpfn'] = dict(code_commit='f' * 40, tabicl=mf.file_sha256(ckpt / kgpfn.TABICL),
+                                    **{kgpfn.CHECKPOINT: mf.file_sha256(ckpt / kgpfn.CHECKPOINT)})
+    (tmp_path / 'models.json').write_text(json.dumps(doc))
+    return code, ckpt, tmp_path / 'models.json'
+
+
+def test_setup_tries_the_python_command(tmp_path):
+    code, ckpt, models = fake_code(tmp_path)
+    system = kgpfn.setup(code, ckpt, sys.executable, models)
+    assert system.python == (sys.executable,) and system.code == code.resolve()
+    with pytest.raises(AdapterSetupError, match='cannot run'):
+        kgpfn.setup(code, ckpt, str(tmp_path / 'no-python'), models)
+    (code / 'script' / 'test_kgpfn.py').write_text("raise ImportError('No module named tabicl')\n")
+    with pytest.raises(AdapterSetupError, match='(?s)does not import KGPFN.s modules.*No module named tabicl'):
+        kgpfn.setup(code, ckpt, sys.executable, models)
 
 
 def test_worker_parse_and_entity_order(tmp_path):

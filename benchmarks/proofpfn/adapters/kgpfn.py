@@ -22,6 +22,7 @@ import os
 import shlex
 import shutil
 import subprocess
+import tempfile
 import time
 from collections import defaultdict
 from dataclasses import dataclass
@@ -57,6 +58,8 @@ NUM_POS, NEG_STEPS = 20, (80, 40, 20)
 DUMP_LIMIT = 2_500_000   # entities x ranked facts up to which the scores are dumped and verified
 EXIT_OOM = 3
 WORKER = Path(__file__).resolve().with_name('kgpfn_worker.py')
+IMPORTS = 'import pfn.tasks, pfn.util, script.test_kgpfn'
+"""The worker's imports of KGPFN, which import KGPFN's requirements."""
 SETTING = 'KGPFN icl_3g (arXiv 2605.14907v2, code 4f1bc61), answer-blind context, context seed 0'
 PROTOCOL = ('inference graph = train.txt; candidates = all entities of train + valid + test; filter = train + valid + all '
             'test facts, the target kept; pessimistic ties; tail and head query of every ranked fact; KGPFN context: 20 '
@@ -93,8 +96,12 @@ def setup(code: Optional[PathLike] = None, checkpoints: Optional[PathLike] = Non
           models: Optional[PathLike] = None, gpu_gb: float = 0.0) -> KGPFN:
     """The checked KGPFN setup (options, else ``$KGPFN_CODE``, ``$KGPFN_CHECKPOINT_DIR`` and ``$KGPFN_PYTHON``).
 
+    Checks the commit and the checkpoints against their pins, and that the command imports the worker's KGPFN modules in
+    the worker's environment.
+
     Raises:
-        AdapterSetupError: For a missing folder or command, another commit, or a checkpoint that differs from its pin.
+        AdapterSetupError: For a missing folder or command, another commit, a checkpoint that differs from its pin, or a
+            command that does not import KGPFN.
     """
     pins = external_pins(KEY, models)
     folder = external_folder(code, 'KGPFN_CODE', 'KGPFN')
@@ -105,7 +112,18 @@ def setup(code: Optional[PathLike] = None, checkpoints: Optional[PathLike] = Non
     command = python if python is not None else os.environ.get('KGPFN_PYTHON')
     if not command:
         raise AdapterSetupError("KGPFN: give the command that starts KGPFN's Python with --python or $KGPFN_PYTHON")
-    return KGPFN(code=folder, checkpoints=files, python=tuple(shlex.split(command)), pins=pins, gpu_gb=gpu_gb)
+    system = KGPFN(code=folder, checkpoints=files, python=tuple(shlex.split(command)), pins=pins, gpu_gb=gpu_gb)
+    with tempfile.TemporaryDirectory(prefix='kgpfn-setup-') as work:
+        trial = Path(work) / KEY / 'setup' / 'python'   # the layout <work>/kgpfn/<collection>/<graph> of a worker's folder
+        trial.mkdir(parents=True)
+        try:
+            done = subprocess.run([*system.python, '-B', '-c', IMPORTS], env=worker_environment(system, trial), cwd=trial,
+                                  capture_output=True, text=True, timeout=600)
+        except (OSError, subprocess.TimeoutExpired) as error:
+            raise AdapterSetupError(f'KGPFN: cannot run {command} ({error})') from None
+    if done.returncode:
+        raise AdapterSetupError(f"KGPFN: {command} does not import KGPFN's modules ({IMPORTS}): {done.stderr.strip()[-600:]}")
+    return system
 
 
 # ---------------------------------------------------------------------------------------------------------- prepare

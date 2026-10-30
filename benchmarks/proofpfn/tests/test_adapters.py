@@ -62,6 +62,18 @@ def test_file_and_commit_checks(tmp_path):
         adapters.check_commit(tmp_path / 'code', 'b' * 40, 'X')
     with pytest.raises(AdapterSetupError, match='no git checkout'):
         adapters.git_head(tmp_path)
+    (git / 'HEAD').write_text('ref: refs/heads/main\n')   # a worktree: its HEAD in .git/worktrees/<name>, the refs in the common folder
+    (git / 'worktrees' / 'wt').mkdir(parents=True)
+    (git / 'worktrees' / 'wt' / 'HEAD').write_text('ref: refs/heads/main\n')
+    (git / 'worktrees' / 'wt' / 'commondir').write_text('../..\n')
+    (tmp_path / 'wt').mkdir()
+    (tmp_path / 'wt' / '.git').write_text(f"gitdir: {git / 'worktrees' / 'wt'}\n")
+    assert adapters.git_head(tmp_path / 'wt') == 'b' * 40
+    (git / 'modules' / 'sub').mkdir(parents=True)   # a submodule: a relative gitdir
+    (git / 'modules' / 'sub' / 'HEAD').write_text('d' * 40 + '\n')
+    (tmp_path / 'code' / 'sub').mkdir()
+    (tmp_path / 'code' / 'sub' / '.git').write_text('gitdir: ../.git/modules/sub\n')
+    assert adapters.git_head(tmp_path / 'code' / 'sub') == 'd' * 40
 
 
 def test_view_ranks_equal_the_research_rank():

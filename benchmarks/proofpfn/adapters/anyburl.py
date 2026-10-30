@@ -138,10 +138,12 @@ class AnyBURL:
 def setup(code: Optional[PathLike] = None, models: Optional[PathLike] = None, java: str = 'java', scope: bool = True) -> AnyBURL:
     """The checked AnyBURL folder: ``code``, else ``$ANYBURL_HOME``, with the pins of ``models.json`` (``external.anyburl``).
 
-    Checks the jar and the sources archive against their pins, the KR learning setting, and that Java starts.
+    Checks the jar and the sources archive against their pins, the KR learning setting, and that Java starts (in the
+    memory scope, unless ``scope`` is off).
 
     Raises:
-        AdapterSetupError: For a missing folder, a file that differs from its pin, another learning setting, or no Java.
+        AdapterSetupError: For a missing folder, a file that differs from its pin, another learning setting, no
+            ``systemd-run`` for the scope, or no Java.
     """
     home, pins = external_folder(code, VARIABLE, 'AnyBURL'), external_pins(KEY, models)
     for name in (JAR, SOURCES):
@@ -152,6 +154,8 @@ def setup(code: Optional[PathLike] = None, models: Optional[PathLike] = None, ja
     if kr != KR_LEARN:
         raise AdapterSetupError(f'AnyBURL: {KR_LEARN_FILE} holds {kr}, not the KR setting {KR_LEARN}')
     prefix = SCOPE if scope else ()
+    if prefix and shutil.which(prefix[0]) is None:
+        raise AdapterSetupError(f'AnyBURL: {prefix[0]} is missing, which caps the memory of each Java step (--no-scope runs Java without it)')
     try:
         done = subprocess.run([*prefix, java, '-version'], capture_output=True, text=True, timeout=120)
     except (OSError, subprocess.TimeoutExpired) as error:

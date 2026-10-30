@@ -171,10 +171,18 @@ def fake_home(tmp_path: Path) -> tuple[Path, Path]:
     return home, tmp_path / 'models.json'
 
 
-def test_setup_refuses_other_files(tmp_path):
+def test_setup_checks_the_files_the_setting_and_java(tmp_path, monkeypatch):
     home, models = fake_home(tmp_path)
     with pytest.raises(AdapterSetupError, match='SHA-256'):
         anyburl.setup(home)
+    java = fake_java(tmp_path, 'echo \'openjdk version "11.0.28" 2025-07-15\' >&2\n').java
+    assert anyburl.setup(home, models, java=java, scope=False).record() == dict(home=str(home.resolve()), java='openjdk version "11.0.28" 2025-07-15',
+                                                                                scope=[])
+    with pytest.raises(AdapterSetupError, match='cannot run'):
+        anyburl.setup(home, models, java=str(tmp_path / 'no-java'), scope=False)
+    monkeypatch.setenv('PATH', str(tmp_path / 'nothing'))
+    with pytest.raises(AdapterSetupError, match='systemd-run is missing'):
+        anyburl.setup(home, models, java=java)
     (home / anyburl.KR_LEARN_FILE).write_text('SNAPSHOTS_AT = 10\n')
     with pytest.raises(AdapterSetupError, match='KR setting'):
         anyburl.setup(home, models)
