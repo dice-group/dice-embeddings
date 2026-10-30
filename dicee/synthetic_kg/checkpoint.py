@@ -150,8 +150,29 @@ def make_checkpoint(state: Mapping[str, torch.Tensor], *, arm: Union[str, ArmPre
     return checkpoint
 
 
+def atomic_write_bytes(path: Union[str, Path], data: bytes) -> Path:
+    """Write bytes atomically: into a hidden temporary file next to the target, then rename it.
+
+    A reader sees the old file or the new one, never a part. The temporary name carries the process id, so two processes
+    never write into the same temporary file.
+
+    Args:
+        path: The target file; its folder is created.
+        data: The bytes.
+
+    Returns:
+        The path.
+    """
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f'.{path.name}.{os.getpid()}.tmp')
+    temporary.write_bytes(data)
+    os.replace(temporary, path)
+    return path
+
+
 def atomic_save(value: Mapping[str, Any], path: Union[str, Path]) -> Path:
-    """``torch.save`` a dictionary atomically: into a temporary file next to the target, then rename.
+    """``torch.save`` a dictionary atomically (``atomic_write_bytes``).
 
     Args:
         value: The dictionary.
@@ -160,14 +181,9 @@ def atomic_save(value: Mapping[str, Any], path: Union[str, Path]) -> Path:
     Returns:
         The path.
     """
-    path = Path(path)
-    path.parent.mkdir(parents=True, exist_ok=True)
     buffer = io.BytesIO()
     torch.save(dict(value), buffer)
-    temporary = path.with_name(path.name + '.tmp')
-    temporary.write_bytes(buffer.getvalue())
-    os.replace(temporary, path)
-    return path
+    return atomic_write_bytes(path, buffer.getvalue())
 
 
 def save_checkpoint(checkpoint: Mapping[str, Any], path: Union[str, Path]) -> Path:

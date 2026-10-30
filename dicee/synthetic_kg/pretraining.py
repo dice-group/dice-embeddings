@@ -50,7 +50,7 @@ from ..models import _relation_weights, graph_model, ultra
 from ..models._inference import to_device
 from ..models.ultra import ULTRA
 from .arms import ArmPreset, arm_preset, initial_model
-from .checkpoint import atomic_save, make_checkpoint, save_checkpoint
+from .checkpoint import atomic_save, atomic_write_bytes, make_checkpoint, save_checkpoint
 from .determinism import THREADS, deterministic_execution, require_cublas_workspace, torch_threads
 from .digests import file_sha256
 from .prepare import PreparedWorld, prepare_slot
@@ -310,9 +310,7 @@ def provenance(config: PretrainConfig, preset: ArmPreset) -> dict[str, Any]:
 
 
 def _write_json(path: Path, value: Any) -> None:
-    temporary = path.with_name(path.name + '.tmp')
-    temporary.write_text(json.dumps(value, indent=1) + '\n')
-    os.replace(temporary, path)
+    atomic_write_bytes(path, (json.dumps(value, indent=1) + '\n').encode())
 
 
 def _worker_init(threads: int) -> None:

@@ -39,7 +39,6 @@ every query is scored on its own (Flock draws its walks from a generator seeded 
 import hashlib
 import json
 import logging
-import os
 import platform
 import socket
 import time
@@ -52,6 +51,7 @@ import torch
 from dicee.evaluation._filtering import FilteredRanker
 from dicee.models.graph_model import GraphKGE
 from dicee.synthetic_kg.arms import SEEDS
+from dicee.synthetic_kg.checkpoint import atomic_write_bytes
 from dicee.synthetic_kg.determinism import THREADS, deterministic_execution, require_cublas_workspace, torch_threads
 
 from .data import GraphData, Queries, load_graph, prepare_queries
@@ -192,11 +192,8 @@ def view_metrics(rows: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, dict[
 # --------------------------------------------------------------------------------------------------------- files
 
 def write_json(path: Path, value: Any) -> None:
-    """Write JSON atomically (temporary file, then rename)."""
-    path.parent.mkdir(parents=True, exist_ok=True)
-    temporary = path.with_name(f'.{path.name}.{os.getpid()}.tmp')
-    temporary.write_text(json.dumps(value))
-    os.replace(temporary, path)
+    """Write compact JSON atomically (``checkpoint.atomic_write_bytes``), the layout of the research row files."""
+    atomic_write_bytes(path, json.dumps(value).encode())
 
 
 def row_file_path(out: PathLike, entry: GraphEntry, systems: Sequence[System]) -> Path:

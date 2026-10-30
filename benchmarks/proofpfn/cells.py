@@ -32,6 +32,8 @@ from typing import Any, Iterable, Sequence
 import numpy as np
 from scipy import sparse  # type: ignore[import-untyped]
 
+from dicee.synthetic_kg.checkpoint import atomic_write_bytes
+
 from .data import GraphData, load_graph
 from .manifests import REPO, SPLITS, GraphEntry, Manifest, ManifestError, PathLike, file_sha256
 
@@ -243,6 +245,6 @@ def write_queries(manifest: Manifest, entries: Sequence[GraphEntry], out: PathLi
     temporary.replace(out)
     meta = dict(manifest=manifest.name, manifest_sha256=manifest.sha256, seed=SEED, graphs=counts, out_sha256=file_sha256(out),
                 inputs=inputs, code_sha256={'benchmarks/proofpfn/cells.py': file_sha256(Path(__file__))})
-    out.with_name(out.name + '.meta.json').write_text(json.dumps(meta, indent=1, sort_keys=True) + '\n')
+    atomic_write_bytes(out.with_name(out.name + '.meta.json'), (json.dumps(meta, indent=1, sort_keys=True) + '\n').encode())
     return meta
 

@@ -222,6 +222,8 @@ def _adapter(args: argparse.Namespace, argv: Sequence[str]) -> int:
 
 
 def _gate(args: argparse.Namespace) -> int:
+    from dicee.synthetic_kg.checkpoint import atomic_write_bytes
+
     from .gate import FAMILIES, gate
     from .systems import family
     models = read_models(args.models)
@@ -229,8 +231,7 @@ def _gate(args: argparse.Namespace) -> int:
     if len(args.family) != 2 or set(systems) != {'S', 'N'}:
         raise ValueError('the gate needs one --family of arm S and one of arm N')
     record = gate(systems['S'], systems['N'], args.families.split(',') if args.families else FAMILIES, args.per_family, args.device)
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(record, indent=1) + '\n')
+    atomic_write_bytes(args.out, (json.dumps(record, indent=1) + '\n').encode())
     print('| family | worlds | MRR S | MRR N | D = S - N | SE | reading |')
     for name, value in record['results'].items():
         print(f"| {name} | {value['worlds']} | {value['mrr_a']:.4f} | {value['mrr_b']:.4f} | {value['D']:+.4f} | {value['se']:.4f} | {value['reading']} |")
@@ -241,7 +242,8 @@ def _gate(args: argparse.Namespace) -> int:
 
 
 def _fv1_models(args: argparse.Namespace) -> int:
-    args.out.write_text(json.dumps(read_models(args.models).fv1_models(), indent=1, sort_keys=True) + '\n')
+    from dicee.synthetic_kg.checkpoint import atomic_write_bytes
+    atomic_write_bytes(args.out, (json.dumps(read_models(args.models).fv1_models(), indent=1, sort_keys=True) + '\n').encode())
     print(f'-> {args.out}')
     return 0
 
