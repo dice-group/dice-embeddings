@@ -1,5 +1,6 @@
 import re
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 # Installation options:
 # - Default install (CPU-only recommended): pip install dicee --extra-index-url https://download.pytorch.org/whl/cpu
