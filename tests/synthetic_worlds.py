@@ -43,14 +43,9 @@ def golden_names(families: set[str], arms: Optional[set[str]] = None) -> list[st
 
 
 def check_world(name: str) -> None:
-    """Build a golden world with the clean generator (2 torch threads) and compare every recorded digest."""
+    """Build a golden world with the clean generator and compare every recorded digest."""
     golden = WORLDS[name]
-    threads = torch.get_num_threads()
-    torch.set_num_threads(2)
-    try:
-        result = world(golden['seed'], Slot(golden['family'], golden['source'], golden['index']), ARMS[golden['arm']].prior)
-    finally:
-        torch.set_num_threads(threads)
+    result = world(golden['seed'], Slot(golden['family'], golden['source'], golden['index']), ARMS[golden['arm']].prior)
     if content_sha256(result.batch) != golden['content_sha256']:
         keys = per_key_digests(content_tensors(result.batch))
         pytest.fail(f"{name}: the content differs in {[k for k in keys if keys[k] != golden['content_per_key'].get(k)]}")

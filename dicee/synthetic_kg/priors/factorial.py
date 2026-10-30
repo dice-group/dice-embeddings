@@ -24,7 +24,7 @@ import random
 from collections import defaultdict
 from dataclasses import dataclass, replace
 from itertools import permutations
-from typing import Any, Callable, Iterable, NamedTuple, Optional
+from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence
 
 import torch
 
@@ -160,10 +160,17 @@ def validate_world(ep: Episode) -> None:
         raise ValueError('empty context or out-of-vocabulary fact')
 
 
-def remap_episode(ep: Episode, entities: list[int], relations: list[int]) -> Episode:
-    """The episode under new entity and relation ids (``redundancy._remap``)."""
+def fact_map(entities: Sequence[int], relations: Sequence[int]) -> Callable[[Triple], Triple]:
+    """The map of a fact to its new ids: entity ``e`` becomes ``entities[e]``, relation ``r`` becomes ``relations[r]``."""
     def fact(q: Triple) -> Triple:
         return entities[q[0]], relations[q[1]], entities[q[2]]
+
+    return fact
+
+
+def remap_episode(ep: Episode, entities: list[int], relations: list[int]) -> Episode:
+    """The episode under new entity and relation ids (``redundancy._remap``)."""
+    fact = fact_map(entities, relations)
 
     def facts(values: Iterable[Triple]) -> frozenset[Triple]:
         return frozenset(map(fact, values))
@@ -325,13 +332,9 @@ def first_world(seed: int, index: int) -> tuple[Episode, list[dict]]:
     relations = rng.sample(range(nr), nr)
     ep = remap_episode(Episode(world_seed, next_node, nr, rules, frozenset(base), truth, frozenset(context), frozenset(support),
                                frozenset(support), noise), entities, relations)
-
-    def fact(q: Triple) -> Triple:
-        return entities[q[0]], relations[q[1]], entities[q[2]]
-
     validate_world(ep)
     groups = [{**block, 'bundles': [{**b, 'correct': tuple(b['order']) == ep.rules[block['rule']].body} for b in block['bundles']]}
-              for block in _remap_grids(blocks, fact, relations)]
+              for block in _remap_grids(blocks, fact_map(entities, relations), relations)]
     return ep, groups
 
 
@@ -409,11 +412,7 @@ def family_world(family: str, seed: int, index: int, blocks: int) -> tuple[Episo
     ep = Episode(world_seed, next_node, 10, rules, frozenset(base), truth, frozenset(context), frozenset(support), frozenset(support), 9)
     entities, relations = rng.sample(range(next_node), next_node), rng.sample(range(10), 10)
     ep = remap_episode(ep, entities, relations)
-
-    def fact(q: Triple) -> Triple:
-        return entities[q[0]], relations[q[1]], entities[q[2]]
-
-    remapped = _remap_grids(groups, fact)
+    remapped = _remap_grids(groups, fact_map(entities, relations))
     for group_value in remapped:
         for bundle in group_value['bundles']:
             if (bundle['triple'] in ep.truth) != bundle['correct']:
@@ -571,12 +570,8 @@ def factorial_world(attached: bool, family: str, sparse: tuple[Episode, list[dic
         raise ValueError('the irrelevant augmentation changed an original label')
     result = replace(ep, num_relations=ep.num_relations + 1, base=ep.base | extra, truth=truth, context=ep.context | extra,
                      background_relation=new_relation)
-    entities, relations = ids
-
-    def fact(q: Triple) -> Triple:
-        return entities[q[0]], relations[q[1]], entities[q[2]]
-
-    result = remap_episode(result, entities, relations)
+    fact = fact_map(*ids)
+    result = remap_episode(result, *ids)
     validate_world(result)
     return FactorialWorld(result, tuple(sorted(fact(q) for q in witnesses)), tuple(sorted(fact(q) for q in base_pool)), family,
                           {fact(q): tuple(tuple(fact(e) for e in p) for p in paths) for q, paths in witnesses.items()})
@@ -592,11 +587,7 @@ def observation_dose(world: FactorialWorld, source: tuple[Episode, list[dict]], 
     """
     before, groups = source
     after, expanded = sparse
-    entities, relations = ids
-
-    def fact(q: Triple) -> Triple:
-        return entities[q[0]], relations[q[1]], entities[q[2]]
-
+    entities, fact = ids[0], fact_map(*ids)
     private = {q[2] for g in groups for b in g['bundles'] for p in b['paths'] for q in p[:-1]}
     core = sorted(entities[i] for i in range(before.num_entities) if i not in private)
     sparse_nodes = range(before.num_entities, after.num_entities)
@@ -760,9 +751,7 @@ def control_world(seed: int, index: int) -> FactorialWorld:
     permutation = (ids.sample(range(ep.num_entities), ep.num_entities), ids.sample(range(ep.num_relations + 1), ep.num_relations + 1))
     world = factorial_world(attached, family, sparse, permutation)
     world = observation_dose(world, source, sparse, permutation)
-    entities, relations = permutation
-    grids = _remap_grids(source[1], lambda q: (entities[q[0]], relations[q[1]], entities[q[2]]))
-    return endpoint_reuse(multiple_matchings(world, grids))
+    return endpoint_reuse(multiple_matchings(world, _remap_grids(source[1], fact_map(*permutation))))
 
 
 def control_batches(world: FactorialWorld, seed: int, index: int) -> dict[str, LegacyBatch]:

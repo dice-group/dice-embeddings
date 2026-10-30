@@ -24,7 +24,7 @@ from ..streams import mixture_draw, stage2_family
 BUILTIN_FAMILIES = ('plain', 'structured', 'statistical')
 """Families of the built-in streams; every other family of a mixture needs a ``FamilySpec``."""
 
-GENERATORS = (*RECORD_PARAMS, 'real')
+GENERATORS = tuple(GENERATOR_PARAMS)
 """Generators of hook families: the record families and the real subgraph worlds."""
 
 RESERVED_STAGE2 = ((90_000, 90_048), (120_000, 160_000))
@@ -300,16 +300,21 @@ def world(seed: int, slot: Slot, prior: PriorConfig, real_sources: Union[str, Pa
         legacy template that no update reads (``sampling_seed``, ``requested_positives``).
 
     Raises:
-        ValueError: For a slot that does not belong to the prior, or a world that fails ``check_batch`` (a generator's
-            own errors propagate too; the research generators never resample a world).
+        ValueError: For a slot that does not belong to the prior, or a world that fails ``check_batch``. A generator's own
+            errors propagate too (the research generators never resample a world); every error of the generator or the
+            check carries a note with the seed and the slot.
     """
     spec = prior.family(slot.family)
     sources = ('hook',) if spec is not None else ('s1', 's2') if slot.family == 'plain' else ('s2',)
     stage1 = slot.source == 's1' and slot.index >= STAGE1_WORLDS
     if slot.family not in prior.shares or slot.source not in sources or slot.index < 0 or stage1 or (slot.source == 's2' and slot.index < STAGE2_OFFSET):
         raise ValueError(f'slot {tuple(slot)} does not belong to this prior')
-    batch, meta = _generate(seed, slot, spec, real_sources)
-    check_batch(batch)
+    try:
+        batch, meta = _generate(seed, slot, spec, real_sources)
+        check_batch(batch)
+    except Exception as error:
+        error.add_note(f'in the world of seed {seed}, slot {tuple(slot)}')
+        raise
     if spec is not None:
         meta = dict(meta, generator_family=meta.get('family'), family=slot.family)
     elif meta.get('family') != slot.family:

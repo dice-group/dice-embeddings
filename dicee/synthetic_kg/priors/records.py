@@ -464,7 +464,9 @@ def list_world(rng: np.random.Generator, P: dict[str, Any]) -> LatentWorld:
         ranges.append(ran)
         return pairs
 
-    expected = sum(na * sp[2] for sp in specs)
+    expected = 0.0
+    for sp in specs:   # a plain float loop: Python 3.12's sum() adds with compensation, the research Python did not
+        expected += na * sp[2]
     scale = min(1.0, 0.9 * P['max_facts'] / max(expected, 1.0))
     rhos = []
     for k, rho, mu, sigma, rev in specs:

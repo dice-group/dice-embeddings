@@ -90,8 +90,8 @@ def query_world(layout: Template, facts: Sequence[Triple], domains: Sequence[Ite
             h, r, t = queries[position]
             position += 1
             forbidden = heads_of[r, t] if head else tails_of[h, r]
-            pool = [e for e in (domains[r] if head else ranges[r]) if e not in forbidden] or [e for e in all_entities if e not in forbidden]
             rest = [e for e in all_entities if e not in forbidden]
+            pool = [e for e in (domains[r] if head else ranges[r]) if e not in forbidden] or rest
             negs = nrng.choices(pool, k=NEGATIVES // 2) + nrng.choices(rest, k=NEGATIVES - NEGATIVES // 2)
             rows.append([mapped(x) for x in [(h, r, t)] + [((e, r, t) if head else (h, r, e)) for e in negs]])
         out[task] = WorldBatch(torch.tensor(rows, dtype=torch.long), b.head_prediction, context, truth, n, nr)

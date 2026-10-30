@@ -8,7 +8,8 @@ import os
 import pytest
 import torch
 
-from dicee.synthetic_kg.priors import FamilySpec, real
+from dicee.synthetic_kg.arms import ARMS
+from dicee.synthetic_kg.priors import FamilySpec, Slot, real, world
 from tests.synthetic_worlds import check_world, golden_names
 
 
@@ -35,6 +36,9 @@ def test_real_sources_are_checked_against_their_pins(tmp_path, monkeypatch):
     monkeypatch.delenv(real.SOURCES_ENV, raising=False)
     with pytest.raises(RuntimeError, match=real.SOURCES_ENV):
         real.source_folder()
+    with pytest.raises(RuntimeError, match=real.SOURCES_ENV) as caught:   # a generator error names the world
+        world(42, Slot('real', 'hook', 400_000), ARMS['R'].prior)
+    assert caught.value.__notes__ == ["in the world of seed 42, slot ('real', 'hook', 400000)"]
     (tmp_path / 'WN18RR').mkdir()
     torch.save({'splits': {'train': torch.zeros(1, 3, dtype=torch.long)}, 'entities': ['a']}, tmp_path / 'WN18RR' / 'data.pt')
     with pytest.raises(ValueError, match='the pin of WN18RR'):

@@ -36,10 +36,11 @@ def test_every_golden_plain_world():
 
 
 def test_world_leaves_global_random_state_unchanged():
-    states = random.getstate(), np.random.get_state()[1].copy(), torch.get_rng_state()
+    python, numpy, generator = random.getstate(), np.random.get_state(legacy=False), torch.get_rng_state()
     check_world('42/S/plain/50')
-    assert random.getstate() == states[0] and np.array_equal(np.random.get_state()[1], states[1])
-    assert torch.equal(torch.get_rng_state(), states[2])
+    after = np.random.get_state(legacy=False)
+    assert np.array_equal(after['state'].pop('key'), numpy['state'].pop('key')) and after == numpy   # the MT19937 key, then the rest
+    assert random.getstate() == python and torch.equal(torch.get_rng_state(), generator)
 
 
 def test_slots_outside_their_streams_are_refused():
