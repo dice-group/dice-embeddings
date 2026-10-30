@@ -48,9 +48,12 @@ def test_check_run_and_cells(tmp_path, capsys):
     common = ['--set', str(manifest), '--data-root', str(tmp_path), '--family', family]
     workspace = os.environ.get('CUBLAS_WORKSPACE_CONFIG')
     assert cli.main(['check', *common]) == 0 and 'check passed (1 graphs' in capsys.readouterr().out
+    final = evaluate.row_file_path(tmp_path / 'out', mf.read_manifest(manifest).entry('g'), ['ts'])
+    earlier = evaluate.write_error(final, mf.read_manifest(manifest).entry('g'), stage='score', error='CUDA out of memory')
     assert cli.main(['run', *common, '--device', 'cpu', '--out', str(tmp_path / 'out')]) == 0
     doc = json.loads((tmp_path / 'out' / 'tiny' / 'ts' / 'g.json').read_text())
     assert doc['families'] == ['ts'] and os.environ.get('CUBLAS_WORKSPACE_CONFIG') == workspace
+    assert final.is_file() and not earlier.exists()   # a graph that is done loses the record of its earlier failure
     assert cli.main(['cells', '--set', str(manifest), '--data-root', str(tmp_path), '--out', str(tmp_path / 'queries.csv')]) == 0
     assert (tmp_path / 'queries.csv').read_text().count('\n') == 1 + len(doc['rows'])
 

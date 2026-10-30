@@ -193,24 +193,27 @@ def _check(args: argparse.Namespace) -> int:
 def _run(args: argparse.Namespace) -> int:
     import torch
 
-    from .evaluate import evaluate_graph, row_file_path, write_error
+    from .evaluate import error_path, evaluate_graph, row_file_path, write_error
     manifest, entries = _entries(args)
     device = _device(args.device)
     systems = _systems(args)
     shard = tuple(int(x) for x in args.shard.split('/') if x.isdigit())
     if len(shard) != 2 or args.shard.count('/') != 1:
         raise UsageError(f'--shard {args.shard!r}: expected i/k')
+    keys = [s.key for s in systems]
     statuses = {}
     for entry in entries:
+        final = row_file_path(args.out, entry, keys)
         try:
             statuses[entry.key] = evaluate_graph(manifest, entry, systems, args.out, root=args.data_root, device=device,
                                                  shard=(shard[0], shard[1]), parts=args.parts, save_minutes=args.save_minutes,
                                                  max_minutes=args.max_minutes)
         except torch.cuda.OutOfMemoryError as error:
-            keys = [s.key for s in systems]
-            write_error(row_file_path(args.out, entry, keys), entry, systems=keys, stage='score', error=str(error).splitlines()[0][:400])
+            write_error(final, entry, systems=keys, stage='score', error=str(error).splitlines()[0][:400])
             torch.cuda.empty_cache()
             statuses[entry.key] = 'oom'
+        if statuses[entry.key] == 'done':
+            error_path(final).unlink(missing_ok=True)   # the record of an earlier failure
         print(entry.key, statuses[entry.key], flush=True)
     if 'oom' in statuses.values():
         return EXIT_OOM
