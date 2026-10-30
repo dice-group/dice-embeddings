@@ -288,15 +288,19 @@ python -m benchmarks.proofpfn gate --family mys=S:runs/S/{seed}/export-24000-ema
 - The reading `n_validity` is `pass` when D > 2 SE on every nulled world family and |D| <= 2 SE on plain.
 - Options: `--per-family` (held-out worlds per world family, at most 100), `--families` (the reading needs all five)
   and `--device` (default `cuda`).
-- The command prints D and SE per world family and writes the record to `--out`.
+- The command prints D and SE per world family and writes the record to `--out`, with the per-world values and a
+  provenance record (code hashes, versions, device, checkpoint records).
 
 ## External baselines
 
 Three adapters run external baselines on the graphs of the benchmark: KGPFN, MERIT and AnyBURL. Their code,
 checkpoints and runtimes stay outside the repository. Each adapter checks its files against the pins of
 `manifests/models.json` and writes row files in the benchmark's format. Before a run, check the setup with
-`--check`. The [README](../benchmarks/proofpfn/README.md#external-baselines) documents the setup and the settings of
-each adapter. Official Flock is a native reference system of the benchmark (`flockoff`), not an adapter.
+`--check`. A graph that fails gets an error record, and the run goes on with the next graph. The KGPFN and AnyBURL
+adapters reproduce their research runners on their goldens. The MERIT adapter is unverified
+([Known limits](#known-limits)). The [README](../benchmarks/proofpfn/README.md#external-baselines) documents the setup
+and the settings of each adapter. Official Flock is a native reference system of the benchmark (`flockoff`), not an
+adapter.
 
 ## Reproducing the thesis results
 
@@ -306,24 +310,35 @@ each adapter. Official Flock is a native reference system of the benchmark (`flo
   `freeze/fresh-v1`).
 - The six registered files in `benchmarks/proofpfn/registered/` turn row files into the registered analysis.
 - `fv1_tables.py` writes the tables `mrr.csv`, `ranks.csv` and `cost.csv`. `fv1_analysis.py analyse` writes the
-  result. `fv1_drops.py` writes `dropped.json` from the dispatcher records of the frozen run.
-- `fv1_devrows.py` writes the development table of `fv1_analysis.py precision`. The two test scripts check the others.
+  result. The two test scripts check the others.
 - The registered files are byte-identical to the freeze anchors of the registration. A test checks their SHA-256.
   Their byte-identical outputs need Python 3.12.2 and numpy 1.26.4.
 - The [README](../benchmarks/proofpfn/README.md#the-registered-analysis) shows the commands of the two main scripts.
-- The benchmark writes three of their inputs. `fv1-models` writes the `--models` file, `cells` writes `queries.csv`
-  and `gate` gives the `n_validity` entry of `gates.json`.
-- The `kgpfn_parity` entry of `gates.json` comes from the KGPFN parity check of the frozen run (registration section
-  7.3).
 - The ported code reproduces the research code bit for bit on the goldens. Its row files have the research format, so
   the registered files read them like the research rows.
 - To evaluate the registered models, pass their pinned research exports under the registered keys. The checkpoints
-  that `convert` makes from these exports pass the pins too.
+  that `convert` makes from these exports with the EMA weights (the default) pass the pins too. A raw conversion does
+  not.
 - The fresh-v1 and block-3 manifests are not in the repository. They follow after the frozen read. A blind manifest
   opens only with `--release NAME`.
 - The research code and its notes stay outside this branch. They are in the branch `proofpfn-research` with the tags
   `research/proofpfn-20261029` and `freeze/fresh-v1`. The snapshot repository `proofpfn-research-snapshot` holds the
   runtime folders of the research runs.
+
+Seam. The writer of each input of the registered analysis:
+
+| Input | Writer |
+|---|---|
+| the row files | `run` and `adapter` |
+| the `--models` file of `fv1_tables.py` | `fv1-models` |
+| `queries.csv` | `cells` |
+| `gates.json`, entry `n_validity` | `gate` |
+| `gates.json`, entry `kgpfn_parity` | the frozen record of the pre-read parity check (registration section 7.3). The check needs KGPFN's native context mode on the T1 probes, outside the answer-blind adapter, so the benchmark has no command for it |
+| `dropped.json` | the registered `fv1_drops.py` on the dispatcher records of the frozen run. The clean `run` and `adapter` write error records to `.errors/` instead |
+| the fresh-v1 and block-3 manifests | added after the frozen read |
+
+`fv1_devrows.py` writes the development table of `fv1_analysis.py precision`. It is kept as a freeze anchor and runs
+only in the research tree: it finds its inputs relative to its own folder there.
 
 ## Testing
 
@@ -374,8 +389,10 @@ Golden references (goldens) record what the research code computes at small size
 
 ## Known limits
 
-- The MERIT adapter imports MERIT's package, which needs torch-scatter and torch-geometric. Without them, the adapter
-  cannot run and its tests skip.
+- The MERIT adapter is unverified: it never ran with MERIT's code. It is verified when
+  `test_check_graph_ranks_equal_the_research_ranks` passes on an H100 NVL. It needs MERIT's environment: torch
+  2.5.1+cu124, torch-scatter 2.1.2, torch-geometric 2.4.0, easydict, jinja2 and PyYAML. Without it, the adapter cannot
+  run and its tests with MERIT's code skip.
 - CUDA results can differ between GPU types. The GPU goldens hold for the RTX 4070 Ti SUPER only. KGPFN's scores, and
   so some of its ranks, differ between GPU types.
 - The graph files of the blind test sets (fresh-v1 and block 3) are never in the repository. Their manifests follow

@@ -23,7 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ProofPFN (`dicee.synthetic_kg`): ULTRA pretrained on worlds of a synthetic prior, with presets of seven arms, resumable runs and its own checkpoint format ([guide](docs/proofpfn.md))
 - `dicee_pretrain_synthetic`: the command that pretrains an arm, converts research exports into checkpoints and builds the real source graphs of arms R and M
 - ProofPFN benchmark (`python -m benchmarks.proofpfn`): frozen graph and model manifests, zero-shot ranks by the research protocol, query cells and the N validity gate
-- Adapters of KGPFN, MERIT and AnyBURL for the ProofPFN benchmark, and its six registered fresh-v1 analysis files, byte-identical to their freeze anchors
+- Adapters of KGPFN, MERIT and AnyBURL for the ProofPFN benchmark (MERIT unverified until its check ranks pass on an H100 NVL), and its six registered fresh-v1 analysis files, byte-identical to their freeze anchors
 - Golden tests against the research code: bitwise world orders, worlds, initial weights, first training updates, exports, ranks, query cells and gate values
 
 ### Changed
