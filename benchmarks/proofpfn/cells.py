@@ -53,7 +53,7 @@ def _input_order_matrix(rows: np.ndarray, cols: np.ndarray, n: int) -> sparse.cs
 
     A stable sort by row gives the columns and the row counts give ``indptr``. A repeated edge stays its own entry. scipy
     1.13.0, the version of the frozen run, built ``csr_matrix((data, (rows, cols)))`` this way. Later versions sort each
-    row, which changes the facts that ``rules_r2`` samples.
+    row, which changes the facts that ``_rules_r2`` samples.
     """
     indptr = np.zeros(n + 1, dtype=np.int64)
     np.cumsum(np.bincount(rows, minlength=n), out=indptr[1:])
@@ -90,7 +90,7 @@ class ObservedGraph:
         return self.rel[a:b], self.dst[a:b]
 
 
-def rules_r1(g: ObservedGraph, qs: Iterable[int]) -> dict[int, dict[int, float]]:
+def _rules_r1(g: ObservedGraph, qs: Iterable[int]) -> dict[int, dict[int, float]]:
     """``conf(r' => q)`` for every q of ``qs``: the pairs of r' that are pairs of q over the pairs of r' (at least 0.05)."""
     pairs: dict[tuple[int, int], set[int]] = defaultdict(set)
     for s, r, d in zip(g.src.tolist(), g.rel.tolist(), g.dst.tolist()):
@@ -106,7 +106,7 @@ def rules_r1(g: ObservedGraph, qs: Iterable[int]) -> dict[int, dict[int, float]]
     return {q: {a: c / size[a] for (a, b), c in co.items() if b == q and c / size[a] >= MIN_CONFIDENCE} for q in qs}
 
 
-def rules_r2(g: ObservedGraph, q: int, rng: random.Random) -> list[tuple[float, int, int]]:
+def _rules_r2(g: ObservedGraph, q: int, rng: random.Random) -> list[tuple[float, int, int]]:
     """``[(conf, b1, b2)]`` of the most frequent length-2 bodies of q with a positive confidence."""
     m = g.mat.get(q)
     if m is None or m.nnz == 0:
@@ -151,7 +151,7 @@ def rules_r2(g: ObservedGraph, q: int, rng: random.Random) -> list[tuple[float, 
     return [b for b in bodies if b[0] > 0]
 
 
-def peer_scores(g: ObservedGraph, anchor: int, q: int) -> np.ndarray:
+def _peer_scores(g: ObservedGraph, anchor: int, q: int) -> np.ndarray:
     """The PEER votes of a query ``(anchor, q, ?)`` over all entities."""
     m = g.mat.get(q)
     if m is None:
@@ -169,7 +169,7 @@ def peer_scores(g: ObservedGraph, anchor: int, q: int) -> np.ndarray:
     return np.asarray(w @ m).ravel()
 
 
-def query_cells(observed: np.ndarray, filt: np.ndarray, facts: Sequence[tuple[int, int, int]], n: int, nr: int,
+def _query_cells(observed: np.ndarray, filt: np.ndarray, facts: Sequence[tuple[int, int, int]], n: int, nr: int,
                 rng: random.Random) -> list[tuple[tuple[int, int, int], bool, float, float, float]]:
     """``[(fact, head, r1_at, rank_peer, r2_at)]`` of every fact in both directions, in the draw order of the research.
 
@@ -189,8 +189,8 @@ def query_cells(observed: np.ndarray, filt: np.ndarray, facts: Sequence[tuple[in
         known[h, r].add(t)
         known[t, r + nr].add(h)
     qs = sorted({q for (_, q, _), _, _ in qlist})
-    r1 = rules_r1(g, qs)
-    r2 = {q: rules_r2(g, q, rng) for q in qs}
+    r1 = _rules_r1(g, qs)
+    r2 = {q: _rules_r2(g, q, rng) for q in qs}
     out = []
     for (anchor, q, target), head, fact in qlist:
         banned = (known[anchor, q] - {target}) | {anchor}
@@ -202,7 +202,7 @@ def query_cells(observed: np.ndarray, filt: np.ndarray, facts: Sequence[tuple[in
         for c, b1, b2 in r2.get(q, []):
             reach = g.mat[b1][anchor] @ g.mat[b2]
             s2[reach.indices] += c
-        out.append((fact, head, float(s1[target]), rank_of(peer_scores(g, anchor, q), target, banned), float(s2[target])))
+        out.append((fact, head, float(s1[target]), rank_of(_peer_scores(g, anchor, q), target, banned), float(s2[target])))
     return out
 
 
@@ -219,7 +219,7 @@ def graph_cells(graph: GraphData) -> list[Cell]:
         raise ManifestError('test.txt holds a fact twice')
     filt = np.concatenate([split['train'], split['valid'], split['test']])
     cells = [(f'{index_of[fact]}:{"h" if head else "t"}', r1, peer, r2)
-             for fact, head, r1, peer, r2 in query_cells(split['train'], filt, facts, graph.num_entities, graph.num_relations, random.Random(SEED))]
+             for fact, head, r1, peer, r2 in _query_cells(split['train'], filt, facts, graph.num_entities, graph.num_relations, random.Random(SEED))]
     return sorted(cells, key=lambda c: (int(c[0].split(':')[0]), c[0].endswith(':h')))
 
 

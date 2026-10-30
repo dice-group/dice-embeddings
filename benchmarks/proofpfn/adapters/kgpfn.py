@@ -225,7 +225,7 @@ def worker_environment(system: KGPFN, folder: Path) -> dict[str, str]:
                 KGPFN_CHECKPOINT_DIR=str(system.checkpoints), KGPFN_WORKER_DIR=str(WORKER.parent), KGPFN_WORK=str(work))
 
 
-def run_worker(system: KGPFN, entry: GraphEntry, folder: Path, meta: Mapping[str, Any]) -> tuple[Optional[int], int]:
+def _run_worker(system: KGPFN, entry: GraphEntry, folder: Path, meta: Mapping[str, Any]) -> tuple[Optional[int], int]:
     """Run the worker with the meta's settings and, after CUDA out of memory, once more with half the batch.
 
     Returns:
@@ -352,7 +352,7 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, system:
     folder = work_folder(work, out, KEY, entry)
     folder.mkdir(parents=True, exist_ok=True)
     meta = prepare(entry, graph, queries, folder, manifest.folder(entry, root))
-    code, attempts = run_worker(system, entry, folder, meta)
+    code, attempts = _run_worker(system, entry, folder, meta)
     if code != 0:
         oom = folder / 'raw.error.json'
         reason = f'stopped after {WORKER_HOURS} h' if code is None else f'the worker exited with code {code}'

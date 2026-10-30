@@ -102,7 +102,7 @@ def gt2_rank(v: torch.Tensor, allowed: np.ndarray, target: int, unseen: np.ndarr
     return int(((q >= q[target]) & allowed).sum())
 
 
-def group_views(systems: Sequence[System], logp: Mapping[Label, torch.Tensor]) -> list[tuple[str, torch.Tensor, bool]]:
+def _group_views(systems: Sequence[System], logp: Mapping[Label, torch.Tensor]) -> list[tuple[str, torch.Tensor, bool]]:
     """``[(key, view, seed view?)]`` of a query group: per family the seed mean, then each seed; per reference its model."""
     views = []
     for system in systems:
@@ -128,13 +128,13 @@ def query_scores(model: GraphKGE, head: bool, h: int, r: int, t: int) -> torch.T
     return scores
 
 
-def group_rows(systems: Sequence[System], models: Mapping[Label, GraphKGE], queries: Queries, position: int,
+def _group_rows(systems: Sequence[System], models: Mapping[Label, GraphKGE], queries: Queries, position: int,
                ranker: FilteredRanker) -> list[dict[str, Any]]:
     """The rows of one query group (one per test member), with every key of every system."""
     (head, r, anchor), members = queries.groups[position]
     h0, _, t0 = queries.facts[members[0]]
     logp = {label: torch.log_softmax(query_scores(model, head, h0, r, t0).double(), 0) for label, model in models.items()}
-    views = group_views(systems, logp)
+    views = _group_views(systems, logp)
     gated = []
     for _, v, _ in views:
         g = v.clone()
@@ -175,12 +175,12 @@ def row_keys(systems: Sequence[System]) -> list[str]:
     return keys
 
 
-def metrics_of(rows: Sequence[Mapping[str, Any]]) -> dict[str, float]:
+def _metrics_of(rows: Sequence[Mapping[str, Any]]) -> dict[str, float]:
     """The mean reciprocal rank per key, as the research rows compute it."""
     return {k: float(np.mean([1 / row[k] for row in rows])) for k in rows[0] if k not in ('index', 'head')}
 
 
-def view_metrics(rows: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, dict[str, float]]]:
+def _view_metrics(rows: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, dict[str, float]]]:
     """MRR and Hits@1, 3, 10 per key for both directions, tail queries and head queries (the T1 views)."""
     keys = [k for k in rows[0] if k not in ('index', 'head')]
     out: dict[str, dict[str, dict[str, float]]] = {}
@@ -222,7 +222,7 @@ def write_error(final: Path, entry: GraphEntry, **record: Any) -> Path:
     return path
 
 
-def shard_blocks(groups: int, shards: int) -> list[tuple[int, int]]:
+def _shard_blocks(groups: int, shards: int) -> list[tuple[int, int]]:
     """``shards`` contiguous blocks ``[a, b)`` of the query groups, of sizes equal up to one group."""
     return [(j * groups // shards, (j + 1) * groups // shards) for j in range(shards)]
 
@@ -238,7 +238,7 @@ def graph_record(manifest: Manifest, entry: GraphEntry, graph: GraphData, querie
                 sampled=queries.positions is not None, sample_rule=SAMPLE_RULES[manifest.sample_rule], positions=queries.positions)
 
 
-def record_of(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, systems: Sequence[System],
+def _record_of(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, systems: Sequence[System],
               setting: Optional[Mapping[str, Any]], device: torch.device) -> dict[str, Any]:
     """The ``allgraph`` record of a row file (the fields of the research record that the tables read, and the rest)."""
     record = dict(graph_record(manifest, entry, graph, queries), families={s.key: s.spec() for s in systems},
@@ -285,12 +285,12 @@ def write_row_file(final: Path, entry: GraphEntry, graph: GraphData, queries: Qu
     if any(list(r) != ['index', 'head', *keys] for r in rows) or any(not 1 <= r[q] <= n for r in rows for q in keys):
         raise ValueError(f'{entry.name}: a row has other keys or a rank outside 1..{n}')
     write_json(final, dict(dataset=entry.name, families=list(families), entities=n, relations=graph.num_relations, reflexive=sorted(queries.reflexive),
-                           protocol=protocol, metrics=metrics_of(rows), rows=rows, seconds=seconds, allgraph=dict(record),
-                           metrics_views=view_metrics(rows), **dict(extra or {}), provenance=dict(provenance)))
+                           protocol=protocol, metrics=_metrics_of(rows), rows=rows, seconds=seconds, allgraph=dict(record),
+                           metrics_views=_view_metrics(rows), **dict(extra or {}), provenance=dict(provenance)))
     logger.info('%s: %d rows, %.0f s -> %s', entry.name, len(rows), seconds, final)
 
 
-def identity_of(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, systems: Sequence[System]) -> str:
+def _identity_of(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, systems: Sequence[System]) -> str:
     """A digest of what a part file's rows depend on: graph, sample, systems and model hashes."""
     value = dict(manifest=manifest.name, key=entry.key, hashes=graph.hashes, positions=queries.positions, keys=row_keys(systems),
                  models={s.key: s.model_sha256() for s in systems}, specs={s.key: s.spec() for s in systems})
@@ -352,8 +352,8 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
                 system.check()
         flock = [s.key for s in systems if isinstance(s, OfficialFlock)]
         setting = official_setting(entry, graph, flock) if flock else None
-        identity = identity_of(manifest, entry, graph, queries, systems)
-        a, b = shard_blocks(len(queries.groups), k)[i - 1]
+        identity = _identity_of(manifest, entry, graph, queries, systems)
+        a, b = _shard_blocks(len(queries.groups), k)[i - 1]
         use_parts = parts or k > 1
         part = part_path(final, shard)
         stored = _read_part(part, entry, keys, shard, len(queries.groups), (a, b), identity) if use_parts else None
@@ -377,7 +377,7 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
             done = start
             try:
                 for position in range(start, b):
-                    rows += group_rows(systems, models, queries, position, ranker)
+                    rows += _group_rows(systems, models, queries, position, ranker)
                     done = position + 1
                     now = time.monotonic()
                     if use_parts and done < b and now - saved >= 60 * save_minutes:
@@ -444,4 +444,4 @@ def _write_row_file(final: Path, manifest: Manifest, entry: GraphEntry, graph: G
     provenance = provenance_of(manifest, CODE_FILES, protocol=PROTOCOL, device=str(device), deterministic=True, threads=torch.get_num_threads(),
                                shards=shards, runs=runs, checkpoints={s.key: s.provenance() for s in systems if isinstance(s, ProofPFNFamily)})
     write_row_file(final, entry, graph, queries, row_keys(systems), rows, families=[s.key for s in systems], protocol=PROTOCOL, seconds=seconds,
-                   record=record_of(manifest, entry, graph, queries, systems, setting, device), provenance=provenance, extra=extra)
+                   record=_record_of(manifest, entry, graph, queries, systems, setting, device), provenance=provenance, extra=extra)

@@ -208,7 +208,7 @@ def _weighted_relation_graph(graph_triples: torch.Tensor, num_entities: int, num
     return rel_edge_index, rel_edge_type, weight.to(rel_edge_index.device)
 
 
-def check_options(relation_weighting: str, pair_channels: str) -> None:
+def _check_options(relation_weighting: str, pair_channels: str) -> None:
     """Refuse unknown or incompatible values of ULTRA's two relation-graph options.
 
     Args:
@@ -261,7 +261,7 @@ def relation_graph(graph_triples: torch.Tensor, num_entities: int, num_direct: i
     Returns:
         The relation graph on the device of ``graph_triples``.
     """
-    check_options(relation_weighting, pair_channels)
+    _check_options(relation_weighting, pair_channels)
     if relation_weighting == 'binary':
         edge_index, edge_type = build_relation_graph(graph_triples[:, [0, 2]].T, graph_triples[:, 1], num_entities, 2 * num_direct)
         return RelationGraph(edge_index, edge_type, None)
@@ -299,7 +299,7 @@ class ULTRA(GraphKGE):
             raise ValueError('ULTRA dimensions and layers must be positive')
         self.relation_weighting = args.get('ultra_relation_weighting', 'binary')
         self.pair_channels = args.get('ultra_pair_channels', 'off')
-        check_options(self.relation_weighting, self.pair_channels)
+        _check_options(self.relation_weighting, self.pair_channels)
         self.relation_model = RelNBFNet(self.dim, self.num_layers)
         self.entity_model = EntityNBFNet(self.dim, self.num_layers)
         if self.pair_channels == 'on':

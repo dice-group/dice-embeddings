@@ -66,7 +66,7 @@ def _shapes(relation_weighting: str, pair_channels: str) -> tuple[tuple[str, tup
     return tuple((key, tuple(value.shape)) for key, value in model.state_dict().items())
 
 
-def state_shapes(arm: Union[str, ArmPreset]) -> dict[str, tuple[int, ...]]:
+def _state_shapes(arm: Union[str, ArmPreset]) -> dict[str, tuple[int, ...]]:
     """The keys and shapes of an arm's state dictionary.
 
     Args:
@@ -114,7 +114,7 @@ def check_checkpoint(checkpoint: Mapping[str, Any]) -> None:
     if not isinstance(checkpoint.get('provenance'), Mapping):
         problems.append('provenance is not a dictionary')
     state = checkpoint.get('model')
-    shapes = state_shapes(preset)
+    shapes = _state_shapes(preset)
     if not isinstance(state, Mapping) or not all(isinstance(v, torch.Tensor) for v in state.values()):
         problems.append('model is not a state dictionary')
     elif {k: tuple(v.shape) for k, v in state.items()} != shapes:
@@ -306,7 +306,7 @@ def _research_problems(saved: Any, preset: ArmPreset) -> list[str]:
     arms = saved['arms']
     if not isinstance(arms, dict) or set(arms) != {RESEARCH_ARM} or set(arms[RESEARCH_ARM]) != set(WEIGHTS):
         return [*problems, f"arms {list(arms) if isinstance(arms, dict) else arms!r} is not {{'{RESEARCH_ARM}': raw, ema}}"]
-    shapes = state_shapes(preset)
+    shapes = _state_shapes(preset)
     extra = (*RESEARCH_ADAPTERS, '_count_model_mode', '_pair_model_mode', '_context_mode') if kind == 'RoleFreqModel' else ()
     tables = [k for k in shapes if k.startswith('relation_model.layers.') and k.endswith('.relation.weight')]
     markers = {'_count_model_mode': [1, 1], '_pair_model_mode': [1, int(preset.pair_channels == 'on')], '_context_mode': CONTEXT_MARKER}
@@ -385,7 +385,7 @@ def _convert(saved: Any, preset: ArmPreset, weights: str, name: str, sha256: str
     if problems:
         raise CheckpointError(f'{name} is not an inert research export of arm {preset.name}: ' + '; '.join(problems))
     state = saved['arms'][RESEARCH_ARM][weights]
-    shapes = state_shapes(preset)
+    shapes = _state_shapes(preset)
     clean = {k: state[k][:shape[0]] if tuple(state[k].shape) != shape else state[k] for k, shape in shapes.items()}
     run = saved['run']
     provenance = dict(source='research-export', research_export=name, research_export_sha256=sha256,

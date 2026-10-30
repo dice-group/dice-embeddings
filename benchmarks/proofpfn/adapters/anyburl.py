@@ -69,7 +69,7 @@ def properties(path: PathLike) -> dict[str, str]:
     return {k.strip(): v.strip() for k, v in pairs}
 
 
-def write_properties(path: Path, values: Mapping[str, Any]) -> dict[str, str]:
+def _write_properties(path: Path, values: Mapping[str, Any]) -> dict[str, str]:
     """Write a properties file; returns its values with paths relative to the file's folder."""
     path.write_text(''.join(f'{k} = {v}\n' for k, v in values.items()))
     prefix = f'{path.parent}/'
@@ -151,7 +151,7 @@ def setup(code: Optional[PathLike] = None, models: Optional[PathLike] = None, ja
     return AnyBURL(home=home, pins=pins, java=java, scope=prefix, version=' | '.join(lines))
 
 
-def step_failed(step: str, times: Mapping[str, Any], log: Path, why: str) -> ExternalStepError:
+def _step_failed(step: str, times: Mapping[str, Any], log: Path, why: str) -> ExternalStepError:
     """The error of a failed Java step, with the reason read from its log and exit status."""
     text = log.read_text(errors='replace') if log.is_file() else ''
     if 'OutOfMemoryError' in text:
@@ -197,18 +197,18 @@ def learn(anyburl: AnyBURL, work: Path, lock: Path) -> dict[str, Any]:
         ExternalStepError: When Learn fails or its rule file is missing or incomplete.
     """
     config = work / 'config-learn.properties'
-    used = write_properties(config, dict(PATH_TRAINING=work / 'train.txt', PATH_OUTPUT=work / 'rules', **KR_LEARN, WORKER_THREADS=THREADS))
+    used = _write_properties(config, dict(PATH_TRAINING=work / 'train.txt', PATH_OUTPUT=work / 'rules', **KR_LEARN, WORKER_THREADS=THREADS))
     rules = work / f"rules-{KR_LEARN['SNAPSHOTS_AT']}"
     rules.unlink(missing_ok=True)
     log = work / 'learn.log'
     times = anyburl.run('Learn', config, log, lock)
     stored = re.findall(r'>>> stored (\d+) rules', log.read_text(errors='replace'))
     if times['code'] not in (0, 1) or not stored or not rules.is_file():
-        raise step_failed('learn', times, log, 'no rule file')
+        raise _step_failed('learn', times, log, 'no rule file')
     with rules.open() as handle:
         count = sum(1 for _ in handle)
     if count != int(stored[-1]):
-        raise step_failed('learn', times, log, f'rule file has {count} lines, Learn stored {stored[-1]}')
+        raise _step_failed('learn', times, log, f'rule file has {count} lines, Learn stored {stored[-1]}')
     return dict(times, config=used, rules=count, rules_sha256=file_sha256(rules))
 
 
@@ -223,12 +223,12 @@ def apply(anyburl: AnyBURL, work: Path, k: int, lock: Path, rules: Optional[Path
     for stale in (predictions, work / f'preds-{k}.gz'):
         stale.unlink(missing_ok=True)
     rules = rules if rules is not None else work / f"rules-{KR_LEARN['SNAPSHOTS_AT']}"
-    used = write_properties(config, dict(PATH_TRAINING=work / 'train.txt', PATH_VALID=work / 'valid.txt', PATH_TEST=work / 'test.txt',
+    used = _write_properties(config, dict(PATH_TRAINING=work / 'train.txt', PATH_VALID=work / 'valid.txt', PATH_TEST=work / 'test.txt',
                                          PATH_RULES=rules, PATH_OUTPUT=predictions, WORKER_THREADS=THREADS, TOP_K_OUTPUT=k))
     log = work / f'apply-{k}.log'
     times = anyburl.run('Apply', config, log, lock)
     if times['code'] != 0 or not predictions.is_file() or '* done with rule application' not in log.read_text(errors='replace'):
-        raise step_failed('apply', times, log, 'no ranking file')
+        raise _step_failed('apply', times, log, 'no ranking file')
     return dict(times, config=used)
 
 
@@ -239,13 +239,13 @@ def native_eval(anyburl: AnyBURL, work: Path, k: int, lock: Path) -> dict[str, A
         ExternalStepError: When Eval fails or prints no result line.
     """
     config = work / f'config-eval-{k}.properties'
-    used = write_properties(config, dict(PATH_TRAINING=work / 'train.txt', PATH_VALID=work / 'valid.txt', PATH_TEST=work / 'test.txt',
+    used = _write_properties(config, dict(PATH_TRAINING=work / 'train.txt', PATH_VALID=work / 'valid.txt', PATH_TEST=work / 'test.txt',
                                          PATH_PREDICTIONS=work / f'preds-{k}', TOP_K=EVAL_TOP_K))
     log = work / f'eval-{k}.log'
     times = anyburl.run('Eval', config, log, lock)
     lines = [x.split() for x in log.read_text(errors='replace').splitlines() if EVAL_LINE.fullmatch(x)]
     if times['code'] != 0 or not lines:
-        raise step_failed('eval', times, log, 'no result line')
+        raise _step_failed('eval', times, log, 'no result line')
     return dict(times, config=used, **dict(zip(('H@1', 'H@3', 'H@10', 'MRR'), map(float, lines[-1]))))
 
 
@@ -350,7 +350,7 @@ def agrees(printed: Mapping[str, float], rebuilt: Mapping[str, float]) -> bool:
     return all(abs(printed[m] - rebuilt[m]) <= 5e-5 + 1e-9 for m in ('MRR', 'H@1', 'H@3', 'H@10'))
 
 
-def compress(path: Path) -> Path:
+def _compress(path: Path) -> Path:
     """Replace a file by its gzip copy; returns the new path."""
     target = path.with_name(path.name + '.gz')
     with open(path, 'rb') as source, gzip.open(target, 'wb', compresslevel=6) as sink:
@@ -406,7 +406,7 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, anyburl
     if not agrees(printed, rebuilt):
         logger.warning("%s: AnyBURL's Eval %s differs from the native rebuild %s", entry.name, printed, rebuilt)
     write_json(folder / f'native-{k}.json', dict(top_k=k, scan=EVAL_SCAN, rows=native))
-    compress(folder / f'preds-{k}')
+    _compress(folder / f'preds-{k}')
     times = {s: {x: steps[s][x] for x in ('wall', 'cpu', 'user', 'sys', 'max_rss_mb', 'code')} for s in steps}
     valid = len(graph.valid)
     meta = dict(label=LABEL, setting=SETTING, jar=JAR, jar_sha256=anyburl.pins[JAR], sources_sha256=anyburl.pins[SOURCES],

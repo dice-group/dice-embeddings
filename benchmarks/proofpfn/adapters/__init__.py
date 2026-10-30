@@ -227,7 +227,7 @@ def view_ranks(scores: torch.Tensor, target: int, others: Sequence[int], anchor:
 
     Both ranks are the benchmark's pessimistic filtered rank (``FilteredRanker(tie_policy='pessimistic')``, equal to
     the research ``#{v >= v[target]}`` over the unfiltered candidates, the target included); the rule view first sets the
-    anchor to ``-inf`` unless the relation is open under the self-loop rule (``evaluate.group_rows``).
+    anchor to ``-inf`` unless the relation is open under the self-loop rule (``evaluate._group_rows``).
 
     Args:
         scores: Float64 scores over all entities, ``-inf`` for a candidate without a score.
