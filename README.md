@@ -746,6 +746,29 @@ evaluation protocol, training, the corrected defects, and verification.
 
 </details>
 
+[ProofPFN](docs/proofpfn.md) pretrains ULTRA only on knowledge graphs of a synthetic
+prior, for zero-shot link prediction on real graphs. Presets cover its seven arms, and
+the benchmark follows the evaluation protocol of the research runs. Worlds, the first
+training updates, checkpoints and ranks are tested bit for bit against golden references
+of the research code.
+
+<details>
+<summary>ProofPFN pretraining and zero-shot evaluation</summary>
+
+```bash
+# Pretrain arm S on the GPU, then repeat with the seeds 43 and 44
+dicee_pretrain_synthetic train --arm S --seed 42 --out runs/S/42
+
+# Rank the test facts of UMLS with the three seeds of S
+python -m benchmarks.proofpfn run --set dev121 --graphs UMLS --out rows \
+  --family mine=S:runs/S/{seed}/export-24000-ema.pt
+```
+
+The [ProofPFN guide](docs/proofpfn.md) covers the arms, resume, the checkpoint format,
+the N validity gate, the external baselines and the reproduction of the research runs.
+
+</details>
+
 ## KGFM Link Prediction
 
 Test-set entity prediction with released checkpoints and no fine-tuning, using
