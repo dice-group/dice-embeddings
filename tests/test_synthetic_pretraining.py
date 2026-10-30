@@ -2,7 +2,8 @@
 
 G4 (``g4_s42.json.gz``, ``g4_s42rm.json.gz``, ``g4_s43.json.gz``, ``g4_s44.json.gz``): the first K updates of the research
 loop on the CPU, bitwise for torch 2.5.1 with AVX-512 CPU kernels and 2 threads (elsewhere the G4 tests skip, and a smoke
-test compares two updates within a relative 1e-5) (``proofpfn-golden/tools/g4_train.py``, which equals the genuine trainer on the GPU): per update the
+test compares the losses of two updates within a relative 1e-5 and 1e-4) (``proofpfn-golden/tools/g4_train.py``, which
+equals the genuine trainer on the GPU): per update the
 learning rate, the logged loss and the gradient norm (``repr``) and the digests of the clean parameters and EMA; at the
 end the clean AdamW state. Seed 42: S with K = 100, CU, UL, HT, N, R and M with K = 20; seeds 43 and 44: S, CU, UL, HT
 and N with K = 20. G10 (``g10_gpu.json.gz``): the genuine research trainer on the local GPU (NVIDIA GeForce RTX 4070 Ti

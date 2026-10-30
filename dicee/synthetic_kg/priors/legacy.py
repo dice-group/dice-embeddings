@@ -11,8 +11,8 @@ code. Through its wrapper chain that is legacy position ``p = 350,000 + x`` (``p
 The two tasks of the batch sample 15 rule targets and 15 base targets with 512 negatives each (``training.make_batches``,
 ``pair_batches.from_world``, ``program.make_batch_values``), and a targeted observation mask removes the observed answers
 of up to three frequent anchors per task (``oc_prior``, arm ``targeted``). Every family keeps from this template its
-task names and order, the head and tail pattern of each task and the program-slot flag; the record and real families
-also keep its RecipeBatch provenance (``Template.recipe_batch``). The research also stored a fingerprint of the world
+task names and order, the head and tail pattern of each task, the program-slot flag and its RecipeBatch provenance
+(``Template.recipe_batch``). The research also stored a fingerprint of the world
 record in each batch (``world_sha256``); no update reads it and no draw depends on it, so the port omits it.
 
 The generator reads four values of the research recipe (``aa_common.cfg``; see ``recipe``): the run seed,

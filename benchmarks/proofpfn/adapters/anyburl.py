@@ -13,7 +13,8 @@ Inductive Knowledge Base Completion"), then ranks the test queries:
   one at a time (a lock file of the work root), and stops after ``STEP_HOURS``.
 - Ranks (``rebuild``): the benchmark's pessimistic filtered rank (``view_ranks``) on AnyBURL's confidences, ``-inf`` for an
   unlisted candidate. An unlisted target, and a target tied with the last entry of a full list, get the number of
-  allowed candidates. The native ranks of the list order must agree with Eval to its four printed decimals.
+  allowed candidates. The native ranks of the list order are compared with Eval to its four printed decimals: a
+  difference logs a warning, and the record holds ``native.agree``.
 """
 import fcntl
 import gzip

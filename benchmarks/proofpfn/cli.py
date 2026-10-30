@@ -72,7 +72,9 @@ def _graph_options(sub: argparse.ArgumentParser) -> None:
 
 def build_parser() -> argparse.ArgumentParser:
     """The argument parser of the commands."""
-    parser = argparse.ArgumentParser(prog='python -m benchmarks.proofpfn', description='Zero-shot link prediction on frozen graph sets (README.md).')
+    parser = argparse.ArgumentParser(prog='python -m benchmarks.proofpfn', description='Zero-shot link prediction on frozen graph sets (README.md).',
+                                     epilog='exit codes: 0 done, 1 internal error, 2 wrong input (one error line), 3 a graph failed (its record is '
+                                            'in .errors/), 76 stopped at --max-minutes, 143 stopped by SIGTERM (README.md, Quick start)')
     commands = parser.add_subparsers(dest='command', required=True)
     sub = {name: commands.add_parser(name, help=text, description=text) for name, text in COMMANDS.items()}
     for name in ('list', 'check', 'run', 'cells', 'adapter'):
@@ -106,7 +108,7 @@ def build_parser() -> argparse.ArgumentParser:
     adapter.add_argument('name', choices=ADAPTERS, help='the external baseline')
     adapter.add_argument('--out', type=Path, required=True, help='the output root of the row files')
     adapter.add_argument('--code', type=Path, default=None, help='the external code folder (default: $KGPFN_CODE, $MERIT_HOME, $ANYBURL_HOME)')
-    adapter.add_argument('--work', type=Path, default=None, help='the work root (default: <out>/.work)')
+    adapter.add_argument('--work', type=Path, default=None, help='kgpfn, anyburl: the work root (default: <out>/.work)')
     adapter.add_argument('--models', type=Path, default=None, help='the pins (default: manifests/models.json)')
     adapter.add_argument('--check', action='store_true', help='check the setup, the pins and the graphs; run nothing')
     adapter.add_argument('--python', default=None, help="kgpfn: the command that starts KGPFN's Python ($KGPFN_PYTHON); "

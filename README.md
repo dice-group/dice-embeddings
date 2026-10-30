@@ -750,7 +750,7 @@ evaluation protocol, training, the corrected defects, and verification.
 prior, for zero-shot link prediction on real graphs. Presets cover its seven arms, and
 the benchmark follows the evaluation protocol of the research runs. Worlds, the first
 training updates, checkpoints and ranks are tested bit for bit against golden references
-of the research code.
+of the research code in the recorded environment.
 
 <details>
 <summary>ProofPFN pretraining and zero-shot evaluation</summary>

@@ -3,8 +3,8 @@
 Each adapter wraps the logic of its research runner and writes row files that the registered ``fv1_tables.py`` reads
 (README, section External baselines; PROTOCOL, section External baselines). The graphs, ranked facts, filter and query
 groups come from ``data``, and the row files from ``evaluate.write_row_file``. Work files stay in
-``<work>/<adapter>/<collection>/<graph>`` (``work_folder``), and an error record in ``.errors/`` next to the row file:
-both are dot folders, which ``fv1_tables.py`` skips.
+``<work>/<adapter>/<collection>/<graph>`` (``work_folder``; the default work root ``<out>/.work`` is a dot folder), and an
+error record in ``.errors/`` next to the row file. ``fv1_tables.py`` skips dot folders.
 
 The external code is never part of this repository. Its folder comes from a command-line option or an environment
 variable (``external_folder``), and its files are checked against the pins of ``manifests/models.json``.

@@ -110,8 +110,8 @@ folder from `--code` or an environment variable and checks it, and its files, ag
 baselines. `--check` checks the setup (with a trial start of KGPFN's Python and of MERIT's child process), the pins and
 the graphs without a run. A graph on which an adapter fails (an external step, or an error with its traceback) gets an
 error record in `.errors/` next to its row file, and the run goes on with the next graph. The command then exits with
-code 3. Work files stay in `<out>/.work` (or `--work`), a dot folder that the tables skip. Tests that need the external
-code skip without it.
+code 3. Work files of KGPFN and AnyBURL stay in `<out>/.work` (or `--work`), a dot folder that the tables skip. Tests
+that need the external code skip without it.
 
 | Adapter | Row file | Keys | Research runner |
 |---|---|---|---|

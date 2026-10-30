@@ -225,8 +225,8 @@ with torch.no_grad():
 - `ULTRA.load_pretrained` refuses a checkpoint whose `model_config` records other options than the model's.
 - The `dicee` command line loads a checkpoint with `--ultra_checkpoint` and the arm's options
   `--ultra_relation_weighting` and `--ultra_pair_channels` ([ULTRA](ultra.md#relation-graph-options)).
-- `benchmarks/kgfm_zero_shot.py` takes no ProofPFN checkpoint, unlike the design: a third zero-shot path next to the
-  `dicee` command line and the benchmark has no use in the thesis.
+- `benchmarks/kgfm_zero_shot.py` takes no ProofPFN checkpoint: a third zero-shot path next to the `dicee` command line
+  and the benchmark has no use in the thesis.
 
 ### Research exports
 

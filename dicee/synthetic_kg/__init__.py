@@ -1,7 +1,7 @@
 """ProofPFN: pretraining ULTRA on synthetic knowledge graphs drawn from a fixed prior.
 
 Modules:
-    recipe: fixed values of the prior (the resolved research recipe, stream layout, family parameters).
+    recipe: fixed values of the prior and its pretraining (schedule, stream layout, world sizes, family parameters).
     streams: the seeded SHA-256 streams with their research version strings.
     batch: the world batch of an update and its checks.
     digests: the digest rules of the golden references.

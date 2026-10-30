@@ -59,7 +59,8 @@ def build_parser() -> argparse.ArgumentParser:
     Returns:
         The parser; the defaults of ``train`` are those of ``PretrainConfig``.
     """
-    parser = argparse.ArgumentParser(prog='dicee_pretrain_synthetic', description=__doc__.split('\n')[0])
+    parser = argparse.ArgumentParser(prog='dicee_pretrain_synthetic', description='ProofPFN pretraining on synthetic knowledge graphs.',
+                                     epilog='exit codes: 0 done, 1 error, 2 wrong input (one error line), 3 stopped by a signal (rerun to resume)')
     commands = parser.add_subparsers(dest='command', required=True)
     train = commands.add_parser('train', help='pretrain one arm and seed; a folder with a last.pt resumes its run')
     train.add_argument('--arm', required=True, choices=tuple(ARMS), help='the arm')

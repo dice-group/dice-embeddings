@@ -72,10 +72,11 @@ the order of the queries or on sharding.
 `allgraph` keeps the fields of the research record that the registered `fv1_tables.py` reads (`key`, `sha256` with the
 three file names, `model_sha256`, `ranked_facts`) and the others (`collection`, `path`, `group`, `verdict`, `weight`,
 `origin_class`, `suite_id`, `test_rows`, `sampled`, `sample_rule`, `positions`, `families`, `seeds`, `gpu`, `torch`,
-`flock_official`; T1 graphs also `tail_only_view`). Differences from the research record, none of which a table reads: `protocol` is this benchmark's
-string; `families` holds the system specs instead of the research run tuples; `loaders`, `host`, `gpu_cap_gb`,
-`peak_gpu_gb` and `runner_sha256` are replaced by `provenance`; `flock_official` has no `code_sha256`; the gate entry of
-grail-WN18RR_v1 keeps the audit's group (null), where the golden run's stand-in audit gave it the contamination view.
+`flock_official`; T1 graphs also `tail_only_view`). Differences from the research record, none of which a table reads:
+`protocol` is this benchmark's string; `families` holds the system specs instead of the research run tuples; `loaders`,
+`host`, `gpu_cap_gb`, `peak_gpu_gb` and `runner_sha256` are replaced by `provenance`; `flock_official` has no
+`code_sha256`; the gate entry of grail-WN18RR_v1 keeps the audit's group (null), where the golden run's stand-in audit
+gave it the contamination view.
 
 ## External baselines
 
