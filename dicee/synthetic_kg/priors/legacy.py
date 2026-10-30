@@ -14,8 +14,8 @@ of up to three frequent anchors per task (``oc_prior``, arm ``targeted``). Every
 task names and order, the head and tail pattern of each task and the program-slot flag; the record and real families
 also keep its RecipeBatch provenance (``Template.recipe_batch``).
 
-The configuration values come from ``recipe.recipe_config(seed)``, the top of the research chain (``aa_common.cfg``);
-the generator reads its seed, batch size, negatives and world sizes. The research rebuilt the same worlds in several
+The generator reads four values of the research recipe (``aa_common.cfg``; see ``recipe``): the run seed,
+``QUERIES``, ``NEGATIVES`` and the world sizes ``WORLD``. The research rebuilt the same worlds in several
 layers; they are built once here, and the batches of worlds that a later layer replaces are not sampled, only their
 target pools are checked (the one way they could fail).
 """
@@ -24,12 +24,12 @@ from bisect import bisect_left
 from collections import Counter, defaultdict
 from dataclasses import dataclass, replace
 from itertools import product
-from typing import Any, Optional
+from typing import Any
 
 import numpy as np
 
 from ..batch import WorldBatch
-from ..recipe import LEGACY_OFFSET, RecipeConfig, recipe_config
+from ..recipe import LEGACY_OFFSET, NEGATIVES, QUERIES
 from ..streams import joint_world_stream, observation_mask_stream, pair_affinity_stream, pair_slot_stream, rule_program_stream, source_schedule_stream
 from .factorial import LegacyBatch, Proofs, Rule, Triple, control_batches, control_world, derive, json_sha256, sample_groups, task_quotas
 
@@ -264,7 +264,7 @@ def _pools(world: RuleWorld) -> dict[str, list[Triple]]:
     return {'rule': sorted(world.context - world.base), 'base': sorted(world.context & world.base)}
 
 
-def check_pools(world: RuleWorld, total: int) -> None:
+def check_pools(world: RuleWorld) -> None:
     """Refuse a rule world with fewer observed targets than the batch size in a task (the research's only failure of
     the batches of a world that a later layer replaces).
 
@@ -272,18 +272,18 @@ def check_pools(world: RuleWorld, total: int) -> None:
         ValueError: For a short pool.
     """
     for task, pool in _pools(world).items():
-        if len(pool) < total:
-            raise ValueError(f'{task}: {len(pool)} observed targets; require {total}; no resampling')
+        if len(pool) < QUERIES:
+            raise ValueError(f'{task}: {len(pool)} observed targets; require {QUERIES}; no resampling')
 
 
-def rule_batches(world: RuleWorld, cfg: RecipeConfig, index: int, joint_exclusion: bool) -> dict[str, LegacyBatch]:
+def rule_batches(world: RuleWorld, index: int, joint_exclusion: bool) -> dict[str, LegacyBatch]:
     """The two tasks of a rule world: 30 targets per task drawn, 15 kept by the split of ``task_quotas``; the context of
     a task lacks its own targets, or every target of both tasks with ``joint_exclusion`` (the rewired worlds).
 
     Raises:
         ValueError: For a short pool, or a context without facts.
     """
-    total = cfg.batch_size
+    total = QUERIES
     fingerprint = world.fingerprint()
     pools = _pools(world)
     result = {}
@@ -293,7 +293,7 @@ def rule_batches(world: RuleWorld, cfg: RecipeConfig, index: int, joint_exclusio
             raise ValueError(f'{task}: {len(pool)} observed targets; require {total}; no resampling')
         sampling_seed = joint_world_stream(world.seed, f'sample:{task}')
         rng = random.Random(sampling_seed)
-        groups, directions = sample_groups(rng.sample(pool, total), world.truth, world.n, cfg.num_negative, rng)
+        groups, directions = sample_groups(rng.sample(pool, total), world.truth, world.n, NEGATIVES, rng)
         indices = [*range(tails), *range(total // 2, total // 2 + count - tails)]
         groups, directions = groups[indices], directions[indices]
         context = world.context - set(map(tuple, groups[:, 0].tolist()))
@@ -381,13 +381,12 @@ class Template:
     program_slot: bool
 
 
-def template(seed: int, index: int, cfg: Optional[RecipeConfig] = None) -> Template:
+def template(seed: int, index: int) -> Template:
     """The legacy plain world of stream index ``index`` (``confirm_common.samples(seed, 300,000 + index)['new']``).
 
     Args:
         seed: The run seed.
         index: The stream index (``s1`` and ``s2`` indices, and the indices of the hook families).
-        cfg: The recipe, ``recipe_config(seed)`` by default.
 
     Returns:
         The template.
@@ -395,22 +394,21 @@ def template(seed: int, index: int, cfg: Optional[RecipeConfig] = None) -> Templ
     Raises:
         ValueError: When a world cannot give a batch (no resampling).
     """
-    cfg = cfg or recipe_config(seed)
     position = POSITION_OFFSET + LEGACY_OFFSET + index
     sampler = SAMPLER_OFFSET + position
     program = program_selected(seed, position)
     if source_arm(seed, sampler) == 'control':
-        batches = control_batches(control_world(cfg, sampler), cfg, sampler)
+        batches = control_batches(control_world(seed, sampler), seed, sampler)
     else:
         world = rule_world(joint_world_stream(seed, f'train-world:{sampler}'))
         pair = pair_selected(seed, sampler)
         if pair:
-            check_pools(world, cfg.batch_size)
+            check_pools(world)
             world = affinity_rewiring(world)
         if program:
-            check_pools(world, cfg.batch_size)
+            check_pools(world)
             world = rule_programs(world)
-        batches = rule_batches(world, cfg, sampler, pair)
+        batches = rule_batches(world, sampler, pair)
     batch = {task: WorldBatch(b.groups, b.head_prediction, targeted_context(b), b.truth, b.num_entities, b.num_relations)
              for task, b in batches.items()}
     provenance = {task: dict(world_sha256=b.world_sha256, sampling_seed=b.sampling_seed, requested_positives=b.requested_positives)

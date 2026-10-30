@@ -84,11 +84,17 @@ def test_streams():
 
 
 def test_recipe_equals_the_research_chain():
+    """The values of the research recipe that the generators read: the seed, the world sizes, the queries and negatives."""
+    world = dataclasses.asdict(recipe.WORLD)
+
+    def read(config: dict) -> dict:
+        return dict(world={k: config['world'][k] for k in world}, batch_size=config['batch_size'], num_negative=config['num_negative'])
+
+    expected = dict(world=world, batch_size=recipe.QUERIES, num_negative=recipe.NEGATIVES)
     for seed in SEEDS:
-        assert typed(dataclasses.asdict(recipe.recipe_config(seed))) == RECIPE['final'][str(seed)]
-    levels = [RECIPE['levels'][str(level)]['config'] for level in range(1, 13)]
-    world_fields = ('world', 'positive_pool', 'observation', 'batch_size', 'num_negative', 'model', 'relation_weighting')
-    assert all({k: c[k] for k in world_fields} == {k: levels[0][k] for k in world_fields} for c in levels)
+        final = RECIPE['final'][str(seed)]
+        assert read(final) == typed(expected) and final['seed'] == typed(seed)
+    assert len(RECIPE['levels']) == 12 and all(read(level['config']) == expected for level in RECIPE['levels'].values())
     for name, params in recipe.RECORD_PARAMS.items():
         assert typed(dict(params)) == RECIPE['params'][name] and list(params) == RECIPE['params_key_order'][name]
     c = RECIPE['constants']
@@ -96,7 +102,7 @@ def test_recipe_equals_the_research_chain():
     assert (recipe.STATISTICAL_SHARE, recipe.STRUCTURED_SHARE) == (c['st_prior_P_STAT'], c['sw_prior_V2_SHARE'])
     assert (recipe.STAGE1_WORLDS, recipe.STAGE2_OFFSET, recipe.LEGACY_OFFSET) == (c['pt_common']['N1'], c['op_common']['S2_OFFSET'], c['cp_prior_OFFSET'])
     assert (recipe.CONSTANT_UPDATES, recipe.DECAY_UPDATES, recipe.TOTAL_UPDATES) == (c['op_common']['N1'], c['op_common']['N2'], c['pt_common']['TOTAL'])
-    assert recipe.QUERIES == recipe.recipe_config(42).batch_size and 2 * recipe.HEAD_QUERIES == recipe.QUERIES
+    assert 2 * recipe.HEAD_QUERIES == recipe.QUERIES
 
 
 def test_record_params_overrides():
@@ -106,7 +112,7 @@ def test_record_params_overrides():
     with pytest.raises(ValueError, match='no parameter'):
         recipe.record_params('rec1', {'swap_budget': 3})
     with pytest.raises(TypeError):
-        recipe.REC1_PARAMS['rows'] = (1, 2)
+        recipe.REC1_PARAMS['rows'] = (1, 2)   # type: ignore[index]  # the parameters are read-only
 
 
 def test_prior_validation():

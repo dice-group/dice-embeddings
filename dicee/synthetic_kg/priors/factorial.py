@@ -30,7 +30,7 @@ from typing import Any, Callable, Iterable, NamedTuple, Optional
 
 import torch
 
-from ..recipe import RecipeConfig, WorldConfig
+from ..recipe import NEGATIVES, QUERIES, WORLD
 from ..streams import world_first_stream
 
 Triple = tuple[int, int, int]
@@ -273,11 +273,11 @@ def _remap_grids(groups: list[dict], fact: Callable[[Triple], Triple], relations
     return out
 
 
-def first_world(config: WorldConfig, seed: int, index: int) -> tuple[Episode, list[dict], str]:
-    """A world-first world of the training split with its candidate grids (``world_first.generate_world``).
+def first_world(seed: int, index: int) -> tuple[Episode, list[dict], str]:
+    """A world-first world of the training split with its candidate grids (``world_first.generate_world``), with the
+    world sizes ``recipe.WORLD``.
 
     Args:
-        config: The world sizes.
         seed: The stream seed of the source worlds.
         index: The world index.
 
@@ -287,30 +287,30 @@ def first_world(config: WorldConfig, seed: int, index: int) -> tuple[Episode, li
     world_seed = world_first_stream(seed, 'world', ('train', index))
     obs_seed = world_first_stream(world_seed, 'observation', 0)
     rng, obs = random.Random(world_seed), random.Random(obs_seed)
-    ne = rng.randint(config.min_core_entities, config.max_core_entities)
-    nr = rng.randint(config.min_relations, config.max_relations)
+    ne = rng.randint(WORLD.min_core_entities, WORLD.max_core_entities)
+    nr = rng.randint(WORLD.min_relations, WORLD.max_relations)
     output, noise = nr - 2, nr - 1
     rules = tuple(Rule(tuple(rng.sample(range(output), length)), output) for length in (2, 3))
     active = sorted({r for rule in rules for r in rule.body} | {noise})
     capacity = ne * (ne - 1) * len(active)
-    density = rng.uniform(config.min_density, config.max_density)
+    density = rng.uniform(WORLD.min_density, WORLD.max_density)
     base: set[Triple] = set()
     for code in rng.sample(range(capacity), max(1, int(capacity * density))):
         pair, rel = divmod(code, len(active))
         h, t = divmod(pair, ne - 1)
         base.add((h, active[rel], t + (t >= h)))
     background = frozenset(base)
-    grid = config.grid_size
-    endpoints = rng.sample(range(ne), 4 * config.blocks_per_rule * grid)
+    grid = WORLD.grid_size
+    endpoints = rng.sample(range(ne), 4 * WORLD.blocks_per_rule * grid)
     next_node, offset = ne, 0
     blocks: list[dict[str, Any]] = []
     for rid, rule in enumerate(rules):
         wrong = [order for order in permutations(rule.body) if order != rule.body]
-        for ordinal in range(config.blocks_per_rule):
+        for ordinal in range(WORLD.blocks_per_rule):
             heads, tails = endpoints[offset:offset + grid], endpoints[offset + grid:offset + 2 * grid]
             offset += 2 * grid
             mapping = rng.sample(range(grid), grid)
-            copies = rng.randint(1, config.max_copies)
+            copies = rng.randint(1, WORLD.max_copies)
             bundles = []
             for i, h in enumerate(heads):
                 for j, t in enumerate(tails):
@@ -326,7 +326,7 @@ def first_world(config: WorldConfig, seed: int, index: int) -> tuple[Episode, li
             blocks.append({'rule': rid, 'demonstration': ordinal == 0, 'heads': heads, 'tails': tails, 'copies': copies, 'bundles': bundles})
     truth, proofs = derive(base, rules)
     # One complete path copy per pair; further copies observed by a mask coupled by path position within a block.
-    observed = obs.uniform(config.min_observed, config.max_observed)
+    observed = obs.uniform(WORLD.min_observed, WORLD.max_observed)
     context = {q for q in sorted(background) if obs.random() < observed}
     support: set[Triple] = set()
     for block in blocks:
@@ -341,13 +341,13 @@ def first_world(config: WorldConfig, seed: int, index: int) -> tuple[Episode, li
                     support.add(bundle['triple'])
     context.update(support)
     # The masked view (unused by the recipe, which observes the supported context) enters only the world record.
-    masked = {q for q in sorted(context & background) if obs.random() < config.mask_keep}
+    masked = {q for q in sorted(context & background) if obs.random() < WORLD.mask_keep}
     for block in blocks:
-        masks = [[obs.random() < config.mask_keep for _ in rules[block['rule']].body] for _ in range(block['copies'])]
+        masks = [[obs.random() < WORLD.mask_keep for _ in rules[block['rule']].body] for _ in range(block['copies'])]
         for bundle in block['bundles']:
             for copy, path in enumerate(bundle['paths']):
                 masked.update(q for q, seen in zip(path, masks[copy]) if seen and q in context)
-    masked.update(q for q in sorted(support) if q[1] == output and obs.random() < config.mask_keep)
+    masked.update(q for q in sorted(support) if q[1] == output and obs.random() < WORLD.mask_keep)
     entities = rng.sample(range(next_node), next_node)
     relations = rng.sample(range(nr), nr)
     ep = Episode(world_seed, next_node, nr, rules, frozenset(base), truth, frozenset(context), proofs, frozenset(support),
@@ -361,7 +361,7 @@ def first_world(config: WorldConfig, seed: int, index: int) -> tuple[Episode, li
                 for block in _remap_grids(blocks, fact, relations)]
     validate_world(ep)
     record = {'version': 1, 'template': serialize_episode(ep), 'masked_context': sorted(fact(q) for q in masked), 'blocks': remapped,
-              'config': asdict(config), 'world_seed': world_seed, 'observation_seed': obs_seed}
+              'config': asdict(WORLD), 'world_seed': world_seed, 'observation_seed': obs_seed}
     groups = [{**block, 'bundles': [{**b, 'correct': tuple(b['order']) == ep.rules[block['rule']].body} for b in block['bundles']]}
               for block in remapped]
     return ep, groups, json_sha256(record)
@@ -456,22 +456,22 @@ def family_world(family: str, seed: int, index: int, blocks: int) -> dict[str, A
     return {'episode': ep, 'groups': remapped, 'world_seed': world_seed, 'family': family}
 
 
-def source_world(cfg: RecipeConfig, index: int, family: str) -> tuple[Episode, list[dict], str]:
+def source_world(seed: int, index: int, family: str) -> tuple[Episode, list[dict], str]:
     """The observed source world of a family (``prior_factorial.source_world``, split ``train``).
 
     Returns:
         The episode, its grid blocks and the SHA-256 of its research provenance record.
     """
     if family == 'current':
-        return first_world(cfg.world, world_first_stream(cfg.seed, 'factorial-original-v1', 'train'), index)
+        return first_world(world_first_stream(seed, 'factorial-original-v1', 'train'), index)
     if family not in FACTORIAL_FAMILIES:
         raise ValueError(f'unknown family {family!r}')
-    value = family_world(family, world_first_stream(cfg.seed, 'factorial-fresh-family-v1', 'train'), index, cfg.world.blocks_per_rule)
+    value = family_world(family, world_first_stream(seed, 'factorial-fresh-family-v1', 'train'), index, WORLD.blocks_per_rule)
     ep, groups = value['episode'], value['groups']
     planted = {q for block in groups for b in block['bundles'] for path in b['paths'] for q in path}
     context = set(ep.context - planted)
     obs = random.Random(world_first_stream(ep.seed, 'factorial-family-observations-v1', 'train'))
-    fraction = obs.uniform(cfg.world.min_observed, cfg.world.max_observed)
+    fraction = obs.uniform(WORLD.min_observed, WORLD.max_observed)
     # The supported observation: the first path complete, further copies masked by position, coupled within a block.
     for block in groups:
         example = block['bundles'][0]['paths']
@@ -816,33 +816,33 @@ def endpoint_reuse(world: FactorialWorld) -> FactorialWorld:
                    witnesses=witnesses, candidate_contrasts={q: () for q in rule_pool}, source_sha256=source)
 
 
-def control_world(cfg: RecipeConfig, index: int) -> FactorialWorld:
+def control_world(seed: int, index: int) -> FactorialWorld:
     """The control world of legacy index ``index`` (``endpoint_prior.make_world(cfg, index, 'concentrated')``).
 
     The research rebuilt the source world and its sparse demonstrations in three layers; they are built once here.
     """
-    attached = scheduled_topology(cfg.seed, index) == 'attached'
-    family = scheduled_family(cfg.seed, index)
-    source = source_world(cfg, index, family)
+    attached = scheduled_topology(seed, index) == 'attached'
+    family = scheduled_family(seed, index)
+    source = source_world(seed, index, family)
     sparse = add_sparse_demonstrations(source[0], source[1])
     ep = sparse[0]
     ids = random.Random(world_first_stream(ep.seed, 'factorial-final-ids-v1', 0))
     permutation = (ids.sample(range(ep.num_entities), ep.num_entities), ids.sample(range(ep.num_relations + 1), ep.num_relations + 1))
-    world = factorial_world(cfg.seed, index, attached, family, source, sparse, permutation)
+    world = factorial_world(seed, index, attached, family, source, sparse, permutation)
     world = observation_dose(world, source, sparse, permutation)
     entities, relations = permutation
     grids = _remap_grids(source[1], lambda q: (entities[q[0]], relations[q[1]], entities[q[2]]))
     return endpoint_reuse(multiple_matchings(world, grids))
 
 
-def control_batches(world: FactorialWorld, cfg: RecipeConfig, index: int) -> dict[str, LegacyBatch]:
+def control_batches(world: FactorialWorld, seed: int, index: int) -> dict[str, LegacyBatch]:
     """The two tasks of a control world (``prior_factorial.batches``): rule targets from the rule pool, base targets
     from the base pool, each task's own targets removed from its context.
 
     Raises:
         ValueError: For a pool below the batch size, or a rule target that lost every planted witness.
     """
-    total = cfg.batch_size
+    total = QUERIES
     ep = world.episode
     fingerprint = json_sha256(world.payload())
     result = {}
@@ -850,9 +850,9 @@ def control_batches(world: FactorialWorld, cfg: RecipeConfig, index: int) -> dic
         pool = world.rule_pool if task == 'rule' else world.base_pool
         if len(pool) < total:
             raise ValueError('insufficient distinct positives; no resampling or duplication')
-        sampling_seed = world_first_stream(cfg.seed, 'factorial-sampling-' + task, (world.family, index))
+        sampling_seed = world_first_stream(seed, 'factorial-sampling-' + task, (world.family, index))
         rng = random.Random(sampling_seed)
-        all_groups, heads = sample_groups(rng.sample(pool, total), ep.truth, ep.num_entities, cfg.num_negative, rng)
+        all_groups, heads = sample_groups(rng.sample(pool, total), ep.truth, ep.num_entities, NEGATIVES, rng)
         indices = [*range(tails), *range(total // 2, total // 2 + count - tails)]
         groups, directions = all_groups[indices], heads[indices]
         positives = set(map(tuple, groups[:, 0].tolist()))

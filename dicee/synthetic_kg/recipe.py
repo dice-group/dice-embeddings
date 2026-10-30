@@ -1,17 +1,16 @@
-"""Fixed values of the synthetic prior and its pretraining: the resolved research recipe, the training schedule, the stream
-layout and the families' parameters.
+"""Fixed values of the synthetic prior and its pretraining: the training schedule, the stream layout, the world sizes and
+the families' parameters.
 
 The research code built its recipe through a chain of 12 configuration wrappers (from ``demo_context_experiment.recipe``
-up to ``architecture-affinity-v1-runtime/aa_common.cfg``). ``RecipeConfig`` holds the values at the top of that chain,
-``aa_common.cfg(seed, 'cpu')``, which the legacy world generator reads. The levels differ only in fields that no
-world reads (updates, validation seed and interval, saving, logging, threads, device, dimension); the world, the query
-and negative counts and the observation policy are the same at every level. The test compares these values with a
-dump of the research chain.
+up to ``architecture-affinity-v1-runtime/aa_common.cfg``). The legacy world generator reads four of its values: the run
+seed, the world sizes (``WorldConfig``), the query groups per world (``QUERIES``) and the negatives per group
+(``NEGATIVES``). These are the same at every level of the chain; the other fields describe research training that no
+ported component reads. The test compares the four values with a dump of the research chain.
 
 The parameters of the record families are the research ``PARAMS`` dictionaries (``pf_prior2f``, ``pf_attr2``,
 ``pf_rec1``, ``pf_list1``) with their key order. A family spec may override entries (``FamilySpec.params``).
 """
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from types import MappingProxyType
 from typing import Any, Mapping, Optional
 
@@ -79,51 +78,8 @@ class WorldConfig:
     mask_keep: float = 0.5
 
 
-@dataclass(frozen=True)
-class RecipeConfig:
-    """``standard_recipe.RecipeConfig`` with the values of the top of the research configuration chain.
-
-    The fields after ``num_negative`` describe the research training of the chain's last experiment. The pretraining
-    of the arms has its own recipe (one AdamW step per world, microbatch 2, 24,000 updates); no ported component reads
-    those fields.
-    """
-
-    model: str = 'CountULTRA'
-    relation_weighting: str = 'normalized'
-    world: WorldConfig = field(default_factory=WorldConfig)
-    positive_pool: str = 'observed'
-    observation: str = 'supported'
-    batch_size: int = QUERIES
-    num_negative: int = NEGATIVES
-    adversarial_temperature: float = 1.0
-    microbatch_size: int = 8
-    learning_rate: float = 5e-4
-    weight_decay: float = 0.01
-    max_grad_norm: Optional[float] = None
-    dim: int = 64
-    layers: int = 6
-    seed: int = 42
-    updates: int = 12_000
-    validation_seed: int = 20_263_000
-    validation_worlds: int = 1
-    validation_queries: int = 4
-    validation_every: int = 1_000
-    save_every: int = 50
-    log_every: int = 25
-    device: str = 'cpu'
-    threads: int = 1
-
-
-def recipe_config(seed: int) -> RecipeConfig:
-    """The recipe that the legacy generator of a run with this seed reads (``aa_common.cfg(seed, 'cpu')``).
-
-    Args:
-        seed: The run seed.
-
-    Returns:
-        The resolved research recipe.
-    """
-    return RecipeConfig(seed=seed)
+WORLD = WorldConfig()
+"""The world sizes of the research recipe, which the legacy generator reads."""
 
 
 def _frozen(values: dict[str, Any]) -> Mapping[str, Any]:
