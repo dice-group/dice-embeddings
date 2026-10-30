@@ -18,8 +18,8 @@ chunk order. The update draws no global random number (the hard target has its o
 on its configuration, its device and torch's thread count, not on the number of workers.
 
 Files of a run folder: ``run.json`` (the run record and its provenance), ``export-<N>-raw.pt`` and ``export-<N>-ema.pt``
-(``proofpfn-checkpoint-v1`` checkpoints, ``checkpoint.load_model``), ``state-20000.pt`` and ``last.pt`` (the training
-state: model, AdamW state, EMA, history; ``last.pt`` every ``save_every`` updates and at the end), ``progress.json``.
+(``proofpfn-checkpoint-v1`` checkpoints, ``checkpoint.load_model``), ``last.pt`` (the training state: model, AdamW
+state, EMA, history; every ``save_every`` updates and at the end), ``progress.json``.
 A run whose folder holds a ``last.pt`` resumes from it; the result equals the uninterrupted run.
 
 This is the research trainer (``prior-fix-v1-runtime/pt_train.py`` with ``pt_ladder``, ``pt_ultra``, ``pt_hard`` and
@@ -62,9 +62,7 @@ logger = logging.getLogger(__name__)
 RUN_FORMAT = 'proofpfn-pretraining-v1'
 STATE_FORMAT = 'proofpfn-training-state-v1'
 EXPORTS = (4000, 8000, 16000, 20000, 24000)
-"""The default export updates (raw and EMA weights); the last update of a run is always exported."""
-STATE_AT = (CONSTANT_UPDATES,)
-"""The updates with a kept training state ``state-<N>.pt``: the end of the constant learning rate."""
+"""The default export updates (raw and EMA weights); the last update, ``TOTAL_UPDATES``, is always exported."""
 SAVE_EVERY = 250
 
 
@@ -75,10 +73,8 @@ class PretrainConfig:
     Attributes:
         arm: The arm name (``'S'``, ``'R'``, ``'M'``, ``'N'``, ``'HT'``, ``'CU'``, ``'UL'``).
         seed: The run seed.
-        total: The run's last update; the learning rate keeps its schedule, so a shorter run is the start of the full
-            one (tests).
-        stop_after: Stop after this update with ``last.pt`` (rerun to resume); ``None`` runs to ``total``.
-        exports: The export updates; ``None``: ``EXPORTS`` up to ``total``. ``total`` is always exported.
+        stop_after: Stop after this update with ``last.pt`` (rerun to resume); ``None`` runs to ``TOTAL_UPDATES``.
+        exports: The export updates; ``None``: ``EXPORTS``. ``TOTAL_UPDATES`` is always exported.
         save_every: ``last.pt`` every this many updates.
         workers: Worker processes that generate and prepare the worlds ahead; 0 prepares them in this process.
         prefetch: Worlds in flight; ``None``: twice the workers.
@@ -91,7 +87,6 @@ class PretrainConfig:
 
     arm: str
     seed: int
-    total: int = TOTAL_UPDATES
     stop_after: Optional[int] = None
     exports: Optional[tuple[int, ...]] = None
     save_every: int = SAVE_EVERY
@@ -105,25 +100,17 @@ class PretrainConfig:
 
     def __post_init__(self) -> None:
         arm_preset(self.arm)
-        if not 1 <= self.total <= TOTAL_UPDATES:
-            raise ValueError(f'total must lie in 1..{TOTAL_UPDATES}')
-        if self.stop_after is not None and not 1 <= self.stop_after <= self.total:
-            raise ValueError('stop_after must lie inside the run')
-        if self.exports is not None and not all(1 <= e <= self.total for e in self.exports):
-            raise ValueError('every export must lie inside the run')
+        if self.stop_after is not None and not 1 <= self.stop_after <= TOTAL_UPDATES:
+            raise ValueError(f'stop_after must lie in 1..{TOTAL_UPDATES}')
+        if self.exports is not None and not all(1 <= e <= TOTAL_UPDATES for e in self.exports):
+            raise ValueError(f'every export must lie in 1..{TOTAL_UPDATES}')
         if min(self.save_every, self.worker_threads, self.threads) < 1 or self.workers < 0 or (self.prefetch is not None and self.prefetch < 1):
             raise ValueError('save_every, threads and prefetch must be positive, workers nonnegative')
 
     @property
     def export_updates(self) -> list[int]:
         """The export updates, sorted."""
-        chosen = self.exports if self.exports is not None else [e for e in EXPORTS if e <= self.total]
-        return sorted({*chosen, self.total})
-
-    @property
-    def state_updates(self) -> list[int]:
-        """The updates with a kept training state."""
-        return [s for s in STATE_AT if s <= self.total]
+        return sorted({*(EXPORTS if self.exports is None else self.exports), TOTAL_UPDATES})
 
 
 class PretrainResult(NamedTuple):
@@ -280,8 +267,8 @@ def run_record(config: PretrainConfig, preset: ArmPreset, digest: str) -> dict[s
     prior = preset.prior
     families = [dict(name=s.name, generator=s.generator, first=s.first, params={k: list(v) if isinstance(v, tuple) else v for k, v in s.params},
                      null_swap_budget=s.null_swap_budget) for s in prior.families]
-    return dict(format=RUN_FORMAT, arm=preset.name, research_arm=preset.research_arm, seed=config.seed, total=config.total,
-                order_sha256=digest, order_slots=TOTAL_UPDATES, prior=dict(mix=prior.mix, order_name=prior.order_name, families=families),
+    return dict(format=RUN_FORMAT, arm=preset.name, research_arm=preset.research_arm, seed=config.seed, order_sha256=digest,
+                order_slots=TOTAL_UPDATES, prior=dict(mix=prior.mix, order_name=prior.order_name, families=families),
                 model_config=preset.model_config(), target=preset.target, constant_updates=CONSTANT_UPDATES, decay_updates=DECAY_UPDATES,
                 learning_rate=LEARNING_RATE, weight_decay=WEIGHT_DECAY, ema_decay=EMA_DECAY, microbatch=MICROBATCH,
                 device=torch.device(config.device).type, threads=config.threads, deterministic=True)
@@ -438,13 +425,13 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
             ema = {k: v.to(device) for k, v in state['ema'].items()}
             history, start = list(state['history']), int(state['next'])
             logger.info('resuming %s from update %d', folder, start)
-        end = config.total if config.stop_after is None else config.stop_after
-        exports, states = set(config.export_updates), set(config.state_updates)
+        end = TOTAL_UPDATES if config.stop_after is None else config.stop_after
+        exports = set(config.export_updates)
         checkpoint_provenance = dict(source='pretraining', run=record, **origin)
 
-        def save_state(path: Path, done: int) -> None:
+        def save_state(done: int) -> None:
             atomic_save(dict(format=STATE_FORMAT, run=record, next=done, model=_cpu(model.state_dict()), optimizer=optimizer.state_dict(),
-                             ema=_cpu(ema), history=history), path)
+                             ema=_cpu(ema), history=history), last)
 
         done, stopped = start, False
         began = time.monotonic()
@@ -471,18 +458,16 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
                     for weights, values in (('raw', model.state_dict()), ('ema', ema)):
                         save_checkpoint(make_checkpoint(values, arm=preset, seed=config.seed, updates=done, weights=weights, order_sha256=digest,
                                                         provenance=checkpoint_provenance), folder / f'export-{done}-{weights}.pt')
-                if done in states:
-                    save_state(folder / f'state-{done}.pt', done)
                 stopping = stop is not None and done < end and stop()
                 if done % config.save_every == 0 or done == end or stopping:
-                    save_state(last, done)
+                    save_state(done)
                 if done % 50 == 0 or done == end or stopping:
                     logger.info('update %d of %d (%s %s %d): loss %.6f, gradient norm %.4f, learning rate %.3g, %.0f s',
-                                done, config.total, slot.family, slot.source, slot.index, metrics['loss'], metrics['grad_norm'], lr,
+                                done, TOTAL_UPDATES, slot.family, slot.source, slot.index, metrics['loss'], metrics['grad_norm'], lr,
                                 time.monotonic() - began)
-                    _write_json(folder / 'progress.json', dict(done=done, total=config.total, last=history[-1], seconds=time.monotonic() - began))
+                    _write_json(folder / 'progress.json', dict(done=done, total=TOTAL_UPDATES, last=history[-1], seconds=time.monotonic() - began))
                 if stopping:
                     stopped = True
                     break
-    status = 'stopped' if stopped else 'complete' if done >= config.total else 'stopped-after'
+    status = 'stopped' if stopped else 'complete' if done >= TOTAL_UPDATES else 'stopped-after'
     return PretrainResult(status, done, folder)

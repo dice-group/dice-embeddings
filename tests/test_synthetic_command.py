@@ -49,8 +49,8 @@ def test_signals_stop_the_run_after_the_current_update(tmp_path, monkeypatch):
 
 
 def test_wrong_input(tmp_path, capsys):
-    assert command.main(['train', '--arm', 'S', '--seed', '42', '--out', str(tmp_path), '--total', '30000']) == command.EXIT_INPUT
-    assert 'total' in capsys.readouterr().err
+    assert command.main(['train', '--arm', 'S', '--seed', '42', '--out', str(tmp_path), '--stop-after', '30000']) == command.EXIT_INPUT
+    assert 'stop_after' in capsys.readouterr().err
     with pytest.raises(SystemExit):
         command.main(['train', '--arm', 'S0', '--seed', '42', '--out', str(tmp_path)])
     torch.save({'model': {}}, tmp_path / 'other.pt')

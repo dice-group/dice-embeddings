@@ -26,7 +26,6 @@ from typing import Any, Optional, Sequence
 from dicee.synthetic_kg.arms import ARMS
 from dicee.synthetic_kg.checkpoint import CheckpointError, from_research_export, save_checkpoint
 from dicee.synthetic_kg.pretraining import PretrainConfig, pretrain
-from dicee.synthetic_kg.recipe import TOTAL_UPDATES
 
 logger = logging.getLogger(__name__)
 EXIT_INPUT, EXIT_STOPPED = 2, 3
@@ -52,7 +51,6 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument('--save-every', type=int, default=250, help='last.pt every this many updates')
     train.add_argument('--allow-code-change', action='store_true', help='resume although the bound sources changed')
     tests = train.add_argument_group('test options')
-    tests.add_argument('--total', type=int, default=None, help='end the run after this update (the schedule stays)')
     tests.add_argument('--stop-after', type=int, default=None, help='stop after this update with last.pt (rerun to resume)')
     tests.add_argument('--exports', type=updates, default=None, help='comma list of export updates (default: 4000,8000,16000,20000,24000)')
     convert = commands.add_parser('convert', help='convert a research export into a checkpoint')
@@ -65,7 +63,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _train(args: argparse.Namespace) -> int:
     try:
-        config = PretrainConfig(args.arm, args.seed, total=args.total or TOTAL_UPDATES, stop_after=args.stop_after, exports=args.exports,
+        config = PretrainConfig(args.arm, args.seed, stop_after=args.stop_after, exports=args.exports,
                                 save_every=args.save_every, workers=args.workers, device=args.device, threads=args.threads,
                                 real_sources=args.real_sources, allow_code_change=args.allow_code_change)
     except ValueError as error:

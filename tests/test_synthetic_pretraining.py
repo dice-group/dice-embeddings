@@ -47,7 +47,8 @@ def train(folder: Path, arm: str, seed: int, k: int, device: str = 'cpu', worker
 
 
 def state_of(folder: Path) -> dict:
-    return torch.load(folder / 'last.pt', map_location='cpu', weights_only=True)
+    state: dict = torch.load(folder / 'last.pt', map_location='cpu', weights_only=True)
+    return state
 
 
 def export_digest(folder: Path, update: int, weights: str) -> str:
@@ -160,8 +161,12 @@ def test_resume_equals_the_uninterrupted_run(tmp_path):
     config = pt.PretrainConfig('HT', 42, stop_after=1, exports=(1, 2, 3), device='cpu', workers=0)
     assert pt.pretrain(config, tmp_path / 'parts').status == 'stopped-after'
     calls = []
-    stopped = pt.pretrain(pt.PretrainConfig('HT', 42, stop_after=3, exports=(1, 2, 3), device='cpu', workers=0), tmp_path / 'parts',
-                          stop=lambda: calls.append(1) or True)
+
+    def stop_now() -> bool:
+        calls.append(1)
+        return True
+
+    stopped = pt.pretrain(pt.PretrainConfig('HT', 42, stop_after=3, exports=(1, 2, 3), device='cpu', workers=0), tmp_path / 'parts', stop=stop_now)
     assert stopped == pt.PretrainResult('stopped', 2, tmp_path / 'parts') and len(calls) == 1
     assert pt.pretrain(pt.PretrainConfig('HT', 42, stop_after=3, exports=(1, 2, 3), device='cpu', workers=0), tmp_path / 'parts').done == 3
     parts = state_of(tmp_path / 'parts')['history']
@@ -172,34 +177,33 @@ def test_resume_equals_the_uninterrupted_run(tmp_path):
 
 
 def test_run_record_and_folder_checks(tmp_path):
-    config = pt.PretrainConfig('UL', 43, total=1, device='cpu', workers=0)
+    config = pt.PretrainConfig('UL', 43, stop_after=1, exports=(1,), device='cpu', workers=0)
     result = pt.pretrain(config, tmp_path)
-    assert result == pt.PretrainResult('complete', 1, tmp_path)
+    assert result == pt.PretrainResult('stopped-after', 1, tmp_path)
     stored = json.loads((tmp_path / 'run.json').read_text())
     run, origin = stored['run'], stored['provenance']
     assert run['order_sha256'] == ARMS['UL'].pinned_order(43) and run['model_config'] == ARMS['UL'].model_config()
-    assert (run['arm'], run['research_arm'], run['seed'], run['total'], run['target'], run['device'], run['threads']) == ('UL', 'REC10A-XLE-UL-noA', 43, 1, 'rbw', 'cpu', 2)
+    assert (run['arm'], run['research_arm'], run['seed'], run['target'], run['device'], run['threads']) == ('UL', 'REC10A-XLE-UL-noA', 43, 'rbw', 'cpu', 2)
     assert {'synthetic_kg/pretraining.py', 'synthetic_kg/prepare.py', 'models/ultra.py'} <= set(origin['sources']) and origin['real_sources'] == {}
     assert sorted(p.name for p in tmp_path.glob('export-*')) == ['export-1-ema.pt', 'export-1-raw.pt']
     model = load_model(tmp_path / 'export-1-ema.pt')
     assert (model.relation_weighting, model.pair_channels) == ('binary', 'off')
     checkpoint = read_checkpoint(tmp_path / 'export-1-raw.pt')
     assert checkpoint['provenance']['source'] == 'pretraining' and checkpoint['provenance']['run'] == run
-    assert pt.pretrain(config, tmp_path) == result   # a finished run does nothing
+    assert pt.pretrain(config, tmp_path) == result   # a run at its stop does nothing
     with pytest.raises(ValueError, match='another run'):
-        pt.pretrain(pt.PretrainConfig('UL', 44, total=1, device='cpu', workers=0), tmp_path)
+        pt.pretrain(pt.PretrainConfig('UL', 44, stop_after=1, device='cpu', workers=0), tmp_path)
     stored['provenance']['sources']['synthetic_kg/prepare.py'] = '0' * 64
     (tmp_path / 'run.json').write_text(json.dumps(stored))
     with pytest.raises(ValueError, match='changed since the run started'):
         pt.pretrain(config, tmp_path)
-    assert pt.pretrain(pt.PretrainConfig('UL', 43, total=1, device='cpu', workers=0, allow_code_change=True), tmp_path) == result
+    assert pt.pretrain(pt.PretrainConfig('UL', 43, stop_after=1, device='cpu', workers=0, allow_code_change=True), tmp_path) == result
 
 
 def test_configuration_checks():
     assert pt.PretrainConfig('S', 42).export_updates == [4000, 8000, 16000, 20000, 24000]
-    assert pt.PretrainConfig('S', 42, total=5000).export_updates == [4000, 5000] and pt.PretrainConfig('S', 42, total=5000).state_updates == []
-    assert pt.PretrainConfig('S', 42, exports=(3,), total=10).export_updates == [3, 10] and pt.PretrainConfig('S', 42).state_updates == [20000]
-    for bad in (dict(total=0), dict(total=24001), dict(stop_after=11, total=10), dict(exports=(0,)), dict(workers=-1), dict(save_every=0)):
+    assert pt.PretrainConfig('S', 42, exports=(3,), stop_after=10).export_updates == [3, 24000]
+    for bad in (dict(stop_after=0), dict(stop_after=24001), dict(exports=(0,)), dict(exports=(24001,)), dict(workers=-1), dict(save_every=0)):
         with pytest.raises(ValueError):
             pt.PretrainConfig('S', 42, **bad)
     with pytest.raises(KeyError):

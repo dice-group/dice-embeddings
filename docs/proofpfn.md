@@ -114,7 +114,6 @@ A model family of the benchmark needs the seeds 42, 43 and 44 of one arm. Train 
 | `--real-sources` | `$PROOFPFN_REAL_SOURCES` | the folder of the real source graphs (arms R and M) |
 | `--save-every` | 250 | updates between two writes of `last.pt` |
 | `--allow-code-change` | off | resume although the sources of the run changed |
-| `--total` | 24000 | test option: end the run after this update, with the learning-rate schedule of the full run |
 | `--stop-after` | none | test option: stop after this update and write `last.pt` |
 | `--exports` | `4000,8000,16000,20000,24000` | test option: the export updates |
 
@@ -124,12 +123,11 @@ Files of a run folder:
 |---|---|
 | `run.json` | the run record (arm, seed, prior, model options, schedule) and its provenance (versions, device, GPU, SHA-256 of the sources and of the real source graphs) |
 | `export-<N>-raw.pt`, `export-<N>-ema.pt` | checkpoints of the raw and of the EMA weights after update N |
-| `state-20000.pt` | the training state at the end of the constant learning rate |
 | `last.pt` | the latest training state: model, AdamW state, EMA and history |
 | `progress.json` | the last logged update, every 50 updates and at the end |
 
-Pretraining writes checkpoints at the export updates and after update `--total`. The registered models are the EMA
-weights of update 24,000.
+Pretraining writes checkpoints at the export updates and after update 24,000. The registered models are the EMA weights
+of update 24,000.
 
 ### Resume
 
