@@ -1,22 +1,24 @@
 """Golden fixtures and test inputs of the ProofPFN benchmark tests.
 
-Small fixtures are copies in ``golden/`` (see its README). Large golden files (research exports, full row files) stay
-outside the repository: ``golden_large`` and ``golden_root`` skip the test unless ``PROOFPFN_GOLDEN`` names the
-proofpfn-golden folder.
+Small fixtures are copies in ``golden/`` (see its README); the G6 ranks and the UMLS scores, which the dicee tests use
+too, are read from ``tests/fixtures/proofpfn``. Large golden files (research exports, full row files) stay outside the
+repository: ``golden_large`` and ``golden_root`` (``tests/proofpfn_fixtures.py``) skip the test unless
+``PROOFPFN_GOLDEN`` names the proofpfn-golden folder.
 """
 import gzip
 import hashlib
 import json
-import os
 from pathlib import Path
 from typing import Any
 
 import numpy as np
-import pytest
 
 from benchmarks.proofpfn.manifests import FORMAT, content_sha256, dumps, file_sha256
+from tests.proofpfn_fixtures import FIXTURES, golden_large, golden_root
 
 GOLDEN = Path(__file__).resolve().parent / 'golden'
+SHARED = ('g6_ranks.json.gz', 'umls_research_scores.json')
+"""The fixtures of ``tests/fixtures/proofpfn`` that the benchmark tests read too."""
 GATE_GPU = 'NVIDIA GeForce RTX 4070 Ti SUPER'   # the GPU of the G6 run
 G6_KEYS = {'gs': ('S', 'REC10A-XLE-PCU-noA'), 'gcu': ('CU', 'REC10A-XLE-CU-noA'), 'gul': ('UL', 'REC10A-XLE-UL-noA'),
            'ght': ('HT', 'PCU-HT')}   # the test keys of G6: arm and research --arm of the G4 exports
@@ -24,8 +26,9 @@ G6_REGISTERED = {'gs': 'rec10axlepcunoa', 'gcu': 'rec10axlecunoa', 'gul': 'rec10
 
 
 def fixture(name: str) -> Any:
-    """A JSON fixture of ``golden/``, gzip-compressed when the name ends with ``.gz``."""
-    data = (GOLDEN / name).read_bytes()
+    """A JSON fixture of ``golden/`` (of ``tests/fixtures/proofpfn`` for ``SHARED``), gzip-compressed when the name ends
+    with ``.gz``."""
+    data = ((FIXTURES if name in SHARED else GOLDEN) / name).read_bytes()
     return json.loads(gzip.decompress(data) if name.endswith('.gz') else data)
 
 
@@ -33,23 +36,6 @@ def fixture_bytes(name: str) -> bytes:
     """The bytes of a fixture of ``golden/``, decompressed when the name ends with ``.gz``."""
     data = (GOLDEN / name).read_bytes()
     return gzip.decompress(data) if name.endswith('.gz') else data
-
-
-def golden_root() -> Path:
-    """The proofpfn-golden folder; skips the test when ``PROOFPFN_GOLDEN`` is unset."""
-    root = os.environ.get('PROOFPFN_GOLDEN')
-    if not root or not Path(root).is_dir():
-        pytest.skip('set PROOFPFN_GOLDEN to the proofpfn-golden folder')
-    root_path = Path(root)
-    return root_path.parent if root_path.name == 'golden' else root_path
-
-
-def golden_large(name: str) -> Path:
-    """A file below ``golden/large`` of the proofpfn-golden folder; skips the test when it is not available."""
-    path = golden_root() / 'golden' / 'large' / name
-    if not path.exists():
-        pytest.skip(f'golden file large/{name} not available')
-    return path
 
 
 def g4_export(arm_key: str) -> str:

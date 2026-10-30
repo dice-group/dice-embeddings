@@ -22,8 +22,9 @@ variable `PROOFPFN_GOLDEN` (the proofpfn-golden folder) and skip when it is unse
 | `g5_cpu.json.gz` | 135,140 | `2d6ce30e5344dc58106bd933a0480ccbf5e1928506eb1a78f088a0a123b56f21` | `golden/small` (G5: CPU exports) | `test_synthetic_checkpoint.py` |
 | `g5_gpu.json.gz` | 43,854 | `a92f60fb6b6786dd45bd13cd3b5140c392b41239b4c3c1a4274cf7b5fe6ee7c3` | `golden/small` (G5: genuine GPU exports) | `test_synthetic_checkpoint.py` |
 | `g10_gpu.json.gz` | 57,492 | `d4e1f5e2ea249230d6bf0be588027834c1c470eb1326492a415f35895264d1ce` | `golden/small` (G10: the genuine research trainer on the local GPU; S seed 42 with 20 updates, UL, CU and HT with 2) | `test_synthetic_pretraining.py` |
-| `g6_ranks.json.gz` | 22,956 | `8d137562cab30fdbe648122b9cc3f1f76565ad9be9d36ef8feac290a4382f8e7` | `golden/small` (G6: evaluation ranks) | `test_synthetic_checkpoint.py` |
-| `umls_research_scores.json` | 8,312 | `0e3ca65eb8ab4072718513dce6cc08050a82cfd6b1522688701ea655e1299720` | 3a: `scratch-3a/tools/ranks_umls.py cpu` and `cuda` (the research models of the G4 exports gs, gcu, gul at update 20 on UMLS: digests of the scores and of the per-seed raw ranks; on CUDA the ranks equal G6) | `test_synthetic_checkpoint.py` |
+| `g6_ranks.json.gz` | 22,956 | `8d137562cab30fdbe648122b9cc3f1f76565ad9be9d36ef8feac290a4382f8e7` | `golden/small` (G6: per-key int64 digests, row identity, metrics, header and record of the research rows on the gate graphs) | `test_synthetic_checkpoint.py`; `benchmarks/proofpfn/tests/`: `test_manifests.py`, `test_data.py`, `test_systems.py`, `test_golden_ranks.py` |
+| `umls_research_scores.json` | 8,312 | `0e3ca65eb8ab4072718513dce6cc08050a82cfd6b1522688701ea655e1299720` | 3a: `scratch-3a/tools/ranks_umls.py cpu` and `cuda` (the research models of the G4 exports gs, gcu, gul at update 20 on UMLS: digests of the scores and of the per-seed raw ranks; on CUDA the ranks equal G6) | `test_synthetic_checkpoint.py` (scores); `benchmarks/proofpfn/tests/test_golden_ranks.py` (CPU ranks) |
 
-The research CPU ranks of `gul.seed44` differ from its G6 ranks, which were computed on the GPU; the CPU test compares
-with the research CPU reference, the CUDA test with both.
+The research CPU ranks of `gul.seed44` differ from its G6 ranks, which were computed on the GPU; the benchmark's CPU
+rank test compares with the research CPU reference, its CUDA tests with G6. The benchmark tests read the two files
+above from this folder (`benchmarks/proofpfn/tests/golden.py`, `SHARED`).

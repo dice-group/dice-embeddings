@@ -1,8 +1,8 @@
-"""Access to the ProofPFN golden fixtures of the tests.
+"""Access to the ProofPFN golden fixtures of the tests in ``tests/`` and ``benchmarks/proofpfn/tests/``.
 
 Small fixtures are copies in ``tests/fixtures/proofpfn`` (see its README). Large golden files stay outside the
-repository: a test that needs one calls ``golden_large`` and skips unless the environment variable ``PROOFPFN_GOLDEN``
-names the proofpfn-golden folder (or its ``golden`` subfolder).
+repository: a test that needs one calls ``golden_large`` (or ``golden_root`` for other files of the folder) and skips
+unless the environment variable ``PROOFPFN_GOLDEN`` names the proofpfn-golden folder (or its ``golden`` subfolder).
 """
 import gzip
 import json
@@ -44,14 +44,21 @@ def fixture(name: str) -> Any:
     return json.loads(gzip.decompress(data) if name.endswith('.gz') else data)
 
 
+def golden_root() -> Path:
+    """The proofpfn-golden folder of ``PROOFPFN_GOLDEN``, which may name its ``golden`` subfolder; skips without it."""
+    value = os.environ.get('PROOFPFN_GOLDEN')
+    if not value or not Path(value).is_dir():
+        pytest.skip('set PROOFPFN_GOLDEN to the proofpfn-golden folder')
+    root = Path(value)
+    return root.parent if root.name == 'golden' else root
+
+
 def golden_large(name: str) -> Path:
     """A file below ``golden/large`` of the proofpfn-golden folder; skips the test when it is not available."""
-    root = os.environ.get('PROOFPFN_GOLDEN')
-    if root:
-        for folder in (Path(root) / 'golden' / 'large', Path(root) / 'large'):
-            if (folder / name).is_file():
-                return folder / name
-    pytest.skip(f'golden file large/{name} not available (set PROOFPFN_GOLDEN to the proofpfn-golden folder)')
+    path = golden_root() / 'golden' / 'large' / name
+    if not path.exists():
+        pytest.skip(f'golden file large/{name} not available (set PROOFPFN_GOLDEN to the proofpfn-golden folder)')
+    return path
 
 
 def per_key_digests(tensors: dict[str, torch.Tensor]) -> dict[str, str]:

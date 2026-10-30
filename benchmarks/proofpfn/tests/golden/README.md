@@ -1,9 +1,11 @@
 # Golden fixtures of the ProofPFN benchmark
 
 Byte-for-byte copies of small golden files of the proofpfn-golden folder (phase 2 of the ProofPFN cleanup; its
-`golden/README.md` documents inputs, commands and environment), one fixture of phase 3a and the adapter fixtures of
-phase 3d. Large goldens (the G4 research exports, the full G6 row files) stay outside the repository: tests that need
-them read `PROOFPFN_GOLDEN` and skip without it (`../golden.py`). Digest rules: golden README section 1.
+`golden/README.md` documents inputs, commands and environment) and the adapter fixtures of phase 3d. The G6 ranks
+(`g6_ranks.json.gz`) and the UMLS scores (`umls_research_scores.json`) are in `tests/fixtures/proofpfn/`, which both
+test suites read. Large goldens (the G4 research exports, the full G6 row files) stay outside the repository: tests
+that need them read `PROOFPFN_GOLDEN` and skip without it (`tests/proofpfn_fixtures.py`). Digest rules: golden README
+section 1.
 
 | File | Bytes | SHA-256 | Source | Used by |
 |---|---:|---|---|---|
@@ -12,7 +14,6 @@ them read `PROOFPFN_GOLDEN` and skip without it (`../golden.py`). Digest rules: 
 | `anyburl/NELLInductive_v1-rules-30` | 3,254 | `bb52f8c70090c6af478b9e9a988852a4d8ad91a83bae1ebfb5cf6e738801a153` | phase 3d: the rule file of a 30-second AnyBURL Learn on ultra-suite-v1/NELLInductive_v1 (KR setting, 4 threads) | `test_adapter_anyburl.py` |
 | `kgpfn_probe_ranks.json` | 3,882 | `973e2cdf4de055b25d56726389005c29c1001442a405a7ad65e9bd08405220c0` | phase 3d: KGPFN ranks of the three probe graphs per GPU as int64 digests: the research `kgpfn_eval.py` on the local RTX 4070 Ti SUPER, and the kiowl rows (H100 NVL) | `test_adapter_kgpfn.py` |
 | `merit_check_ranks.json` | 3,397 | `3ca7f35cd262e76c2d3e0fc87f3082dfa7d5b3737ceb9b6f1d465d1a1e811ba1` | phase 3d: the raw ranks of `K/merit-ref-v1/check/*.json` (kiowl) as int64 digests, with the upstream and checkpoint pins | `test_adapter_merit.py` |
-| `g6_ranks.json.gz` | 22,956 | `8d137562cab30fdbe648122b9cc3f1f76565ad9be9d36ef8feac290a4382f8e7` | `golden/small` (G6: per-key int64 digests, row identity, metrics, header and record of the research rows on the gate graphs) | `test_manifests.py`, `test_data.py`, `test_systems.py`, `test_golden_ranks.py` |
 | `g7_cells/queries-NELLInductive_v1.csv` | 18,931 | `d164be5b1eb9521b154eaf26cff025a4347f47b6c66fd81385ae81fa46e31e47` | `golden/small/g7_cells` (G7) | `test_cells.py` |
 | `g7_cells/queries-UMLS.csv` | 62,816 | `4d07aed85f6b3e2ca4b99b1077f1a9a950766b7cacff89f6524b5d4471f6bfd7` | `golden/small/g7_cells` (G7: `fv1_cells.py --set gate:UMLS`) | `test_cells.py` |
 | `g7_cells/queries-grail-WN18RR_v1.csv` | 17,646 | `4fcb79175685f07e29cfacf506ab597d99dc08a7f32d7e17bada1291be21f396` | `golden/small/g7_cells` (G7) | `test_cells.py` |
@@ -28,4 +29,3 @@ them read `PROOFPFN_GOLDEN` and skip without it (`../golden.py`). Digest rules: 
 | `g8/expected/tables/tables.meta.json.gz` | 22,348 | `9888cd670665f3dd896d4f1b39ea4a5aeffcbf8097a78d8524eda773e2a2317a` | `golden/small/g8/expected` (G8: a file of the chain on the expected design) | `test_registered.py` |
 | `g8/g8_analysis.json.gz` | 23,284 | `ba09c982be231430ad93aea8b16621ad1ab219bcfa74a2d584552ee3486fa8ad` | `golden/small/g8` (G8: anchors, expected design, SHA-256 of every input and output) | `test_registered.py` |
 | `g9_gate.json` | 5,947 | `7ab51b2b7495431716255b3b0cb820f92291e423998bbbe7334d9f630362fe02` | `golden/small` (G9: the research N validity gate, `s5_manip.py`, on the G4 exports of S and N at update 20, 2 held-out worlds per family) | `test_gate.py` |
-| `umls_research_scores.json` | 8,312 | `0e3ca65eb8ab4072718513dce6cc08050a82cfd6b1522688701ea655e1299720` | `tests/fixtures/proofpfn` (3a: the research models of the G4 exports gs, gcu, gul on UMLS: per-seed raw rank digests on the CPU and CUDA) | `test_golden_ranks.py` |

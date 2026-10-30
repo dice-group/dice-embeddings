@@ -6,8 +6,6 @@ worker prepared for 24 task graphs (golden G2, golden/large/g2_worlds_k0_seed42.
 """
 import gzip
 import io
-import os
-from pathlib import Path
 
 import pytest
 import torch
@@ -18,6 +16,7 @@ from dicee.models._relation_weights import incidence_counts, pair_channel_weight
 from dicee.models.ultra import ULTRA, build_relation_graph, relation_graph
 from dicee.scripts.run import get_default_arguments
 from dicee.synthetic_kg.determinism import THREADS, torch_threads
+from tests.proofpfn_fixtures import golden_large
 
 # Direct triples of 3 entities and 2 relations; (0, 1) carries both relations.
 DIRECT = torch.tensor([[0, 0, 1], [0, 1, 1], [0, 1, 2], [1, 1, 2]])
@@ -180,14 +179,6 @@ def test_checkpoint_options_must_match(tmp_path):
     small(ultra_relation_weighting='normalized').load_pretrained(tmp_path / 'count.pt')
     torch.save(small().state_dict(), tmp_path / 'official.pt')   # no model_config: the official layout
     small().load_pretrained(tmp_path / 'official.pt')
-
-
-def golden_large(name: str) -> Path:
-    root = os.environ.get('PROOFPFN_GOLDEN')
-    for folder in ((Path(root) / 'golden' / 'large', Path(root) / 'large') if root else ()):
-        if (folder / name).is_file():
-            return folder / name
-    pytest.skip(f'golden file {name} not found (set PROOFPFN_GOLDEN to the proofpfn-golden folder)')
 
 
 def test_relation_graphs_equal_the_research_worker():

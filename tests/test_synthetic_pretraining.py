@@ -200,7 +200,7 @@ def test_run_record_and_folder_checks(tmp_path):
     assert pt.pretrain(pt.PretrainConfig('UL', 43, stop_after=1, device='cpu', workers=0, allow_code_change=True), tmp_path) == result
 
 
-def test_configuration_checks():
+def test_configuration_checks(monkeypatch):
     assert pt.PretrainConfig('S', 42).export_updates == [4000, 8000, 16000, 20000, 24000]
     assert pt.PretrainConfig('S', 42, exports=(3,), stop_after=10).export_updates == [3, 24000]
     for bad in (dict(stop_after=0), dict(stop_after=24001), dict(exports=(0,)), dict(exports=(24001,)), dict(workers=-1), dict(save_every=0)):
@@ -208,13 +208,9 @@ def test_configuration_checks():
             pt.PretrainConfig('S', 42, **bad)
     with pytest.raises(KeyError):
         pt.PretrainConfig('S0', 42)
+    monkeypatch.delenv(real.SOURCES_ENV, raising=False)
     with pytest.raises(RuntimeError, match=real.SOURCES_ENV):
-        previous = os.environ.pop(real.SOURCES_ENV, None)
-        try:
-            pt.provenance(pt.PretrainConfig('R', 42, device='cpu'), ARMS['R'])
-        finally:
-            if previous is not None:
-                os.environ[real.SOURCES_ENV] = previous
+        pt.provenance(pt.PretrainConfig('R', 42, device='cpu'), ARMS['R'])
 
 
 def test_learning_rate_schedule():

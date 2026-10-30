@@ -2,12 +2,11 @@
 
 G5 (g5_cpu.json.gz, g5_gpu.json.gz): the clean raw and EMA states of 41 research exports of all seven arms. G3
 (g3_init.json.gz): the initial adapter tensors, which the exports' frozen adapters must still equal. Scores
-(umls_research_scores.json, recorded in phase 3a from the research models) and per-seed raw ranks (G6,
-g6_ranks.json.gz): converted exports of S, CU and UL on UMLS. The export files are large goldens (PROOFPFN_GOLDEN).
+(umls_research_scores.json, recorded from the research models): converted exports of S, CU and UL on UMLS score like
+the research models; the benchmark tests compare their ranks (G6). The export files are large goldens (PROOFPFN_GOLDEN).
 """
 import hashlib
 import os
-from collections import defaultdict
 from pathlib import Path
 
 import numpy as np
@@ -178,36 +177,24 @@ def query_groups(test: list) -> list:
     return sorted(groups.items(), key=lambda item: item[0][1])
 
 
-def scores_and_raw_ranks(model: ULTRA, device: str) -> tuple[str, str, str]:
-    """The research protocol for one model: scores per query group, log-softmax, filtered pessimistic rank."""
+def scores_of(model: ULTRA, device: str) -> tuple[str, str]:
+    """The research protocol's scores of one model on UMLS: one call per query group, the digests of all scores and of
+    the rows of the groups (``[index, head]``, the row identity of G6)."""
     ids, n, nr = research_ids(UMLS)
     test = ids['test']
-    known: dict = {False: defaultdict(set), True: defaultdict(set)}
-    for h, r, t in ids['train'] + test + ids['valid']:
-        known[False][r, h].add(t)
-        known[True][r, t].add(h)
     model.query_batch_size = 1
     model.set_graph(torch.tensor(ids['train'], dtype=torch.long), n, nr)
     model.to(device).eval().requires_grad_(False)
-    scores, ranks, identity = hashlib.sha256(), [], []
-    for (head, r, anchor), members in query_groups(test):
+    scores, identity = hashlib.sha256(), []
+    for (head, r, _), members in query_groups(test):
         h0, _, t0 = test[members[0]]
         query = torch.tensor([[r, t0]] if head else [[h0, r]], device=model.device)
         with torch.no_grad():
             s = (model.forward_k_vs_all_heads(query) if head else model.forward_k_vs_all(query))[0].cpu()
         assert torch.isfinite(s).all()
         scores.update(s.contiguous().numpy().tobytes())
-        v = torch.log_softmax(s.double(), 0)
-        filtered = known[head][(r, anchor)]
-        for index in members:
-            h, _, t = test[index]
-            target = h if head else t
-            mask = torch.ones(n, dtype=torch.bool)
-            mask[torch.tensor(sorted(filtered - {target}), dtype=torch.long)] = False
-            ranks.append(int(((v >= v[target]) & mask).sum()))
-            identity.append([index, int(head)])
-    digest = hashlib.sha256(np.asarray(ranks, dtype='<i8').tobytes()).hexdigest()
-    return scores.hexdigest(), digest, hashlib.sha256(np.asarray(identity, dtype='<i8').tobytes()).hexdigest()
+        identity += [[index, int(head)] for index in members]
+    return scores.hexdigest(), hashlib.sha256(np.asarray(identity, dtype='<i8').tobytes()).hexdigest()
 
 
 @pytest.mark.slow
@@ -231,9 +218,6 @@ def test_converted_exports_score_umls_like_the_research_models(device, tmp_path)
             assert file_sha256(path) == expected['export_sha256']
             model = load_model(save_checkpoint(from_research_export(path, arm), tmp_path / f'{key}-{seed}.pt'))
             with deterministic_execution():
-                scores, ranks, identity = scores_and_raw_ranks(model, device)
+                scores, identity = scores_of(model, device)
             assert identity == reference['rows_identity'] == g6['rows_identity']
             assert scores == expected['scores_sha256'], (key, seed)
-            assert ranks == expected['raw_rank_sha256'], (key, seed)
-            if device == 'cuda':   # the research harness's own rows (golden G6) were computed on this GPU
-                assert ranks == g6['per_key'][f'{key}.seed{seed}:raw'], (key, seed)
