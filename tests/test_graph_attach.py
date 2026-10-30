@@ -91,3 +91,12 @@ def test_query_facts_keep_their_edges_in_training(options):
         assert not torch.allclose(model.forward_k_vs_all(facts[:, :2]), model.forward_query_facts(facts, False))
     scores.sum().backward()
     assert all(p.grad is not None for p in model.parameters())
+
+
+@pytest.mark.skipif(not torch.cuda.is_available(), reason='needs CUDA')
+@pytest.mark.parametrize('options', OPTIONS, ids=['binary', 'normalized', 'pairs'])
+def test_a_graph_prepared_on_the_cpu_attaches_to_a_cuda_model(options):
+    expected = ultra(**options).cuda().set_graph(FACTS)
+    graph, mapping, num_direct = ULTRA.internal_graph(FACTS, 5, 3)
+    prepared = relation_graph(graph, 5, num_direct, options.get('ultra_relation_weighting', 'binary'), options.get('ultra_pair_channels', 'off'))
+    same_buffers(ultra(**options).cuda().attach_graph(graph, mapping, 5, 3, num_direct, prepared), expected)
