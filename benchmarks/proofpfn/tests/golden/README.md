@@ -1,19 +1,19 @@
 # Golden fixtures of the ProofPFN benchmark
 
-Byte-for-byte copies of small golden files of the proofpfn-golden folder (phase 2 of the ProofPFN cleanup; its
-`golden/README.md` documents inputs, commands and environment) and the adapter fixtures of phase 3d. The G6 ranks
-(`g6_ranks.json.gz`) and the UMLS scores (`umls_research_scores.json`) are in `tests/fixtures/proofpfn/`, which both
-test suites read. Large goldens (the G4 research exports, the full G6 row files) stay outside the repository: tests
-that need them read `PROOFPFN_GOLDEN` and skip without it (`tests/proofpfn_fixtures.py`). Digest rules: golden README
-section 1.
+Byte-for-byte copies of small golden files of the proofpfn-golden folder (its `golden/README.md` documents inputs,
+commands and environment), and fixtures of the adapters and of the sample rule, recorded from the research code. The G6
+ranks (`g6_ranks.json.gz`) and the UMLS scores (`umls_research_scores.json`) are in `tests/fixtures/proofpfn/`, which
+both test suites read. Large goldens (the G4 research exports, the full G6 row files) stay outside the repository.
+Tests that need them read `PROOFPFN_GOLDEN` and skip without it (`tests/proofpfn_fixtures.py`). Digest rules: golden
+README section 1.
 
 | File | Bytes | SHA-256 | Source | Used by |
 |---|---:|---|---|---|
-| `anyburl/NELLInductive_v1-preds-225.gz` | 4,897 | `5584038fe7b8c24b7f8d7e9a60b5b111f29639cd692f6c6bd438e0234b779304` | phase 3d: the ranking file of AnyBURL Apply with the rule file below on ultra-suite-v1/NELLInductive_v1 (`gzip -n -9`) | `test_adapter_anyburl.py` |
-| `anyburl/NELLInductive_v1-research.json` | 1,716 | `0dc588d88fb421782c517b4f19ae48ba9be1366effdc6a33315dc1d657979a97` | phase 3d: the research `anyburl_run.py` (unchanged copy) on that file: `rebuild` rows and native ranks as JSON digests, counts, `write_inputs` hashes, and the input hashes of the kiowl row | `test_adapter_anyburl.py` |
-| `anyburl/NELLInductive_v1-rules-30` | 3,254 | `bb52f8c70090c6af478b9e9a988852a4d8ad91a83bae1ebfb5cf6e738801a153` | phase 3d: the rule file of a 30-second AnyBURL Learn on ultra-suite-v1/NELLInductive_v1 (KR setting, 4 threads) | `test_adapter_anyburl.py` |
-| `kgpfn_probe_ranks.json` | 3,882 | `973e2cdf4de055b25d56726389005c29c1001442a405a7ad65e9bd08405220c0` | phase 3d: KGPFN ranks of the three probe graphs per GPU as int64 digests: the research `kgpfn_eval.py` on the local RTX 4070 Ti SUPER, and the kiowl rows (H100 NVL) | `test_adapter_kgpfn.py` |
-| `merit_check_ranks.json` | 3,397 | `3ca7f35cd262e76c2d3e0fc87f3082dfa7d5b3737ceb9b6f1d465d1a1e811ba1` | phase 3d: the raw ranks of `K/merit-ref-v1/check/*.json` (kiowl) as int64 digests, with the upstream and checkpoint pins | `test_adapter_merit.py` |
+| `anyburl/NELLInductive_v1-preds-225.gz` | 4,897 | `5584038fe7b8c24b7f8d7e9a60b5b111f29639cd692f6c6bd438e0234b779304` | the ranking file of AnyBURL Apply with the rule file below on ultra-suite-v1/NELLInductive_v1 (`gzip -n -9`) | `test_adapter_anyburl.py` |
+| `anyburl/NELLInductive_v1-research.json` | 1,716 | `0dc588d88fb421782c517b4f19ae48ba9be1366effdc6a33315dc1d657979a97` | the research `anyburl_run.py` (unchanged copy) on that file: `rebuild` rows and native ranks as JSON digests, counts, `write_inputs` hashes, and the input hashes of the kiowl row | `test_adapter_anyburl.py` |
+| `anyburl/NELLInductive_v1-rules-30` | 3,254 | `bb52f8c70090c6af478b9e9a988852a4d8ad91a83bae1ebfb5cf6e738801a153` | the rule file of a 30-second AnyBURL Learn on ultra-suite-v1/NELLInductive_v1 (KR setting, 4 threads) | `test_adapter_anyburl.py` |
+| `kgpfn_probe_ranks.json` | 3,882 | `973e2cdf4de055b25d56726389005c29c1001442a405a7ad65e9bd08405220c0` | KGPFN ranks of the three probe graphs per GPU as int64 digests: the research `kgpfn_eval.py` on the local RTX 4070 Ti SUPER, and the kiowl rows (H100 NVL) | `test_adapter_kgpfn.py` |
+| `merit_check_ranks.json` | 3,397 | `3ca7f35cd262e76c2d3e0fc87f3082dfa7d5b3737ceb9b6f1d465d1a1e811ba1` | the raw ranks of `K/merit-ref-v1/check/*.json` (kiowl) as int64 digests, with the upstream and checkpoint pins | `test_adapter_merit.py` |
 | `g7_cells/queries-NELLInductive_v1.csv` | 18,931 | `d164be5b1eb9521b154eaf26cff025a4347f47b6c66fd81385ae81fa46e31e47` | `golden/small/g7_cells` (G7) | `test_cells.py` |
 | `g7_cells/queries-UMLS.csv` | 62,816 | `4d07aed85f6b3e2ca4b99b1077f1a9a950766b7cacff89f6524b5d4471f6bfd7` | `golden/small/g7_cells` (G7: `fv1_cells.py --set gate:UMLS`) | `test_cells.py` |
 | `g7_cells/queries-grail-WN18RR_v1.csv` | 17,646 | `4fcb79175685f07e29cfacf506ab597d99dc08a7f32d7e17bada1291be21f396` | `golden/small/g7_cells` (G7) | `test_cells.py` |

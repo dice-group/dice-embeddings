@@ -8,7 +8,7 @@ CUDA, on another GPU, without ``CUBLAS_WORKSPACE_CONFIG`` or without the large g
 
 The seam test feeds the clean rows and the research rows (``large/g6/ranks``), under the registered keys, to the
 registered ``fv1_tables.py``. The CPU test compares the per-seed raw ranks of S, CU and UL on UMLS with the research
-models' CPU ranks (phase 3a).
+models' CPU ranks (recorded from the research models).
 """
 import json
 import subprocess
@@ -121,7 +121,7 @@ def test_registered_tables_read_clean_and_research_rows_alike(clean_rows, tmp_pa
 
 @pytest.mark.slow
 def test_seed_ranks_on_the_cpu_equal_the_research_cpu_ranks(tmp_path):
-    """Per-seed raw ranks of S, CU and UL on UMLS on the CPU against the research models (recorded in phase 3a)."""
+    """Per-seed raw ranks of S, CU and UL on UMLS on the CPU against the ranks of the research models."""
     reference = fixture('umls_research_scores.json')['devices']['cpu']
     gate = mf.read_manifest('gate')
     entry = gate.entry('UMLS')

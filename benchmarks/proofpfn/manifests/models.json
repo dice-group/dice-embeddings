@@ -1,6 +1,6 @@
 {
  "format": "proofpfn-models-v1",
- "about": "Export pins of the ProofPFN families (research exports K/<research_run>/training/<seed>/export-<export>.pt, weights decay/ema, seeds 42, 43, 44) and the SHA-256 of the reference checkpoints (paths relative to the checkpoint root). From K/fresh-v1/models.json (computed on kiowl on 29 October 2026) and, for HT, K/fresh-v1/models-pcuht.json (written after HT's training, from its verified-ht-24000.json files). rows_only: arms of the old architecture whose rows the analysis reads from the frozen run; the clean code does not load them. external: files of the external adapters (phase 3d), outside the fv1_tables models object.",
+ "about": "Export pins of the ProofPFN families (research exports K/<research_run>/training/<seed>/export-<export>.pt, weights decay/ema, seeds 42, 43, 44) and the SHA-256 of the reference checkpoints (paths relative to the checkpoint root). From K/fresh-v1/models.json (computed on kiowl on 29 October 2026) and, for HT, K/fresh-v1/models-pcuht.json (written after HT's training, from its verified-ht-24000.json files). rows_only: arms of the old architecture whose rows the analysis reads from the frozen run; the clean code does not load them. external: the files of the external adapters, outside the fv1_tables models object.",
  "sources": {
   "K/fresh-v1/models.json": "dace17d9c406bad8c18c4b5c48785b0a7acaf2f51af3683f764ca0bcb42ac646",
   "K/fresh-v1/models-pcuht.json": "64d8e37db204381fe3d7094718d3d2a453c44e9dbe3481334c62c1b0efa2ff45"

@@ -1,5 +1,5 @@
 """The MERIT adapter: the model's per-query noise seeds, the systems and their row file through the benchmark's runner, the
-compiler policy, the setup checks and the child process; with MERIT's environment on kiowl's GPU, the check ranks.
+compiler policy, the setup checks and the child process; with MERIT's environment on an H100 NVL, the check ranks.
 
 MERIT's own code imports only in MERIT's environment, so most tests give the model a small stand-in relation model and
 motif tensor of the same interfaces (``FAKE``).
@@ -173,7 +173,7 @@ def test_checkpoint_pins_are_the_registered_references():
 def test_check_graph_ranks_equal_the_research_ranks(tmp_path):
     """The raw ranks of the five systems on the graphs of merit-ref-v1/check (kiowl, torch 2.5.1+cu124).
 
-    Needs MERIT's environment (``$MERIT_PYTHON``) and the MERIT folder (``$MERIT_HOME``) on kiowl's GPU type.
+    Needs MERIT's environment (``$MERIT_PYTHON``) and the MERIT folder (``$MERIT_HOME``) on the GPU type of the research run.
     """
     if not (os.environ.get(merit.VARIABLE) and os.environ.get(merit.PYTHON_VARIABLE)) or not torch.cuda.is_available():
         pytest.skip("set $MERIT_HOME and $MERIT_PYTHON (MERIT's environment) on a CUDA machine")
