@@ -21,10 +21,9 @@ from typing import Any, Callable, Iterable, Sequence
 import numpy as np
 import torch
 
-from ..batch import WorldBatch
+from ..batch import Triple, WorldBatch
 from ..recipe import NEGATIVES
 from ..streams import is_statistical, is_structured, statistical_stream, structured_stream
-from .factorial import Triple
 from .legacy import Template, template
 
 ATTRIBUTE_QUERIES, SELF_QUERIES = 4, 2

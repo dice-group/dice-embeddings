@@ -1,11 +1,13 @@
 """Digests that pin worlds, weights and files, by the rules of the ProofPFN golden references.
 
 ``tensor_digest`` is the research ``weights_digest``: for each key in sorted order, the key (UTF-8), then
-``str((tuple(shape), dtype))`` (UTF-8), then the raw bytes of the contiguous CPU tensor. All digests are hex SHA-256.
+``str((tuple(shape), dtype))`` (UTF-8), then the raw bytes of the contiguous CPU tensor. ``json_sha256`` is the JSON
+digest. All digests are hex SHA-256.
 """
 import hashlib
+import json
 from pathlib import Path
-from typing import Mapping, Union
+from typing import Any, Mapping, Union
 
 import torch
 
@@ -27,6 +29,20 @@ def tensor_digest(tensors: Mapping[str, torch.Tensor]) -> str:
     return digest.hexdigest()
 
 
+def json_sha256(value: Any, compact: bool = True) -> str:
+    """SHA-256 of ``json.dumps(value, sort_keys=True)``, floats as ``repr``.
+
+    Args:
+        value: A JSON-safe value.
+        compact: With the separators ``(',', ':')`` (the JSON digest of the golden references), else ``json``'s defaults.
+
+    Returns:
+        The hex digest.
+    """
+    text = json.dumps(value, sort_keys=True, separators=(',', ':')) if compact else json.dumps(value, sort_keys=True)
+    return hashlib.sha256(text.encode()).hexdigest()
+
+
 def file_sha256(path: Union[str, Path]) -> str:
     """SHA-256 of a file's bytes.
 
@@ -36,8 +52,5 @@ def file_sha256(path: Union[str, Path]) -> str:
     Returns:
         The hex digest.
     """
-    digest = hashlib.sha256()
     with Path(path).open('rb') as handle:
-        for block in iter(lambda: handle.read(1 << 20), b''):
-            digest.update(block)
-    return digest.hexdigest()
+        return hashlib.file_digest(handle, 'sha256').hexdigest()

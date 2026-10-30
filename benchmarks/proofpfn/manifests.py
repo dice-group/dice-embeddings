@@ -257,12 +257,9 @@ def read_manifest(source: PathLike, release: Optional[str] = None) -> Manifest:
 # --------------------------------------------------------------------------------------------------------- hashes
 
 def file_sha256(path: PathLike) -> str:
-    """SHA-256 of a file's bytes."""
-    digest = hashlib.sha256()
+    """SHA-256 of a file's bytes (``dicee.synthetic_kg.digests.file_sha256``, here without importing PyTorch)."""
     with Path(path).open('rb') as handle:
-        for block in iter(lambda: handle.read(1 << 20), b''):
-            digest.update(block)
-    return digest.hexdigest()
+        return hashlib.file_digest(handle, 'sha256').hexdigest()
 
 
 def content_sha256(path: PathLike) -> str:

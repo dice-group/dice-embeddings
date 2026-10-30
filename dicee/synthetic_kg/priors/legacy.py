@@ -29,10 +29,10 @@ from typing import Any
 
 import numpy as np
 
-from ..batch import WorldBatch
+from ..batch import Triple, WorldBatch
 from ..recipe import LEGACY_OFFSET, NEGATIVES, QUERIES
 from ..streams import joint_world_stream, observation_mask_stream, pair_affinity_stream, pair_slot_stream, rule_program_stream, source_schedule_stream
-from .factorial import LegacyBatch, Rule, Triple, control_batches, control_world, derive, sample_groups, task_quotas
+from .factorial import LegacyBatch, Rule, control_batches, control_world, derive, sample_groups, task_quotas
 
 POSITION_OFFSET = 50_000
 """``confirm_common.OFFSET``: legacy position = ``LEGACY_OFFSET + stream index + POSITION_OFFSET``."""

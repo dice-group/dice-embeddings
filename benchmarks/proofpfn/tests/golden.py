@@ -64,11 +64,6 @@ def int_digest(values: Any) -> str:
     return hashlib.sha256(np.asarray(values, dtype='<i8').tobytes()).hexdigest()
 
 
-def json_digest(value: Any) -> str:
-    """The JSON digest of the goldens."""
-    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
-
-
 def write_graph(folder: Path, train: list[str], valid: list[str], test: list[str]) -> Path:
     """A graph folder from lines of tab-separated triples."""
     folder.mkdir(parents=True, exist_ok=True)

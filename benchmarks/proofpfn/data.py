@@ -28,9 +28,10 @@ from typing import Optional, Sequence
 import numpy as np
 import torch
 
+from dicee.synthetic_kg.batch import Triple
+
 from .manifests import SAMPLE, SAMPLE_SEED, SPLITS, GraphEntry, Manifest, ManifestError, PathLike, graph_problems
 
-Triple = tuple[int, int, int]
 GroupKey = tuple[bool, int, int]
 
 

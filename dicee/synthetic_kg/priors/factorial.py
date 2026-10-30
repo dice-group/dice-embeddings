@@ -28,10 +28,10 @@ from typing import Any, Callable, Iterable, NamedTuple, Optional, Sequence
 
 import torch
 
+from ..batch import Triple
 from ..recipe import NEGATIVES, QUERIES, WORLD
 from ..streams import world_first_stream
 
-Triple = tuple[int, int, int]
 Proofs = dict[Triple, tuple[int, tuple[Triple, ...]]]
 """A derived fact's witness: the index of its rule and the premises of one application (from an earlier round)."""
 

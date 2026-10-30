@@ -36,7 +36,6 @@ Sharding: ``shard=(i, k)`` ranks block i of k contiguous blocks of the query gro
 stored group, and the run that completes the last part writes the row file. Ranks do not depend on the sharding:
 every query is scored on its own (Flock draws its walks from a generator seeded per call).
 """
-import hashlib
 import json
 import logging
 import platform
@@ -53,6 +52,7 @@ from dicee.models.graph_model import GraphKGE
 from dicee.synthetic_kg.arms import SEEDS
 from dicee.synthetic_kg.checkpoint import atomic_write_bytes
 from dicee.synthetic_kg.determinism import THREADS, deterministic_execution, require_cublas_workspace, torch_threads
+from dicee.synthetic_kg.digests import json_sha256
 
 from .data import GraphData, Queries, load_graph, prepare_queries
 from .manifests import REPO, SAMPLE_RULES, GraphEntry, Manifest, PathLike, file_sha256
@@ -239,7 +239,7 @@ def identity_of(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries
     """A digest of what a part file's rows depend on: graph, sample, systems and model hashes."""
     value = dict(manifest=manifest.name, key=entry.key, hashes=graph.hashes, positions=queries.positions, keys=row_keys(systems),
                  models={s.key: s.model_sha256() for s in systems}, specs={s.key: s.spec() for s in systems})
-    return hashlib.sha256(json.dumps(value, sort_keys=True).encode()).hexdigest()
+    return json_sha256(value, compact=False)
 
 
 # --------------------------------------------------------------------------------------------------------- runner

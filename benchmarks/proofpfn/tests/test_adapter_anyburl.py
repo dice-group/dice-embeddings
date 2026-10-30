@@ -17,8 +17,9 @@ import torch
 from benchmarks.proofpfn import manifests as mf
 from benchmarks.proofpfn.adapters import AdapterSetupError, anyburl
 from benchmarks.proofpfn.data import GraphData, load_graph, prepare_queries
+from dicee.synthetic_kg.digests import json_sha256
 
-from .golden import GOLDEN, json_digest, write_graph, write_manifest
+from .golden import GOLDEN, write_graph, write_manifest
 
 FIXTURE = GOLDEN / 'anyburl'
 GATE_GRAPH = 'ultra-suite-v1/NELLInductive_v1'
@@ -149,7 +150,7 @@ def test_rebuild_equals_the_research_rebuild_on_a_stored_ranking_file(tmp_path):
     _, _, graph = gate_graph()
     queries = prepare_queries(graph, 'first-1000')
     rows, native, counts = anyburl.rebuild(FIXTURE / 'NELLInductive_v1-preds-225.gz', graph, queries, record['k'])
-    assert json_digest(rows) == record['rows_digest'] and json_digest(native) == record['native_digest']
+    assert json_sha256(rows) == record['rows_digest'] and json_sha256(native) == record['native_digest']
     assert counts == record['counts'] and sorted(queries.reflexive) == record['reflexive'] and queries.positions == record['positions']
     assert anyburl.write_inputs(tmp_path, graph, queries) == record['inputs'] == record['kiowl_inputs']
 
@@ -183,7 +184,7 @@ def test_apply_with_a_stored_rule_file_equals_the_research_rebuild(tmp_path):
     anyburl.write_inputs(tmp_path, graph, queries)
     anyburl.apply(system, tmp_path, record['k'], tmp_path / 'java.lock', rules=FIXTURE / 'NELLInductive_v1-rules-30')
     rows, native, counts = anyburl.rebuild(tmp_path / f"preds-{record['k']}", graph, queries, record['k'])
-    assert json_digest(rows) == record['rows_digest'] and json_digest(native) == record['native_digest'] and counts == record['counts']
+    assert json_sha256(rows) == record['rows_digest'] and json_sha256(native) == record['native_digest'] and counts == record['counts']
     printed = anyburl.native_eval(system, tmp_path, record['k'], tmp_path / 'java.lock')
     assert anyburl.agrees(printed, anyburl.native_metrics(native))
 

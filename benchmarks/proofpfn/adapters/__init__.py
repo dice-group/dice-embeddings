@@ -40,11 +40,10 @@ from dicee.evaluation._filtering import FilteredRanker
 
 from ..data import GraphData, Queries
 from ..evaluate import metrics_of, view_metrics, write_json
-from ..manifests import MANIFESTS, REPO, SAMPLE_RULES, GraphEntry, Manifest, file_sha256
+from ..manifests import MANIFESTS, REPO, SAMPLE_RULES, GraphEntry, Manifest, PathLike, file_sha256
 
 logger = logging.getLogger(__name__)
 
-PathLike = Union[str, Path]
 ROW_FIELDS = ('index', 'head')
 
 

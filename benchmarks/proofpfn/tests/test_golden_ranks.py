@@ -23,8 +23,9 @@ from benchmarks.proofpfn import evaluate as ev
 from benchmarks.proofpfn import manifests as mf
 from benchmarks.proofpfn import systems as sy
 from dicee.synthetic_kg.determinism import CUBLAS_WORKSPACES
+from dicee.synthetic_kg.digests import json_sha256
 
-from .golden import G6_KEYS, G6_REGISTERED, GATE_GPU, fixture, g4_export, golden_large, int_digest, json_digest
+from .golden import G6_KEYS, G6_REGISTERED, GATE_GPU, fixture, g4_export, golden_large, int_digest
 
 GRAPHS = ('UMLS', 'NELLInductive_v1', 'grail-WN18RR_v1')
 REGISTERED = mf.REPO / 'benchmarks' / 'proofpfn' / 'registered'
@@ -78,7 +79,7 @@ def test_every_key_equals_the_research_rows(clean_rows, name):
     assert int_digest([[r['index'], int(r['head'])] for r in rows]) == reference['rows_identity']
     differing = [k for k, digest in reference['per_key'].items() if int_digest([int(r[k]) for r in rows]) != digest]
     assert differing == [], f'{name}: {len(differing)} keys differ from the research rows: {differing[:8]}'
-    assert {k: json_digest(v) for k, v in doc['metrics'].items()} == reference['metrics']
+    assert {k: json_sha256(v) for k, v in doc['metrics'].items()} == reference['metrics']
     for position, row in reference['examples'].items():
         assert rows[int(position)] == row
     header = {k: doc[k] for k in ('dataset', 'families', 'entities', 'relations', 'reflexive')}
