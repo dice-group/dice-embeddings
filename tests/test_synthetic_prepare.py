@@ -102,7 +102,7 @@ def test_the_relation_graph_without_pairs_is_the_block_of_types_0_to_3(arm):
     full = prepare_world(generated, slot, PCU['ultra_relation_weighting'], PCU['ultra_pair_channels'])
     part = prepare_world(generated, slot, options['ultra_relation_weighting'], options['ultra_pair_channels'])
     for task in full.tasks:
-        index, types, weight = full.tasks[task].graph.relation_graph
+        index, types, weight, _ = full.tasks[task].graph.relation_graph
         assert weight is not None
         block = int((types < 4).sum())
         assert bool((types[:block] < 4).all()) and bool((types[block:] >= 4).all())

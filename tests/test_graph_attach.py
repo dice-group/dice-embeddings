@@ -23,7 +23,7 @@ def same_buffers(a: GraphKGE, b: GraphKGE) -> None:
     for name in BUFFERS:
         x, y = getattr(a, name, None), getattr(b, name, None)
         assert (x is None) == (y is None), name
-        if x is not None:
+        if x is not None and y is not None:
             assert x.dtype == y.dtype and x.device == y.device and torch.equal(x, y), name
 
 
@@ -49,6 +49,13 @@ def test_attach_checks_its_inputs():
         ultra().attach_graph(graph, mapping, 5, 3, num_direct, relation_graph(graph, 5, 3, 'normalized'))
     with pytest.raises(ValueError, match='ultra_relation_weighting'):
         ultra(ultra_relation_weighting='normalized').attach_graph(graph, mapping, 5, 3, num_direct, relation_graph(graph, 5, 3))
+    pairs, counts = relation_graph(graph, 5, 3, 'normalized', 'on'), relation_graph(graph, 5, 3, 'normalized')
+    with pytest.raises(ValueError, match="built for ultra_relation_weighting='normalized', ultra_pair_channels='on'"):
+        ultra(ultra_relation_weighting='normalized').attach_graph(graph, mapping, 5, 3, num_direct, pairs)   # CountULTRA, a PCUltra graph
+    with pytest.raises(ValueError, match="ultra_pair_channels='off'; the model has 'normalized', 'on'"):
+        ultra(ultra_relation_weighting='normalized', ultra_pair_channels='on').attach_graph(graph, mapping, 5, 3, num_direct, counts)
+    with pytest.raises(ValueError, match='edge types must lie in 0..3'):
+        ultra(ultra_relation_weighting='normalized').attach_graph(graph, mapping, 5, 3, num_direct, counts._replace(edge_type=counts.edge_type + 2))
     with pytest.raises(ValueError, match='requires'):
         relation_graph(graph, 5, 3, 'binary', 'on')
     with pytest.raises(ValueError, match='outside'):

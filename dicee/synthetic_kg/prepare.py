@@ -85,17 +85,13 @@ class PreparedWorld:
 
     Attributes:
         slot: The order slot of the world.
-        tasks: Task name to prepared task.
+        tasks: Task name to prepared task; the relation graphs record their ULTRA options.
         meta: The world's metadata (``World.meta``).
-        relation_weighting: The ULTRA option of the relation graphs.
-        pair_channels: The ULTRA option of the relation graphs.
     """
 
     slot: Slot
     tasks: dict[str, PreparedTask]
     meta: dict[str, Any]
-    relation_weighting: str
-    pair_channels: str
 
     @property
     def num_queries(self) -> int:
@@ -219,7 +215,7 @@ def prepare_world(generated: World, slot: Slot, relation_weighting: str = 'binar
             graph = prepare_graph(batch.context, batch.num_entities, batch.num_relations, relation_weighting, pair_channels)
             graphs.append((batch, graph))
         tasks[name] = prepare_task(batch, graph)
-    return PreparedWorld(slot, tasks, dict(generated.meta), relation_weighting, pair_channels)
+    return PreparedWorld(slot, tasks, dict(generated.meta))
 
 
 def prepare_slot(seed: int, slot: Slot, prior: PriorConfig, options: Mapping[str, str], real_sources: Union[str, Path, None] = None) -> PreparedWorld:

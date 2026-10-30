@@ -201,11 +201,19 @@ def weighted_relation_graph(graph_triples: torch.Tensor, num_entities: int, num_
 
 
 class RelationGraph(NamedTuple):
-    """ULTRA's relation graph: the edges between relations, their types and, with count weighting, their float64 weights."""
+    """ULTRA's relation graph: the edges between relations, their types and, with count weighting, their float64 weights.
+
+    Attributes:
+        edge_index: The relation pairs ``[2, M]``.
+        edge_type: The edge type of each pair ``[M]``: 0 to 3, and 4 and 5 for the pair channels.
+        edge_weight: The float64 weights ``[M]`` of count weighting, ``None`` for the binary graph.
+        pair_channels: The ``ultra_pair_channels`` option of the graph. A graph with pair channels can have no pair edge.
+    """
 
     edge_index: torch.Tensor
     edge_type: torch.Tensor
     edge_weight: Optional[torch.Tensor]
+    pair_channels: str = 'off'
 
 
 def relation_graph(graph_triples: torch.Tensor, num_entities: int, num_direct: int, relation_weighting: str = 'binary',
@@ -233,7 +241,7 @@ def relation_graph(graph_triples: torch.Tensor, num_entities: int, num_direct: i
     if relation_weighting == 'binary':
         edge_index, edge_type = build_relation_graph(graph_triples[:, [0, 2]].T, graph_triples[:, 1], num_entities, 2 * num_direct)
         return RelationGraph(edge_index, edge_type, None)
-    return RelationGraph(*weighted_relation_graph(graph_triples, num_entities, num_direct, pair_channels == 'on'))
+    return RelationGraph(*weighted_relation_graph(graph_triples, num_entities, num_direct, pair_channels == 'on'), pair_channels)
 
 
 class ULTRA(GraphKGE):
@@ -311,11 +319,16 @@ class ULTRA(GraphKGE):
 
     def _attach_relation_graph(self, graph: RelationGraph) -> None:
         """Store a relation graph of ``relation_graph`` for this model's options; the weights take the parameter dtype."""
-        edge_index, edge_type, edge_weight = graph
-        if (edge_weight is None) != (self.relation_weighting == 'binary'):
-            raise ValueError(f'the relation graph does not fit ultra_relation_weighting={self.relation_weighting!r}')
+        edge_index, edge_type, edge_weight = graph.edge_index, graph.edge_type, graph.edge_weight
+        options = ('binary' if edge_weight is None else 'normalized', graph.pair_channels)
+        if options != (self.relation_weighting, self.pair_channels):
+            raise ValueError(f'the relation graph was built for ultra_relation_weighting={options[0]!r}, ultra_pair_channels={options[1]!r}; '
+                             f'the model has {self.relation_weighting!r}, {self.pair_channels!r}')
         if tuple(edge_index.shape) != (2, len(edge_type)) or (edge_weight is not None and edge_weight.shape != edge_type.shape):
             raise ValueError('Relation-graph edge indices, types and weights must match')
+        rows = cast(RelationalConv, self.relation_model.layers[0]).relation.num_embeddings
+        if len(edge_type) and not 0 <= int(edge_type.min()) <= int(edge_type.max()) < rows:
+            raise ValueError(f'relation-graph edge types must lie in 0..{rows - 1}, the rows of the relation tables')
         self.clear_inference_cache()
         self.rel_edge_index = to_device(edge_index, self.device)
         self.rel_edge_type = to_device(edge_type, self.device)
