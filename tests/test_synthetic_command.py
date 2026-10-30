@@ -70,6 +70,7 @@ def test_wrong_input(tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeyp
     assert not (tmp_path / 'x.pt').exists()
     command.main(['train', '--arm', 'UL', '--seed', '43', '--out', str(tmp_path / 'UL'), '--device', 'cpu', '--workers', '0', '--stop_after', '1',
                   '--exports', '1'])
+    capsys.readouterr()   # warnings of the run, for example torch's notes on sparse tensors
     assert 'another run' in refused('train', '--arm', 'UL', '--seed', '44', '--out', str(tmp_path / 'UL'), '--device', 'cpu', '--workers', '0')
 
 
