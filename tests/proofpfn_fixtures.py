@@ -3,6 +3,11 @@
 Small fixtures are copies in ``tests/fixtures/proofpfn`` (see its README). Large golden files stay outside the
 repository: a test that needs one calls ``golden_large`` (or ``golden_root`` for other files of the folder) and skips
 unless the environment variable ``PROOFPFN_GOLDEN`` names the proofpfn-golden folder (or its ``golden`` subfolder).
+
+The bitwise training goldens hold in their recorded environment only: the CPU training (G4) for torch 2.5.1 with its
+AVX-512 CPU kernels and 2 threads, the CUDA goldens for torch 2.5.1 with CUDA 11.8 on ``GOLDEN_GPU``. Other kernels and
+CUDA libraries change the last bits of the backward pass and of AdamW, so ``require_cpu_training_golden_environment``
+and ``require_gpu_golden_environment`` skip these tests elsewhere.
 """
 import gzip
 import json
@@ -13,10 +18,13 @@ from typing import Any
 import pytest
 import torch
 
+from dicee.synthetic_kg.determinism import CUBLAS_WORKSPACES
 from dicee.synthetic_kg.digests import tensor_digest
 from dicee.synthetic_kg.priors import FamilySpec, PriorConfig
 
 FIXTURES = Path(__file__).resolve().parent / 'fixtures' / 'proofpfn'
+GOLDEN_GPU = 'NVIDIA GeForce RTX 4070 Ti SUPER'
+"""The GPU of every CUDA golden."""
 # Research hook modules of the record and real families (module:function 'sample'); s5_null:<generator> is the null.
 RESEARCH_GENERATORS = {'pf_prior2f': 'categorical2', 'pf_rec1': 'rec1', 'pf_attr2': 'attr2', 'pf_list1': 'list1', 'pt_real': 'real'}
 
@@ -42,6 +50,26 @@ def fixture(name: str) -> Any:
     """A JSON fixture of ``tests/fixtures/proofpfn``, gzip-compressed when the name ends with ``.gz``."""
     data = (FIXTURES / name).read_bytes()
     return json.loads(gzip.decompress(data) if name.endswith('.gz') else data)
+
+
+def require_cpu_training_golden_environment() -> None:
+    """Skip a bitwise CPU training golden (G4) unless torch is 2.5.1 and runs its AVX-512 CPU kernels."""
+    version, capability = torch.__version__.split('+')[0], torch.backends.cpu.get_cpu_capability()
+    if (version, capability) != ('2.5.1', 'AVX512'):
+        pytest.skip(f'the CPU training goldens hold for torch 2.5.1 with AVX512 CPU kernels, not torch {version} with {capability}')
+
+
+def require_gpu_golden_environment() -> None:
+    """Skip a CUDA golden without CUDA, without a deterministic cuBLAS setting, on another GPU than ``GOLDEN_GPU``, or with
+    another torch than 2.5.1 with CUDA 11.8."""
+    if not torch.cuda.is_available():
+        pytest.skip('needs CUDA')
+    if os.environ.get('CUBLAS_WORKSPACE_CONFIG') not in CUBLAS_WORKSPACES:
+        pytest.skip('deterministic cuBLAS needs CUBLAS_WORKSPACE_CONFIG=:4096:8 before CUDA starts')
+    if torch.cuda.get_device_name(0) != GOLDEN_GPU:
+        pytest.skip(f'the CUDA goldens were recorded on {GOLDEN_GPU}')
+    if (torch.__version__.split('+')[0], torch.version.cuda) != ('2.5.1', '11.8'):
+        pytest.skip(f'the CUDA goldens hold for torch 2.5.1 with CUDA 11.8, not torch {torch.__version__} with CUDA {torch.version.cuda}')
 
 
 def golden_root() -> Path:

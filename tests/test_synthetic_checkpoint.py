@@ -6,7 +6,6 @@ G5 (g5_cpu.json.gz, g5_gpu.json.gz): the clean raw and EMA states of 41 research
 the research models; the benchmark tests compare their ranks (G6). The export files are large goldens (PROOFPFN_GOLDEN).
 """
 import hashlib
-import os
 from pathlib import Path
 
 import numpy as np
@@ -16,9 +15,9 @@ import torch
 from dicee.models.ultra import ULTRA
 from dicee.synthetic_kg.arms import ARMS, initial_model
 from dicee.synthetic_kg.checkpoint import FORMAT, KEYS, CheckpointError, check_checkpoint, from_research_export, load_model, make_checkpoint, read_checkpoint, save_checkpoint
-from dicee.synthetic_kg.determinism import CUBLAS_WORKSPACES, THREADS, deterministic_execution, torch_threads
+from dicee.synthetic_kg.determinism import THREADS, deterministic_execution, torch_threads
 from dicee.synthetic_kg.digests import file_sha256, tensor_digest
-from tests.proofpfn_fixtures import fixture, golden_large
+from tests.proofpfn_fixtures import GOLDEN_GPU, fixture, golden_large, require_gpu_golden_environment
 
 ARM_OF = {arm.research_arm: arm.name for arm in ARMS.values()}
 G3 = fixture('g3_init.json.gz')
@@ -204,12 +203,8 @@ def test_converted_exports_score_umls_like_the_research_models(device, tmp_path)
     if not UMLS.is_dir():
         pytest.skip('KGs/UMLS is not available')
     if device == 'cuda':
-        if not torch.cuda.is_available():
-            pytest.skip('needs CUDA')
-        if os.environ.get('CUBLAS_WORKSPACE_CONFIG') not in CUBLAS_WORKSPACES:
-            pytest.skip('deterministic cuBLAS needs CUBLAS_WORKSPACE_CONFIG=:4096:8 before CUDA starts')
-        if torch.cuda.get_device_name(0) != reference['environment']['gpu']:
-            pytest.skip(f"the CUDA reference was recorded on {reference['environment']['gpu']}")
+        require_gpu_golden_environment()
+        assert reference['environment']['gpu'] == GOLDEN_GPU
     g6 = fixture('g6_ranks.json.gz')['graphs']['UMLS']
     for key, arm in (('gs', 'S'), ('gcu', 'CU'), ('gul', 'UL')):
         for seed in (42, 43, 44):

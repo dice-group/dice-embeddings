@@ -1,7 +1,8 @@
 """The pretraining loop (``dicee.synthetic_kg.pretraining``) against goldens G4 (CPU), G10 (GPU) and G5 (exports).
 
 G4 (``g4_s42.json.gz``, ``g4_s42rm.json.gz``, ``g4_s43.json.gz``, ``g4_s44.json.gz``): the first K updates of the research
-loop on the CPU (``proofpfn-golden/tools/g4_train.py``, which equals the genuine trainer on the GPU): per update the
+loop on the CPU, bitwise for torch 2.5.1 with AVX-512 CPU kernels and 2 threads (elsewhere the G4 tests skip, and a smoke
+test compares two updates within a relative 1e-5) (``proofpfn-golden/tools/g4_train.py``, which equals the genuine trainer on the GPU): per update the
 learning rate, the logged loss and the gradient norm (``repr``) and the digests of the clean parameters and EMA; at the
 end the clean AdamW state. Seed 42: S with K = 100, CU, UL, HT, N, R and M with K = 20; seeds 43 and 44: S, CU, UL, HT
 and N with K = 20. G10 (``g10_gpu.json.gz``): the genuine research trainer on the local GPU (NVIDIA GeForce RTX 4070 Ti
@@ -10,6 +11,7 @@ update on. G5: the exports against the research exports after conversion, tensor
 ``PROOFPFN_GOLDEN``). The default run checks the first updates of four arms; the full checks are slow.
 """
 import json
+import math
 import os
 from pathlib import Path
 
@@ -19,14 +21,12 @@ import torch
 from dicee.synthetic_kg import pretraining as pt
 from dicee.synthetic_kg.arms import ARMS, initial_model
 from dicee.synthetic_kg.checkpoint import from_research_export, load_model, read_checkpoint
-from dicee.synthetic_kg.determinism import CUBLAS_WORKSPACES
 from dicee.synthetic_kg.digests import tensor_digest
 from dicee.synthetic_kg.priors import real
-from tests.proofpfn_fixtures import fixture, golden_large
+from tests.proofpfn_fixtures import fixture, golden_large, require_cpu_training_golden_environment, require_gpu_golden_environment
 
 G4 = {tag: fixture(f'g4_{tag}.json.gz') for tag in ('s42', 's42rm', 's43', 's44')}
 G10 = fixture('g10_gpu.json.gz')
-GPU = 'NVIDIA GeForce RTX 4070 Ti SUPER'
 TABLE = '.relation.weight'
 SLOT_KEYS = ('family', 'source', 'index', 'n_entities', 'n_context')
 
@@ -93,13 +93,26 @@ def default_threads():
 
 @pytest.mark.parametrize('arm', ['S', 'HT', 'CU', 'UL'])
 def test_first_updates_equal_the_research_loop(arm, tmp_path):
+    require_cpu_training_golden_environment()
     history = train(tmp_path, arm, 42, 2)
     check_g4(tmp_path, history, arm, 2, 's42')
+
+
+def test_two_updates_of_s_are_close_to_the_research_loop(tmp_path):
+    """Not a golden: in any environment, the logged losses of two updates of S are finite and close to G4.
+
+    The loss of update 1 runs the forward pass only (relative 1e-5); one AdamW step amplifies the last bits of other CPU
+    kernels, so update 2 gets a relative 1e-4 (with torch 2.5.1's AVX2 and default kernels about 3e-6 and 8e-6).
+    """
+    history = train(tmp_path, 'S', 42, 2)
+    for h, g, tolerance in zip(history, G4['s42']['arms']['S']['updates'][:2], (1e-5, 1e-4), strict=True):
+        assert math.isfinite(h['loss']) and math.isclose(h['loss'], float(g['loss']), rel_tol=tolerance, abs_tol=0.0), h['update']
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize('arm, seed, k, tag', g4_runs(), ids=[f'{a}-{s}-{k}' for a, s, k, _ in g4_runs()])
 def test_every_golden_run_equals_the_research_loop(arm, seed, k, tag, tmp_path):
+    require_cpu_training_golden_environment()
     options = {}
     if ARMS[arm].prior.family('real') is not None:
         if not os.environ.get(real.SOURCES_ENV):
@@ -116,19 +129,10 @@ def test_every_golden_run_equals_the_research_loop(arm, seed, k, tag, tmp_path):
                 assert list(found) == list(expected) and all(torch.equal(found[key], expected[key]) for key in expected)
 
 
-def require_gpu() -> None:
-    if not torch.cuda.is_available():
-        pytest.skip('needs CUDA')
-    if os.environ.get('CUBLAS_WORKSPACE_CONFIG') not in CUBLAS_WORKSPACES:
-        pytest.skip('deterministic cuBLAS needs CUBLAS_WORKSPACE_CONFIG=:4096:8 before CUDA starts')
-    if torch.cuda.get_device_name(0) != GPU:
-        pytest.skip(f'the G10 reference was recorded on {GPU}')
-
-
 @pytest.mark.slow
 @pytest.mark.parametrize('arm', ['S', 'UL', 'CU', 'HT'])
 def test_gpu_training_equals_the_genuine_trainer(arm, tmp_path):
-    require_gpu()
+    require_gpu_golden_environment()
     golden = G10['arms'][arm]
     k = len(golden['updates'])
     history = train(tmp_path, arm, 42, k, device='cuda', workers=2)

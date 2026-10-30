@@ -34,7 +34,8 @@ pip install -e '.[dev]'                                                         
 - The reference systems of the benchmark read the released checkpoints below `checkpoints/`: TRIX
   (`trix/entity_prediction.pth`), ULTRA-3g (`ultra_3g.pth`) and Flock (`flock/flock_entity.pth`). Their guides list
   the downloads: [ULTRA](ultra.md), [TRIX](trix.md), [Flock](flock.md).
-- The goldens hold for Python 3.12.2, torch 2.5.1, numpy 1.26.4 and scipy 1.13.0.
+- The goldens are bitwise in the recorded environment: Python 3.12.2, torch 2.5.1 with AVX-512 CPU kernels and 2
+  threads, numpy 1.26.4 and scipy 1.13.0 ([Testing](#testing)). Elsewhere the training and GPU golden tests skip.
 
 ## Model options
 
@@ -162,7 +163,8 @@ real-sources/
 - Deterministic cuBLAS needs `CUBLAS_WORKSPACE_CONFIG=:4096:8` before CUDA starts. The command sets it when it is
   unset.
 - The updates do not depend on the number of workers. An update draws no global random number.
-- CPU results depend on the torch thread count (`--threads`).
+- CPU results depend on the torch thread count (`--threads`) and on torch's CPU kernels
+  (`torch.backends.cpu.get_cpu_capability()`).
 - CPU and CUDA results differ from the first update on. CUDA results can also differ between GPU types.
 - A run uses one device. Select the GPU with `CUDA_VISIBLE_DEVICES`. Without a GPU, pass `--device cpu`.
 
@@ -345,8 +347,13 @@ Golden references (goldens) record what the research code computes at small size
 - The KGPFN probe ranks exist per GPU type. The MERIT check ranks need an H100 NVL.
 - pytest runs the tests marked `slow` by default, as in the rest of the repository. `-m "not slow"` deselects them.
 - `PROOFPFN_SIMULATE=1` adds the simulations of the registered analysis tests (about 9 minutes).
-- A failing golden test means that the port differs from the research code. Then fix the code. Leave the golden and
-  its comparison unchanged.
+- The CPU training goldens (G4) are bitwise in the recorded environment only: torch 2.5.1 with AVX-512 CPU kernels
+  (`torch.backends.cpu.get_cpu_capability()`) and 2 threads. Other CPU kernels change the last bits of the backward pass
+  and of AdamW, so elsewhere these tests skip. A smoke test then compares the losses of two updates within a relative
+  tolerance.
+- The CUDA goldens also need torch 2.5.1 with CUDA 11.8. Elsewhere they skip.
+- In the recorded environment, a failing golden test means that the port differs from the research code. Then fix the
+  code. Leave the golden and its comparison unchanged.
 
 ## Known limits
 

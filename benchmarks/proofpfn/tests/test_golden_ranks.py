@@ -11,21 +11,19 @@ registered ``fv1_tables.py``. The CPU test compares the per-seed raw ranks of S,
 models' CPU ranks (phase 3a).
 """
 import json
-import os
 import subprocess
 import sys
 from pathlib import Path
 
 import pytest
-import torch
 
 from benchmarks.proofpfn import evaluate as ev
 from benchmarks.proofpfn import manifests as mf
 from benchmarks.proofpfn import systems as sy
-from dicee.synthetic_kg.determinism import CUBLAS_WORKSPACES
 from dicee.synthetic_kg.digests import json_sha256
+from tests.proofpfn_fixtures import GOLDEN_GPU, require_gpu_golden_environment
 
-from .golden import G6_KEYS, G6_REGISTERED, GATE_GPU, fixture, g4_export, golden_large, int_digest
+from .golden import G6_KEYS, G6_REGISTERED, fixture, g4_export, golden_large, int_digest
 
 GRAPHS = ('UMLS', 'NELLInductive_v1', 'grail-WN18RR_v1')
 REGISTERED = mf.REPO / 'benchmarks' / 'proofpfn' / 'registered'
@@ -43,19 +41,10 @@ def g6_systems(keys: tuple[str, ...] = tuple(G6_KEYS), references: tuple[str, ..
     return systems + [sy.reference(key, pins) for key in references]
 
 
-def require_gate_gpu() -> None:
-    if not torch.cuda.is_available():
-        pytest.skip('needs CUDA')
-    if os.environ.get('CUBLAS_WORKSPACE_CONFIG') not in CUBLAS_WORKSPACES:
-        pytest.skip('deterministic cuBLAS needs CUBLAS_WORKSPACE_CONFIG=:4096:8 before CUDA starts')
-    if torch.cuda.get_device_name(0) != GATE_GPU:
-        pytest.skip(f'the G6 ranks were recorded on {GATE_GPU}')
-
-
 @pytest.fixture(scope='module')
 def clean_rows(tmp_path_factory):
     """The clean row files of the three gate graphs on the GPU: graph name -> path."""
-    require_gate_gpu()
+    require_gpu_golden_environment()
     gate = mf.read_manifest('gate')
     systems = g6_systems()
     out = tmp_path_factory.mktemp('g6')
@@ -85,7 +74,7 @@ def test_every_key_equals_the_research_rows(clean_rows, name):
     header = {k: doc[k] for k in ('dataset', 'families', 'entities', 'relations', 'reflexive')}
     assert header == {k: v for k, v in reference['header'].items() if k != 'protocol'}
     record = doc['allgraph']
-    assert record['model_sha256'] == reference['record']['model_sha256'] and record['gpu'] == GATE_GPU
+    assert record['model_sha256'] == reference['record']['model_sha256'] and record['gpu'] == GOLDEN_GPU
     assert {k: v for k, v in record['flock_official'].items()} == {k: v for k, v in reference['record']['flock_official'].items() if k != 'code_sha256'}
     for key in ('key', 'path', 'collection', 'test_rows', 'ranked_facts', 'sampled', 'positions', 'sample_rule', 'seeds'):
         assert record[key] == reference['record'][key], key

@@ -9,6 +9,14 @@ Large goldens (research exports, tensor files) stay outside the repository. Test
 variable `PROOFPFN_GOLDEN` (the proofpfn-golden folder) and skip when it is unset or the file is missing
 (`tests/proofpfn_fixtures.py`). Digest rules: golden README section 1, implemented in `dicee/synthetic_kg/digests.py`.
 
+The goldens were recorded in one environment: Python 3.12.2, torch 2.5.1 (CUDA 11.8, cuDNN 9.1.0), numpy 1.26.4, an
+AMD Ryzen 7 7800X3D with `torch.backends.cpu.get_cpu_capability() == 'AVX512'`, 2 torch threads, and an NVIDIA GeForce
+RTX 4070 Ti SUPER with `CUBLAS_WORKSPACE_CONFIG=:4096:8`. The CPU training goldens (G4: `g4_*.json.gz`) are bitwise for
+torch 2.5.1 with AVX-512 CPU kernels only; with the AVX2 or the default kernels the first update already differs in the
+last bits, so `require_cpu_training_golden_environment` skips them elsewhere. The CUDA goldens (G10, the CUDA scores,
+G6 on the GPU) need torch 2.5.1 with CUDA 11.8 on that GPU (`require_gpu_golden_environment`). The worlds, orders,
+initial weights, conversions and CPU scores and ranks do not depend on the CPU kernels.
+
 | File | Bytes | SHA-256 | Source | Used by |
 |---|---:|---|---|---|
 | `g1_orders.json.gz` | 13,352 | `a0b6a1670904a88024083093e767ce23a52f67a6a8b916832bfd8aa797fc210c` | `golden/small` (G1: world orders) | `test_synthetic_priors.py` |

@@ -11,7 +11,7 @@ from dicee.scripts import pretrain_synthetic as command
 from dicee.synthetic_kg.checkpoint import from_research_export, read_checkpoint
 from dicee.synthetic_kg.digests import tensor_digest
 from dicee.synthetic_kg.pretraining import PretrainResult
-from tests.proofpfn_fixtures import fixture, golden_large
+from tests.proofpfn_fixtures import fixture, golden_large, require_cpu_training_golden_environment
 
 SETUP = Path(__file__).resolve().parents[1] / 'setup.py'
 
@@ -21,6 +21,7 @@ def test_the_entry_point_is_declared():
 
 
 def test_train_and_resume(tmp_path, monkeypatch):
+    require_cpu_training_golden_environment()
     monkeypatch.delenv('CUBLAS_WORKSPACE_CONFIG', raising=False)
     options = ['train', '--arm', 'S', '--seed', '42', '--out', str(tmp_path), '--workers', '0', '--device', 'cpu', '--exports', '1,2']
     assert command.main([*options, '--stop-after', '1']) == 0
