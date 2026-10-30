@@ -73,7 +73,8 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument('--threads', type=int, default=DEFAULTS['threads'],
                        help='torch threads of the training process; CPU results depend on them (default: %(default)s)')
     train.add_argument('--save_every', type=int, default=DEFAULTS['save_every'], help='updates between two writes of last.pt (default: %(default)s)')
-    train.add_argument('--allow_code_change', action='store_true', help='resume although the sources that the run record binds changed')
+    train.add_argument('--allow_code_change', action='store_true',
+                       help='resume although the sources that the run binds, the torch version or the GPU changed since it started')
     tests = train.add_argument_group('test options')
     tests.add_argument('--stop_after', type=int, default=None, help='stop after this update with last.pt; rerun to resume')
     tests.add_argument('--exports', type=updates, default=None,

@@ -19,13 +19,15 @@ on its configuration, its device and torch's thread count, not on the number of 
 
 Files of a run folder: ``run.json`` (the run record and its provenance), ``export-<N>-raw.pt`` and ``export-<N>-ema.pt``
 (``proofpfn-checkpoint-v1`` checkpoints, ``checkpoint.load_model``), ``last.pt`` (the training state: model, AdamW
-state, EMA, history; every ``save_every`` updates and at the end), ``progress.json``.
-A run whose folder holds a ``last.pt`` resumes from it; the result equals the uninterrupted run.
+state, EMA, history; every ``save_every`` updates and at the end), ``progress.json``, and ``.lock``, which a run holds
+exclusively while it trains. A run whose folder holds a ``last.pt`` resumes from it; the result equals the uninterrupted
+run on the same torch version and device.
 
 This is the research trainer (``prior-fix-v1-runtime/pt_train.py`` with ``pt_ladder``, ``pt_ultra``, ``pt_hard`` and
 ``statworlds-scale-v1-runtime/fast_pipeline``) for the ported arms, without its adapters, screens, restarts and skips.
 dicee's trainers are not used: an update trains on its own generated graph, which their datasets do not express.
 """
+import fcntl
 import json
 import logging
 import math
@@ -36,17 +38,17 @@ import time
 import warnings
 from collections import deque
 from concurrent.futures import Future, ProcessPoolExecutor
-from contextlib import closing
+from contextlib import closing, contextmanager
 from dataclasses import dataclass
 from multiprocessing import get_context
 from pathlib import Path
-from typing import Any, Callable, Generator, Mapping, NamedTuple, Optional, Sequence, Union
+from typing import Any, Callable, Generator, Iterator, Mapping, NamedTuple, Optional, Sequence, Union
 
 import numpy
 import torch
 
 from .. import __version__ as DICEE_VERSION
-from ..models import _relation_weights, graph_model, ultra
+from ..models import _inference, _relation_weights, graph_model, ultra
 from ..models._inference import to_device
 from ..models.ultra import ULTRA
 from .arms import ArmPreset, arm_preset, initial_model
@@ -88,7 +90,8 @@ class PretrainConfig:
         device: The training device.
         threads: Torch threads of the training process (CPU results depend on it).
         real_sources: The folder of the real source graphs (arms R and M); ``None`` reads ``PROOFPFN_REAL_SOURCES``.
-        allow_code_change: Resume although the code that the run record binds has changed.
+        allow_code_change: Resume although the sources that the run binds, the torch version or the GPU changed since the
+            run started (the result then can differ from the uninterrupted run).
     """
 
     arm: str
@@ -252,14 +255,15 @@ def ema_update(ema: Mapping[str, torch.Tensor], model: torch.nn.Module) -> None:
 # ------------------------------------------------------------------------------------------------------ the run
 
 def source_hashes() -> dict[str, str]:
-    """The SHA-256 of the sources that define the updates: ``dicee/synthetic_kg`` and the ULTRA model files.
+    """The SHA-256 of the sources that define the updates: ``dicee/synthetic_kg``, the ULTRA model files and the inference
+    helpers that the training path calls (``models/_inference.py``).
 
     Returns:
         The digest of each file by its path below ``dicee``.
     """
     package = Path(__file__).resolve().parent
     root = package.parent
-    files = sorted(package.rglob('*.py')) + [Path(m.__file__).resolve() for m in (ultra, graph_model, _relation_weights) if m.__file__]
+    files = sorted(package.rglob('*.py')) + [Path(m.__file__).resolve() for m in (ultra, graph_model, _relation_weights, _inference) if m.__file__]
     return {path.relative_to(root).as_posix(): file_sha256(path) for path in files}
 
 
@@ -380,8 +384,23 @@ def _cpu(state: Mapping[str, torch.Tensor]) -> dict[str, torch.Tensor]:
     return {k: v.detach().cpu().clone() for k, v in state.items()}
 
 
-def _check_start(folder: Path, record: Mapping[str, Any], sources: Mapping[str, str], allow_code_change: bool) -> None:
-    """Refuse to continue a run folder whose run record differs, or whose bound sources changed."""
+@contextmanager
+def _folder_lock(folder: Path) -> Iterator[None]:
+    """Hold the lock file ``.lock`` of a run folder exclusively; the operating system releases it when the process ends.
+
+    Raises:
+        RunInputError: When another process holds it.
+    """
+    with (folder / '.lock').open('a') as handle:
+        try:
+            fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RunInputError(f'another process trains into {folder}') from None
+        yield
+
+
+def _check_start(folder: Path, record: Mapping[str, Any], origin: Mapping[str, Any], allow_code_change: bool) -> None:
+    """Refuse to continue a run folder whose run record differs, or whose bound sources, torch version or GPU changed."""
     path = folder / 'run.json'
     if not path.exists():
         return
@@ -389,9 +408,11 @@ def _check_start(folder: Path, record: Mapping[str, Any], sources: Mapping[str, 
     if stored['run'] != record:
         changed = sorted(k for k in {*stored['run'], *record} if stored['run'].get(k) != record.get(k))
         raise RunInputError(f'{folder} holds another run (it differs in {changed}); choose another folder')
-    changed = sorted(k for k in {*stored['provenance']['sources'], *sources} if stored['provenance']['sources'].get(k) != sources.get(k))
+    before, sources = stored['provenance'], origin['sources']
+    changed = sorted(k for k in {*before['sources'], *sources} if before['sources'].get(k) != sources.get(k))
+    changed += [f'{key} ({before.get(key)} -> {origin[key]})' for key in ('torch', 'gpu') if before.get(key) != origin[key]]
     if changed and not allow_code_change:
-        raise RunInputError(f'the sources {changed} changed since the run started; resume with allow_code_change or start a new folder')
+        raise RunInputError(f'{changed} changed since the run started; resume with allow_code_change or start a new folder')
 
 
 def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[Callable[[], bool]] = None) -> PretrainResult:
@@ -406,8 +427,9 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
         Where the run ended.
 
     Raises:
-        RunInputError: For a folder of another run or with changed sources, a world order that differs from the arm's
-            pin, a foreign ``last.pt``, or real source graphs that are missing or differ from their pins.
+        RunInputError: For a folder of another run, with changed sources, torch version or GPU, or in use by another
+            process, a world order that differs from the arm's pin, a foreign ``last.pt``, or real source graphs that are
+            missing or differ from their pins.
         RuntimeError: For CUDA without a deterministic cuBLAS workspace setting.
     """
     preset = arm_preset(config.arm)
@@ -421,10 +443,10 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
     if pinned is not None and digest != pinned:
         raise RunInputError(f'the world order of arm {preset.name}, seed {config.seed} has digest {digest}, its pin is {pinned}')
     record = run_record(config, preset, digest)
-    with torch_threads(config.threads), deterministic_execution():
-        origin = provenance(config, preset)
-        _check_start(folder, record, origin['sources'], config.allow_code_change)
-        folder.mkdir(parents=True, exist_ok=True)
+    origin = provenance(config, preset)
+    folder.mkdir(parents=True, exist_ok=True)
+    with _folder_lock(folder), torch_threads(config.threads), deterministic_execution():
+        _check_start(folder, record, origin, config.allow_code_change)
         if not (folder / 'run.json').exists():
             _write_json(folder / 'run.json', dict(run=record, provenance=origin))
         model = initial_model(preset, config.seed).to(device)

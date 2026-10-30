@@ -115,7 +115,7 @@ A model family of the benchmark needs the seeds 42, 43 and 44 of one arm. Train 
 | `--threads` | 2 | torch threads of the training process |
 | `--real_sources` | `$PROOFPFN_REAL_SOURCES` | the folder of the real source graphs (arms R and M) |
 | `--save_every` | 250 | updates between two writes of `last.pt` |
-| `--allow_code_change` | off | resume although the sources of the run changed |
+| `--allow_code_change` | off | resume although the sources of the run, the torch version or the GPU changed |
 | `--stop_after` | none | test option: stop after this update and write `last.pt` |
 | `--exports` | `4000,8000,16000,20000,24000` | test option: the export updates |
 
@@ -136,9 +136,11 @@ of update 24,000.
 - If the run folder holds a `last.pt`, the command resumes from it. To resume, run the same command again.
 - A resumed run gives the same updates as an uninterrupted run.
 - SIGINT and SIGTERM stop the run after the current update. The command then writes `last.pt` and exits with code 3.
-- The command refuses a folder that holds another run (another arm, seed or option).
-- If a source file of `dicee/synthetic_kg` or of the ULTRA model changed since the start, the command refuses to
-  resume. Pass `--allow_code_change` to resume anyway.
+- The command refuses a folder that holds another run (another arm, seed or option), and a folder that another process
+  trains into (the run holds the folder's `.lock`).
+- If a source file of `dicee/synthetic_kg` or of the ULTRA model, the torch version or the GPU changed since the start,
+  the command refuses to resume. Pass `--allow_code_change` to resume anyway; the result then can differ from the
+  uninterrupted run.
 - Exit codes: 0 done (also after `--stop_after`), 1 error, 2 wrong input (one `error:` line), 3 stopped by a signal.
 
 ### Real source graphs

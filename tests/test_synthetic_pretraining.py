@@ -10,6 +10,7 @@ SUPER), deterministic: S, seed 42, 20 updates; UL, CU and HT 2 updates. CPU and 
 update on. G5: the exports against the research exports after conversion, tensor by tensor (large goldens,
 ``PROOFPFN_GOLDEN``). The default run checks the first updates of four arms; the full checks are slow.
 """
+import fcntl
 import json
 import math
 import os
@@ -207,7 +208,8 @@ def test_run_record_and_folder_checks(tmp_path):
     run, origin = stored['run'], stored['provenance']
     assert run['order_sha256'] == ARMS['UL'].pinned_order(43) and run['model_config'] == ARMS['UL'].model_config()
     assert (run['arm'], run['research_arm'], run['seed'], run['target'], run['device'], run['threads']) == ('UL', 'REC10A-XLE-UL-noA', 43, 'rbw', 'cpu', 2)
-    assert {'synthetic_kg/pretraining.py', 'synthetic_kg/prepare.py', 'models/ultra.py'} <= set(origin['sources']) and origin['real_sources'] == {}
+    assert {'synthetic_kg/pretraining.py', 'synthetic_kg/prepare.py', 'models/ultra.py', 'models/_inference.py'} <= set(origin['sources'])
+    assert origin['real_sources'] == {} and origin['gpu'] is None
     assert sorted(p.name for p in tmp_path.glob('export-*')) == ['export-1-ema.pt', 'export-1-raw.pt']
     model = load_model(tmp_path / 'export-1-ema.pt')
     assert (model.relation_weighting, model.pair_channels) == ('binary', 'off')
@@ -216,11 +218,17 @@ def test_run_record_and_folder_checks(tmp_path):
     assert pt.pretrain(config, tmp_path) == result   # a run at its stop does nothing
     with pytest.raises(pt.RunInputError, match='another run'):
         pt.pretrain(pt.PretrainConfig('UL', 44, stop_after=1, device='cpu', workers=0), tmp_path)
-    stored['provenance']['sources']['synthetic_kg/prepare.py'] = '0' * 64
-    (tmp_path / 'run.json').write_text(json.dumps(stored))
-    with pytest.raises(pt.RunInputError, match='changed since the run started'):
-        pt.pretrain(config, tmp_path)
-    assert pt.pretrain(pt.PretrainConfig('UL', 43, stop_after=1, device='cpu', workers=0, allow_code_change=True), tmp_path) == result
+    allowed = pt.PretrainConfig('UL', 43, stop_after=1, device='cpu', workers=0, allow_code_change=True)
+    for key, value in (('sources', {**origin['sources'], 'synthetic_kg/prepare.py': '0' * 64}), ('torch', '0.0.0'), ('gpu', 'another GPU')):
+        (tmp_path / 'run.json').write_text(json.dumps(dict(stored, provenance=dict(origin, **{key: value}))))
+        with pytest.raises(pt.RunInputError, match=f"{'prepare.py' if key == 'sources' else key}.*changed since the run started"):
+            pt.pretrain(config, tmp_path)
+        assert pt.pretrain(allowed, tmp_path) == result
+    with (tmp_path / '.lock').open('a') as handle:   # another process holds the folder
+        fcntl.flock(handle, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        with pytest.raises(pt.RunInputError, match='another process'):
+            pt.pretrain(allowed, tmp_path)
+    assert pt.pretrain(allowed, tmp_path) == result
 
 
 def test_configuration_checks(monkeypatch, tmp_path):
