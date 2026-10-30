@@ -90,6 +90,22 @@ def test_gate_graphs_give_the_research_rows(name):
     assert isinstance(queries.gt2[False, 0][0], np.ndarray)
 
 
+@pytest.mark.parametrize('name', ['FB15k-237', 'YAGO3-10', 'FB15k'])
+def test_sampled_graphs_give_the_research_sample(name):
+    """The first-1000 rule on the test split of a sampled development graph equals the research ``ag_eval.sample_positions``
+    on the research loader's test split (golden ``sample_positions.json``)."""
+    record = fixture('sample_positions.json')['graphs'][name]
+    manifest = mf.read_manifest(record['manifest'])
+    entry = manifest.entry(record['key'])
+    if not (mf.REPO / entry.path / 'test.txt').is_file():
+        pytest.skip(f'{entry.path} is not available')
+    graph = D.load_graph(manifest, entry, mf.REPO)
+    assert {f'{s}.txt': graph.hashes[f'{s}.txt'] for s in mf.SPLITS} == record['sha256']   # the files of the golden
+    positions = D.ranked_positions(D.as_triples(graph.test), manifest.sample_rule)
+    assert positions is not None and (len(positions), positions[:5], positions[-5:]) == (record['ranked'], record['first'], record['last'])
+    assert int_digest(positions) == record['positions_sha256'] and (graph.num_entities, graph.num_relations) == (record['entities'], record['relations'])
+
+
 def test_a_large_test_split_is_sampled_and_keeps_its_filter(tmp_path):
     names = [f'e{i:02d}' for i in range(40)]
     facts = [(h, r, t) for h in names for r in ('r0', 'r1') for t in names if h != t]
