@@ -11,6 +11,7 @@ variable (``external_folder``), and its files are checked against the pins of ``
 """
 import os
 import socket
+import subprocess
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence
 
@@ -21,6 +22,9 @@ from dicee.evaluation._filtering import FilteredRanker
 from ..data import GraphData, Queries
 from ..evaluate import graph_record, provenance_of, write_row_file
 from ..manifests import GraphEntry, InputError, Manifest, PathLike, file_sha256, read_models
+
+STOP_SECONDS = 30.0
+"""The time between SIGTERM and SIGKILL when an external process stops (``call``)."""
 
 
 class AdapterSetupError(InputError):
@@ -127,6 +131,32 @@ def check_commit(folder: PathLike, commit: str, what: str) -> str:
     if head != commit:
         raise AdapterSetupError(f'{what}: {folder} is at commit {head}, the pin {commit}')
     return head
+
+
+def call(command: Sequence[str], *, timeout: float, **options: Any) -> Optional[int]:
+    """Run an external process to its end; returns its exit code, or ``None`` when it ran past the timeout.
+
+    At the timeout, and when this process stops while the other one runs (a signal, an error), the other process gets
+    SIGTERM and, after ``STOP_SECONDS``, SIGKILL: a container client forwards SIGTERM to the container, SIGKILL it cannot.
+
+    Args:
+        command: The command line.
+        timeout: The seconds after which the process stops.
+        options: Further options of ``subprocess.Popen``.
+    """
+    process = subprocess.Popen(command, **options)
+    try:
+        return process.wait(timeout)
+    except BaseException as error:
+        process.terminate()
+        try:
+            process.wait(STOP_SECONDS)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            process.wait()
+        if isinstance(error, subprocess.TimeoutExpired):
+            return None
+        raise
 
 
 # ------------------------------------------------------------------------------------------------------ ranks

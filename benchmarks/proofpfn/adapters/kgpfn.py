@@ -40,6 +40,7 @@ from ..manifests import REPO, SPLITS, GraphEntry, Manifest, PathLike, file_sha25
 from . import (
     AdapterSetupError,
     ExternalStepError,
+    call,
     check_commit,
     check_file,
     external_folder,
@@ -57,6 +58,8 @@ CHECKPOINT, TABICL = 'kgpfn_icl_3g.pth', 'tabicl-regressor-v2-20260212.ckpt'
 NUM_POS, NEG_STEPS = 20, (80, 40, 20)
 DUMP_LIMIT = 2_500_000   # entities x ranked facts up to which the scores are dumped and verified
 EXIT_OOM = 3
+WORKER_HOURS = 24.0
+"""The time after which a worker run stops."""
 WORKER = Path(__file__).resolve().with_name('kgpfn_worker.py')
 IMPORTS = 'import pfn.tasks, pfn.util, script.test_kgpfn'
 """The worker's imports of KGPFN, which import KGPFN's requirements."""
@@ -209,23 +212,24 @@ def worker_environment(system: KGPFN, folder: Path) -> dict[str, str]:
                 KGPFN_CHECKPOINT_DIR=str(system.checkpoints), KGPFN_WORKER_DIR=str(WORKER.parent), KGPFN_WORK=str(work))
 
 
-def run_worker(system: KGPFN, entry: GraphEntry, folder: Path, meta: Mapping[str, Any]) -> tuple[int, int]:
+def run_worker(system: KGPFN, entry: GraphEntry, folder: Path, meta: Mapping[str, Any]) -> tuple[Optional[int], int]:
     """Run the worker with the meta's settings and, after CUDA out of memory, once more with half the batch.
 
     Returns:
-        ``(exit code, attempts)``.
+        ``(exit code, attempts)``; the exit code is ``None`` when the worker ran past ``WORKER_HOURS``.
     """
     batch, heads, candidates = meta['batch_size'], meta['entity_chunk'], meta['eval_chunk']
     env = worker_environment(system, folder)
     for stale in ('raw.json', 'raw.error.json', 'scores.npz'):   # outputs of an earlier run of this graph
         (folder / stale).unlink(missing_ok=True)
-    code, attempt = 0, 0
+    code: Optional[int] = 0
+    attempt = 0
     for attempt in (1, 2):
         command = worker_command(system, entry, folder, batch, heads, candidates, meta['num_neg'], meta['dump'])
         logger.info('%s: attempt %d, batch %d, heads %d, candidates %d, negatives %d', entry.name, attempt, batch, heads, candidates,
                     meta['num_neg'])
         with open(folder / f'worker-{attempt}.log', 'w') as log:
-            code = subprocess.call(command, env=env, stdout=log, stderr=subprocess.STDOUT, cwd=folder)
+            code = call(command, timeout=WORKER_HOURS * 3600, env=env, stdout=log, stderr=subprocess.STDOUT, cwd=folder)
         if code != EXIT_OOM or attempt == 2 or batch <= 1:
             break
         batch, heads, candidates = max(1, batch // 2), max(1, heads // 2), candidates * 2
@@ -330,9 +334,10 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, system:
     folder.mkdir(parents=True, exist_ok=True)
     meta = prepare(system, entry, graph, queries, folder, manifest.folder(entry, root))
     code, attempts = run_worker(system, entry, folder, meta)
-    if code:
+    if code != 0:
         oom = folder / 'raw.error.json'
-        raise ExternalStepError(dict(stage='run', reason=f'the worker exited with code {code}', exit_code=code, attempts=attempts,
+        reason = f'stopped after {WORKER_HOURS} h' if code is None else f'the worker exited with code {code}'
+        raise ExternalStepError(dict(stage='run', reason=reason, exit_code=code, attempts=attempts,
                                      oom=json.loads(oom.read_text()) if oom.is_file() else None,
                                      log_tail=(folder / f'worker-{attempts}.log').read_text(errors='replace').splitlines()[-30:]))
     raw = json.loads((folder / 'raw.json').read_text())

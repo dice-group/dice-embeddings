@@ -27,7 +27,7 @@ import signal
 import sys
 import traceback
 from pathlib import Path
-from typing import Any, Optional, Sequence
+from typing import Any, Callable, Optional, Sequence
 
 from .manifests import REPO, BlindSetError, InputError, read_manifest, read_models
 
@@ -216,7 +216,8 @@ def _adapter(args: argparse.Namespace, argv: Sequence[str]) -> int:
     manifest, entries = _entries(args)
     if args.name == 'merit' and not args.worker:   # the scoring runs in a child process with MERIT's folder on its path
         from .adapters import merit
-        return merit.run_in_child(argv, code=args.code, models=args.models, checkpoint_root=args.checkpoint_root, python=args.python)
+        code = merit.run_in_child(argv, len(entries), code=args.code, models=args.models, checkpoint_root=args.checkpoint_root, python=args.python)
+        return EXIT_FAILED if code is None else code
     if args.name == 'anyburl':
         from .adapters import anyburl
         system: Any = anyburl.setup(args.code, args.models, java=args.java, scope=not args.no_scope)
@@ -296,13 +297,13 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             for entry in _entries(args)[1]:
                 print(entry.key)
             return 0
-        if args.command in ('run', 'gate', 'adapter'):   # the commands that can start CUDA, which needs the setting first
+        commands: dict[str, Callable[[argparse.Namespace], int]] = {'check': _check, 'run': _run, 'cells': _cells, 'gate': _gate,
+                                                                    'fv1-models': _fv1_models, 'adapter': lambda a: _adapter(a, argv)}
+        if args.command in ('run', 'gate') or (args.command == 'adapter' and args.name == 'merit'):
             from dicee.synthetic_kg.determinism import cublas_workspace
-            with cublas_workspace():
-                return _adapter(args, argv) if args.command == 'adapter' else (_run if args.command == 'run' else _gate)(args)
-        commands = dict(check=_check, cells=_cells)
-        commands['fv1-models'] = _fv1_models
-        return commands[args.command](args)
+            with cublas_workspace():   # dicee's models score on CUDA (MERIT in its child), which needs the setting first
+                return commands[args.command](args)
+        return commands[args.command](args)   # KGPFN's worker and AnyBURL keep the caller's environment
     except (InputError, BlindSetError) as error:
         print(f'error: {error}', file=sys.stderr)
         return EXIT_INPUT

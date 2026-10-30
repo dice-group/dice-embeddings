@@ -25,7 +25,6 @@ and the model hash of each checkpoint, plus ``merit_meta``. MERIT's package impo
 import logging
 import os
 import shlex
-import subprocess
 import sys
 import types
 from contextlib import contextmanager
@@ -43,7 +42,7 @@ from dicee.models.ultra import ULTRA
 from .. import evaluate
 from ..manifests import REPO, GraphEntry, Manifest, PathLike, file_sha256, read_models
 from ..systems import Reference, frozen
-from . import AdapterSetupError, ExternalStepError, check_commit, check_file, external_folder, external_pins
+from . import AdapterSetupError, ExternalStepError, call, check_commit, check_file, external_folder, external_pins
 
 logger = logging.getLogger(__name__)
 
@@ -55,6 +54,8 @@ NOISE_SEED = 0
 UPSTREAM = ('kgfm/models/merit.py', 'kgfm/tasks.py')
 CHECKPOINTS = Path('merit') / 'ckpts' / 'merit'
 ATTENTION_POLICY = 'fresh-compiler-per-graph-no-recompile-v1'
+GRAPH_HOURS = 6.0
+"""The time per graph after which the child process stops (``run_in_child``)."""
 VARIABLE, PYTHON_VARIABLE = 'MERIT_HOME', 'MERIT_PYTHON'
 
 
@@ -292,9 +293,20 @@ def child_command(argv: Sequence[str], merit: MeritSetup, python: Optional[str] 
     return [*command, '-B', '-m', 'benchmarks.proofpfn', *argv, '--worker'], env
 
 
-def run_in_child(argv: Sequence[str], *, code: Optional[PathLike] = None, models: Optional[PathLike] = None,
-                 checkpoint_root: PathLike = REPO / 'checkpoints', python: Optional[str] = None) -> int:
-    """Check the setup here, then run ``adapter merit`` in a child process in MERIT's environment; returns its exit code.
+def run_in_child(argv: Sequence[str], graphs: int, *, code: Optional[PathLike] = None, models: Optional[PathLike] = None,
+                 checkpoint_root: PathLike = REPO / 'checkpoints', python: Optional[str] = None) -> Optional[int]:
+    """Check the setup here, then run ``adapter merit`` in a child process in MERIT's environment.
+
+    Args:
+        argv: The arguments of this command line.
+        graphs: The number of graphs of the run; the child stops after ``GRAPH_HOURS`` per graph.
+        code: The MERIT folder (default ``$MERIT_HOME``).
+        models: The pins (default ``manifests/models.json``).
+        checkpoint_root: The root of ``merit/ckpts/merit/``.
+        python: The command of MERIT's Python (default ``$MERIT_PYTHON``, else this interpreter).
+
+    Returns:
+        The child's exit code, or ``None`` when it ran past its time.
 
     Raises:
         AdapterSetupError: When the setup check fails.
@@ -302,4 +314,7 @@ def run_in_child(argv: Sequence[str], *, code: Optional[PathLike] = None, models
     merit = setup(code, models, checkpoint_root)
     command, env = child_command(argv, merit, python)
     logger.info('MERIT: %s', ' '.join(command))
-    return subprocess.call(command, env=env)
+    exit_code = call(command, timeout=GRAPH_HOURS * 3600 * max(1, graphs), env=env)
+    if exit_code is None:
+        logger.error('MERIT: the child process ran past %s h per graph and was stopped', GRAPH_HOURS)
+    return exit_code

@@ -5,8 +5,10 @@ import csv
 import json
 import math
 import os
+import signal
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import numpy as np
@@ -182,11 +184,34 @@ def test_registered_tables_read_the_adapter_rows(adapter_rows, tmp_path):
     assert meta['counts']['row_files'] == 3   # the work folder of an adapter is a dot folder, which the tables skip
 
 
+def test_call_stops_a_process_at_its_timeout_and_with_this_process(tmp_path, monkeypatch):
+    began = time.monotonic()
+    assert adapters.call([sys.executable, '-c', 'import time; time.sleep(60)'], timeout=0.5) is None and time.monotonic() - began < 20
+    assert adapters.call([sys.executable, '-c', 'raise SystemExit(7)'], timeout=30) == 7
+    stubborn = tmp_path / 'stubborn.py'   # it ignores SIGTERM, so SIGKILL follows after STOP_SECONDS
+    stubborn.write_text('import os, pathlib, signal, time\nsignal.signal(signal.SIGTERM, signal.SIG_IGN)\n'
+                        'pathlib.Path("pid").write_text(str(os.getpid()))\ntime.sleep(60)\n')
+    monkeypatch.setattr(adapters, 'STOP_SECONDS', 0.5)
+    previous = signal.signal(signal.SIGALRM, lambda *_: sys.exit(143))   # as the command line's SIGTERM handler
+    signal.setitimer(signal.ITIMER_REAL, 1.0)
+    try:
+        with pytest.raises(SystemExit):
+            adapters.call([sys.executable, str(stubborn)], timeout=60, cwd=tmp_path)
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
+    with pytest.raises(ProcessLookupError):
+        os.kill(int((tmp_path / 'pid').read_text()), 0)
+
+
 def test_a_failing_graph_gets_an_error_record_and_the_run_goes_on(tmp_path, monkeypatch, capsys):
     folders = {name: tiny_graph(tmp_path / 'KGs' / name, seed=seed) for seed, name in enumerate('fgh')}
     manifest = mf.read_manifest(write_manifest(tmp_path / 'tiny.json', tmp_path, folders))
+    monkeypatch.delenv('CUBLAS_WORKSPACE_CONFIG', raising=False)
+    workspace = []
 
     def evaluate_graph(manifest: mf.Manifest, entry: mf.GraphEntry, out: Path, system: object, **options: object) -> str:
+        workspace.append(os.environ.get('CUBLAS_WORKSPACE_CONFIG'))   # the command line sets none for an external process
         if entry.name == 'f':
             raise KeyError('tail_rank')   # an error of the adapter, for example in a worker output
         if entry.name == 'g':
@@ -202,6 +227,7 @@ def test_a_failing_graph_gets_an_error_record_and_the_run_goes_on(tmp_path, monk
     assert f['stage'] == 'adapter' and f['reason'] == "KeyError: 'tail_rank'" and "raise KeyError('tail_rank')" in '\n'.join(f['traceback'])
     assert g['stage'] == 'learn' and g['adapter'] == 'anyburl' and 'traceback' not in g
     assert not ev.error_path(final['h']).exists()   # a graph that is done loses the record of its earlier failure
+    assert workspace == [None, None, None]
 
 
 def test_command_line_refusals(tmp_path, capsys):
