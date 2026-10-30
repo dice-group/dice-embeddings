@@ -1,5 +1,6 @@
 """The AnyBURL adapter: input files, the rank rebuild (hand-made lists, and the research rebuild on a stored ranking file),
-the row file, and, with ``$ANYBURL_HOME``, the Java steps.
+the setup, the Java steps of a stand-in AnyBURL with their failures and the stop of a running step, and, with
+``$ANYBURL_HOME``, the Java steps of AnyBURL.
 
 Learn is time-bounded and threaded, so its rules differ between runs; the tests with Java check the protocol and the
 format, and Apply with a stored rule file (whose lists do not depend on the threads).
@@ -17,12 +18,14 @@ import numpy as np
 import pytest
 import torch
 
+from benchmarks.proofpfn import cli
+from benchmarks.proofpfn import evaluate as ev
 from benchmarks.proofpfn import manifests as mf
 from benchmarks.proofpfn.adapters import AdapterSetupError, anyburl
 from benchmarks.proofpfn.data import GraphData, Queries, load_graph, prepare_queries
 from dicee.synthetic_kg.digests import json_sha256
 
-from .golden import GOLDEN, write_graph, write_manifest
+from .golden import GOLDEN, tiny_graph, write_graph, write_manifest
 
 FIXTURE = GOLDEN / 'anyburl'
 GATE_GRAPH = 'ultra-suite-v1/NELLInductive_v1'
@@ -214,6 +217,65 @@ def test_a_stopped_step_kills_its_java_process(tmp_path):
         os.kill(int((config.parent / 'java.pid').read_text()), 0)
     with open(tmp_path / 'java.lock') as held:
         fcntl.flock(held, fcntl.LOCK_EX | fcntl.LOCK_NB)
+
+
+FAKE_ANYBURL = '''#!{python}
+"""A stand-in of Java with AnyBURL: -version, then Learn, Apply and Eval by their configuration file. FAKE_ANYBURL=<step>:<failure>
+makes a step fail: heap (Java's out-of-memory error), killed (SIGKILL) or slow (60 seconds)."""
+import os
+import sys
+import time
+from pathlib import Path
+
+if sys.argv[1:] == ['-version']:
+    print('openjdk version "11.0.28" 2025-07-15', file=sys.stderr)
+    sys.exit(0)
+main, config = sys.argv[-2].rsplit('.', 1)[1], Path(sys.argv[-1])
+values = dict(line.split(' = ', 1) for line in config.read_text().splitlines())
+step, _, failure = os.environ.get('FAKE_ANYBURL', '').partition(':')
+if step == main.lower():
+    if failure == 'heap':
+        print('Exception in thread "main" java.lang.OutOfMemoryError: Java heap space')
+        sys.exit(3)
+    if failure == 'killed':
+        os.kill(os.getpid(), 9)
+    time.sleep(60)
+if main == 'Learn':   # one rule file, and exit code 1 after the last snapshot, as AnyBURL's Learn
+    Path(values['PATH_OUTPUT'] + '-30').write_text('2\\t1\\t0.5\\tr0(X,Y) <= r1(Y,X)\\n3\\t1\\t0.3\\tr1(X,Y) <= r0(Y,X)\\n')
+    print('>>> stored 2 rules')
+    sys.exit(1)
+if main == 'Apply':   # an empty candidate list for every ranked fact
+    facts = Path(values['PATH_TEST']).read_text().split()
+    Path(values['PATH_OUTPUT']).write_text(''.join(' '.join(facts[i:i + 3]) + '\\nHeads: \\nTails: \\n' for i in range(0, len(facts), 3)))
+    print('* done with rule application')
+    sys.exit(0)
+print('0.0000   0.0000   0.0000   0.0000')   # Eval of empty lists: hits@1, hits@3, hits@10 and MRR
+'''
+
+
+def test_java_steps_and_their_failures_through_the_command_line(tmp_path, monkeypatch):
+    """Learn, Apply and Eval of a stand-in AnyBURL give a row file; a failing step gives an error record with its reason."""
+    home, models = fake_home(tmp_path)
+    java = tmp_path / 'fake-java'
+    java.write_text(FAKE_ANYBURL.format(python=sys.executable))
+    java.chmod(0o755)
+    manifest = mf.read_manifest(write_manifest(tmp_path / 'tiny.json', tmp_path, {'g': tiny_graph(tmp_path / 'KGs' / 'g')}))
+    command = ['adapter', 'anyburl', '--set', str(tmp_path / 'tiny.json'), '--data-root', str(tmp_path), '--code', str(home), '--models', str(models),
+               '--java', str(java), '--no-scope']
+    monkeypatch.setattr(anyburl, 'STEP_HOURS', 2 / 3600)
+
+    def run(out: str, failure: str = '') -> int:
+        monkeypatch.setenv('FAKE_ANYBURL', failure)
+        return cli.main([*command, '--out', str(tmp_path / out)])
+    assert run('rows') == 0
+    meta = json.loads(ev.row_file_path(tmp_path / 'rows', manifest.entry('g'), ['anyburl']).read_text())['anyburl_meta']
+    assert meta['native']['agree'] and meta['rules'] == 2 and [meta['times'][s]['code'] for s in ('learn', 'apply', 'eval')] == [1, 0, 0]
+    for failure, reason in (('learn:heap', 'out of memory (JVM heap -Xmx6G)'), ('apply:killed', 'killed (memory cap MemoryMax=8G of the scope)'),
+                            ('eval:slow', 'stopped after')):
+        assert run(failure, failure) == 3, failure
+        record = json.loads(ev.error_path(ev.row_file_path(tmp_path / failure, manifest.entry('g'), ['anyburl'])).read_text())
+        assert (record['stage'], record['adapter']) == (failure.split(':')[0], 'anyburl') and record['reason'].startswith(reason), record
+        assert record['timed_out'] == (failure == 'eval:slow') and record['entities'] == 16
 
 
 def installed() -> anyburl.AnyBURL:

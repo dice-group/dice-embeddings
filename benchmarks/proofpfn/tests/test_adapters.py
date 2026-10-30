@@ -130,6 +130,9 @@ def adapter_rows(tmp_path_factory):
     write_rows(ev.row_file_path(out, entry, ['kgpfn']), manifest, entry, graph, queries, 'kgpfn', kgpfn.rows_of(raw, queries))
     systems = fake_systems(root)
     assert ev.evaluate_graph(manifest, entry, systems, out, root=root, device='cpu') == 'done'
+    ev.write_error(ev.row_file_path(out, entry, ['kgpfn']), entry, stage='run', reason='an earlier failure')   # dot folders that the tables skip
+    adapters.work_folder(None, out, 'anyburl', entry).mkdir(parents=True)
+    (adapters.work_folder(None, out, 'anyburl', entry) / 'native-16.json').write_text(json.dumps(dict(rows=[])))
     return root, out, entry, systems
 
 
@@ -181,7 +184,8 @@ def test_registered_tables_read_the_adapter_rows(adapter_rows, tmp_path):
         assert table['merit', seed] == mrr(f'{system.key}:raw', path) and table['merit+rule', seed] == mrr(system.key, path)
     meta = json.loads((tmp_path / 'tables' / 'tables.meta.json').read_text())
     assert meta['models_checked'] == sorted(s.key for s in systems) and {'anyburl', 'kgpfn'} <= set(meta['models_unchecked'])
-    assert meta['counts']['row_files'] == 3   # the work folder of an adapter is a dot folder, which the tables skip
+    assert (out / '.work').is_dir() and (out / 'tiny' / 'kgpfn' / '.errors' / 'g.json').is_file()
+    assert meta['counts']['row_files'] == 3   # the work folder and the error records are dot folders, which the tables skip
 
 
 def test_call_stops_a_process_at_its_timeout_and_with_this_process(tmp_path, monkeypatch):

@@ -1,5 +1,6 @@
-"""The KGPFN adapter: context size and settings, staging and meta, the worker's ranks against the benchmark's ranker, the
-finalize and verify steps, and, with KGPFN's environment and a GPU of the reference, the ranks of the probe graphs.
+"""The KGPFN adapter: context size and settings, staging and meta, the setup, the worker's ranks against the benchmark's
+ranker, the finalize and verify steps, a stand-in worker's run with its retry, and, with KGPFN's environment and a GPU of
+the reference, the ranks of the probe graphs.
 
 The worker module imports KGPFN only inside ``main``, so its rank function runs here without KGPFN.
 """
@@ -13,6 +14,8 @@ import numpy as np
 import pytest
 import torch
 
+from benchmarks.proofpfn import adapters
+from benchmarks.proofpfn import evaluate as ev
 from benchmarks.proofpfn import manifests as mf
 from benchmarks.proofpfn.adapters import AdapterSetupError, ExternalStepError, kgpfn, kgpfn_worker
 from benchmarks.proofpfn.data import as_triples, load_graph, prepare_queries, read_triples
@@ -217,6 +220,55 @@ def test_worker_parse_and_entity_order(tmp_path):
         assert kgpfn_worker.read_split(folder / f'{s}.txt') == read_triples(folder / f'{s}.txt')
     names = kgpfn.worker_entities(folder)
     assert len(names) == len(set(names)) and names[:2] == list(read_triples(folder / 'train.txt')[0][::2])
+
+
+FAKE_WORKER = '''"""A stand-in of the KGPFN worker. FAKE_KGPFN_OOM=first: CUDA out of memory (exit code 3) at the meta's batch; always: at every
+batch. Else a complete output with rank 1 for every query."""
+import argparse
+import hashlib
+import json
+import os
+import sys
+from pathlib import Path
+
+parser = argparse.ArgumentParser()
+for option in ('--meta', '--out', '--batch-size', '--entity-chunk', '--eval-chunk', '--num-neg'):
+    parser.add_argument(option)
+a, _ = parser.parse_known_args()
+meta, oom = json.loads(Path(a.meta).read_text()), os.environ.get('FAKE_KGPFN_OOM')
+if oom == 'always' or (oom == 'first' and int(a.batch_size) == meta['batch_size']):
+    Path(a.out).with_name('raw.error.json').write_text(json.dumps(dict(status='oom', batch_size=int(a.batch_size))))
+    sys.exit(3)
+ranks = [1] * meta['test_rows']
+settings = dict(batch_size=int(a.batch_size), entity_chunk_size=int(a.entity_chunk), eval_chunk_size=int(a.eval_chunk), num_pos=20,
+                num_neg=int(a.num_neg), order='stand-in', seeding='stand-in', meta_sha256=hashlib.sha256(Path(a.meta).read_bytes()).hexdigest())
+Path(a.out).write_text(json.dumps(dict(
+    status='complete', context_mode='blind', seed=0, settings=settings, counts=dict(nonfinite_rows=0), rank_mismatches_vs_native=0,
+    queries_with_target_tie=0, strict_load=dict(missing=[], shape_mismatch=[], value_mismatch=[], unexpected=[]), times=dict(total_s=1.5),
+    gpu=dict(name='stand-in'), provenance=dict(imported=meta['pins']['imported']), tail_rank=ranks, head_rank=ranks, tail_rank_rule=ranks,
+    head_rank_rule=ranks)))
+'''
+
+
+def test_the_worker_retries_after_cuda_out_of_memory_and_the_rows_follow(tmp_path, monkeypatch):
+    manifest, entry, graph, _, _ = tiny(tmp_path, entities=200)
+    (tmp_path / 'worker.py').write_text(FAKE_WORKER)
+    system = kgpfn.KGPFN(code=tmp_path / 'KGPFN', checkpoints=tmp_path / 'ckpt', python=(sys.executable, str(tmp_path / 'worker.py')),
+                         pins=kgpfn.external_pins('kgpfn'))
+    monkeypatch.setattr(kgpfn, 'DUMP_LIMIT', 0)   # the stand-in dumps no scores, so nothing to verify
+    monkeypatch.setenv('FAKE_KGPFN_OOM', 'first')
+    assert kgpfn.evaluate_graph(manifest, entry, tmp_path / 'rows', system, root=tmp_path) == 'done'
+    doc = json.loads(ev.row_file_path(tmp_path / 'rows', entry, ['kgpfn']).read_text())
+    batch = kgpfn.settings(graph.num_entities)[0]
+    assert (doc['kgpfn_meta']['attempts'], doc['kgpfn_meta']['batch_size'], doc['kgpfn_meta']['verified']) == (2, batch // 2, False)
+    assert all(r['kgpfn'] == r['kgpfn:raw'] == 1 for r in doc['rows']) and doc['seconds'] == 1.5
+    work = adapters.work_folder(None, tmp_path / 'rows', 'kgpfn', entry)
+    assert (work / 'worker-1.log').is_file() and (work / 'worker-2.log').is_file() and not (work / 'stage' / 'train.txt').exists()
+    assert kgpfn.evaluate_graph(manifest, entry, tmp_path / 'rows', system, root=tmp_path) == 'exists'
+    monkeypatch.setenv('FAKE_KGPFN_OOM', 'always')
+    with pytest.raises(ExternalStepError) as caught:
+        kgpfn.evaluate_graph(manifest, entry, tmp_path / 'again', system, root=tmp_path)
+    assert caught.value.record['stage'] == 'run' and caught.value.record['attempts'] == 2 and caught.value.record['oom']['batch_size'] == batch // 2
 
 
 # ------------------------------------------------------------------------------------------------ probe graphs
