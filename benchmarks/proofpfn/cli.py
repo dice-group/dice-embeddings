@@ -9,7 +9,8 @@ An adapter takes its external code from ``--code`` or its environment variable (
 
 Exit codes: 0 done; 2 wrong input (graph, system, hash, pins, adapter setup); 3 a graph ran out of CUDA memory, or an
 adapter failed on a graph and went on with the next one (the graph's error record is in ``.errors/`` of the row folder);
-76 stopped at ``--max-minutes`` (the part file is saved); 143 stopped by SIGTERM.
+76 stopped at ``--max-minutes`` (the part file is saved); 143 stopped by SIGTERM (with ``--parts`` or a shard, the part
+file is saved). An internal error ends with a traceback and exit code 1.
 """
 import argparse
 import json
@@ -24,11 +25,11 @@ from .manifests import REPO, BlindSetError, InputError, read_manifest, read_mode
 
 logger = logging.getLogger(__name__)
 EXIT_INPUT, EXIT_OOM, EXIT_PARTIAL, EXIT_TERM = 2, 3, 76, 143
-EXIT_FAILED = EXIT_OOM   # a graph failed in an adapter's external step
+EXIT_FAILED = EXIT_OOM   # an adapter failed on a graph
 ADAPTERS = ('kgpfn', 'merit', 'anyburl')
 COMMANDS = {
     'list': 'the graphs of a manifest view',
-    'check': "CPU only: the graphs' hash checks and counts, and the systems' files and pins; no score",
+    'check': "CPU only: the graphs' hash checks, counts and official Flock's setting, and the systems' files and pins; no score",
     'run': 'rank the graphs with the systems and write one row file per graph (evaluate.evaluate_graph)',
     'cells': 'the query cells of the graphs: queries.csv and its .meta.json (cells.write_queries)',
     'gate': 'the N validity gate of amendment A1: S and N on held-out worlds of the prior (gate.gate)',
