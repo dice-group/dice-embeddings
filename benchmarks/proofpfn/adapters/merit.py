@@ -13,7 +13,8 @@ tensor of the inference graph:
   Transformer on that converted relation, where ULTRA uses the direct relation.
 - The motif tensor comes from the inference graph with both edge directions, once per graph.
 - The relation Transformer draws Gaussian noise on its tokens: the noise of a query is seeded with
-  ``merit_seed(0, head, relation)`` inside ``torch.random.fork_rng``, so ranks do not depend on the query order.
+  ``merit_seed(0, head, relation)`` inside ``torch.random.fork_rng``. With one query per microbatch (``MeritReference``),
+  ranks do not depend on the query order.
 - Attention: ``flex`` on CUDA (under MERIT's float16 autocast); the CPU runs MERIT's ``mha`` path (smoke tests only).
 - Compiler (``fresh_compiler``): a fresh compiler cache per graph, and a recompilation is an error: torch 2.5.1 falls back
   from compiled flex attention to eager attention after eight shapes, which changes the scores.
@@ -60,7 +61,16 @@ VARIABLE, PYTHON_VARIABLE = 'MERIT_HOME', 'MERIT_PYTHON'
 
 
 def merit_seed(noise_seed: int, head: int, relation: int) -> int:
-    """The seed of the relation tokens' noise for a query with this head entity and (converted) relation."""
+    """The seed of the relation tokens' noise for a query with this head entity and (converted) relation.
+
+    Args:
+        noise_seed: The model's noise seed (``merit_noise_seed``).
+        head: The head entity of the converted query (its anchor).
+        relation: The relation of the converted query: the inverse relation for a head query.
+
+    Returns:
+        ``(noise_seed * 1_000_003 + head * 4_099 + relation) % (2**63 - 1)``.
+    """
     return (noise_seed * 1_000_003 + head * 4_099 + relation) % (2**63 - 1)
 
 
@@ -84,6 +94,13 @@ def import_upstream(home: Path, pins: Mapping[str, str]) -> Upstream:
     """``RelTransformerMERIT`` and ``build_motif_tensor`` from MERIT's package, which must load from ``home``.
 
     Needs MERIT's environment with ``home`` on the module path (the child process of ``run_in_child``).
+
+    Args:
+        home: The MERIT code folder.
+        pins: The pins of ``models.json`` (``external.merit``), with the SHA-256 of each file of ``UPSTREAM``.
+
+    Returns:
+        The ``Upstream`` with ``RelTransformerMERIT``, ``build_motif_tensor`` and the SHA-256 of their source files.
 
     Raises:
         AdapterSetupError: When the package does not import, loads from elsewhere, or its files differ from the pins.
@@ -162,6 +179,14 @@ class MeritReference(Reference):
     def build_model(self, num_entities: int, num_relations: int, setting: Optional[Mapping[str, Any]] = None) -> GraphKGE:
         """The frozen MERIT of this checkpoint on the CPU (query batch 1), built with the global random state restored.
 
+        Args:
+            num_entities: The number of entities of all splits.
+            num_relations: The number of relations of all splits.
+            setting: The official Flock setting of the graph, or ``None``. MERIT does not use it.
+
+        Returns:
+            MERIT with the weights of the release checkpoint and the noise seed ``NOISE_SEED``, without a graph.
+
         Raises:
             AdapterSetupError: Without MERIT's code.
         """
@@ -174,7 +199,12 @@ class MeritReference(Reference):
         return frozen(model)
 
     def spec(self) -> dict[str, Any]:
-        """The system's record."""
+        """The system's record.
+
+        Returns:
+            ``kind`` (``'reference'``), ``model`` (``'MERIT'``), ``checkpoint`` (the file), ``query_batch_size`` (1),
+            ``noise_seed`` (``NOISE_SEED``), ``config`` (``CONFIG``) and ``attention_policy`` (``ATTENTION_POLICY``).
+        """
         return dict(kind='reference', model='MERIT', checkpoint=str(self.path), query_batch_size=1, noise_seed=NOISE_SEED,
                     config=CONFIG, attention_policy=ATTENTION_POLICY)
 
@@ -197,18 +227,41 @@ class MeritSetup:
     _upstream: Optional[Upstream] = field(default=None, init=False, repr=False)
 
     def upstream(self) -> Upstream:
-        """MERIT's code, imported on first use (needs MERIT's environment)."""
+        """MERIT's code, imported on first use (needs MERIT's environment).
+
+        Returns:
+            The ``Upstream`` of ``import_upstream``. Later calls return the same object.
+
+        Raises:
+            AdapterSetupError: When MERIT's package does not import, loads from elsewhere, or its files differ from the
+                pins (``import_upstream``).
+        """
         if self._upstream is None:
             self._upstream = import_upstream(self.home, self.pins)
         return self._upstream
 
     def systems(self) -> list[MeritReference]:
-        """The five MERIT systems, in seed order."""
+        """The five MERIT systems, in seed order.
+
+        Returns:
+            One ``MeritReference`` per key of ``KEYS``, with its checkpoint, its pinned SHA-256 and MERIT's code.
+
+        Raises:
+            AdapterSetupError: When the first import of MERIT's code fails (``upstream``).
+        """
         upstream = self.upstream()
         return [MeritReference(key=key, path=self.checkpoints[key], sha256=self.sha256[key], upstream=upstream) for key in KEYS]
 
     def record(self) -> dict[str, Any]:
-        """The setup for the logs, with the files of MERIT's package that imported (needs MERIT's environment)."""
+        """The setup for the logs, with the files of MERIT's package that imported (needs MERIT's environment).
+
+        Returns:
+            ``home``, ``code_commit`` (the pin), ``upstream_sha256`` (the pinned SHA-256 of the source files),
+            ``checkpoints`` (system key to file) and ``imported`` (the SHA-256 of the imported files).
+
+        Raises:
+            AdapterSetupError: When the first import of MERIT's code fails (``upstream``).
+        """
         return dict(home=str(self.home), code_commit=self.pins['code_commit'], upstream_sha256={k: self.pins[k] for k in UPSTREAM},
                     checkpoints={k: str(p) for k, p in self.checkpoints.items()}, imported=dict(self.upstream().files))
 
@@ -217,8 +270,18 @@ def setup(code: Optional[PathLike] = None, models: Optional[PathLike] = None, ch
     """The checked MERIT setup: the folder (``code``, else ``$MERIT_HOME``) at the pinned commit with the pinned source files,
     and the five checkpoints below ``checkpoint_root`` with the SHA-256 of ``models.json``.
 
+    Args:
+        code: The MERIT folder (default ``$MERIT_HOME``).
+        models: The pins (default ``manifests/models.json``).
+        checkpoint_root: The root of ``merit/ckpts/merit/``.
+
+    Returns:
+        The setup with the folder, the pins of ``external.merit``, and the checkpoint file and pinned SHA-256 of each
+        system key.
+
     Raises:
         AdapterSetupError: For a missing folder or file, another commit or a file that differs from its pin.
+        manifests.ManifestError: For a missing or malformed file of pins (``read_models``).
     """
     pins = external_pins('merit', models)
     home = external_folder(code, VARIABLE, 'MERIT')
@@ -236,6 +299,10 @@ def setup(code: Optional[PathLike] = None, models: Optional[PathLike] = None, ch
 @contextmanager
 def fresh_compiler() -> Iterator[None]:
     """A fresh compiler cache, and recompilation as an error, for the scoring of one graph.
+
+    Yields:
+        ``None``. The block runs after ``torch._dynamo.reset`` with ``error_on_recompile`` on, so a recompilation in it
+        raises ``torch._dynamo.exc.RecompileError``.
 
     Raises:
         AdapterSetupError: When a compiler cache limit is below 1 (MERIT would run eager attention, which changes its scores).

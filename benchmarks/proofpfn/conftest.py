@@ -11,5 +11,9 @@ collect_ignore_glob = ['registered/*']
 
 
 def pytest_configure(config: pytest.Config) -> None:
-    """Register the marker of the frozen simulations."""
+    """Register the marker of the frozen simulations.
+
+    Args:
+        config: The pytest configuration.
+    """
     config.addinivalue_line('markers', 'simulate: the frozen simulations of test_fv1_analysis.py (about 9 minutes; set PROOFPFN_SIMULATE=1)')

@@ -117,6 +117,19 @@ def _group_views(systems: Sequence[System], logp: Mapping[Label, torch.Tensor]) 
 def query_scores(model: GraphKGE, head: bool, h: int, r: int, t: int) -> torch.Tensor:
     """The model's scores over all entities for one query, on the CPU.
 
+    A head query calls ``forward_k_vs_all_heads([[r, t]])`` and a tail query ``forward_k_vs_all([[h, r]])``, both
+    without gradients.
+
+    Args:
+        model: The model, with its inference graph attached (``systems.attach``).
+        head: True for a head query ``(?, r, t)``, False for a tail query ``(h, r, ?)``.
+        h: The head entity (unused by a head query).
+        r: The relation.
+        t: The tail entity (unused by a tail query).
+
+    Returns:
+        One score per entity, a 1-D CPU tensor.
+
     Raises:
         FloatingPointError: When a score is not finite.
     """
@@ -166,7 +179,15 @@ def _group_rows(systems: Sequence[System], models: Mapping[Label, GraphKGE], que
 
 
 def row_keys(systems: Sequence[System]) -> list[str]:
-    """The rank keys of the systems, in row order."""
+    """The rank keys of the systems, in row order.
+
+    Args:
+        systems: The systems of the row file.
+
+    Returns:
+        Per system ``F``: ``F``, ``F:gt2``, ``F:raw`` and ``F:raw:gt2``, then for a ProofPFN family per seed ``S``:
+        ``F.seedS:raw``, ``F.seedS`` and ``F.seedS:gt2``.
+    """
     keys = []
     for system in systems:
         keys += [system.key, f'{system.key}:gt2', f'{system.key}:raw', f'{system.key}:raw:gt2']
@@ -195,28 +216,71 @@ def _view_metrics(rows: Sequence[Mapping[str, Any]]) -> dict[str, dict[str, dict
 # --------------------------------------------------------------------------------------------------------- files
 
 def write_json(path: Path, value: Any) -> None:
-    """Write compact JSON atomically (``checkpoint.atomic_write_bytes``), the layout of the research row files."""
+    """Write JSON atomically (``checkpoint.atomic_write_bytes``) in the layout of the research row files.
+
+    The text is ``json.dumps(value)`` with its defaults: the separators ``', '`` and ``': '``, no indentation,
+    non-ASCII characters escaped and no final newline.
+
+    Args:
+        path: The file. Its folder is created.
+        value: The value to write.
+    """
     atomic_write_bytes(path, json.dumps(value).encode())
 
 
 def row_file_path(out: PathLike, entry: GraphEntry, keys: Sequence[str]) -> Path:
-    """``<out>/<collection>/<system keys joined by '-'>/<graph>.json``."""
+    """``<out>/<collection>/<system keys joined by '-'>/<graph>.json``.
+
+    Args:
+        out: The output root.
+        entry: The graph.
+        keys: The system keys, in order.
+
+    Returns:
+        The path of the graph's row file.
+    """
     return Path(out) / entry.collection / '-'.join(keys) / f'{entry.name}.json'
 
 
 def part_path(final: Path, shard: tuple[int, int]) -> Path:
     """The part file of a shard: ``.parts/<graph>/shard-i-of-k.json`` next to the row file (a dot folder, which the
-    registered ``fv1_tables.py`` skips)."""
+    registered ``fv1_tables.py`` skips).
+
+    Args:
+        final: The row file.
+        shard: The shard ``(i, k)``: block i of k.
+
+    Returns:
+        The path of the part file.
+    """
     return final.parent / '.parts' / final.stem / f'shard-{shard[0]}-of-{shard[1]}.json'
 
 
 def error_path(final: Path) -> Path:
-    """The error record of a failed graph: ``.errors/<graph>.json`` next to the row file."""
+    """The error record of a failed graph: ``.errors/<graph>.json`` next to the row file.
+
+    Args:
+        final: The row file.
+
+    Returns:
+        The path of the error record.
+    """
     return final.parent / '.errors' / final.name
 
 
 def write_error(final: Path, entry: GraphEntry, **record: Any) -> Path:
-    """Write the error record of a failed graph (``error_path``) with the graph, host and date; returns its path."""
+    """Write the error record of a failed graph (``error_path``) with the graph, host and date.
+
+    The record holds ``graph`` (the name), ``key``, the fields of ``record``, ``host`` and ``date`` (local time).
+
+    Args:
+        final: The row file of the graph.
+        entry: The graph.
+        record: The fields of the failure, for example ``stage`` and ``reason``.
+
+    Returns:
+        The path of the error record.
+    """
     path = error_path(final)
     write_json(path, dict(graph=entry.name, key=entry.key, **record, host=socket.gethostname(), date=time.strftime('%Y-%m-%d %H:%M:%S')))
     return path
@@ -228,12 +292,31 @@ def _shard_blocks(groups: int, shards: int) -> list[tuple[int, int]]:
 
 
 def code_sha256(names: Sequence[str] = CODE_FILES) -> dict[str, str]:
-    """The SHA-256 of files of the repository (paths relative to its root; the scoring path by default)."""
+    """The SHA-256 of files of the repository (paths relative to its root; the scoring path by default).
+
+    Args:
+        names: The file paths, relative to the repository root.
+
+    Returns:
+        The SHA-256 per path of each named file that exists. A missing file is left out.
+    """
     return {name: file_sha256(REPO / name) for name in names if (REPO / name).is_file()}
 
 
 def graph_record(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries) -> dict[str, Any]:
-    """The graph part of an ``allgraph`` record: the entry's fields, the file hashes and the sample."""
+    """The graph part of an ``allgraph`` record: the entry's fields, the file hashes and the sample.
+
+    Args:
+        manifest: The graph set.
+        entry: The graph.
+        graph: The loaded graph.
+        queries: Its ranked facts.
+
+    Returns:
+        The fields of ``entry.record()``, then ``sha256`` (``graph.hashes`` and the manifest name as ``manifest``),
+        ``test_rows``, ``ranked_facts``, ``sampled``, ``sample_rule`` (the rule's text of ``SAMPLE_RULES``) and
+        ``positions``.
+    """
     return dict(entry.record(), sha256=dict(graph.hashes, manifest=manifest.name), test_rows=queries.test_rows, ranked_facts=len(queries.facts),
                 sampled=queries.positions is not None, sample_rule=SAMPLE_RULES[manifest.sample_rule], positions=queries.positions)
 
@@ -251,7 +334,17 @@ def _record_of(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries:
 
 def provenance_of(manifest: Manifest, code: Sequence[str], **fields: Any) -> dict[str, Any]:
     """The ``provenance`` record of a row file: the benchmark, the manifest, the code hashes, the versions, the host and
-    ``fields``."""
+    ``fields``.
+
+    Args:
+        manifest: The graph set.
+        code: The repository files whose SHA-256 the record holds (``code_sha256``).
+        fields: Further entries, after the host.
+
+    Returns:
+        The record: ``benchmark``, ``manifest`` (name and SHA-256), ``code_sha256``, the versions ``python``,
+        ``torch`` and ``numpy``, ``host``, then ``fields``.
+    """
     return dict(benchmark='benchmarks.proofpfn', manifest=dict(name=manifest.name, sha256=manifest.sha256), code_sha256=code_sha256(code),
                 python=platform.python_version(), torch=torch.__version__, numpy=np.__version__, host=socket.gethostname(), **fields)
 
@@ -304,8 +397,8 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
                    save_minutes: float = 10.0, max_minutes: float = 0.0, extra: Optional[Mapping[str, Any]] = None) -> str:
     """Evaluate one graph with the systems and write its row file (or one shard's part file).
 
-    Runs under ``deterministic_execution`` with ``THREADS`` CPU threads, the protocol's; both are restored afterwards. On
-    CUDA, ``CUBLAS_WORKSPACE_CONFIG`` must be set before CUDA starts.
+    Runs under ``deterministic_execution`` with ``THREADS`` CPU threads, the protocol's; both are restored afterwards.
+    On CUDA, ``CUBLAS_WORKSPACE_CONFIG`` must be set before CUDA starts.
 
     Args:
         manifest: The graph set.
@@ -329,6 +422,10 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
         manifests.InputError: For systems with the same key, a shard outside the query groups, or a part file of another
             run.
         systems.SystemCheckError: When a system cannot run on the graph.
+        manifests.BlindSetError: For a blind folder outside a released blind manifest.
+        FloatingPointError: When a model returns a score that is not finite.
+        RuntimeError: On CUDA, when ``CUBLAS_WORKSPACE_CONFIG`` is not a deterministic setting
+            (``require_cublas_workspace``).
     """
     device = torch.device(device)
     keys = [s.key for s in systems]

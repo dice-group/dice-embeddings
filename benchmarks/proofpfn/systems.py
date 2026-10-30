@@ -85,6 +85,15 @@ FLOCK_SCRIPT = _script_table()
 def rule_walks(entities: int, edges: int) -> tuple[float, int]:
     """The raw value and the walk count of Flock's test-time rule for an inference graph.
 
+    Args:
+        entities: Distinct entities of the inference graph.
+        edges: Distinct triples of the inference graph.
+
+    Returns:
+        ``(raw, walks)``: 128 times the harmonic mean of ``entities / V_TRAIN`` and ``edges / E_TRAIN``, and the walk
+        count ``2^round(log2(raw))`` clamped to 16..512. ``V_TRAIN`` and ``E_TRAIN`` are the mean sizes of Flock's
+        pretraining graphs.
+
     Raises:
         ValueError: For an empty inference graph.
     """
@@ -97,7 +106,14 @@ def rule_walks(entities: int, edges: int) -> tuple[float, int]:
 
 
 def rule_passes(walks: int) -> int:
-    """The passes of the rule for a graph outside the official script."""
+    """The passes of the rule for a graph outside the official script.
+
+    Args:
+        walks: The walk count of the rule (``rule_walks``).
+
+    Returns:
+        16 for at most 128 walks, 4 for 256 walks, else 2.
+    """
     return 16 if walks <= 128 else (4 if walks == 256 else 2)
 
 
@@ -122,6 +138,16 @@ def flock_setting(entities: int, edges: int, suite_id: Optional[str] = None) -> 
 def official_setting(entry: GraphEntry, graph: GraphData, keys: Sequence[str]) -> dict[str, Any]:
     """The official Flock setting of a graph for the given keys, after checking train.txt against the manifest's size.
 
+    Args:
+        entry: The graph's manifest entry, with ``size`` and ``suite_id``.
+        graph: The loaded graph.
+        keys: The keys of the official Flock systems.
+
+    Returns:
+        The row file's ``allgraph.flock_official``: the fields of ``flock_setting``, ``graph`` (the entry's key),
+        ``rule`` (``FLOCK_RULE``), ``entities_all`` and ``relations_all`` (the counts of all splits), and ``keys`` (each
+        key with its ``walks`` and ``passes``).
+
     Raises:
         SystemCheckError: When the inference graph's statistics differ from the manifest (the walk count would not follow
             the stated rule).
@@ -138,7 +164,14 @@ def official_setting(entry: GraphEntry, graph: GraphData, keys: Sequence[str]) -
 # ------------------------------------------------------------------------------------------------------ systems
 
 def frozen(model: Model) -> Model:
-    """The model in evaluation mode without gradients."""
+    """The model in evaluation mode without gradients.
+
+    Args:
+        model: A graph model.
+
+    Returns:
+        The same model, changed in place.
+    """
     model.eval().requires_grad_(False)
     return model
 
@@ -258,26 +291,57 @@ class ProofPFNFamily:
             self.members[seed] = member
 
     def build(self) -> dict[Label, GraphKGE]:
-        """The three frozen models on the CPU (``check`` runs first if it has not)."""
+        """The three frozen models on the CPU (``check`` runs first if it has not).
+
+        Returns:
+            ``(key, seed)`` to the seed's ULTRA (``model_from_checkpoint``), in seed order, without a graph.
+
+        Raises:
+            SystemCheckError: When ``check`` runs here and refuses a file.
+        """
         if set(self.members) != set(SEEDS):
             self.check()
         return {(self.key, seed): model_from_checkpoint(self.members[seed].checkpoint) for seed in SEEDS}
 
     def query_batch_size(self, setting: Optional[Mapping[str, Any]]) -> int:
-        """One query per microbatch."""
+        """One query per microbatch.
+
+        Args:
+            setting: The official Flock setting of the graph (``official_setting``), or ``None``. The family does not
+                use it.
+
+        Returns:
+            The microbatch of queries: 1.
+        """
         return 1
 
     def spec(self) -> dict[str, Any]:
-        """The family's record: arm, model options, checkpoint files and pin state."""
+        """The family's record: arm, model options, checkpoint files and pin state.
+
+        Returns:
+            ``kind`` (``'proofpfn'``), ``arm``, ``model_config`` (the arm's ULTRA options), ``weights`` (``'ema'``),
+            ``checkpoints`` (seed to file) and ``pinned`` (whether the key has pins).
+        """
         return dict(kind='proofpfn', arm=self.arm, model_config=ARMS[self.arm].model_config(), weights='ema',
                     checkpoints={str(s): str(self.checkpoints[s]) for s in SEEDS}, pinned=self.pins is not None)
 
     def model_sha256(self) -> dict[str, str]:
-        """``{seed: model hash}`` of the row file's ``allgraph.model_sha256``."""
+        """``{seed: model hash}`` of the row file's ``allgraph.model_sha256``.
+
+        Returns:
+            Seed (a string) to the model hash of the member that ``check`` read: the research export's SHA-256 where
+            there is one, else the file's (``Member.model_sha256``).
+        """
         return {str(s): self.members[s].model_sha256 for s in SEEDS}
 
     def provenance(self) -> dict[str, Any]:
-        """Per seed: the file's SHA-256 and format, and the checkpoint's own provenance."""
+        """Per seed: the file's SHA-256 and format, and the checkpoint's own provenance.
+
+        Returns:
+            Seed (a string) to ``file_sha256``, ``research_export_sha256`` (``None`` without a research export),
+            ``updates``, ``order_sha256`` and ``provenance`` of the checkpoint, for the members that ``check`` read, in
+            seed order.
+        """
         return {str(s): dict(file_sha256=m.file_sha256, research_export_sha256=m.research_export_sha256, updates=m.checkpoint['updates'],
                              order_sha256=m.checkpoint['order_sha256'], provenance=m.checkpoint['provenance'])
                 for s, m in sorted(self.members.items())}
@@ -308,14 +372,28 @@ class Reference:
         return [(self.key, None)]
 
     def check(self) -> None:
-        """Refuse a missing file or a file hash that differs from the pin."""
+        """Refuse a missing file or a file hash that differs from the pin.
+
+        Raises:
+            SystemCheckError: For a missing file or a SHA-256 that differs from the pin.
+        """
         if not Path(self.path).is_file():
             raise SystemCheckError(f'{self.key}: missing {self.path}')
         if file_sha256(self.path) != self.sha256:
             raise SystemCheckError(f'{self.key}: the SHA-256 of {self.path} differs from models.json')
 
     def build_model(self, num_entities: int, num_relations: int, setting: Optional[Mapping[str, Any]] = None) -> GraphKGE:
-        """The frozen model on the CPU (query batch 1); ``setting`` is official Flock's."""
+        """The frozen model on the CPU (query batch 1); ``setting`` is official Flock's.
+
+        Args:
+            num_entities: The number of entities of all splits.
+            num_relations: The number of relations of all splits.
+            setting: The official Flock setting of the graph (``official_setting``), or ``None``. TRIX and ULTRA do not
+                use it.
+
+        Returns:
+            TRIX for ``trix``, else ULTRA, with the weights of the checkpoint file and without a graph.
+        """
         with torch.random.fork_rng(devices=[]):
             if self.key == 'trix':
                 model: GraphKGE = TRIX(dict(num_entities=num_entities, num_relations=num_relations, trix_query_batch_size=1))
@@ -325,15 +403,32 @@ class Reference:
         return frozen(model)
 
     def query_batch_size(self, setting: Optional[Mapping[str, Any]]) -> int:
-        """One query per microbatch."""
+        """One query per microbatch.
+
+        Args:
+            setting: The official Flock setting of the graph (``official_setting``), or ``None``. The reference does not
+                use it.
+
+        Returns:
+            The microbatch of queries: 1.
+        """
         return 1
 
     def spec(self) -> dict[str, Any]:
-        """The reference's record."""
+        """The reference's record.
+
+        Returns:
+            ``kind`` (``'reference'``), ``model`` (``'TRIX'`` or ``'ULTRA'``), ``checkpoint`` (the file) and
+            ``query_batch_size`` (1).
+        """
         return dict(kind='reference', model='TRIX' if self.key == 'trix' else 'ULTRA', checkpoint=str(self.path), query_batch_size=1)
 
     def model_sha256(self) -> dict[str, str]:
-        """``{"model": hash}``."""
+        """``{"model": hash}``.
+
+        Returns:
+            The pinned SHA-256 of the file under the key ``model``.
+        """
         return {'model': self.sha256}
 
 
@@ -351,6 +446,14 @@ class OfficialFlock(Reference):
     def build_model(self, num_entities: int, num_relations: int, setting: Optional[Mapping[str, Any]] = None) -> GraphKGE:
         """The frozen Flock of a graph's setting on the CPU: the official walk count and passes, seed 42.
 
+        Args:
+            num_entities: The number of entities of all splits.
+            num_relations: The number of relations of all splits.
+            setting: The official Flock setting of the graph (``official_setting``), with ``walks`` and ``passes``.
+
+        Returns:
+            Flock with the weights of the checkpoint file and the query batch of ``query_batch_size``, without a graph.
+
         Raises:
             SystemCheckError: Without the graph's setting.
         """
@@ -363,11 +466,23 @@ class OfficialFlock(Reference):
         return frozen(model)
 
     def query_batch_size(self, setting: Optional[Mapping[str, Any]]) -> int:
-        """The passes of one query with ``one_microbatch``, else 1."""
+        """The passes of one query with ``one_microbatch``, else 1.
+
+        Args:
+            setting: The official Flock setting of the graph (``official_setting``), or ``None``.
+
+        Returns:
+            The microbatch of query passes: ``setting['passes']`` with ``one_microbatch`` and a setting, else 1.
+        """
         return int(setting['passes']) if self.one_microbatch and setting is not None else 1
 
     def spec(self) -> dict[str, Any]:
-        """The reference's record."""
+        """The reference's record.
+
+        Returns:
+            ``kind`` (``'reference'``), ``model`` (``'Flock'``), ``checkpoint`` (the file), ``setting`` (a fixed text),
+            ``seed`` (42) and ``one_microbatch``.
+        """
         return dict(kind='reference', model='Flock', checkpoint=str(self.path), setting='official walk count and passes',
                     seed=FLOCK_SEED, one_microbatch=self.one_microbatch)
 
@@ -381,9 +496,20 @@ def family(key: str, arm: str, template: str, models: ModelPins) -> ProofPFNFami
     A key registered in ``models.json`` must be registered for this arm and have pins; any other key must not be a
     registered key (a test family, run without pins).
 
+    Args:
+        key: The system key of the row file (``<key>``, ``<key>.seed<S>``).
+        arm: The arm (``S``, ``R``, ``M``, ``N``, ``HT``, ``CU``, ``UL``).
+        template: The path of each seed's checkpoint or research export, with the field ``{seed}``.
+        models: The model pins (``read_models``).
+
+    Returns:
+        The family with the registered pins of its key, or with ``pins`` ``None`` for an unregistered key. ``check``
+        reads its files.
+
     Raises:
-        SystemCheckError: For a template without ``{seed}`` or with another field, a key of another arm or system, or a
-            registered key whose pins are pending.
+        SystemCheckError: For a malformed template, a template without ``{seed}`` or with another field, a key of
+            another arm or system, a key with a character other than a lower-case letter or digit, a key without a
+            letter, an unknown arm, or a registered key whose pins are pending.
     """
     try:
         fields = {name for _, name, _, _ in string.Formatter().parse(template) if name is not None}
@@ -404,8 +530,18 @@ def family(key: str, arm: str, template: str, models: ModelPins) -> ProofPFNFami
 def reference(key: str, models: ModelPins, root: Union[str, Path] = CHECKPOINTS, one_microbatch: bool = True) -> Reference:
     """A reference system by key (``trix``, ``ultra3g``, ``flockoff``) with its checkpoint below ``root``, pinned in ``models``.
 
+    Args:
+        key: The system key.
+        models: The model pins (``read_models``) with the file and SHA-256 of the key.
+        root: The checkpoint root (default ``<repository>/checkpoints``).
+        one_microbatch: For ``flockoff``: run the passes of one query as one microbatch of the walk sampler.
+
+    Returns:
+        An ``OfficialFlock`` for ``flockoff``, else a ``Reference``, with the pinned file below ``root`` and its pinned
+        SHA-256.
+
     Raises:
-        SystemCheckError: For an unknown key.
+        SystemCheckError: For an unknown key or a key without a pin in ``models``.
     """
     if key not in REFERENCE_KEYS or key not in models.references:
         raise SystemCheckError(f'unknown reference {key!r}; choose from {REFERENCE_KEYS}')
@@ -417,7 +553,16 @@ def reference(key: str, models: ModelPins, root: Union[str, Path] = CHECKPOINTS,
 
 
 def build_models(systems: Sequence[System], graph: GraphData, setting: Optional[Mapping[str, Any]]) -> dict[Label, GraphKGE]:
-    """Every model of the systems, frozen on the CPU, in system order (a family's seeds in order)."""
+    """Every model of the systems, frozen on the CPU, in system order (a family's seeds in order).
+
+    Args:
+        systems: The families and references of the run.
+        graph: The loaded graph, for the entity and relation counts of the references.
+        setting: The official Flock setting of the graph (``official_setting``), or ``None`` without official Flock.
+
+    Returns:
+        ``(key, seed)`` to model, with seed ``None`` for a reference. The models have no graph yet (``attach``).
+    """
     models: dict[Label, GraphKGE] = {}
     for system in systems:
         if isinstance(system, ProofPFNFamily):

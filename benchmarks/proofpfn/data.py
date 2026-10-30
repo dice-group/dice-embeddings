@@ -71,6 +71,12 @@ class GraphData:
 def read_triples(path: PathLike) -> list[tuple[str, str, str]]:
     """The non-empty lines of a triple file as name triples, in file order.
 
+    Args:
+        path: The triple file, read as UTF-8.
+
+    Returns:
+        One ``(head, relation, tail)`` triple per non-empty line, its names split at whitespace, duplicates included.
+
     Raises:
         ManifestError: For a line that does not hold three names.
     """
@@ -94,6 +100,9 @@ def read_graph(folder: PathLike, hashes: Optional[dict[str, str]] = None) -> Gra
 
     Returns:
         The graph.
+
+    Raises:
+        ManifestError: For a line that does not hold three names.
     """
     splits = {s: read_triples(Path(folder) / f'{s}.txt') for s in SPLITS}
     entities = sorted({e for rows in splits.values() for h, _, t in rows for e in (h, t)})
@@ -115,7 +124,7 @@ def load_graph(manifest: Manifest, entry: GraphEntry, root: PathLike) -> GraphDa
         The graph, with the computed hashes.
 
     Raises:
-        ManifestError: When a file is missing, a hash or a manifest count differs.
+        ManifestError: When a file is missing, a hash or a manifest count differs, or a line does not hold three names.
         manifests.BlindSetError: For a blind folder outside a released blind manifest.
     """
     folder = manifest.folder(entry, root)
@@ -132,12 +141,29 @@ def load_graph(manifest: Manifest, entry: GraphEntry, root: PathLike) -> GraphDa
 
 
 def as_triples(ids: torch.Tensor) -> list[Triple]:
-    """An ``[N, 3]`` id tensor as a list of int triples."""
+    """An ``[N, 3]`` id tensor as a list of int triples.
+
+    Args:
+        ids: The ``[N, 3]`` ids, one ``(head, relation, tail)`` row per fact.
+
+    Returns:
+        One ``(h, r, t)`` triple of Python ints per row, in row order.
+    """
     return [(int(h), int(r), int(t)) for h, r, t in ids.tolist()]
 
 
 def sample_positions(test: Sequence[Triple]) -> Optional[list[int]]:
-    """The ``first-1000`` sample: ``None`` (rank every row) for at most 1,000 rows, else the 1,000 sampled positions."""
+    """The ``first-1000`` sample: ``None`` (rank every row) for at most 1,000 rows, else the 1,000 sampled positions.
+
+    The pool holds the first position of every distinct fact, and the sample is
+    ``sorted(random.Random(SAMPLE_SEED).sample(pool, SAMPLE))``.
+
+    Args:
+        test: The test facts, in file order.
+
+    Returns:
+        ``None`` for at most ``SAMPLE`` rows, else the ``SAMPLE`` sampled positions in increasing order.
+    """
     if len(test) <= SAMPLE:
         return None
     first: dict[Triple, int] = {}
@@ -147,7 +173,18 @@ def sample_positions(test: Sequence[Triple]) -> Optional[list[int]]:
 
 
 def ranked_positions(test: Sequence[Triple], rule: str) -> Optional[list[int]]:
-    """The positions of the ranked test rows under a sample rule, ``None`` for all rows."""
+    """The positions of the ranked test rows under a sample rule, ``None`` for all rows.
+
+    Args:
+        test: The test facts, in file order.
+        rule: The sample rule, ``first-1000`` (``sample_positions``) or ``all``.
+
+    Returns:
+        The positions in increasing order, or ``None`` when every row is ranked.
+
+    Raises:
+        ValueError: For an unknown sample rule.
+    """
     if rule == 'all':
         return None
     if rule == 'first-1000':
@@ -156,7 +193,14 @@ def ranked_positions(test: Sequence[Triple], rule: str) -> Optional[list[int]]:
 
 
 def known_sets(triples: Sequence[Triple]) -> dict[bool, dict[tuple[int, int], set[int]]]:
-    """The filter: ``{False: {(r, h): tails}, True: {(r, t): heads}}`` of the given facts."""
+    """The filter: ``{False: {(r, h): tails}, True: {(r, t): heads}}`` of the given facts.
+
+    Args:
+        triples: The known facts.
+
+    Returns:
+        The known answers per head direction and ``(relation, anchor)``. The inner mappings are ``defaultdict(set)``.
+    """
     known: dict[bool, dict[tuple[int, int], set[int]]] = {False: defaultdict(set), True: defaultdict(set)}
     for h, r, t in triples:
         known[False][r, h].add(t)
@@ -165,7 +209,16 @@ def known_sets(triples: Sequence[Triple]) -> dict[bool, dict[tuple[int, int], se
 
 
 def query_groups(test: Sequence[Triple]) -> list[tuple[GroupKey, list[int]]]:
-    """``[((head, relation, anchor), member indices)]``: both directions of every fact, stably sorted by relation."""
+    """``[((head, relation, anchor), member indices)]``: both directions of every fact, stably sorted by relation.
+
+    Args:
+        test: The ranked test facts.
+
+    Returns:
+        One group per head direction, relation and anchor (the head of a tail query, the tail of a head query),
+        sorted by relation and, within a relation, in the order of first appearance. The members are indices into
+        ``test``, in increasing order.
+    """
     groups: 'OrderedDict[GroupKey, list[int]]' = OrderedDict()
     for index, (h, r, t) in enumerate(test):
         for head in (False, True):
@@ -174,14 +227,34 @@ def query_groups(test: Sequence[Triple]) -> list[tuple[GroupKey, list[int]]]:
 
 
 def reflexive_relations(train: Sequence[Triple]) -> set[int]:
-    """The relations that the self-loop rule ``share1`` leaves open: at least 1% of their train facts are self-loops."""
+    """The relations that the self-loop rule ``share1`` leaves open: at least 1% of their train facts are self-loops.
+
+    Args:
+        train: The train facts (every row counts).
+
+    Returns:
+        The ids of the open relations.
+    """
     facts = Counter(r for _, r, _ in train)
     loops = Counter(r for h, r, t in train if h == t)
     return {r for r in loops if loops[r] >= 0.01 * facts[r]}
 
 
 def gt2_inputs(train: Sequence[Triple], n: int) -> dict[tuple[bool, int], tuple[np.ndarray, float]]:
-    """Per (head direction, relation) of train: the mask of candidates unseen in the query role and ``(n1 + 0.5) / (N + 1)``."""
+    """Per (head direction, relation) of train: the mask of candidates unseen in the query role and
+    ``(n1 + 0.5) / (N + 1)``.
+
+    The query role is the tail for a tail query and the head for a head query. ``N`` is the number of train facts of
+    the relation, and ``n1`` the number of entities that fill the role in exactly one of them.
+
+    Args:
+        train: The train facts (every row counts).
+        n: The number of entities.
+
+    Returns:
+        The inputs ``{(head, relation): (unseen, good_turing)}`` of every relation of train. ``unseen`` is a boolean
+        mask over the ``n`` entities and ``good_turing`` the estimate.
+    """
     counts: dict[bool, dict[int, Counter]] = {False: defaultdict(Counter), True: defaultdict(Counter)}
     for h, r, t in train:
         counts[False][r][t] += 1
@@ -219,12 +292,31 @@ class Queries:
     gt2: dict[tuple[bool, int], tuple[np.ndarray, float]]
 
     def index(self, member: int) -> int:
-        """The position in test.txt of a ranked fact."""
+        """The position in test.txt of a ranked fact.
+
+        Args:
+            member: The fact's index in ``facts``.
+
+        Returns:
+            The position ``positions[member]``, or ``member`` when every row is ranked.
+        """
         return member if self.positions is None else self.positions[member]
 
 
 def prepare_queries(graph: GraphData, sample_rule: str) -> Queries:
-    """The ranked facts, query groups, filter, open relations and GT2 inputs of a graph under a sample rule."""
+    """The ranked facts, query groups, filter, open relations and GT2 inputs of a graph under a sample rule.
+
+    Args:
+        graph: The loaded graph.
+        sample_rule: The sample rule, ``first-1000`` or ``all`` (``ranked_positions``).
+
+    Returns:
+        The queries. The filter holds the facts of train, valid and test, and the open relations and the GT2 inputs
+        come from train.
+
+    Raises:
+        ValueError: For an unknown sample rule.
+    """
     test, train = as_triples(graph.test), as_triples(graph.train)
     positions = ranked_positions(test, sample_rule)
     facts = test if positions is None else [test[i] for i in positions]
@@ -234,7 +326,14 @@ def prepare_queries(graph: GraphData, sample_rule: str) -> Queries:
 
 
 def inference_stats(train: torch.Tensor) -> tuple[int, int]:
-    """``(|V|, |E|)`` of an inference graph: its distinct entities (heads and tails) and its distinct triples."""
+    """``(|V|, |E|)`` of an inference graph: its distinct entities (heads and tails) and its distinct triples.
+
+    Args:
+        train: The ``[N, 3]`` ids of the inference graph.
+
+    Returns:
+        The number of distinct entities and the number of distinct triples.
+    """
     return int(torch.unique(train[:, [0, 2]]).numel()), int(torch.unique(train, dim=0).shape[0])
 
 

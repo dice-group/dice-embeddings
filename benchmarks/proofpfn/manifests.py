@@ -107,6 +107,14 @@ class GraphEntry:
     def from_json(cls, value: Mapping[str, Any]) -> 'GraphEntry':
         """An entry from its manifest JSON object.
 
+        Args:
+            value: An object of the manifest's ``graphs`` list. It needs ``key``, ``name``, ``path``, ``collection``,
+                ``view``, ``size`` and ``sha256``. A split missing from ``sha256`` becomes ``None``, and ``weight``
+                defaults to 0.0.
+
+        Returns:
+            The entry, with read-only mappings.
+
         Raises:
             ManifestError: When a field is missing or malformed.
         """
@@ -127,7 +135,13 @@ class GraphEntry:
         return entry
 
     def record(self) -> dict[str, Any]:
-        """The entry's fields for the ``allgraph`` record of a row file (with the suite's tail-only flag where it has one)."""
+        """The entry's fields for the ``allgraph`` record of a row file
+        (with the suite's tail-only flag where it has one).
+
+        Returns:
+            ``key``, ``collection``, ``path``, ``group``, ``verdict``, ``weight``, ``origin_class`` and
+            ``suite_id``, then ``tail_only_view`` when it is not ``None``.
+        """
         record = dict(key=self.key, collection=self.collection, path=self.path, group=self.group, verdict=self.verdict, weight=self.weight,
                       origin_class=self.origin_class, suite_id=self.suite_id)
         if self.tail_only_view is not None:
@@ -175,6 +189,12 @@ class Manifest:
     def entry(self, graph: str) -> GraphEntry:
         """The entry of a graph name or key.
 
+        Args:
+            graph: A graph name or key.
+
+        Returns:
+            The first entry in manifest order whose name or key is ``graph``.
+
         Raises:
             KeyError: For a graph outside the manifest.
         """
@@ -184,8 +204,17 @@ class Manifest:
         raise KeyError(f'{graph!r} is not a graph of manifest {self.name}')
 
     def select(self, view: Optional[str] = None, graphs: Optional[Iterable[str]] = None, codes: Optional[Iterable[str]] = None) -> list[GraphEntry]:
-        """The entries of explicit graphs (names or keys, in the given order) or of a view, then of the audit group codes; no
-        duplicates.
+        """The entries of explicit graphs (names or keys, in the given order) or of a view, then of the audit group
+        codes; no duplicates.
+
+        Args:
+            view: A view name (``views``). It selects the graphs when ``graphs`` is ``None`` or empty, and filters
+                them otherwise.
+            graphs: Graph names or keys, in output order.
+            codes: The audit group codes that filter the entries. ``None`` applies no filter.
+
+        Returns:
+            The entries, each once, in the order of their first appearance in ``graphs`` or in the view.
 
         Raises:
             KeyError: For an unknown graph, view or audit group code.
@@ -214,6 +243,13 @@ class Manifest:
         A development manifest is refused when the folder or its resolved path (links followed) names a blind folder
         (``in_blind_folder``), or when the resolved path lies below a resolved ``BLIND_FOLDERS`` folder.
 
+        Args:
+            entry: The graph.
+            root: The data root that the manifest paths are relative to.
+
+        Returns:
+            The folder ``<root>/<entry.path>``, with links not resolved.
+
         Raises:
             BlindSetError: For a blind folder named by a development manifest.
         """
@@ -227,7 +263,14 @@ class Manifest:
 
 def in_blind_folder(path: PathLike) -> bool:
     """Whether a path names a blind folder: one of its parts is the name of a ``BLIND_FOLDERS`` folder (``fresh-v1``,
-    ``lockbox3``)."""
+    ``lockbox3``).
+
+    Args:
+        path: The path, checked as given (links not followed).
+
+    Returns:
+        True when one of its parts is a name of ``BLIND_NAMES``.
+    """
     return any(part in BLIND_NAMES for part in Path(path).parts)
 
 
@@ -242,7 +285,8 @@ def read_manifest(source: PathLike, release: Optional[str] = None) -> Manifest:
         The manifest.
 
     Raises:
-        BlindSetError: For a blind manifest whose name is not ``release``.
+        BlindSetError: For a blind manifest whose name is not ``release``, or a development manifest that names a blind
+            folder.
         ManifestError: For a missing or malformed manifest.
     """
     path = Path(source)
@@ -280,7 +324,14 @@ def _read_json(path: Path, kind: str) -> tuple[dict[str, Any], str]:
 # --------------------------------------------------------------------------------------------------------- hashes
 
 def file_sha256(path: PathLike) -> str:
-    """SHA-256 of a file's bytes (``dicee.synthetic_kg.digests.file_sha256``, here without importing PyTorch)."""
+    """SHA-256 of a file's bytes (``dicee.synthetic_kg.digests.file_sha256``, here without importing PyTorch).
+
+    Args:
+        path: The file.
+
+    Returns:
+        The hex digest.
+    """
     with Path(path).open('rb') as handle:
         return hashlib.file_digest(handle, 'sha256').hexdigest()
 
@@ -290,6 +341,12 @@ def content_sha256(path: PathLike) -> str:
 
     A line splits at tabs if it has one, else at whitespace; lines without exactly three fields are skipped (the rule of
     ``graph-audit-v1``, restated by ``allgraph-v1/ag_eval.content_sha``).
+
+    Args:
+        path: The triple file, read as UTF-8 with undecodable bytes replaced.
+
+    Returns:
+        The hex digest.
     """
     rows = set()
     with Path(path).open(encoding='utf-8', errors='replace') as handle:
@@ -393,13 +450,26 @@ class ModelPins:
     external: Mapping[str, Mapping[str, Any]]
 
     def family_of_key(self, key: str) -> Optional[FamilyPins]:
-        """The family registered under a system key, or ``None``."""
+        """The family registered under a system key, or ``None``.
+
+        Args:
+            key: A system key.
+
+        Returns:
+            The family pins whose ``key`` is ``key``, or ``None`` when no family has it.
+        """
         return next((f for f in self.families.values() if f.key == key), None)
 
     def fv1_models(self) -> dict[str, dict[str, dict[str, str]]]:
-        """The ``--models`` input of the registered ``fv1_tables.py``: ``{"models": {hash key: {seed or "model": sha256}}}``.
+        """The ``--models`` input of the registered ``fv1_tables.py``:
+        ``{"models": {hash key: {seed or "model": sha256}}}``.
 
         Families with pending pins are left out (as in the research file); references enter by their file hash.
+
+        Returns:
+            The object, with its hash keys sorted. A family enters under its system key and maps each seed of
+            ``SEEDS``, as a string, to the SHA-256 of its export. A reference enters under its key and maps ``"model"``
+            to the SHA-256 of its file.
         """
         models: dict[str, dict[str, str]] = {}
         for family in self.families.values():
@@ -412,6 +482,13 @@ class ModelPins:
 
 def read_models(path: Optional[PathLike] = None) -> ModelPins:
     """The model pins (``manifests/models.json`` by default).
+
+    Args:
+        path: The models file, or ``None`` for ``manifests/models.json``.
+
+    Returns:
+        The pins of the sections ``families`` and ``rows_only`` (by arm), ``references`` (by system key) and
+        ``external`` (by adapter), as read-only mappings.
 
     Raises:
         ManifestError: For a missing or malformed file.

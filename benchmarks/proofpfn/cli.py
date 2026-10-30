@@ -46,6 +46,16 @@ class UsageError(InputError):
 def parse_family(spec: str, models: Any) -> tuple[str, str, str]:
     """``(key, arm, template)`` of a ``[KEY=]ARM:TEMPLATE`` option; the key defaults to the arm's registered key.
 
+    The key is the text before the first ``=`` when that ``=`` comes before the first ``:``. The arm ends at the first
+    ``:``, and the template is the rest.
+
+    Args:
+        spec: The value of a ``--family`` option.
+        models: The model pins (``manifests.ModelPins``), which hold the registered keys.
+
+    Returns:
+        The key, the arm and the template.
+
     Raises:
         UsageError: For a malformed option or an arm without a registered key.
     """
@@ -71,7 +81,11 @@ def _graph_options(sub: argparse.ArgumentParser) -> None:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """The argument parser of the commands."""
+    """The argument parser of the commands.
+
+    Returns:
+        The parser, with one subcommand per entry of ``COMMANDS``.
+    """
     parser = argparse.ArgumentParser(prog='python -m benchmarks.proofpfn', description='Zero-shot link prediction on frozen graph sets (README.md).',
                                      epilog='exit codes: 0 done, 1 internal error, 2 wrong input (one error line), 3 a graph failed (its record is '
                                             'in .errors/), 76 stopped at --max-minutes, 143 stopped by SIGTERM (README.md, Quick start)')
@@ -307,7 +321,22 @@ def _fv1_models(args: argparse.Namespace) -> int:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Run a command; returns the exit code."""
+    """Run a command.
+
+    While the command runs, SIGTERM exits with ``EXIT_TERM``. The commands ``run`` and ``gate`` and the adapter
+    ``merit`` run inside ``determinism.cublas_workspace``.
+
+    Args:
+        argv: The arguments after the program name, or ``None`` for ``sys.argv[1:]``.
+
+    Returns:
+        The exit code (see the module docstring). An ``InputError`` or a ``BlindSetError`` prints one ``error:`` line
+        on stderr and gives ``EXIT_INPUT``.
+
+    Raises:
+        SystemExit: From ``argparse`` for ``--help`` (code 0) or a malformed command line (code 2), and at SIGTERM
+            (code ``EXIT_TERM``).
+    """
     argv = list(sys.argv[1:] if argv is None else argv)
     args = build_parser().parse_args(argv)
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(name)s: %(message)s')

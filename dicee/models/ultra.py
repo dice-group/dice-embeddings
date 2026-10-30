@@ -355,7 +355,20 @@ class ULTRA(GraphKGE):
 
     def load_checkpoint(self, stored: Mapping[str, Any]) -> Self:
         """Load weights (``GraphKGE.load_checkpoint``); a checkpoint whose ``model_config`` records the relation-graph
-        options must match them."""
+        options must match them.
+
+        Args:
+            stored: A state dictionary, or a dictionary with one under ``'model'`` (a checkpoint that ``torch.load``
+                read). Its ``model_config``, where it is a dictionary, records the relation-graph options. A missing
+                option counts as its default, ``ultra_relation_weighting='binary'`` or ``ultra_pair_channels='off'``.
+
+        Returns:
+            The model.
+
+        Raises:
+            ValueError: When a recorded option differs from the model's, or the keys or shapes of the state dictionary
+                differ from the model's.
+        """
         config = stored.get('model_config')
         if isinstance(config, dict):
             options = {'ultra_relation_weighting': self.relation_weighting, 'ultra_pair_channels': self.pair_channels}

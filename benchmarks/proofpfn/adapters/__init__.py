@@ -76,6 +76,13 @@ def external_folder(option: Optional[PathLike], variable: str, what: str) -> Pat
 def external_pins(name: str, models: Optional[PathLike] = None) -> dict[str, Any]:
     """The pins of an external adapter in the ``external`` section of ``models.json``.
 
+    Args:
+        name: The adapter (``kgpfn``, ``merit`` or ``anyburl``).
+        models: The pins (default ``manifests/models.json``).
+
+    Returns:
+        The adapter's entry as a new dictionary.
+
     Raises:
         AdapterSetupError: When the section has no entry for the adapter.
         manifests.ManifestError: For a missing or malformed file.
@@ -88,6 +95,14 @@ def external_pins(name: str, models: Optional[PathLike] = None) -> dict[str, Any
 
 def check_file(path: PathLike, sha256: str, what: str) -> str:
     """The SHA-256 of a file that must equal its pin.
+
+    Args:
+        path: The file.
+        sha256: The pinned SHA-256.
+        what: The system or system key, for the error message.
+
+    Returns:
+        The SHA-256 of the file, equal to the pin.
 
     Raises:
         AdapterSetupError: For a missing file or another SHA-256.
@@ -105,6 +120,13 @@ def git_head(folder: PathLike) -> str:
 
     ``.git`` is the git folder, or the file ``gitdir: <path>`` of a worktree or a submodule; a worktree keeps its branch
     refs in the common git folder that its ``commondir`` names.
+
+    Args:
+        folder: The folder of the checkout, which holds ``.git``.
+
+    Returns:
+        The commit: the content of a detached ``HEAD``, else the commit of the ref that ``HEAD`` names, from its ref
+        file or from ``packed-refs``.
 
     Raises:
         AdapterSetupError: When the folder holds no readable git checkout.
@@ -129,8 +151,16 @@ def git_head(folder: PathLike) -> str:
 def check_commit(folder: PathLike, commit: str, what: str) -> str:
     """The commit of an external checkout, which must equal its pin.
 
+    Args:
+        folder: The folder of the checkout.
+        commit: The pinned commit.
+        what: The system, for the error message.
+
+    Returns:
+        The commit of the checkout, equal to the pin.
+
     Raises:
-        AdapterSetupError: For another commit.
+        AdapterSetupError: For another commit, or a folder without a readable git checkout (``git_head``).
     """
     head = git_head(folder)
     if head != commit:
@@ -252,6 +282,13 @@ def group_targets(queries: Queries) -> list[tuple[int, bool, int, int, int, list
     """Every ranked query in the benchmark's row order: ``(member, head, relation, anchor, target, others)``.
 
     ``member`` indexes ``queries.facts``; ``others`` holds the filtered candidates of the query (sorted).
+
+    Args:
+        queries: The ranked facts, query groups and filter of a graph.
+
+    Returns:
+        One tuple per member of each query group, in group order. ``head`` is ``True`` for a head query, and ``target``
+        is the head of the fact for a head query, else its tail.
     """
     out = []
     for (head, r, anchor), members in queries.groups:
@@ -269,6 +306,15 @@ def work_folder(work: Optional[PathLike], out: PathLike, adapter: str, entry: Gr
     """The absolute work folder of a graph: ``<work>/<adapter>/<collection>/<graph>``; ``work`` defaults to ``<out>/.work``.
 
     The external steps run in their work folder and a container mounts it, so a relative path would point elsewhere.
+
+    Args:
+        work: The work root, or ``None`` for ``<out>/.work``.
+        out: The output root of the row files.
+        adapter: The adapter key (``kgpfn``, ``anyburl``).
+        entry: The graph, with its ``collection`` and ``name``.
+
+    Returns:
+        The folder as an absolute path. The function does not create it.
     """
     root = (Path(work) if work is not None else Path(out) / '.work').absolute()
     return root / adapter / entry.collection / entry.name

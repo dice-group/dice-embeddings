@@ -81,11 +81,26 @@ class ObservedGraph:
         self.invdeg = {q: np.where(self.pop[q] > 0, 1.0 / np.maximum(self.pop[q], 1), 0.0) for q in self.mat}
 
     def inv(self, q: int) -> int:
-        """The inverse of a relation of the 2R relations."""
+        """The inverse of a relation of the 2R relations.
+
+        Args:
+            q: A relation id in ``0..2R-1``.
+
+        Returns:
+            The relation ``q + R`` for ``q < R``, else ``q - R``.
+        """
         return q + self.nr if q < self.nr else q - self.nr
 
     def out(self, x: int) -> tuple[np.ndarray, np.ndarray]:
-        """The relations and destinations of the edges that leave x."""
+        """The relations and destinations of the edges that leave x.
+
+        Args:
+            x: The source entity.
+
+        Returns:
+            The arrays ``(relations, destinations)``, slices of the sorted edge list (by relation, then destination), a
+            repeated fact as its own entry.
+        """
         a, b = self.ptr[x], self.ptr[x + 1]
         return self.rel[a:b], self.dst[a:b]
 
@@ -209,6 +224,13 @@ def _query_cells(observed: np.ndarray, filt: np.ndarray, facts: Sequence[tuple[i
 def graph_cells(graph: GraphData) -> list[Cell]:
     """``[(query, r1_at, rank_peer, r2_at)]`` of a graph, sorted by test index with the tail query first.
 
+    Args:
+        graph: The loaded graph. Every row of test.txt gives a query in both directions.
+
+    Returns:
+        Two cells per test fact. ``query`` is ``<index>:t`` (tail query) or ``<index>:h`` (head query), with ``index``
+        the position in test.txt.
+
     Raises:
         ManifestError: When test.txt holds a fact twice (a value could not join its fact).
     """
@@ -234,6 +256,10 @@ def write_queries(manifest: Manifest, entries: Sequence[GraphEntry], out: PathLi
 
     Returns:
         The meta record.
+
+    Raises:
+        ManifestError: When a graph fails to load (``data.load_graph``) or its test.txt holds a fact twice.
+        manifests.BlindSetError: For a blind folder outside a released blind manifest.
     """
     out = Path(out)
     counts, inputs = {}, {}

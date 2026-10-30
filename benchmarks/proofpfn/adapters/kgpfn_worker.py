@@ -56,7 +56,14 @@ Split = list[tuple[str, str, str]]
 
 
 def sha256(path: Path) -> str:
-    """SHA-256 of a file's bytes."""
+    """SHA-256 of a file's bytes.
+
+    Args:
+        path: The file.
+
+    Returns:
+        The hex digest.
+    """
     digest = hashlib.sha256()
     with open(path, 'rb') as handle:
         for block in iter(lambda: handle.read(1 << 22), b''):
@@ -65,7 +72,17 @@ def sha256(path: Path) -> str:
 
 
 def read_split(path: Path) -> Split:
-    """The non-empty lines of a split file as name triples (tab split if a line has a tab, else whitespace split)."""
+    """The non-empty lines of a split file as name triples (tab split if a line has a tab, else whitespace split).
+
+    Args:
+        path: The split file (UTF-8).
+
+    Returns:
+        The ``(head, relation, tail)`` names in file order, each without surrounding white space.
+
+    Raises:
+        ValueError: For a line that does not hold three fields.
+    """
     rows = []
     for line in path.read_text(encoding='utf-8').splitlines():
         if line.strip():
@@ -77,15 +94,29 @@ def read_split(path: Path) -> Split:
 
 
 def parse_sha(rows: Split) -> str:
-    """SHA-256 of the parsed triples in file order (the host hashes its parse the same way)."""
+    """SHA-256 of the parsed triples in file order (the host hashes its parse the same way).
+
+    Args:
+        rows: The name triples of a split (``read_split``).
+
+    Returns:
+        The hex digest of the triples in UTF-8, with the names joined by tabs and the triples by newlines.
+    """
     return hashlib.sha256('\n'.join('\t'.join(t) for t in rows).encode('utf-8')).hexdigest()
 
 
 def build_graphs(splits: dict[str, Split], name: str, tasks: Any) -> tuple[dict[str, Any], dict[str, torch.Tensor], int, int, dict[str, int]]:
     """Train, valid and test ``Data`` objects as KGPFN's ``TransductiveDataset.process`` builds them (vocabulary in file order).
 
+    Args:
+        splits: The name triples of ``train``, ``valid`` and ``test``.
+        name: The dataset name of the ``Data`` objects.
+        tasks: KGPFN's module ``pfn.tasks``. The test graph comes from its ``build_relation_graph``.
+
     Returns:
         ``(graphs, ids, entities, relations, relation ids)``; ``ids`` holds ``(h, t, r)`` rows per split.
+        Each graph holds the train edges with their inverses and the target edges of its split. ``entities`` and
+        ``relations`` are counts, and ``relation ids`` maps each relation name to its id.
     """
     from torch_geometric.data import Data  # type: ignore[import-not-found]
     entities: dict[str, int] = {}
@@ -149,7 +180,14 @@ def our_ranks(pred: torch.Tensor, batch: torch.Tensor, target: torch.Tensor, kno
 
 
 def write(path: Path, value: dict[str, Any]) -> None:
-    """Write JSON atomically."""
+    """Write JSON atomically.
+
+    The JSON goes to a temporary file in the same folder, which then replaces ``path``.
+
+    Args:
+        path: The output file. ``write`` creates its missing parent folders.
+        value: The JSON object. A value that JSON cannot hold becomes its ``str``.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f'.{path.name}.{os.getpid()}.tmp')
     temporary.write_text(json.dumps(value, default=str))
@@ -157,7 +195,14 @@ def write(path: Path, value: dict[str, Any]) -> None:
 
 
 def package_version(name: str) -> Optional[str]:
-    """The installed version of a distribution, or ``None``."""
+    """The installed version of a distribution, or ``None``.
+
+    Args:
+        name: The distribution name.
+
+    Returns:
+        The version string, or ``None`` when the distribution is not installed.
+    """
     try:
         return version(name)
     except PackageNotFoundError:
@@ -166,14 +211,29 @@ def package_version(name: str) -> Optional[str]:
 
 def imported_files(code: Path, kernel: Path) -> dict[str, str]:
     """The SHA-256 of KGPFN's files that this run loaded, by their path below the code folder: the modules imported from
-    the code folder and the sources of the kernel build in ``kernel``."""
+    the code folder and the sources of the kernel build in ``kernel``.
+
+    Args:
+        code: The resolved KGPFN code folder.
+        kernel: The folder of the kernel sources. Every file in it counts as loaded.
+
+    Returns:
+        The SHA-256 of each file by its POSIX path relative to ``code``, in path order.
+    """
     files = {Path(path).resolve() for path in (getattr(m, '__file__', None) for m in list(sys.modules.values())) if path}
     files = {f for f in files if f.is_relative_to(code)} | {f.resolve() for f in kernel.iterdir() if f.is_file()}
     return {f.relative_to(code).as_posix(): sha256(f) for f in sorted(files)}
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
-    """The worker's options."""
+    """The worker's options.
+
+    Args:
+        argv: The command-line arguments without the program name, or ``None`` for ``sys.argv[1:]``.
+
+    Returns:
+        The parsed options.
+    """
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument('--graph-dir', type=Path, required=True, help='the staged train.txt, valid.txt and test.txt')
     p.add_argument('--name', required=True, help='the graph name (KGPFN dataset name)')
@@ -192,7 +252,22 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
-    """Score one graph; returns the exit code."""
+    """Score one graph.
+
+    Args:
+        argv: The command-line arguments without the program name, or ``None`` for ``sys.argv[1:]``.
+
+    Returns:
+        0 with the output JSON written, or ``EXIT_OOM`` (3) when CUDA runs out of memory in the scoring loop, with an
+        error JSON next to the output.
+
+    Raises:
+        SystemExit: With a message when KGPFN's modules or the rspmm kernel import from outside the code folder, the
+            ``config`` of the TabICL checkpoint is not a dict, the preset is not context graph 3 with context tail and
+            TabICL, the model's tensors do not equal the checkpoint's (the strict load check), the parse of a split
+            differs from the host's, the meta's positions are not rows of test.txt, or a reflexive relation of the meta
+            is not in the graph. With the code ``EXIT_TERM`` (143) at SIGTERM.
+    """
     signal.signal(signal.SIGTERM, lambda *_: sys.exit(EXIT_TERM))   # as PID 1 of a container, Python drops SIGTERM without a handler
     logging.basicConfig(level=logging.INFO, format='%(asctime)s kgpfn_worker: %(message)s')
     a = parse_args(argv)

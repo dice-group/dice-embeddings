@@ -64,7 +64,15 @@ Candidates = tuple[np.ndarray, np.ndarray]
 
 
 def properties(path: PathLike) -> dict[str, str]:
-    """The ``KEY = value`` lines of a Java properties file (AnyBURL's files have no continuation lines)."""
+    """The ``KEY = value`` lines of a Java properties file (AnyBURL's files have no continuation lines).
+
+    Args:
+        path: The properties file.
+
+    Returns:
+        Key to value, both without surrounding white space. A line splits at its first ``=``. Comment lines (``#``) and
+        lines without ``=`` give no entry.
+    """
     pairs = (x.split('=', 1) for x in Path(path).read_text().splitlines() if '=' in x and not x.lstrip().startswith('#'))
     return {k.strip(): v.strip() for k, v in pairs}
 
@@ -95,7 +103,12 @@ class AnyBURL:
     version: str = ''
 
     def record(self) -> dict[str, Any]:
-        """The setup for the logs."""
+        """The setup for the logs.
+
+        Returns:
+            ``home`` (the AnyBURL folder), ``java`` (the ``java -version`` line) and ``scope`` (the command prefix of
+            the Java steps).
+        """
         return dict(home=str(self.home), java=self.version, scope=list(self.scope))
 
     def run(self, main: str, config: Path, log: Path, lock: Path) -> dict[str, Any]:
@@ -105,9 +118,17 @@ class AnyBURL:
         The JVM stops after ``STEP_HOURS``, and also when this process stops while it runs (a signal, an error), before
         the lock is released.
 
+        Args:
+            main: The class of ``de.unima.ki.anyburl`` to run: ``Learn``, ``Apply`` or ``Eval``.
+            config: The configuration file. The step runs in its folder.
+            log: The file that takes the standard output and the standard error of the step.
+            lock: The lock file. The step holds an exclusive lock on it while Java runs, so steps with the same lock
+                file run one at a time. ``run`` creates its folder when it is missing.
+
         Returns:
             The exit code (``None`` when stopped), wall and CPU seconds, peak resident memory and whether the step was
             stopped.
+            The keys are ``code``, ``wall``, ``cpu`` (``user`` plus ``sys``), ``max_rss_mb`` and ``timed_out``.
         """
         command = [*self.scope, self.java, *JVM, '-cp', str(self.home / JAR), f'de.unima.ki.anyburl.{main}', str(config)]
         lock.parent.mkdir(parents=True, exist_ok=True)
@@ -125,8 +146,19 @@ def setup(code: Optional[PathLike] = None, models: Optional[PathLike] = None, ja
     Checks the jar and the sources archive against their pins, the KR learning setting, and that Java starts (in the
     memory scope, unless ``scope`` is off).
 
+    Args:
+        code: The AnyBURL folder, or ``None`` for ``$ANYBURL_HOME``.
+        models: The pin file, or ``None`` for ``manifests/models.json``.
+        java: The Java executable, a name on ``PATH`` or a path. A path becomes absolute, since the Java steps run in
+            their work folder.
+        scope: Whether each Java step runs in the memory scope ``SCOPE``.
+
+    Returns:
+        The checked folder with its pins, the Java command, the scope prefix (empty without the scope) and the output of
+        ``java -version`` as one line.
+
     Raises:
-        AdapterSetupError: For a missing folder, a file that differs from its pin, another learning setting, no
+        AdapterSetupError: For a missing folder or file, a file that differs from its pin, another learning setting, no
             ``systemd-run`` for the scope, or no Java.
     """
     home, pins = external_folder(code, VARIABLE, 'AnyBURL'), external_pins(KEY, models)
@@ -167,10 +199,18 @@ def _step_failed(step: str, times: Mapping[str, Any], log: Path, why: str) -> Ex
 
 def write_inputs(work: Path, graph: GraphData, queries: Queries) -> dict[str, str]:
     """Write AnyBURL's ``train.txt``, ``valid.txt`` (valid plus the unranked test rows) and ``test.txt`` (the ranked facts)
-    as lines ``e<h> r<r> e<t>``; returns their SHA-256.
+    as tab-separated lines ``e<h> r<r> e<t>``.
 
     Asserted: each file holds exactly its rows, and AnyBURL's filter (train + valid.txt + test.txt) equals the benchmark's
     (train + valid + all test facts).
+
+    Args:
+        work: The work folder that receives the three files.
+        graph: The graph.
+        queries: Its ranked facts and their positions in test.txt.
+
+    Returns:
+        The SHA-256 of each written file, by file name.
 
     Raises:
         ValueError: When a file or the filter differs.
@@ -192,6 +232,15 @@ def write_inputs(work: Path, graph: GraphData, queries: Queries) -> dict[str, st
 
 def learn(anyburl: AnyBURL, work: Path, lock: Path) -> dict[str, Any]:
     """Learn in the KR setting: one rule file ``rules-30`` (Learn ends with exit code 1 after its last snapshot).
+
+    Args:
+        anyburl: The checked AnyBURL folder.
+        work: The work folder with ``train.txt``. The configuration, the log and the rule file go there.
+        lock: The lock file of the Java steps (``AnyBURL.run``).
+
+    Returns:
+        The record of the step (``AnyBURL.run``) with ``config`` (the written settings, with paths relative to the work
+        folder), ``rules`` (the number of rules in the rule file) and ``rules_sha256`` (the SHA-256 of the rule file).
 
     Raises:
         ExternalStepError: When Learn fails or its rule file is missing or incomplete.
@@ -215,6 +264,17 @@ def learn(anyburl: AnyBURL, work: Path, lock: Path) -> dict[str, Any]:
 def apply(anyburl: AnyBURL, work: Path, k: int, lock: Path, rules: Optional[Path] = None) -> dict[str, Any]:
     """Apply the rule file (default ``rules-30`` of the work folder) with ``TOP_K_OUTPUT`` k: the ranking file ``preds-<k>``.
 
+    Args:
+        anyburl: The checked AnyBURL folder.
+        work: The work folder with the three input files. The configuration, the log and the ranking file go there.
+        k: The ``TOP_K_OUTPUT`` of Apply, the largest number of candidates per list.
+        lock: The lock file of the Java steps (``AnyBURL.run``).
+        rules: The rule file, or ``None`` for ``rules-30`` of the work folder.
+
+    Returns:
+        The record of the step (``AnyBURL.run``) with ``config`` (the written settings, with paths relative to the work
+        folder).
+
     Raises:
         ExternalStepError: When Apply fails or writes no ranking file.
     """
@@ -235,6 +295,16 @@ def apply(anyburl: AnyBURL, work: Path, k: int, lock: Path, rules: Optional[Path
 def native_eval(anyburl: AnyBURL, work: Path, k: int, lock: Path) -> dict[str, Any]:
     """AnyBURL's Eval on the ranking file ``preds-<k>``: Hits@1, Hits@3, Hits@10 and MRR as printed (4 decimals).
 
+    Args:
+        anyburl: The checked AnyBURL folder.
+        work: The work folder with the three input files and the ranking file. The configuration and the log go there.
+        k: The ``TOP_K_OUTPUT`` of the ranking file.
+        lock: The lock file of the Java steps (``AnyBURL.run``).
+
+    Returns:
+        The record of the step (``AnyBURL.run``) with ``config`` (the written settings, with paths relative to the work
+        folder) and ``H@1``, ``H@3``, ``H@10`` and ``MRR`` of the last result line.
+
     Raises:
         ExternalStepError: When Eval fails or prints no result line.
     """
@@ -252,7 +322,20 @@ def native_eval(anyburl: AnyBURL, work: Path, k: int, lock: Path) -> dict[str, A
 # ---------------------------------------------------------------------------------------------------------- ranks
 
 def candidates(line: str, tag: str) -> Candidates:
-    """One ``Heads: `` or ``Tails: `` line: the tab-separated candidates and confidences in AnyBURL's order, as ids and floats."""
+    """One ``Heads: `` or ``Tails: `` line: the tab-separated candidates and confidences in AnyBURL's order,
+    as ids and floats.
+
+    Args:
+        line: The line, with its tag.
+        tag: The expected tag, ``'Heads: '`` or ``'Tails: '``.
+
+    Returns:
+        ``(entity ids, confidences)`` as int64 and float64 arrays, in the order of the line.
+
+    Raises:
+        ValueError: When the line does not start with ``tag``, or its fields are not pairs of an entity ``e<i>`` and a
+            confidence.
+    """
     if not line.startswith(tag):
         raise ValueError(f'expected {tag!r}: {line[:60]!r}')
     tokens = [x for x in line[len(tag):].rstrip('\n').split('\t') if x]
@@ -268,8 +351,16 @@ def read_lists(path: PathLike) -> tuple[dict[tuple[int, int, int], tuple[Candida
     Per test triple the line ``e<h> r<r> e<t>``, then ``Heads: `` and ``Tails: `` (in either order); a repeated triple keeps
     its last block, as ``ResultSet`` does. A ``.gz`` file is read decompressed.
 
+    Args:
+        path: The ranking file, or its gzip copy (``.gz``).
+
     Returns:
         ``({(h, r, t): (head candidates, tail candidates)}, number of blocks)``.
+        Each candidate list is the ``(entity ids, confidences)`` pair of ``candidates``, and the number of blocks counts
+        a repeated triple each time.
+
+    Raises:
+        ValueError: For a block that does not start with a triple line, or a malformed candidate line (``candidates``).
     """
     lists, blocks = {}, 0
     path = Path(path)
@@ -305,7 +396,8 @@ def rebuild(path: PathLike, graph: GraphData, queries: Queries, k: int) -> tuple
         ``[index, head, rank]`` with rank 0 for a target outside the first 100 list positions.
 
     Raises:
-        ValueError: When the file does not hold one block per ranked fact.
+        ValueError: When the file does not hold one block per ranked fact, or a list repeats a candidate or names an
+            unknown entity.
     """
     lists, blocks = read_lists(path)
     if blocks != len(queries.facts) or set(lists) != set(queries.facts):
@@ -339,14 +431,30 @@ def rebuild(path: PathLike, graph: GraphData, queries: Queries, k: int) -> tuple
 
 
 def native_metrics(native: Sequence[Sequence[Any]]) -> dict[str, float]:
-    """MRR and Hits@1, 3, 10 of AnyBURL's native ranks (rank 0 adds nothing)."""
+    """MRR and Hits@1, 3, 10 of AnyBURL's native ranks (rank 0 adds nothing).
+
+    Args:
+        native: The ``[index, head, rank]`` rows of ``rebuild``.
+
+    Returns:
+        ``MRR``, ``H@1``, ``H@3`` and ``H@10``, each the mean over all rows.
+    """
     x = np.array([q[2] for q in native], dtype=np.float64)
     rr = np.divide(1.0, x, out=np.zeros_like(x), where=x > 0)
     return dict(MRR=float(rr.mean()), **{f'H@{c}': float(((x > 0) & (x <= c)).mean()) for c in (1, 3, 10)})
 
 
 def agrees(printed: Mapping[str, float], rebuilt: Mapping[str, float]) -> bool:
-    """Whether the rebuilt native metrics equal AnyBURL's Eval to its 4 printed decimals (half a unit of the last digit)."""
+    """Whether the rebuilt native metrics equal AnyBURL's Eval to its 4 printed decimals
+    (half a unit of the last digit).
+
+    Args:
+        printed: ``MRR``, ``H@1``, ``H@3`` and ``H@10`` as Eval printed them.
+        rebuilt: The same metrics of the rebuilt native ranks (``native_metrics``).
+
+    Returns:
+        ``True`` when no metric differs by more than ``5e-5 + 1e-9``.
+    """
     return all(abs(printed[m] - rebuilt[m]) <= 5e-5 + 1e-9 for m in ('MRR', 'H@1', 'H@3', 'H@10'))
 
 

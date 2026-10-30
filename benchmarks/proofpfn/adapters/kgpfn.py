@@ -92,7 +92,12 @@ class KGPFN:
     gpu_gb: float = 0.0
 
     def record(self) -> dict[str, Any]:
-        """The setup for the logs and the row files' record."""
+        """The setup for the logs and the row files' record.
+
+        Returns:
+            ``code``, ``code_commit`` (the pinned commit), ``checkpoints``, ``python`` (the command words),
+            ``checkpoint_sha256`` (the pins of the two checkpoints) and ``gpu_gb``.
+        """
         return dict(code=str(self.code), code_commit=self.pins['code_commit'], checkpoints=str(self.checkpoints), python=list(self.python),
                     checkpoint_sha256={CHECKPOINT: self.pins[CHECKPOINT], TABICL: self.pins['tabicl']}, gpu_gb=self.gpu_gb)
 
@@ -105,9 +110,20 @@ def setup(code: Optional[PathLike] = None, checkpoints: Optional[PathLike] = Non
     the kernel source folder holds the pinned files only, and that the command imports the worker's KGPFN modules in the
     worker's environment.
 
+    Args:
+        code: The KGPFN code folder, or ``None`` for ``$KGPFN_CODE``.
+        checkpoints: The folder of the two checkpoints, or ``None`` for ``$KGPFN_CHECKPOINT_DIR``.
+        python: The command that starts KGPFN's Python, or ``None`` for ``$KGPFN_PYTHON``. It splits into words as a
+            shell line does, and a first word that is a path becomes absolute, since the worker runs in its work folder.
+        models: The pin file, or ``None`` for ``manifests/models.json``.
+        gpu_gb: The cap of the worker's CUDA allocator in GB (0: none).
+
+    Returns:
+        The checked setup.
+
     Raises:
-        AdapterSetupError: For a missing folder or command, another commit, a file that differs from its pin, or a command
-            that does not import KGPFN.
+        AdapterSetupError: For a missing folder or command, another commit, a file that differs from its pin, a kernel
+            source file without a pin, or a command that does not run or does not import KGPFN.
     """
     pins = external_pins(KEY, models)
     folder = external_folder(code, 'KGPFN_CODE', 'KGPFN')
@@ -149,6 +165,14 @@ def unfillable(graph: GraphData, queries: Queries, num_neg: int) -> int:
 
     A query of relation r needs ``num_neg + 20 - min(20, visible pairs of r)`` entities outside the anchor's visible
     answers in the role of the query.
+
+    Args:
+        graph: The graph. Its train split is the visible graph.
+        queries: Its ranked facts.
+        num_neg: The number of context negatives.
+
+    Returns:
+        The number of such queries. The tail query and the head query of each ranked fact count separately.
     """
     tails: dict[tuple[int, int], set[int]] = defaultdict(set)
     heads: dict[tuple[int, int], set[int]] = defaultdict(set)
@@ -165,19 +189,50 @@ def unfillable(graph: GraphData, queries: Queries, num_neg: int) -> int:
 
 
 def settings(entities: int) -> tuple[int, int, int]:
-    """``(batch, NBFNet head chunk, candidate chunk)`` by the entity count (memory only; 64 at 17k entities peaked at 5.4 GB)."""
+    """``(batch, NBFNet head chunk, candidate chunk)`` by the entity count
+    (memory only; 64 at 17k entities peaked at 5.4 GB).
+
+    Args:
+        entities: The number of entities of the graph.
+
+    Returns:
+        The batch (64 up to 19,000 entities, 32 up to 38,000, 16 up to 76,000, else 8), the head chunk (64 up to 38,000
+        entities, 32 up to 76,000, else 16) and the candidate chunk ``256 * 64 // batch``.
+    """
     batch = 64 if entities <= 19_000 else 32 if entities <= 38_000 else 16 if entities <= 76_000 else 8
     heads = 64 if entities <= 38_000 else 32 if entities <= 76_000 else 16
     return batch, heads, 256 * 64 // batch
 
 
 def parse_sha256(folder: Path) -> dict[str, str]:
-    """The SHA-256 of the host's parse of each split (the triples in file order), which the worker's parse must equal."""
+    """The SHA-256 of the host's parse of each split (the triples in file order), which the worker's parse must equal.
+
+    Args:
+        folder: The graph folder with ``train.txt``, ``valid.txt`` and ``test.txt``.
+
+    Returns:
+        The hex SHA-256 of each split by its name (``train``, ``valid``, ``test``), over the triples in file order with
+        the names joined by tabs and the triples by newlines, in UTF-8.
+    """
     return {s: hashlib.sha256('\n'.join('\t'.join(t) for t in read_triples(folder / f'{s}.txt')).encode('utf-8')).hexdigest() for s in SPLITS}
 
 
 def prepare(entry: GraphEntry, graph: GraphData, queries: Queries, folder: Path, source: Path) -> dict[str, Any]:
     """Stage the split files and write ``meta.json`` for the worker; returns the meta.
+
+    Args:
+        entry: The graph.
+        graph: The loaded graph, with the hashes of its checked files.
+        queries: Its ranked facts, positions and open relations.
+        folder: The work folder of the graph. ``stage/`` and ``meta.json`` go there.
+        source: The checked graph folder with the split files.
+
+    Returns:
+        The meta: the graph's name, key and collection, the ranked ``positions``, the open relations by name
+        (``reflexive``) and by id, the parse hashes, ``num_neg`` (the largest size of ``NEG_STEPS`` that fills every
+        ranked query), the unfillable queries per size, the batch and the two chunks of ``settings``, ``dump`` (whether
+        the entities times the ranked facts stay within ``DUMP_LIMIT``), the counts of entities, relations, test rows
+        and ranked facts, the SHA-256 of the split files and the time of preparation.
 
     Raises:
         ExternalStepError: When no context size of ``NEG_STEPS`` fills every ranked query (the graph cannot run).
@@ -208,7 +263,21 @@ def prepare(entry: GraphEntry, graph: GraphData, queries: Queries, folder: Path,
 
 def worker_command(system: KGPFN, entry: GraphEntry, folder: Path, batch: int, heads: int, candidates: int, num_neg: int,
                    dump: bool) -> list[str]:
-    """The command line of the worker for one attempt."""
+    """The command line of the worker for one attempt.
+
+    Args:
+        system: The checked KGPFN setup.
+        entry: The graph.
+        folder: The work folder of the graph, with ``stage/`` and ``meta.json``. The worker writes its files there.
+        batch: The number of test facts per batch.
+        heads: The number of NBFNet heads per chunk.
+        candidates: The number of candidates per scoring chunk.
+        num_neg: The number of context negatives.
+        dump: Whether the worker writes the score rows to ``scores.npz`` in ``folder``.
+
+    Returns:
+        KGPFN's Python with ``-B -P``, the worker file and its options.
+    """
     command = [*system.python, '-B', '-P', str(WORKER), '--graph-dir', str(folder / 'stage'), '--name', entry.name,
                '--meta', str(folder / 'meta.json'), '--code', str(system.code), '--checkpoints', str(system.checkpoints),
                '--work', str(folder), '--out', str(folder / 'raw.json'), '--batch-size', str(batch), '--entity-chunk', str(heads),
@@ -218,7 +287,19 @@ def worker_command(system: KGPFN, entry: GraphEntry, folder: Path, batch: int, h
 
 def worker_environment(system: KGPFN, folder: Path) -> dict[str, str]:
     """The worker's environment: KGPFN's code folder on ``PYTHONPATH``, no bytecode, the folders that a container wrapper
-    mounts, and the cache of the rspmm kernel build in the work root ``KGPFN_WORK``, the one folder that a container writes."""
+    mounts, and the cache of the rspmm kernel build in the work root ``KGPFN_WORK``,
+    the one folder that a container writes.
+
+    Args:
+        system: The checked KGPFN setup.
+        folder: The work folder of the graph, ``<work>/kgpfn/<collection>/<graph>``. Its folder two levels up,
+            ``<work>/kgpfn``, becomes ``KGPFN_WORK``, and its ``mpl`` folder becomes ``MPLCONFIGDIR``.
+
+    Returns:
+        This process's environment with new values for ``PYTHONPATH``, ``PYTHONDONTWRITEBYTECODE``,
+        ``TORCH_EXTENSIONS_DIR``, ``MPLCONFIGDIR``, ``WANDB_MODE``, ``HF_HUB_OFFLINE``, ``KGPFN_CODE``,
+        ``KGPFN_CHECKPOINT_DIR``, ``KGPFN_WORKER_DIR`` and ``KGPFN_WORK``.
+    """
     work = folder.parents[1]
     return dict(os.environ, PYTHONPATH=str(system.code), PYTHONDONTWRITEBYTECODE='1', TORCH_EXTENSIONS_DIR=str(work / 'torch_extensions'),
                 MPLCONFIGDIR=str(folder / 'mpl'), WANDB_MODE='disabled', HF_HUB_OFFLINE='1', KGPFN_CODE=str(system.code),
@@ -253,6 +334,12 @@ def check_output(raw: Mapping[str, Any], meta_path: Path, imported: Mapping[str,
     """Refuse a worker output that is incomplete, of another mode or meta, with a failed load or non-finite scores, or of
     KGPFN files other than the pinned ``imported`` ones.
 
+    Args:
+        raw: The worker output (``raw.json``).
+        meta_path: The graph's ``meta.json``. Its SHA-256 must equal the one that the worker recorded.
+        imported: The pinned SHA-256 of each KGPFN file that the worker loads, by its path below the code folder
+            (``external.kgpfn.imported`` of ``models.json``).
+
     Raises:
         AdapterSetupError: When the worker loaded other KGPFN files than the pins.
         ValueError: For another such output.
@@ -274,6 +361,15 @@ def check_output(raw: Mapping[str, Any], meta_path: Path, imported: Mapping[str,
 def rows_of(raw: Mapping[str, Any], queries: Queries) -> list[dict[str, Any]]:
     """The rows in the benchmark's order from the worker's per-position ranks.
 
+    Args:
+        raw: The worker output with ``tail_rank``, ``head_rank``, ``tail_rank_rule`` and ``head_rank_rule``, each a
+            list over the positions of test.txt.
+        queries: The ranked facts and query groups.
+
+    Returns:
+        One row per ranked query with ``index`` (the position in test.txt), ``head``, ``kgpfn`` (the rule view rank)
+        and ``kgpfn:raw`` (the raw rank).
+
     Raises:
         ValueError: When a rank is missing, or the rule view is worse than the raw view for a target that is not its anchor.
     """
@@ -292,6 +388,12 @@ def worker_entities(folder: Path) -> list[str]:
     """The worker's entity order: names by first appearance (head, then tail) in train, valid and test.
 
     The worker's parse equals the host's (``parse_sha256`` of the meta), so the host's parse gives its order.
+
+    Args:
+        folder: The folder with the split files that the worker read (``stage/``).
+
+    Returns:
+        The entity names, in the order of the worker's entity ids.
     """
     order: dict[str, int] = {}
     for s in SPLITS:
@@ -303,6 +405,17 @@ def worker_entities(folder: Path) -> list[str]:
 
 def verify(dump: Path, folder: Path, graph: GraphData, queries: Queries, rows: Sequence[Mapping[str, Any]]) -> int:
     """Recompute both views from the dumped scores with the benchmark's ranker; returns the number of rows that differ.
+
+    Args:
+        dump: The worker's ``scores.npz`` with ``index``, ``head`` and the ``scores`` rows over the worker's entity ids.
+            The host ranks the ``log_softmax`` of each row, permuted to the benchmark's entity ids.
+        folder: The work folder of the graph, whose ``stage/`` holds the split files.
+        graph: The graph.
+        queries: Its ranked facts, filter and query groups.
+        rows: The rows of ``rows_of``.
+
+    Returns:
+        The number of rows whose rule view rank or raw rank differs from the ranks of the dumped scores.
 
     Raises:
         ValueError: When the dump does not cover the rows.
