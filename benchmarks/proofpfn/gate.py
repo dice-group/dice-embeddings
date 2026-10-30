@@ -21,6 +21,8 @@ preparation and scores:
   on plain.
 """
 import math
+import platform
+import socket
 from collections import defaultdict
 from typing import Any, Mapping, Sequence, Union
 
@@ -33,10 +35,12 @@ from dicee.synthetic_kg.batch import World
 from dicee.synthetic_kg.checkpoint import model_from_checkpoint
 from dicee.synthetic_kg.determinism import THREADS, deterministic_execution, require_cublas_workspace, torch_threads
 from dicee.synthetic_kg.prepare import PreparedWorld, answers_by_anchor, prepare_world
+from dicee.synthetic_kg.pretraining import source_hashes
 from dicee.synthetic_kg.priors import Slot, world
 from dicee.synthetic_kg.streams import stage2_family
 
 from .data import rank_of
+from .evaluate import code_sha256
 from .systems import ProofPFNFamily
 
 FAMILIES = ('rec1', 'attr2', 'list1', 'categorical2', 'plain')
@@ -48,6 +52,9 @@ PLAIN_FIRST, PLAIN_END = 120_000, 130_000
 WORLD_SEED = 42
 PER_FAMILY = 100
 CHUNK = 2
+CODE_FILES = ('benchmarks/proofpfn/data.py', 'benchmarks/proofpfn/evaluate.py', 'benchmarks/proofpfn/gate.py', 'benchmarks/proofpfn/manifests.py',
+              'benchmarks/proofpfn/systems.py')
+"""The benchmark modules of the gate; ``pretraining.source_hashes`` binds the worlds, the preparation and the model."""
 
 
 def heldout_slots(family: str, count: int = PER_FAMILY) -> list[Slot]:
@@ -188,7 +195,8 @@ def gate(s: ProofPFNFamily, n: ProofPFNFamily, families: Sequence[str] = FAMILIE
 
     Returns:
         The record: the systems with their model hashes, the settings, ``results`` (``compare``), ``queries``,
-        ``per_world`` (``score``'s MRRs) and, with every family, the ``reading``.
+        ``per_world`` (``score``'s MRRs), with every family the ``reading``, and the ``provenance`` (code hashes, versions,
+        device, threads, checkpoint records).
 
     Raises:
         ValueError: For families of other arms.
@@ -209,4 +217,8 @@ def gate(s: ProofPFNFamily, n: ProofPFNFamily, families: Sequence[str] = FAMILIE
                   queries=scored['queries'], per_world=scored['mrr'])
     if set(FAMILIES) <= set(families):
         record['reading'] = reading(results)
+    code = dict(code_sha256(CODE_FILES), **{f'dicee/{name}': digest for name, digest in source_hashes().items()})
+    record['provenance'] = dict(benchmark='benchmarks.proofpfn', code_sha256=code, python=platform.python_version(), torch=torch.__version__,
+                                numpy=np.__version__, device=str(device), deterministic=True, threads=THREADS, host=socket.gethostname(),
+                                checkpoints={system.key: system.provenance() for system in (s, n)})
     return record

@@ -104,7 +104,9 @@ def test_gate_equals_the_research_gate(tmp_path):
     assert record['reading'] == gt.reading(G9['results'])
     for side, family in (('a', s), ('b', n)):   # a research export's model hash is its file's SHA-256
         assert record['systems'][side]['model_sha256'] == {str(seed): file_sha256(family.checkpoints[seed]) for seed in SEEDS}
-
+    provenance = record['provenance']
+    assert provenance['threads'] == 2 and set(provenance['checkpoints']) == {'gs', 'gn'}
+    assert {'benchmarks/proofpfn/gate.py', 'dicee/synthetic_kg/prepare.py', 'dicee/models/ultra.py'} <= set(provenance['code_sha256'])
 
 
 def test_gate_command_needs_one_family_of_s_and_one_of_n(tmp_path, capsys):

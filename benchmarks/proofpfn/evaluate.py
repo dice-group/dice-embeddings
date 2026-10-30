@@ -68,7 +68,10 @@ GT2_LAMBDA = 0.5
 CODE_FILES = ('benchmarks/proofpfn/data.py', 'benchmarks/proofpfn/evaluate.py', 'benchmarks/proofpfn/manifests.py',
               'benchmarks/proofpfn/systems.py', 'dicee/evaluation/_filtering.py', 'dicee/models/flock.py',
               'dicee/models/flock_walks.py', 'dicee/models/graph_model.py', 'dicee/models/trix.py', 'dicee/models/ultra.py',
-              'dicee/models/_relation_weights.py', 'dicee/synthetic_kg/checkpoint.py')
+              'dicee/models/_relation_weights.py', 'dicee/models/_inference.py', 'dicee/models/_fused_message.py',
+              'dicee/models/_triton_message.py', 'dicee/models/_fused_flock.py', 'dicee/models/_triton_flock.py',
+              'dicee/synthetic_kg/arms.py', 'dicee/synthetic_kg/checkpoint.py', 'dicee/synthetic_kg/determinism.py')
+"""The benchmark modules and the dicee files on the scoring path (the Triton kernels run on CUDA)."""
 
 
 # --------------------------------------------------------------------------------------------------------- views
@@ -217,9 +220,9 @@ def shard_blocks(groups: int, shards: int) -> list[tuple[int, int]]:
     return [(j * groups // shards, (j + 1) * groups // shards) for j in range(shards)]
 
 
-def code_sha256() -> dict[str, str]:
-    """The SHA-256 of the benchmark modules and the dicee files on the scoring path."""
-    return {name: file_sha256(REPO / name) for name in CODE_FILES if (REPO / name).is_file()}
+def code_sha256(names: Sequence[str] = CODE_FILES) -> dict[str, str]:
+    """The SHA-256 of files of the repository (paths relative to its root; the scoring path by default)."""
+    return {name: file_sha256(REPO / name) for name in names if (REPO / name).is_file()}
 
 
 def record_of(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, systems: Sequence[System],
@@ -364,10 +367,17 @@ def _read_part(path: Path, entry: GraphEntry, keys: list[str], shard: tuple[int,
 
 def _merge(final: Path, manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Queries, systems: Sequence[System],
            setting: Optional[Mapping[str, Any]], identity: str, shards: int, device: torch.device) -> str:
-    """Write the row file when all parts of the layout are complete; ``'shard-done'`` while one is open."""
+    """Write the row file when all parts of the layout are complete; ``'shard-done'`` while one is open.
+
+    Raises:
+        manifests.InputError: For a part of another run (other systems or graph files), which blocks the merge.
+    """
     paths = [part_path(final, (j, shards)) for j in range(1, shards + 1)]
     stored = [json.loads(p.read_text()) if p.exists() else None for p in paths]
-    if any(p is None or not p['complete'] or p['identity'] != identity for p in stored):
+    stale = [path for path, part in zip(paths, stored) if part is not None and part['identity'] != identity]
+    if stale:
+        raise InputError(f'{stale[0]} is a part of another run or shard layout; remove it to merge the parts of this run')
+    if any(p is None or not p['complete'] for p in stored):
         return 'shard-done'
     rows = [row for p in stored if p is not None for row in p['rows']]
     _write_row_file(final, manifest, entry, graph, queries, systems, setting, rows, sum(p['seconds'] for p in stored if p is not None),

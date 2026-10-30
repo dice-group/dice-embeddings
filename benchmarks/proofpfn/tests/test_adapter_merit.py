@@ -15,6 +15,7 @@ from torch import nn
 from benchmarks.proofpfn import cli
 from benchmarks.proofpfn import evaluate as ev
 from benchmarks.proofpfn import manifests as mf
+from benchmarks.proofpfn import systems as sy
 from benchmarks.proofpfn.adapters import AdapterSetupError, merit
 
 from .golden import GOLDEN, int_digest, tiny_graph, write_manifest
@@ -37,7 +38,8 @@ class FakeRelationModel(nn.Module):
         tokens = self.table.weight[:n] + motif.sum((1, 2))[:, None]
         x = tokens[None].expand(len(query), n, -1).clone()
         x[torch.arange(len(query)), query] += 1.0
-        return self.mix(x + torch.randn(len(query), n, x.shape[-1], device=x.device))
+        states: torch.Tensor = self.mix(x + torch.randn(len(query), n, x.shape[-1], device=x.device))
+        return states
 
 
 def fake_motif(graph) -> torch.Tensor:
@@ -106,7 +108,7 @@ def test_systems_write_the_reference_rows(tmp_path):
     assert all(list(r) == ['index', 'head', *keys] for r in doc['rows'])
     assert doc['allgraph']['model_sha256'] == {s.key: {'model': s.sha256} for s in systems}
     assert doc['allgraph']['families']['merit1024']['model'] == 'MERIT' and doc['allgraph']['families']['merit1024']['noise_seed'] == 0
-    with pytest.raises(AdapterSetupError, match='unknown MERIT'):
+    with pytest.raises(sy.SystemCheckError, match="unknown reference 'merit7'"):
         merit.MeritReference(key='merit7', path=systems[0].path, sha256=systems[0].sha256)
     with pytest.raises(AdapterSetupError, match='not loaded'):
         merit.MeritReference(key='merit1024', path=systems[0].path, sha256=systems[0].sha256).build_model(4, 2)
@@ -115,8 +117,8 @@ def test_systems_write_the_reference_rows(tmp_path):
 def test_fresh_compiler_policy():
     from torch._dynamo import config
     with merit.fresh_compiler():
-        assert config.error_on_recompile
-    assert not config.error_on_recompile
+        inside = config.error_on_recompile
+    assert inside and not config.error_on_recompile
     with config.patch(cache_size_limit=0):
         with pytest.raises(AdapterSetupError, match='compiler cache'):
             with merit.fresh_compiler():

@@ -15,7 +15,7 @@ from benchmarks.proofpfn import manifests as mf
 from benchmarks.proofpfn import systems as sy
 from dicee.evaluation._filtering import FilteredRanker
 
-from .golden import tiny_graph, write_manifest
+from .golden import tiny_graph, write_graph, write_manifest
 from .test_systems import clean_checkpoints
 
 REGISTERED = mf.REPO / 'benchmarks' / 'proofpfn' / 'registered'
@@ -55,7 +55,8 @@ def tiny(tmp_path_factory):
     """A tiny graph set, the clean checkpoints of two arms, the systems and one run of all of them.
 
     The S family has the registered key of S (built directly, without pins), so that the registered tables read its rows.
-    TRIX, ULTRA-3g and official Flock join when their checkpoints are available.
+    TRIX and ULTRA-3g join when their checkpoints are available. Official Flock takes 1.5 s per query group on the CPU,
+    so it has its own test on a smaller graph.
     """
     root = tmp_path_factory.mktemp('tiny')
     manifest = mf.read_manifest(write_manifest(root / 'tiny.json', root, {'g': tiny_graph(root / 'KGs' / 'g')}))
@@ -63,7 +64,7 @@ def tiny(tmp_path_factory):
     template = clean_checkpoints(root, 'S')
     systems: list = [sy.ProofPFNFamily(key='rec10axlepcunoa', arm='S', checkpoints={s: Path(template.format(seed=s)) for s in (42, 43, 44)}),
                      sy.family('tu', 'UL', clean_checkpoints(root, 'UL'), pins)]
-    for key in ('trix', 'ultra3g', 'flockoff'):
+    for key in ('trix', 'ultra3g'):
         reference = sy.reference(key, pins)
         if reference.path.is_file():
             systems.append(reference)
@@ -99,8 +100,8 @@ def test_row_file(tiny):
     assert record['key'] == 'tiny/g' and record['ranked_facts'] == facts and record['sampled'] is False
     assert record['sha256']['train.txt'] == mf.file_sha256(root / 'KGs' / 'g' / 'train.txt')
     assert record['model_sha256']['rec10axlepcunoa'] == {str(s): mf.file_sha256(root / f'S-{s}.pt') for s in (42, 43, 44)}
-    assert ('flock_official' in record) == any(isinstance(s, sy.OfficialFlock) for s in systems)
-    assert doc['provenance']['deterministic'] and doc['provenance']['threads'] == 2
+    assert 'flock_official' not in record and doc['provenance']['deterministic'] and doc['provenance']['threads'] == 2
+    assert doc['provenance']['code_sha256'] == ev.code_sha256() and 'dicee/models/_inference.py' in ev.code_sha256()
 
 
 def test_shards_and_resumed_runs_equal_one_run(tiny):
@@ -110,20 +111,38 @@ def test_shards_and_resumed_runs_equal_one_run(tiny):
     assert statuses == ['shard-done', 'shard-done', 'done']
     sharded = json.loads(ev.row_file_path(root / 'sharded', manifest.entry('g'), systems).read_text())
     assert sharded['rows'] == rows and sharded['metrics'] == json.loads(whole.read_text())['metrics'] and sharded['provenance']['shards'] == 3
-    fast = [s for s in systems if not isinstance(s, sy.OfficialFlock)]
-    _, plain = run(root, manifest, fast, root / 'plain')
-    status, stopped = run(root, manifest, fast, root / 'resumed', parts=True, max_minutes=1e-9)   # stops after the first group
+    status, stopped = run(root, manifest, systems, root / 'resumed', parts=True, max_minutes=1e-9)   # stops after the first group
     assert status == 'stopped' and not stopped.exists()
     part = json.loads(ev.part_path(stopped, (1, 1)).read_text())
     assert part['done'] == 1 and not part['complete']
-    assert run(root, manifest, fast, root / 'resumed', parts=True)[0] == 'done'
+    assert run(root, manifest, systems, root / 'resumed', parts=True)[0] == 'done'
     resumed = json.loads(stopped.read_text())
-    assert resumed['rows'] == json.loads(plain.read_text())['rows'] and resumed['provenance']['runs'] == [2]
-    bad = ev.part_path(ev.row_file_path(root / 'resumed2', manifest.entry('g'), fast), (1, 1))
+    assert resumed['rows'] == rows and resumed['provenance']['runs'] == [2]
+    bad = ev.part_path(ev.row_file_path(root / 'resumed2', manifest.entry('g'), systems), (1, 1))
     bad.parent.mkdir(parents=True)
     bad.write_text(json.dumps(dict(part, identity='0' * 64)))
-    with pytest.raises(ValueError, match='another run'):   # a part of other systems or graph files is refused
-        run(root, manifest, fast, root / 'resumed2', parts=True)
+    with pytest.raises(mf.InputError, match='another run'):   # a part of other systems or graph files is refused
+        run(root, manifest, systems, root / 'resumed2', parts=True)
+    assert run(root, manifest, systems, root / 'stale', shard=(1, 2))[0] == 'shard-done'
+    other = ev.part_path(ev.row_file_path(root / 'stale', manifest.entry('g'), systems), (2, 2))
+    other.write_text(json.dumps(dict(complete=True, identity='0' * 64)))   # the stale part of another run blocks the merge
+    with pytest.raises(mf.InputError, match='shard-2-of-2.json is a part of another run'):
+        run(root, manifest, systems, root / 'stale', shard=(1, 2))
+
+
+def test_official_flock_rows_do_not_depend_on_the_sharding(tmp_path):
+    """Official Flock draws the walks of each query from a generator seeded per call: two shards give the rows of one run."""
+    flock = sy.reference('flockoff', mf.read_models())
+    if not flock.path.is_file():
+        pytest.skip(f'{flock.path} is not available')
+    folder = write_graph(tmp_path / 'KGs' / 'g', ['a\tr0\tb', 'b\tr0\tc', 'c\tr1\ta', 'a\tr1\tc', 'b\tr1\td', 'd\tr0\ta'], [],
+                         ['a\tr0\tc', 'd\tr1\tb'])
+    manifest = mf.read_manifest(write_manifest(tmp_path / 'm.json', tmp_path, {'g': folder}))
+    status, whole = run(tmp_path, manifest, [flock], tmp_path / 'whole')
+    assert status == 'done' and [run(tmp_path, manifest, [flock], tmp_path / 'sharded', shard=(i, 2))[0] for i in (2, 1)] == ['shard-done', 'done']
+    doc = json.loads(whole.read_text())
+    assert json.loads(ev.row_file_path(tmp_path / 'sharded', manifest.entry('g'), [flock]).read_text())['rows'] == doc['rows']
+    assert doc['allgraph']['flock_official']['keys'] == {'flockoff': dict(walks=16, passes=16)}
 
 
 def test_global_settings_are_restored(tiny):

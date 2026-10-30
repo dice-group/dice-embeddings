@@ -42,6 +42,18 @@ def test_check_run_and_cells(tmp_path, capsys):
     assert (tmp_path / 'queries.csv').read_text().count('\n') == 1 + len(doc['rows'])
 
 
+def test_check_reports_every_failing_graph(tmp_path, capsys):
+    folders = {name: tiny_graph(tmp_path / 'KGs' / name, seed=seed) for seed, name in enumerate('fgh')}
+    manifest = write_manifest(tmp_path / 'tiny.json', tmp_path, folders)
+    (folders['f'] / 'test.txt').write_text('x\tr0\ty\n')   # another file
+    (folders['g'] / 'valid.txt').unlink()                   # a missing file
+    common = ['--set', str(manifest), '--data-root', str(tmp_path), '--family', f"ts=S:{clean_checkpoints(tmp_path, 'S')}"]
+    assert cli.main(['check', *common]) == cli.EXIT_INPUT
+    lines = capsys.readouterr().out.splitlines()
+    assert [line.split()[0] for line in lines[-4:-1]] == ['tiny/f', 'tiny/g', 'tiny/h'] and lines[-2].endswith(' ok')
+    assert 'FAILED' in lines[-4] and 'FAILED' in lines[-3] and lines[-1] == 'check FAILED: 2 of 3 graphs (tiny/f, tiny/g)'
+
+
 def test_refusals(tmp_path, capsys):
     folder = write_graph(tmp_path / 'KGs' / 'lockbox3' / 'g', ['a\tr\tb'], [], ['b\tr\ta'])
     blind = write_manifest(tmp_path / 'blind.json', tmp_path, {'g': folder}, name='blindtest', blind=True)

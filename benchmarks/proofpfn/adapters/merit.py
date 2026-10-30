@@ -45,7 +45,7 @@ import types
 from contextlib import contextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Callable, Iterator, Mapping, Optional, Sequence, cast
+from typing import Any, Callable, ClassVar, Iterator, Mapping, Optional, Sequence, cast
 
 import torch
 from torch import nn
@@ -170,12 +170,9 @@ class MeritReference(Reference):
     """
 
     upstream: Optional[Upstream] = field(default=None, compare=False)
+    KEYS: ClassVar[tuple[str, ...]] = KEYS
 
-    def __post_init__(self) -> None:
-        if self.key not in KEYS:
-            raise AdapterSetupError(f'unknown MERIT system {self.key!r}; choose from {KEYS}')
-
-    def build_model(self, num_entities: int, num_relations: int) -> GraphKGE:
+    def build_model(self, num_entities: int, num_relations: int, setting: Optional[Mapping[str, Any]] = None) -> GraphKGE:
         """The frozen MERIT of this checkpoint on the CPU (query batch 1), built with the global random state restored.
 
         Raises:

@@ -141,20 +141,40 @@ def _systems(args: argparse.Namespace) -> list[Any]:
     return systems
 
 
-def _check(args: argparse.Namespace) -> int:
+def _check_graphs(manifest: Any, entries: Sequence[Any], root: Path, what: str, flock: Sequence[str] = ()) -> int:
+    """Hash-check, load and count every graph, with official Flock's setting for the keys ``flock``; print one line per
+    graph and return the exit code (``EXIT_INPUT`` when a graph fails)."""
     from .data import load_graph, prepare_queries
+    from .systems import official_setting
+    failed = []
+    for entry in entries:
+        try:
+            graph = load_graph(manifest, entry, root)
+            queries = prepare_queries(graph, manifest.sample_rule)
+            setting = official_setting(entry, graph, flock) if flock else None
+        except (InputError, BlindSetError) as error:
+            failed.append(entry.key)
+            print(f'{entry.key:45s} FAILED: {error}')
+            continue
+        walks = f" flock walks {setting['walks']} passes {setting['passes']}" if setting else ''
+        print(f'{entry.key:45s} entities {graph.num_entities:7d} relations {graph.num_relations:5d} train {len(graph.train):8d} '
+              f'test rows {queries.test_rows:6d} ranked {len(queries.facts):5d} query groups {len(queries.groups):6d}{walks} ok')
+    if failed:
+        print(f'check FAILED: {len(failed)} of {len(entries)} graphs ({", ".join(failed)})')
+        return EXIT_INPUT
+    print(f'check passed ({len(entries)} graphs, {what})')
+    return 0
+
+
+def _check(args: argparse.Namespace) -> int:
+    from .systems import OfficialFlock
     manifest, entries = _entries(args)
     systems = _systems(args)
     for system in systems:
         system.check()
         print(f'{system.key}: {json.dumps(system.model_sha256())}')
-    for entry in entries:
-        graph = load_graph(manifest, entry, args.data_root)
-        queries = prepare_queries(graph, manifest.sample_rule)
-        print(f'{entry.key:45s} entities {graph.num_entities:7d} relations {graph.num_relations:5d} train {len(graph.train):8d} '
-              f'test rows {queries.test_rows:6d} ranked {len(queries.facts):5d} query groups {len(queries.groups):6d} ok')
-    print(f'check passed ({len(entries)} graphs, systems {",".join(s.key for s in systems)})')
-    return 0
+    flock = [s.key for s in systems if isinstance(s, OfficialFlock)]
+    return _check_graphs(manifest, entries, args.data_root, f'systems {",".join(s.key for s in systems)}', flock)
 
 
 def _run(args: argparse.Namespace) -> int:
@@ -210,12 +230,7 @@ def _adapter(args: argparse.Namespace, argv: Sequence[str]) -> int:
         record = dict(system.record(), imported=system.upstream().files)
     print(f'{args.name}: {json.dumps(record)}')
     if args.check:
-        from .data import load_graph, prepare_queries
-        for entry in entries:
-            queries = prepare_queries(load_graph(manifest, entry, args.data_root), manifest.sample_rule)
-            print(f'{entry.key:45s} ranked {len(queries.facts):5d} query groups {len(queries.groups):6d} ok')
-        print(f'check passed ({len(entries)} graphs, adapter {args.name})')
-        return 0
+        return _check_graphs(manifest, entries, args.data_root, f'adapter {args.name}')
     statuses = {}
     for entry in entries:
         if args.name == 'anyburl':
