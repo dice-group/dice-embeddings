@@ -96,10 +96,10 @@ arm trains ULTRA with dimension 64 and 6 layers, with the seeds 42, 43 and 44.
 dicee_pretrain_synthetic train --arm S --seed 42 --out runs/S/42
 
 # Arms R and M also read the real source graphs
-dicee_pretrain_synthetic train --arm R --seed 42 --out runs/R/42 --real-sources data/real-sources
+dicee_pretrain_synthetic train --arm R --seed 42 --out runs/R/42 --real_sources data/real-sources
 
 # A smoke run: 2 updates on the CPU, a checkpoint after each
-dicee_pretrain_synthetic train --arm S --seed 42 --out runs/smoke --device cpu --workers 0 --stop-after 2 --exports 1,2
+dicee_pretrain_synthetic train --arm S --seed 42 --out runs/smoke --device cpu --workers 0 --stop_after 2 --exports 1,2
 ```
 
 A model family of the benchmark needs the seeds 42, 43 and 44 of one arm. Train each seed into its own folder.
@@ -112,10 +112,10 @@ A model family of the benchmark needs the seeds 42, 43 and 44 of one arm. Train 
 | `--device` | `cuda` | the training device |
 | `--workers` | 4 | worker processes that generate and prepare the worlds ahead (0: the training process prepares them) |
 | `--threads` | 2 | torch threads of the training process |
-| `--real-sources` | `$PROOFPFN_REAL_SOURCES` | the folder of the real source graphs (arms R and M) |
-| `--save-every` | 250 | updates between two writes of `last.pt` |
-| `--allow-code-change` | off | resume although the sources of the run changed |
-| `--stop-after` | none | test option: stop after this update and write `last.pt` |
+| `--real_sources` | `$PROOFPFN_REAL_SOURCES` | the folder of the real source graphs (arms R and M) |
+| `--save_every` | 250 | updates between two writes of `last.pt` |
+| `--allow_code_change` | off | resume although the sources of the run changed |
+| `--stop_after` | none | test option: stop after this update and write `last.pt` |
 | `--exports` | `4000,8000,16000,20000,24000` | test option: the export updates |
 
 Files of a run folder:
@@ -137,13 +137,13 @@ of update 24,000.
 - SIGINT and SIGTERM stop the run after the current update. The command then writes `last.pt` and exits with code 3.
 - The command refuses a folder that holds another run (another arm, seed or option).
 - If a source file of `dicee/synthetic_kg` or of the ULTRA model changed since the start, the command refuses to
-  resume. Pass `--allow-code-change` to resume anyway.
-- Exit codes: 0 done (also after `--stop-after`), 1 error, 2 wrong input, 3 stopped by a signal.
+  resume. Pass `--allow_code_change` to resume anyway.
+- Exit codes: 0 done (also after `--stop_after`), 1 error, 2 wrong input (one `error:` line), 3 stopped by a signal.
 
 ### Real source graphs
 
 Arms R and M build their real worlds from the train splits of FB15k-237, WN18RR and CoDEx-M. Give the folder of these
-graphs with `--real-sources` or with the environment variable `PROOFPFN_REAL_SOURCES`:
+graphs with `--real_sources` or with the environment variable `PROOFPFN_REAL_SOURCES`:
 
 ```
 real-sources/

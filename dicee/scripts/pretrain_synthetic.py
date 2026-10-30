@@ -9,7 +9,7 @@ Commands:
 Examples::
 
     dicee_pretrain_synthetic train --arm S --seed 42 --out runs/S/42
-    dicee_pretrain_synthetic train --arm R --seed 42 --out runs/R/42 --real-sources data/real-sources
+    dicee_pretrain_synthetic train --arm R --seed 42 --out runs/R/42 --real_sources data/real-sources
     dicee_pretrain_synthetic convert --export export-24000.pt --arm S --out S-42.pt
 
 The command sets ``CUBLAS_WORKSPACE_CONFIG=:4096:8`` (deterministic cuBLAS) unless it is set. SIGINT and SIGTERM stop a
@@ -18,6 +18,7 @@ a folder of another run or with changed sources, real source graphs that are mis
 that the converter cannot read or refuses), 3 stopped by a signal (rerun the same command to resume).
 """
 import argparse
+import dataclasses
 import logging
 import signal
 import sys
@@ -26,39 +27,57 @@ from typing import Any, Optional, Sequence
 from dicee.synthetic_kg.arms import ARMS
 from dicee.synthetic_kg.checkpoint import CheckpointError, from_research_export, save_checkpoint
 from dicee.synthetic_kg.determinism import cublas_workspace
-from dicee.synthetic_kg.pretraining import PretrainConfig, RunInputError, pretrain
+from dicee.synthetic_kg.pretraining import EXPORTS, PretrainConfig, RunInputError, pretrain
+from dicee.synthetic_kg.recipe import TOTAL_UPDATES
 
 logger = logging.getLogger(__name__)
 EXIT_INPUT, EXIT_STOPPED = 2, 3
+DEFAULTS = {field.name: field.default for field in dataclasses.fields(PretrainConfig)}
+"""The defaults of the run options (``PretrainConfig``)."""
 
 
 def updates(text: str) -> tuple[int, ...]:
-    """A comma list of update numbers."""
+    """The update numbers of a comma list.
+
+    Args:
+        text: For example ``'1,2,4000'``.
+
+    Returns:
+        The numbers in list order.
+    """
     return tuple(int(part) for part in text.split(',') if part.strip())
 
 
 def build_parser() -> argparse.ArgumentParser:
-    """The argument parser of the commands."""
+    """The argument parser of the commands.
+
+    Returns:
+        The parser; the defaults of ``train`` are those of ``PretrainConfig``.
+    """
     parser = argparse.ArgumentParser(prog='dicee_pretrain_synthetic', description=__doc__.split('\n')[0])
     commands = parser.add_subparsers(dest='command', required=True)
-    train = commands.add_parser('train', help='pretrain one arm and seed')
-    train.add_argument('--arm', required=True, choices=tuple(ARMS))
-    train.add_argument('--seed', type=int, required=True)
+    train = commands.add_parser('train', help='pretrain one arm and seed; a folder with a last.pt resumes its run')
+    train.add_argument('--arm', required=True, choices=tuple(ARMS), help='the arm')
+    train.add_argument('--seed', type=int, required=True, help='the run seed (the research runs: 42, 43, 44)')
     train.add_argument('--out', required=True, help='the run folder')
-    train.add_argument('--workers', type=int, default=4, help='worker processes that prepare the worlds ahead (0: in this process)')
-    train.add_argument('--device', default='cuda')
-    train.add_argument('--real-sources', default=None, help='the folder of the real source graphs (<name>/data.pt; arms R and M)')
-    train.add_argument('--threads', type=int, default=2, help='torch threads of the training process (CPU results depend on it)')
-    train.add_argument('--save-every', type=int, default=250, help='last.pt every this many updates')
-    train.add_argument('--allow-code-change', action='store_true', help='resume although the bound sources changed')
+    train.add_argument('--workers', type=int, default=DEFAULTS['workers'],
+                       help='worker processes that prepare the worlds ahead; 0 prepares them in this process (default: %(default)s)')
+    train.add_argument('--device', default=DEFAULTS['device'], help='the training device (default: %(default)s)')
+    train.add_argument('--real_sources', default=None,
+                       help='the folder of the real source graphs of arms R and M (<name>/data.pt; default: $PROOFPFN_REAL_SOURCES)')
+    train.add_argument('--threads', type=int, default=DEFAULTS['threads'],
+                       help='torch threads of the training process; CPU results depend on them (default: %(default)s)')
+    train.add_argument('--save_every', type=int, default=DEFAULTS['save_every'], help='updates between two writes of last.pt (default: %(default)s)')
+    train.add_argument('--allow_code_change', action='store_true', help='resume although the sources that the run record binds changed')
     tests = train.add_argument_group('test options')
-    tests.add_argument('--stop-after', type=int, default=None, help='stop after this update with last.pt (rerun to resume)')
-    tests.add_argument('--exports', type=updates, default=None, help='comma list of export updates (default: 4000,8000,16000,20000,24000)')
-    convert = commands.add_parser('convert', help='convert a research export into a checkpoint')
+    tests.add_argument('--stop_after', type=int, default=None, help='stop after this update with last.pt; rerun to resume')
+    tests.add_argument('--exports', type=updates, default=None,
+                       help=f"comma list of export updates (default: {','.join(map(str, EXPORTS))}); update {TOTAL_UPDATES} is always exported")
+    convert = commands.add_parser('convert', help='convert a research export into a checkpoint after its inertness checks')
     convert.add_argument('--export', required=True, help='the research export-<N>.pt')
-    convert.add_argument('--arm', required=True, choices=tuple(ARMS))
+    convert.add_argument('--arm', required=True, choices=tuple(ARMS), help='the arm of the export')
     convert.add_argument('--out', required=True, help='the checkpoint file')
-    convert.add_argument('--weights', choices=('ema', 'raw'), default='ema')
+    convert.add_argument('--weights', choices=('ema', 'raw'), default='ema', help='the weights to convert (default: %(default)s)')
     return parser
 
 
@@ -98,7 +117,14 @@ def _convert(args: argparse.Namespace) -> int:
 
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
-    """Run a command; returns the exit code."""
+    """Run a command.
+
+    Args:
+        argv: The arguments after the program name; ``None`` reads ``sys.argv``.
+
+    Returns:
+        The exit code.
+    """
     args = build_parser().parse_args(argv)
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(name)s: %(message)s')
     with cublas_workspace():

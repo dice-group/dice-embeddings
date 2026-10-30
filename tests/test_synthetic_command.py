@@ -24,9 +24,9 @@ def test_train_and_resume(tmp_path, monkeypatch):
     require_cpu_training_golden_environment()
     monkeypatch.delenv('CUBLAS_WORKSPACE_CONFIG', raising=False)
     options = ['train', '--arm', 'S', '--seed', '42', '--out', str(tmp_path), '--workers', '0', '--device', 'cpu', '--exports', '1,2']
-    assert command.main([*options, '--stop-after', '1']) == 0
+    assert command.main([*options, '--stop_after', '1']) == 0
     assert 'CUBLAS_WORKSPACE_CONFIG' not in os.environ   # set for the run, then restored
-    assert command.main([*options, '--stop-after', '2']) == 0
+    assert command.main([*options, '--stop_after', '2']) == 0
     history = torch.load(tmp_path / 'last.pt', map_location='cpu', weights_only=True)['history']
     golden = fixture('g4_s42.json.gz')['arms']['S']['updates']
     assert [(repr(h['loss']), repr(h['grad_norm'])) for h in history] == [(g['loss'], g['grad_norm']) for g in golden[:2]]
@@ -56,10 +56,10 @@ def test_wrong_input(tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeyp
         assert len(lines) == 1 and lines[0].startswith('error: ')   # one line, no traceback
         return lines[0]
 
-    assert 'stop_after' in refused('train', '--arm', 'S', '--seed', '42', '--out', str(tmp_path), '--stop-after', '30000')
+    assert 'stop_after' in refused('train', '--arm', 'S', '--seed', '42', '--out', str(tmp_path), '--stop_after', '30000')
     monkeypatch.delenv('PROOFPFN_REAL_SOURCES', raising=False)
     assert 'PROOFPFN_REAL_SOURCES' in refused('train', '--arm', 'R', '--seed', '42', '--out', str(tmp_path / 'R'), '--device', 'cpu')
-    assert 'missing' in refused('train', '--arm', 'M', '--seed', '42', '--out', str(tmp_path / 'M'), '--device', 'cpu', '--real-sources', str(tmp_path))
+    assert 'missing' in refused('train', '--arm', 'M', '--seed', '42', '--out', str(tmp_path / 'M'), '--device', 'cpu', '--real_sources', str(tmp_path))
     with pytest.raises(SystemExit):
         command.main(['train', '--arm', 'S0', '--seed', '42', '--out', str(tmp_path)])
     capsys.readouterr()
@@ -68,7 +68,7 @@ def test_wrong_input(tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeyp
     for export in ('other.pt', 'text.pt', 'missing.pt'):
         assert export in refused('convert', '--export', str(tmp_path / export), '--arm', 'S', '--out', str(tmp_path / 'x.pt'))
     assert not (tmp_path / 'x.pt').exists()
-    command.main(['train', '--arm', 'UL', '--seed', '43', '--out', str(tmp_path / 'UL'), '--device', 'cpu', '--workers', '0', '--stop-after', '1',
+    command.main(['train', '--arm', 'UL', '--seed', '43', '--out', str(tmp_path / 'UL'), '--device', 'cpu', '--workers', '0', '--stop_after', '1',
                   '--exports', '1'])
     assert 'another run' in refused('train', '--arm', 'UL', '--seed', '44', '--out', str(tmp_path / 'UL'), '--device', 'cpu', '--workers', '0')
 
