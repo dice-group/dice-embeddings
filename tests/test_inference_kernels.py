@@ -33,13 +33,20 @@ class TableModel(torch.nn.Module):
 
 
 @pytest.fixture(autouse=True)
-def execution_settings(monkeypatch):
+def execution_settings():
     previous = torch.get_num_threads()
+    # Not monkeypatch: since pytest 9.2 its undo calls delattr on objects without a data descriptor, and the
+    # precision objects of PyTorch serve fp32_precision through __getattr__/__setattr__.
+    saved = [(backend, backend.fp32_precision) for backend in float32_precision_backends()]
     torch.set_num_threads(2)
-    for backend in float32_precision_backends():
-        monkeypatch.setattr(backend, 'fp32_precision', 'ieee')
-    yield
-    torch.set_num_threads(previous)
+    try:
+        for backend, _ in saved:
+            backend.fp32_precision = 'ieee'
+        yield
+    finally:
+        for backend, precision in reversed(saved):
+            backend.fp32_precision = precision
+        torch.set_num_threads(previous)
 
 
 @pytest.mark.parametrize('device', DEVICES)
