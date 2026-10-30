@@ -347,8 +347,7 @@ def main(argv: Optional[list[str]] = None) -> int:
                  peak_reserved_gb=torch.cuda.max_memory_reserved(device) / 2**30),
         provenance=dict(worker_sha256=sha256(Path(__file__)), python=sys.version.split()[0],
                         torch=torch.__version__, cuda=torch.version.cuda, tabicl=package_version('tabicl'),
-                        torch_geometric=package_version('torch_geometric'), image=os.environ.get('KGPFN_IMAGE'),
-                        image_id=os.environ.get('KGPFN_IMAGE_ID'),
+                        torch_geometric=package_version('torch_geometric'),
                         split_sha256={s: sha256(a.graph_dir / f'{s}.txt') for s in ('train', 'valid', 'test')}),
         tail_rank=out['tail'], head_rank=out['head'], tail_rank_opt=out['tail_opt'], head_rank_opt=out['head_opt'],
         tail_rank_rule=out['tail_rule'], head_rank_rule=out['head_rule'])

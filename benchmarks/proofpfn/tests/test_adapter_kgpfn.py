@@ -6,6 +6,7 @@ The worker module imports KGPFN only inside ``main``, so its rank function runs 
 import json
 import os
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
@@ -129,8 +130,8 @@ def test_rows_and_outputs_are_checked(tmp_path):
     raw['tail_rank_rule'][0] = 2   # the rule view moves a rank down only for a target that is its anchor
     with pytest.raises(ValueError, match='position 0'):
         kgpfn.rows_of(raw, queries)
-    good = dict(status='complete', context_mode='blind', seed=0, settings=dict(meta_sha256=mf.file_sha256(work / 'meta.json')),
-                strict_load=dict(missing=[], shape_mismatch=[], value_mismatch=[], unexpected=[]), counts=dict(nonfinite_rows=0))
+    good: dict[str, Any] = dict(status='complete', context_mode='blind', seed=0, settings=dict(meta_sha256=mf.file_sha256(work / 'meta.json')),
+                                strict_load=dict(missing=[], shape_mismatch=[], value_mismatch=[], unexpected=[]), counts=dict(nonfinite_rows=0))
     kgpfn.check_output(good, work / 'meta.json')
     for change, message in ((dict(status='partial'), 'partial'), (dict(context_mode='native'), 'native'),
                             (dict(settings=dict(meta_sha256='0')), 'another meta'),
@@ -139,7 +140,8 @@ def test_rows_and_outputs_are_checked(tmp_path):
             kgpfn.check_output(dict(good, **change), work / 'meta.json')
 
 
-def test_worker_command_and_environment(tmp_path):
+def test_worker_command_and_environment(tmp_path, monkeypatch):
+    monkeypatch.setenv('TORCH_EXTENSIONS_DIR', str(tmp_path / 'elsewhere'))   # a container would not see this folder
     system = fake_setup(tmp_path)
     folder = tmp_path / 'work' / 'kgpfn' / 'tiny' / 'g'
     command = kgpfn.worker_command(system, mf.GraphEntry.from_json(json.loads(
@@ -149,7 +151,7 @@ def test_worker_command_and_environment(tmp_path):
     assert command[command.index('--num-neg') + 1] == '40' and command[command.index('--code') + 1] == str(system.code)
     env = kgpfn.worker_environment(system, folder)
     assert env['PYTHONPATH'] == str(system.code) and env['PYTHONDONTWRITEBYTECODE'] == '1' and env['KGPFN_WORK'] == str(folder.parents[1])
-    assert env['KGPFN_WORKER_DIR'] == str(kgpfn.WORKER.parent)
+    assert env['KGPFN_WORKER_DIR'] == str(kgpfn.WORKER.parent) and env['TORCH_EXTENSIONS_DIR'] == str(folder.parents[1] / 'torch_extensions')
     worker = kgpfn_worker.parse_args(command[4:])
     assert (worker.batch_size, worker.entity_chunk, worker.eval_chunk, worker.num_neg) == (64, 64, 256, 40)
 

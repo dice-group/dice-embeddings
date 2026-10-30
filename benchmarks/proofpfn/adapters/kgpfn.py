@@ -183,11 +183,12 @@ def worker_command(system: KGPFN, entry: GraphEntry, folder: Path, batch: int, h
 
 
 def worker_environment(system: KGPFN, folder: Path) -> dict[str, str]:
-    """The worker's environment: KGPFN's code folder on ``PYTHONPATH``, no bytecode, the folders a container wrapper mounts."""
-    extensions = os.environ.get('TORCH_EXTENSIONS_DIR') or str(folder.parents[1] / 'torch_extensions')
-    return dict(os.environ, PYTHONPATH=str(system.code), PYTHONDONTWRITEBYTECODE='1', TORCH_EXTENSIONS_DIR=extensions,
+    """The worker's environment: KGPFN's code folder on ``PYTHONPATH``, no bytecode, the folders that a container wrapper
+    mounts, and the cache of the rspmm kernel build in the work root ``KGPFN_WORK``, the one folder that a container writes."""
+    work = folder.parents[1]
+    return dict(os.environ, PYTHONPATH=str(system.code), PYTHONDONTWRITEBYTECODE='1', TORCH_EXTENSIONS_DIR=str(work / 'torch_extensions'),
                 MPLCONFIGDIR=str(folder / 'mpl'), WANDB_MODE='disabled', HF_HUB_OFFLINE='1', KGPFN_CODE=str(system.code),
-                KGPFN_CHECKPOINT_DIR=str(system.checkpoints), KGPFN_WORKER_DIR=str(WORKER.parent), KGPFN_WORK=str(folder.parents[1]))
+                KGPFN_CHECKPOINT_DIR=str(system.checkpoints), KGPFN_WORKER_DIR=str(WORKER.parent), KGPFN_WORK=str(work))
 
 
 def run_worker(system: KGPFN, entry: GraphEntry, folder: Path, meta: Mapping[str, Any]) -> tuple[int, int]:
