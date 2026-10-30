@@ -3,7 +3,7 @@
 Modules:
     recipe: fixed values of the prior (the resolved research recipe, stream layout, family parameters).
     streams: the seeded SHA-256 streams with their research version strings.
-    batch: the world batch of an update, its checks and its content digest.
+    batch: the world batch of an update and its checks.
     digests: the digest rules of the golden references.
     priors: the prior configuration, the world order of a run and the world of an order slot.
     arms: the seven arm presets and their initial weights.

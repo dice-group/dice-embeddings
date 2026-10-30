@@ -1,4 +1,4 @@
-"""The world batch that a pretraining update reads, its checks, and its content digest.
+"""The world batch that a pretraining update reads, and its checks.
 
 A world is a mapping from task names to ``WorldBatch`` objects. The research worlds have two tasks, ``'rule'`` and
 ``'base'``, in this insertion order; an update visits the tasks in mapping order, so generators must keep it. Over
@@ -9,7 +9,6 @@ from typing import Any, Mapping, NamedTuple
 
 import torch
 
-from .digests import tensor_digest
 from .recipe import HEAD_QUERIES, QUERIES
 
 Triple = tuple[int, int, int]
@@ -95,25 +94,3 @@ def world_sizes(batch: Mapping[str, WorldBatch]) -> dict[str, int]:
         ``{'n_entities': ..., 'n_context': ...}``.
     """
     return dict(n_entities=max(b.num_entities for b in batch.values()), n_context=max(len(b.context) for b in batch.values()))
-
-
-def content_sha256(batch: Mapping[str, WorldBatch]) -> str:
-    """The content digest of a world (golden G2's ``content_sha256``): the tensor digest of its training content.
-
-    The content holds per task ``groups`` (int64), ``head_prediction`` (bool), ``context`` and ``truth`` as sorted int64
-    ``[n, 3]``, and ``num_entities`` and ``num_relations`` as int64 scalars, under the keys ``'<task>/<name>'``.
-
-    Args:
-        batch: Task name to ``WorldBatch``.
-
-    Returns:
-        The hex digest; it does not depend on the task order.
-    """
-    content = {}
-    for task, b in batch.items():
-        content.update({f'{task}/groups': b.groups.to(torch.long), f'{task}/head_prediction': b.head_prediction.to(torch.bool),
-                        f'{task}/context': torch.tensor(sorted(b.context), dtype=torch.long).reshape(-1, 3),
-                        f'{task}/truth': torch.tensor(sorted(b.truth), dtype=torch.long).reshape(-1, 3),
-                        f'{task}/num_entities': torch.tensor(int(b.num_entities), dtype=torch.long),
-                        f'{task}/num_relations': torch.tensor(int(b.num_relations), dtype=torch.long)})
-    return tensor_digest(content)
