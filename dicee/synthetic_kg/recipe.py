@@ -1,4 +1,5 @@
-"""Fixed values of the synthetic prior: the resolved research recipe, the stream layout and the families' parameters.
+"""Fixed values of the synthetic prior and its pretraining: the resolved research recipe, the training schedule, the stream
+layout and the families' parameters.
 
 The research code built its recipe through a chain of 12 configuration wrappers (from ``demo_context_experiment.recipe``
 up to ``architecture-affinity-v1-runtime/aa_common.cfg``). ``RecipeConfig`` holds the values at the top of that chain,
@@ -46,6 +47,18 @@ DECAY_UPDATES = 4_000
 
 TOTAL_UPDATES = CONSTANT_UPDATES + DECAY_UPDATES
 """Updates of a run, and the length of its world order."""
+
+LEARNING_RATE = 5e-4
+"""AdamW's learning rate during the constant updates (``op_common.LR``)."""
+
+WEIGHT_DECAY = 0.01
+"""AdamW's weight decay (``op_common.WEIGHT_DECAY``)."""
+
+EMA_DECAY = 0.999
+"""The decay of the exponential moving average of the weights (``op_common.EMA_DECAY``)."""
+
+MICROBATCH = 2
+"""Query rows per backward chunk of an update (``op_common.MICROBATCH``)."""
 
 
 @dataclass(frozen=True)

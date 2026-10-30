@@ -29,7 +29,7 @@ import torch
 from ..models.ultra import ULTRA
 from .arms import ULTRA_DIM, ULTRA_LAYERS, ArmPreset, arm_preset, research_record
 from .digests import file_sha256
-from .recipe import CONSTANT_UPDATES, DECAY_UPDATES
+from .recipe import CONSTANT_UPDATES, DECAY_UPDATES, EMA_DECAY, LEARNING_RATE, MICROBATCH, WEIGHT_DECAY
 
 logger = logging.getLogger(__name__)
 
@@ -234,8 +234,8 @@ def _research_problems(saved: Any, preset: ArmPreset) -> list[str]:
         problems.append('the weights did not train from the random start on the prior only')
     run = saved['run'] if isinstance(saved['run'], dict) else {}
     expected = dict(research_record(preset), format=RESEARCH_FORMAT, seed=saved['seed'], start='random', n1=CONSTANT_UPDATES,
-                    n2=DECAY_UPDATES, loss='hard-ce-full' if preset.target == 'hard' else 'rbw-ce-full', lr=5e-4, weight_decay=0.01,
-                    ema_decay=0.999, microbatch=2, nondeterministic=False, model_kind=kind)
+                    n2=DECAY_UPDATES, loss='hard-ce-full' if preset.target == 'hard' else 'rbw-ce-full', lr=LEARNING_RATE,
+                    weight_decay=WEIGHT_DECAY, ema_decay=EMA_DECAY, microbatch=MICROBATCH, nondeterministic=False, model_kind=kind)
     for key in dict.fromkeys([*expected, *RESEARCH_OPTIONS]):
         if run.get(key) != expected.get(key):
             problems.append(f'run record {key} is {run.get(key)!r}, arm {preset.name} has {expected.get(key)!r}')
