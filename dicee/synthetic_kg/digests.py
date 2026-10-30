@@ -29,18 +29,16 @@ def tensor_digest(tensors: Mapping[str, torch.Tensor]) -> str:
     return digest.hexdigest()
 
 
-def json_sha256(value: Any, compact: bool = True) -> str:
-    """SHA-256 of ``json.dumps(value, sort_keys=True)``, floats as ``repr``.
+def json_sha256(value: Any) -> str:
+    """SHA-256 of ``json.dumps(value, sort_keys=True, separators=(',', ':'))``, floats as ``repr``.
 
     Args:
         value: A JSON-safe value.
-        compact: With the separators ``(',', ':')`` (the JSON digest of the golden references), else ``json``'s defaults.
 
     Returns:
         The hex digest.
     """
-    text = json.dumps(value, sort_keys=True, separators=(',', ':')) if compact else json.dumps(value, sort_keys=True)
-    return hashlib.sha256(text.encode()).hexdigest()
+    return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
 
 def file_sha256(path: Union[str, Path]) -> str:

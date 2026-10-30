@@ -56,13 +56,13 @@ def test_unfillable_contexts_equal_a_direct_count(tmp_path):
 def test_prepare_stages_the_files_and_writes_the_meta(tmp_path):
     _, entry, graph, queries, folder = tiny(tmp_path, entities=200)
     work = tmp_path / 'work'
-    meta = kgpfn.prepare(fake_setup(tmp_path), entry, graph, queries, work, folder)
+    meta = kgpfn.prepare(entry, graph, queries, work, folder)
     assert json.loads((work / 'meta.json').read_text()) == meta
     assert meta['num_neg'] in kgpfn.NEG_STEPS and meta['unfillable'][str(meta['num_neg'])] == 0
     assert meta['positions'] is None and meta['reflexive_ids'] == sorted(queries.reflexive)
     assert meta['reflexive'] == sorted(graph.relations[r] for r in queries.reflexive)
     assert (meta['batch_size'], meta['entity_chunk'], meta['eval_chunk']) == kgpfn.settings(graph.num_entities) and meta['dump']
-    assert meta['pins'] == kgpfn.external_pins('kgpfn') and meta['sha256']['train.txt'] == entry.sha256['train']
+    assert meta['sha256']['train.txt'] == entry.sha256['train']
     for s in mf.SPLITS:
         assert (work / 'stage' / f'{s}.txt').read_bytes() == (folder / f'{s}.txt').read_bytes()
         # the worker's parse (a tab split) hashes as the host's
@@ -105,7 +105,7 @@ def test_worker_ranks_equal_the_benchmark_ranker_and_verify(tmp_path):
              for p in range(len(queries.facts)) for head in (False, True)}
     expected, to_worker = worker_ranks(graph, queries, lambda p, head: table[p, head])
     work = tmp_path / 'work'
-    kgpfn.prepare(fake_setup(tmp_path), entry, graph, queries, work, folder)
+    kgpfn.prepare(entry, graph, queries, work, folder)
     keys = sorted(table)
     scores = np.stack([table[q].numpy() for q in keys])   # columns in the benchmark's ids: permute to the worker's
     worker_scores = np.zeros_like(scores)
@@ -127,7 +127,7 @@ def test_worker_ranks_equal_the_benchmark_ranker_and_verify(tmp_path):
 def test_rows_and_outputs_are_checked(tmp_path):
     _, entry, graph, queries, folder = tiny(tmp_path, entities=200)
     work = tmp_path / 'work'
-    kgpfn.prepare(fake_setup(tmp_path), entry, graph, queries, work, folder)
+    kgpfn.prepare(entry, graph, queries, work, folder)
     n = len(queries.facts)
     raw = {key: [1] * n for key in ('tail_rank', 'head_rank', 'tail_rank_rule', 'head_rank_rule')}
     assert len(kgpfn.rows_of(raw, queries)) == 2 * n
@@ -223,7 +223,7 @@ def test_worker_parse_and_entity_order(tmp_path):
 
 
 FAKE_WORKER = '''"""A stand-in of the KGPFN worker. FAKE_KGPFN_OOM=first: CUDA out of memory (exit code 3) at the meta's batch; always: at every
-batch. Else a complete output with rank 1 for every query."""
+batch. Else a complete output with rank 1 for every query, which reports the files of FAKE_KGPFN_IMPORTED (JSON) as loaded."""
 import argparse
 import hashlib
 import json
@@ -235,7 +235,7 @@ parser = argparse.ArgumentParser()
 for option in ('--meta', '--out', '--batch-size', '--entity-chunk', '--eval-chunk', '--num-neg'):
     parser.add_argument(option)
 a, _ = parser.parse_known_args()
-meta, oom = json.loads(Path(a.meta).read_text()), os.environ.get('FAKE_KGPFN_OOM')
+meta, oom, imported = json.loads(Path(a.meta).read_text()), os.environ.get('FAKE_KGPFN_OOM'), json.loads(os.environ['FAKE_KGPFN_IMPORTED'])
 if oom == 'always' or (oom == 'first' and int(a.batch_size) == meta['batch_size']):
     Path(a.out).with_name('raw.error.json').write_text(json.dumps(dict(status='oom', batch_size=int(a.batch_size))))
     sys.exit(3)
@@ -245,7 +245,7 @@ settings = dict(batch_size=int(a.batch_size), entity_chunk_size=int(a.entity_chu
 Path(a.out).write_text(json.dumps(dict(
     status='complete', context_mode='blind', seed=0, settings=settings, counts=dict(nonfinite_rows=0), rank_mismatches_vs_native=0,
     queries_with_target_tie=0, strict_load=dict(missing=[], shape_mismatch=[], value_mismatch=[], unexpected=[]), times=dict(total_s=1.5),
-    gpu=dict(name='stand-in'), provenance=dict(imported=meta['pins']['imported']), tail_rank=ranks, head_rank=ranks, tail_rank_rule=ranks,
+    gpu=dict(name='stand-in'), provenance=dict(imported=imported), tail_rank=ranks, head_rank=ranks, tail_rank_rule=ranks,
     head_rank_rule=ranks)))
 '''
 
@@ -256,6 +256,7 @@ def test_the_worker_retries_after_cuda_out_of_memory_and_the_rows_follow(tmp_pat
     system = kgpfn.KGPFN(code=tmp_path / 'KGPFN', checkpoints=tmp_path / 'ckpt', python=(sys.executable, str(tmp_path / 'worker.py')),
                          pins=kgpfn.external_pins('kgpfn'))
     monkeypatch.setattr(kgpfn, 'DUMP_LIMIT', 0)   # the stand-in dumps no scores, so nothing to verify
+    monkeypatch.setenv('FAKE_KGPFN_IMPORTED', json.dumps(dict(system.pins['imported'])))
     monkeypatch.setenv('FAKE_KGPFN_OOM', 'first')
     assert kgpfn.evaluate_graph(manifest, entry, tmp_path / 'rows', system, root=tmp_path) == 'done'
     doc = json.loads(ev.row_file_path(tmp_path / 'rows', entry, ['kgpfn']).read_text())
@@ -281,6 +282,7 @@ def test_relative_paths_through_the_command_line(tmp_path, monkeypatch):
     manifest = mf.read_manifest(write_manifest(tmp_path / 'tiny.json', tmp_path, {'g': tiny_graph(tmp_path / 'KGs' / 'g', entities=200)}))
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr(kgpfn, 'DUMP_LIMIT', 0)   # the stand-in dumps no scores, so nothing to verify
+    monkeypatch.setenv('FAKE_KGPFN_IMPORTED', json.dumps(json.loads(models.read_text())['external']['kgpfn']['imported']))
     assert cli.main(['adapter', 'kgpfn', '--set', 'tiny.json', '--data-root', '.', '--out', 'rows', '--code', 'KGPFN', '--checkpoints', 'ckpt',
                      '--python', './python', '--models', 'models.json']) == 0
     doc = json.loads(ev.row_file_path(tmp_path / 'rows', manifest.entry('g'), ['kgpfn']).read_text())

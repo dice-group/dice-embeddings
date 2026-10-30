@@ -294,19 +294,18 @@ def identity_of(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries
     """A digest of what a part file's rows depend on: graph, sample, systems and model hashes."""
     value = dict(manifest=manifest.name, key=entry.key, hashes=graph.hashes, positions=queries.positions, keys=row_keys(systems),
                  models={s.key: s.model_sha256() for s in systems}, specs={s.key: s.spec() for s in systems})
-    return json_sha256(value, compact=False)
+    return json_sha256(value)
 
 
 # --------------------------------------------------------------------------------------------------------- runner
 
 def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[System], out: PathLike, *, root: PathLike = REPO,
                    device: Union[str, torch.device] = 'cuda', shard: tuple[int, int] = (1, 1), parts: bool = False,
-                   save_minutes: float = 10.0, max_minutes: float = 0.0, threads: int = THREADS,
-                   extra: Optional[Mapping[str, Any]] = None) -> str:
+                   save_minutes: float = 10.0, max_minutes: float = 0.0, extra: Optional[Mapping[str, Any]] = None) -> str:
     """Evaluate one graph with the systems and write its row file (or one shard's part file).
 
-    Runs under ``deterministic_execution`` with ``threads`` CPU threads; both are restored afterwards. On CUDA,
-    ``CUBLAS_WORKSPACE_CONFIG`` must be set before CUDA starts.
+    Runs under ``deterministic_execution`` with ``THREADS`` CPU threads, the protocol's; both are restored afterwards. On
+    CUDA, ``CUBLAS_WORKSPACE_CONFIG`` must be set before CUDA starts.
 
     Args:
         manifest: The graph set.
@@ -319,7 +318,6 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
         parts: Store a part file (and resume from it) also for an unsharded run.
         save_minutes: Interval of the part file.
         max_minutes: Save and stop after this time (0: no limit).
-        threads: CPU threads.
         extra: Further entries of the row file (an adapter's record, ``write_row_file``).
 
     Returns:
@@ -344,7 +342,7 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
     if device.type == 'cuda':
         require_cublas_workspace()
     began = time.monotonic()
-    with deterministic_execution(), torch_threads(threads):
+    with deterministic_execution(), torch_threads(THREADS):
         graph = load_graph(manifest, entry, root)
         queries = prepare_queries(graph, manifest.sample_rule)
         if not 1 <= i <= k <= max(1, len(queries.groups)):

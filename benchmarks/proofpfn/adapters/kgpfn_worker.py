@@ -177,7 +177,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     p.add_argument('--graph-dir', type=Path, required=True, help='the staged train.txt, valid.txt and test.txt')
     p.add_argument('--name', required=True, help='the graph name (KGPFN dataset name)')
-    p.add_argument('--meta', type=Path, required=True, help="the host's meta.json (positions, reflexive, parse and file pins)")
+    p.add_argument('--meta', type=Path, required=True, help="the host's meta.json (positions, reflexive relations, parse and file hashes)")
     p.add_argument('--code', type=Path, required=True, help='the KGPFN code folder')
     p.add_argument('--checkpoints', type=Path, required=True, help='the folder of kgpfn_icl_3g.pth and the TabICL checkpoint')
     p.add_argument('--work', type=Path, required=True, help='a writable folder (the TabICL yaml)')

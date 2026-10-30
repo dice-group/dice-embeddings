@@ -7,7 +7,7 @@ Host side of the research runners ``kgpfn-ref-v1-runtime/kgpfn_ag.py`` (prepare,
 
 1. Prepare: the context negatives are KGPFN's 80, else the largest of 40 and 20 that fills the context of every ranked
    query (``unfillable``). Batch, NBFNet head chunk and candidate chunk follow the entity count (``settings``, memory
-   only). The split files go to ``stage/`` with ``meta.json`` (positions, open relations, parse hashes, pins).
+   only). The split files go to ``stage/`` with ``meta.json`` (positions, open relations, parse and file hashes).
 2. Run: the worker, and after CUDA out of memory (exit 3) once more with half the batch. The batch changes the context
    draws, so the record keeps the attempts.
 3. Verify (entities x ranked facts up to 2.5 million): both views of the dumped scores, ranked by the benchmark's ranker,
@@ -168,7 +168,7 @@ def parse_sha256(folder: Path) -> dict[str, str]:
     return {s: hashlib.sha256('\n'.join('\t'.join(t) for t in read_triples(folder / f'{s}.txt')).encode('utf-8')).hexdigest() for s in SPLITS}
 
 
-def prepare(system: KGPFN, entry: GraphEntry, graph: GraphData, queries: Queries, folder: Path, source: Path) -> dict[str, Any]:
+def prepare(entry: GraphEntry, graph: GraphData, queries: Queries, folder: Path, source: Path) -> dict[str, Any]:
     """Stage the split files and write ``meta.json`` for the worker; returns the meta.
 
     Raises:
@@ -191,7 +191,7 @@ def prepare(system: KGPFN, entry: GraphEntry, graph: GraphData, queries: Queries
                 parse_sha256=parse_sha256(source), num_neg=fill[0], unfillable={str(k): v for k, v in counts.items()}, batch_size=batch,
                 entity_chunk=heads, eval_chunk=candidates, dump=graph.num_entities * len(queries.facts) <= DUMP_LIMIT,
                 entities=graph.num_entities, relations=graph.num_relations, test_rows=queries.test_rows, ranked_facts=len(queries.facts),
-                sha256={f'{s}.txt': graph.hashes[f'{s}.txt'] for s in SPLITS}, pins=dict(system.pins), prepared=time.strftime('%Y-%m-%d %H:%M:%S'))
+                sha256={f'{s}.txt': graph.hashes[f'{s}.txt'] for s in SPLITS}, prepared=time.strftime('%Y-%m-%d %H:%M:%S'))
     (folder / 'meta.json').write_text(json.dumps(meta))
     return meta
 
@@ -343,7 +343,7 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, system:
     queries = prepare_queries(graph, manifest.sample_rule)
     folder = work_folder(work, out, KEY, entry)
     folder.mkdir(parents=True, exist_ok=True)
-    meta = prepare(system, entry, graph, queries, folder, manifest.folder(entry, root))
+    meta = prepare(entry, graph, queries, folder, manifest.folder(entry, root))
     code, attempts = run_worker(system, entry, folder, meta)
     if code != 0:
         oom = folder / 'raw.error.json'

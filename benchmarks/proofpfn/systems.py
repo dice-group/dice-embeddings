@@ -18,7 +18,6 @@ A system has a ``key``, ``labels`` (its models as (key, seed)), ``check``, ``que
 Every model is built on the CPU with the global random state restored, in evaluation mode without gradients. The
 evaluation attaches the inference graph with ``attach``.
 """
-import logging
 import math
 import string
 from dataclasses import dataclass, field
@@ -37,8 +36,6 @@ from dicee.synthetic_kg.checkpoint import RESEARCH_ARM, CheckpointError, model_f
 
 from .data import GraphData, inference_stats
 from .manifests import REPO, FamilyPins, GraphEntry, InputError, ModelPins, file_sha256
-
-logger = logging.getLogger(__name__)
 
 CHECKPOINTS = REPO / 'checkpoints'
 FLOCK_SEED = 42
