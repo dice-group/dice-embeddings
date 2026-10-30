@@ -7,6 +7,8 @@ Modules:
     digests: the digest rules of the golden references.
     priors: the prior configuration, the world order of a run and the world of an order slot.
     arms: the seven arm presets and their initial weights.
+    prepare: the worker preparation of a world for an update (graph, relation graph, targets, context masks).
+    pretraining: the pretraining loop, its update, exports, training states and resume.
     checkpoint: the checkpoint format, its loader and the converter of research exports.
     determinism: deterministic execution for pretraining and evaluation.
 
