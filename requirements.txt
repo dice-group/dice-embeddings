@@ -9,6 +9,7 @@ pandas>=2.1.0
 
 # Optional dependencies
 polars>=0.16.14
+# PyArrow 26 requires NumPy 2.x; keep compatible with our NumPy 1.26 pin before Python 3.13.
 pyarrow>=11.0.0,<26; python_version < '3.13'
 pyarrow>=11.0.0; python_version >= '3.13'
 rdflib>=7.0.0

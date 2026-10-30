@@ -168,6 +168,11 @@ def sanity_check_callback_args(args):
         args.swa_start_epoch = args.swa_start_epoch or 1
         assert args.swa_start_epoch > 0, "SWA Start Epoch must be greater than 0"
 
+    # ASWA is reported broken with TP and multi-GPU PL (#323)
+    if args.adaptive_swa and (args.trainer == "TP" or (args.trainer == "PL" and gpu_count >= 2)):
+        raise ValueError("adaptive_swa is not supported with the TP trainer or the PL trainer on multiple GPUs. "
+                         "Use a single GPU (e.g. CUDA_VISIBLE_DEVICES=0) or another trainer.")
+
     # TWA/SWAG trainer compatibility
     if any([args.twa, args.swag]) and args.trainer in {"TP", "torchDDP", "torchFSDP"}:
         raise NotImplementedError("TWA and SWAG are not supported with TP, torchDDP, or torchFSDP trainers.")
