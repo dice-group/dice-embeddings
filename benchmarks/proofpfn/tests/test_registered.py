@@ -1,15 +1,21 @@
 """The six registered analysis files: their freeze anchors, their frozen fast checks, the registered chain (golden G8)
 and, on request, their simulations. The files run in subprocesses only (``conftest.py`` keeps pytest from importing them).
+
+The frozen ``fv1_analysis.py`` refuses any environment other than the registered one (``REGISTERED_ENV``: Python 3.12.2
+with numpy 1.26.4), so its checks, the chain and the simulations skip elsewhere. The table checks, the anchors and the
+pins run everywhere.
 """
 import gzip
 import hashlib
 import json
 import os
+import platform
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 from benchmarks.proofpfn.evaluate import write_json
@@ -24,6 +30,8 @@ ANCHORS = {'fv1_analysis.py': 'eb6af63af900a9967b84f2d3c60ef07e48fd2929a75de90a5
            'test_fv1_tables.py': '43dde76e06b9b19a938fa91c8742e2d5749edafefa4e2c92e70ce00670bf045e',
            'fv1_drops.py': '3ca0e50d75af33604e83779b8dc9caa9e91338ab0f28e525555aa257b6eea014',
            'fv1_devrows.py': '6af5c62d07dfdd50d948d81f852d23a697caf1ab35e0a20a99adde6440a2538a'}
+REGISTERED_ENVIRONMENT = pytest.mark.skipif((platform.python_version(), np.__version__) != ('3.12.2', '1.26.4'),
+                                            reason='the registered analysis refuses other environments (registration, section 16)')
 
 
 def python(*args: str, cwd: Path = REGISTERED, timeout: float = 1200) -> subprocess.CompletedProcess:
@@ -57,13 +65,17 @@ def test_registered_systems_have_the_keys_of_the_model_pins():
         assert f"('{key}', (0,))" in analysis
 
 
-def test_frozen_fast_checks(tmp_path):
-    analysis = frozen('test_fv1_analysis.py')
-    assert analysis.returncode == 0, analysis.stdout[-3000:] + analysis.stderr[-3000:]
-    assert analysis.stdout.strip().splitlines()[-1].startswith('0 failed checks, 0 documented limitations exceeded')
+def test_frozen_table_checks(tmp_path):
     tables = frozen('test_fv1_tables.py', '--tmp', str(tmp_path))
     assert tables.returncode == 0, tables.stdout[-3000:] + tables.stderr[-3000:]
     assert tables.stdout.strip().splitlines()[-1].startswith('PASS all checks')
+
+
+@REGISTERED_ENVIRONMENT
+def test_frozen_analysis_checks():
+    analysis = frozen('test_fv1_analysis.py')
+    assert analysis.returncode == 0, analysis.stdout[-3000:] + analysis.stderr[-3000:]
+    assert analysis.stdout.strip().splitlines()[-1].startswith('0 failed checks, 0 documented limitations exceeded')
 
 
 def tree_digests(root: Path) -> dict[str, str]:
@@ -71,6 +83,7 @@ def tree_digests(root: Path) -> dict[str, str]:
 
 
 @pytest.mark.slow
+@REGISTERED_ENVIRONMENT
 def test_registered_chain_reproduces_golden_g8(tmp_path):
     """Simulated rows -> the registered fv1_tables.py -> the registered fv1_analysis.py, byte for byte as golden G8."""
     case = tmp_path / 'expected'
@@ -95,6 +108,7 @@ def test_registered_chain_reproduces_golden_g8(tmp_path):
 
 
 @pytest.mark.simulate
+@REGISTERED_ENVIRONMENT
 @pytest.mark.skipif(os.environ.get('PROOFPFN_SIMULATE') != '1', reason='the frozen simulations take about 9 minutes; set PROOFPFN_SIMULATE=1')
 def test_frozen_simulations():
     result = frozen('test_fv1_analysis.py', '--simulate', timeout=3600)

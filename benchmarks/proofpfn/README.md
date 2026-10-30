@@ -193,7 +193,9 @@ GPU and goldens are present. Goldens (`tests/golden/README.md`):
 | MERIT check ranks | the raw ranks of the five systems on two graphs equal `merit-ref-v1/check` | `$MERIT_HOME`, `$MERIT_PYTHON`, an H100 NVL |
 
 `PROOFPFN_GOLDEN` names the proofpfn-golden folder with the large goldens; tests that need them skip without it. The
-goldens hold for Python 3.12.2, torch 2.5.1, numpy 1.26.4 and scipy 1.13.0.
+goldens hold for Python 3.12.2, torch 2.5.1, numpy 1.26.4 and scipy 1.13.0. The registered `fv1_analysis.py` refuses
+every other Python and numpy version, so its fast checks, G8 and its simulations skip there. The table checks, the
+anchors and the pins run everywhere.
 
 ## Not here
 
