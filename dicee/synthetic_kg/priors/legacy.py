@@ -308,12 +308,11 @@ def _rule_batches(world: RuleWorld, index: int, joint_exclusion: bool) -> dict[s
         ValueError: For a short pool, or a context without facts.
     """
     total = QUERIES
+    _check_pools(world)
     pools = _pools(world)
     result = {}
     for task, (count, tails) in task_quotas(index, total).items():
         pool = pools[task]
-        if len(pool) < total:
-            raise ValueError(f'{task}: {len(pool)} observed targets; require {total}; no resampling')
         sampling_seed = joint_world_stream(world.seed, f'sample:{task}')
         rng = random.Random(sampling_seed)
         groups, directions = sample_groups(rng.sample(pool, total), world.truth, world.n, NEGATIVES, rng)
