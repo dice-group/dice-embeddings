@@ -1,5 +1,6 @@
 """The command line: family options, list, check, run and cells on a tiny graph set, the refusals of wrong input with
 one error line, the traceback of an internal error, and fv1-models."""
+import argparse
 import json
 import os
 
@@ -19,6 +20,18 @@ def test_family_options():
     for bad in ('S', 'X:/x/{seed}.pt'):
         with pytest.raises(ValueError):
             cli.parse_family(bad, pins)
+
+
+def test_every_command_and_option_has_a_help_text(capsys):
+    parser = cli.build_parser()
+    commands = next(a for a in parser._actions if isinstance(a, argparse._SubParsersAction))
+    assert [a.dest for a in commands._choices_actions] == list(cli.COMMANDS)   # the commands of the top-level --help
+    for name, sub in commands.choices.items():
+        assert all(action.help for action in sub._actions), name
+    with pytest.raises(SystemExit):
+        cli.main(['--help'])
+    text = capsys.readouterr().out
+    assert all(f'    {name} ' in text for name in cli.COMMANDS)
 
 
 def test_list(capsys):

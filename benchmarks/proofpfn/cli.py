@@ -1,13 +1,4 @@
-"""Command line of the ProofPFN benchmark: ``python -m benchmarks.proofpfn <command>``.
-
-Commands:
-    list        the graphs of a manifest view
-    check       CPU only: the graphs' hash checks and counts, and the systems' files and pins; no score
-    run         rank the graphs with the systems and write one row file per graph (``evaluate.evaluate_graph``)
-    cells       the query cells of the graphs (``queries.csv``, ``cells.write_queries``)
-    gate        the N validity gate of amendment A1: S and N on held-out worlds of the prior (``gate.gate``)
-    fv1-models  the ``--models`` file of the registered ``fv1_tables.py`` from ``models.json``
-    adapter     an external baseline (``kgpfn``, ``merit``, ``anyburl``) on the graphs: one row file per graph (``adapters``)
+"""Command line of the ProofPFN benchmark: ``python -m benchmarks.proofpfn <command>`` (the commands: ``COMMANDS``, ``--help``).
 
 A family is ``--family [KEY=]ARM:TEMPLATE``: ARM is S, R, M, N, HT, CU or UL; TEMPLATE is the checkpoint or research
 export path with ``{seed}`` (seeds 42, 43, 44); KEY defaults to the arm's registered key, whose pins every file must
@@ -35,6 +26,15 @@ logger = logging.getLogger(__name__)
 EXIT_INPUT, EXIT_OOM, EXIT_PARTIAL, EXIT_TERM = 2, 3, 76, 143
 EXIT_FAILED = EXIT_OOM   # a graph failed in an adapter's external step
 ADAPTERS = ('kgpfn', 'merit', 'anyburl')
+COMMANDS = {
+    'list': 'the graphs of a manifest view',
+    'check': "CPU only: the graphs' hash checks and counts, and the systems' files and pins; no score",
+    'run': 'rank the graphs with the systems and write one row file per graph (evaluate.evaluate_graph)',
+    'cells': 'the query cells of the graphs: queries.csv and its .meta.json (cells.write_queries)',
+    'gate': 'the N validity gate of amendment A1: S and N on held-out worlds of the prior (gate.gate)',
+    'fv1-models': 'the --models file of the registered fv1_tables.py, from manifests/models.json',
+    'adapter': 'an external baseline (kgpfn, merit, anyburl) on the graphs: one row file per graph (adapters)',
+}
 
 
 class UsageError(InputError):
@@ -58,52 +58,50 @@ def parse_family(spec: str, models: Any) -> tuple[str, str, str]:
     return key, arm, template
 
 
+def _graph_options(sub: argparse.ArgumentParser) -> None:
+    """The options that select the graphs of a manifest."""
+    sub.add_argument('--set', required=True, help='a manifest name (dev121, t1, gate) or a manifest file')
+    sub.add_argument('--view', default=None, help='a view of the manifest (dev121: main, contamination, apart; default: all)')
+    sub.add_argument('--graphs', default=None, help='comma list of graph names or keys')
+    sub.add_argument('--codes', default=None, help='comma list of audit group codes (E, L, B, S, O, R, C, T)')
+    sub.add_argument('--release', default=None, help='the name of the blind test set that this run may open')
+    sub.add_argument('--data-root', type=Path, default=REPO, help='the folder that the manifest paths are relative to (default: the repository)')
+
+
 def build_parser() -> argparse.ArgumentParser:
     """The argument parser of the commands."""
-    parser = argparse.ArgumentParser(prog='python -m benchmarks.proofpfn', description=__doc__.split('\n')[0])
+    parser = argparse.ArgumentParser(prog='python -m benchmarks.proofpfn', description='Zero-shot link prediction on frozen graph sets (README.md).')
     commands = parser.add_subparsers(dest='command', required=True)
-    for name in ('list', 'check', 'run', 'cells'):
-        sub = commands.add_parser(name)
-        sub.add_argument('--set', required=True, help='a manifest name (dev121, t1, gate) or a manifest file')
-        sub.add_argument('--view', default=None, help='a view of the manifest (dev121: main, contamination, apart, all)')
-        sub.add_argument('--graphs', default=None, help='comma list of graph names or keys')
-        sub.add_argument('--codes', default=None, help='comma list of audit group codes (E, L, B, S, O, R, C, T)')
-        sub.add_argument('--release', default=None, help='the name of the blind test set that this run may open')
-        sub.add_argument('--data-root', type=Path, default=REPO, help='the folder that the manifest paths are relative to')
-        if name in ('check', 'run'):
-            sub.add_argument('--family', action='append', default=[], help='[KEY=]ARM:TEMPLATE with {seed}; repeat for more families')
-            sub.add_argument('--references', default='', help='comma list of trix, ultra3g, flockoff')
-            sub.add_argument('--checkpoint-root', type=Path, default=REPO / 'checkpoints')
-            sub.add_argument('--models', type=Path, default=None, help='the model pins (default: manifests/models.json)')
-            sub.add_argument('--flock-passes-in-sequence', action='store_true',
-                             help="run official Flock's passes of a query one after another, not as one microbatch")
-        if name == 'run':
-            sub.add_argument('--out', type=Path, required=True)
-            sub.add_argument('--device', default='cuda')
-            sub.add_argument('--shard', default='1/1', help='i/k: block i of k contiguous blocks of the query groups')
-            sub.add_argument('--parts', action='store_true', help='keep a part file (and resume from it) also without shards')
-            sub.add_argument('--save-minutes', type=float, default=10.0)
-            sub.add_argument('--max-minutes', type=float, default=0.0, help='save and stop after this time (0: no limit)')
-        if name == 'cells':
-            sub.add_argument('--out', type=Path, required=True, help='the queries.csv file')
-    gate = commands.add_parser('gate')
+    sub = {name: commands.add_parser(name, help=text, description=text) for name, text in COMMANDS.items()}
+    for name in ('list', 'check', 'run', 'cells', 'adapter'):
+        _graph_options(sub[name])
+    models = 'the model pins (default: manifests/models.json)'
+    for name in ('check', 'run'):
+        sub[name].add_argument('--family', action='append', default=[], help='[KEY=]ARM:TEMPLATE with {seed}; repeat for more families')
+        sub[name].add_argument('--references', default='', help='comma list of trix, ultra3g, flockoff')
+        sub[name].add_argument('--checkpoint-root', type=Path, default=REPO / 'checkpoints', help='the folder of the reference checkpoints (default: checkpoints/)')
+        sub[name].add_argument('--models', type=Path, default=None, help=models)
+        sub[name].add_argument('--flock-passes-in-sequence', action='store_true',
+                               help="run official Flock's passes of a query one after another, not as one microbatch")
+    run = sub['run']
+    run.add_argument('--out', type=Path, required=True, help='the output root of the row files')
+    run.add_argument('--device', default='cuda', help='the scoring device (default: cuda)')
+    run.add_argument('--shard', default='1/1', help='i/k: rank block i of k contiguous blocks of the query groups (default: 1/1)')
+    run.add_argument('--parts', action='store_true', help='keep a part file (and resume from it) also without shards')
+    run.add_argument('--save-minutes', type=float, default=10.0, help='minutes between two saves of a part file (default: 10)')
+    run.add_argument('--max-minutes', type=float, default=0.0, help='save and stop after this time (default: 0, no limit)')
+    sub['cells'].add_argument('--out', type=Path, required=True, help='the queries.csv file')
+    gate = sub['gate']
     gate.add_argument('--family', action='append', default=[], help='[KEY=]S:TEMPLATE and [KEY=]N:TEMPLATE, each with {seed}')
     gate.add_argument('--families', default=None, help='comma list of held-out families (default: rec1, attr2, list1, categorical2, plain)')
-    gate.add_argument('--per-family', type=int, default=100, help='held-out worlds per family (at most 100)')
-    gate.add_argument('--device', default='cuda')
-    gate.add_argument('--models', type=Path, default=None, help='the model pins (default: manifests/models.json)')
+    gate.add_argument('--per-family', type=int, default=100, help='held-out worlds per family (default and maximum: 100)')
+    gate.add_argument('--device', default='cuda', help='the scoring device (default: cuda)')
+    gate.add_argument('--models', type=Path, default=None, help=models)
     gate.add_argument('--out', type=Path, required=True, help='the result file (JSON)')
-    fv1 = commands.add_parser('fv1-models')
-    fv1.add_argument('--models', type=Path, default=None)
-    fv1.add_argument('--out', type=Path, required=True)
-    adapter = commands.add_parser('adapter', help='run an external baseline (README, section External baselines)')
-    adapter.add_argument('name', choices=ADAPTERS)
-    adapter.add_argument('--set', required=True, help='a manifest name (dev121, t1, gate) or a manifest file')
-    adapter.add_argument('--view', default=None)
-    adapter.add_argument('--graphs', default=None, help='comma list of graph names or keys')
-    adapter.add_argument('--codes', default=None, help='comma list of audit group codes')
-    adapter.add_argument('--release', default=None, help='the name of the blind test set that this run may open')
-    adapter.add_argument('--data-root', type=Path, default=REPO, help='the folder that the manifest paths are relative to')
+    sub['fv1-models'].add_argument('--models', type=Path, default=None, help=models)
+    sub['fv1-models'].add_argument('--out', type=Path, required=True, help='the models file (JSON)')
+    adapter = sub['adapter']
+    adapter.add_argument('name', choices=ADAPTERS, help='the external baseline')
     adapter.add_argument('--out', type=Path, required=True, help='the output root of the row files')
     adapter.add_argument('--code', type=Path, default=None, help='the external code folder (default: $KGPFN_CODE, $MERIT_HOME, $ANYBURL_HOME)')
     adapter.add_argument('--work', type=Path, default=None, help='the work root (default: <out>/.work)')
@@ -112,11 +110,11 @@ def build_parser() -> argparse.ArgumentParser:
     adapter.add_argument('--python', default=None, help="kgpfn: the command that starts KGPFN's Python ($KGPFN_PYTHON); "
                                                         "merit: the Python of MERIT's environment ($MERIT_PYTHON, default: this one)")
     adapter.add_argument('--checkpoints', type=Path, default=None, help="kgpfn: the folder of KGPFN's two checkpoints ($KGPFN_CHECKPOINT_DIR)")
-    adapter.add_argument('--gpu-gb', type=float, default=0.0, help='kgpfn: cap of the CUDA allocator in GB (0: none)')
-    adapter.add_argument('--checkpoint-root', type=Path, default=REPO / 'checkpoints', help='merit: the root of merit/ckpts/merit/')
-    adapter.add_argument('--device', default='cuda', help='merit: the scoring device')
+    adapter.add_argument('--gpu-gb', type=float, default=0.0, help='kgpfn: cap of the CUDA allocator in GB (default: 0, none)')
+    adapter.add_argument('--checkpoint-root', type=Path, default=REPO / 'checkpoints', help='merit: the root of merit/ckpts/merit/ (default: checkpoints/)')
+    adapter.add_argument('--device', default='cuda', help='merit: the scoring device (default: cuda)')
     adapter.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)   # merit: this process runs in MERIT's environment
-    adapter.add_argument('--java', default='java', help='anyburl: the Java 11 executable')
+    adapter.add_argument('--java', default='java', help='anyburl: the Java 11 executable (default: java)')
     adapter.add_argument('--no-scope', action='store_true', help='anyburl: run Java without the systemd-run memory scope')
     return parser
 
