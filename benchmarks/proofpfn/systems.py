@@ -32,7 +32,7 @@ from dicee.synthetic_kg.arms import ARMS, SEEDS
 from dicee.synthetic_kg.checkpoint import FORMAT, RESEARCH_ARM, CheckpointError, check_checkpoint, from_research_export, model_from_checkpoint
 
 from .data import GraphData, inference_stats
-from .manifests import REPO, FamilyPins, GraphEntry, ModelPins, file_sha256
+from .manifests import REPO, FamilyPins, GraphEntry, InputError, ModelPins, file_sha256
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +43,8 @@ Label = tuple[str, Optional[int]]
 Model = TypeVar('Model', bound=GraphKGE)
 
 
-class SystemCheckError(ValueError):
-    """A system that cannot run: a missing file, a hash that differs from its pins, or a key of another system."""
+class SystemCheckError(InputError):
+    """A system that cannot run: a missing or invalid file, a hash that differs from its pins, or a key of another system."""
 
 
 # ------------------------------------------------------------------------------------------- Flock's official setting
@@ -234,13 +234,17 @@ class ProofPFNFamily:
         A pinned seed needs the research export of its pin, its pinned weights and update, and its own seed.
 
         Raises:
-            SystemCheckError: For a missing file, or a file that differs from the pins.
+            SystemCheckError: For a missing file, a file that is not a valid checkpoint or an inert research export of the
+                arm, or a file that differs from the pins.
         """
         for seed in SEEDS:
             path = Path(self.checkpoints[seed])
             if not path.is_file():
                 raise SystemCheckError(f'{self.key}: missing {path}')
-            member = read_member(path, self.arm)
+            try:
+                member = read_member(path, self.arm)
+            except CheckpointError as error:
+                raise SystemCheckError(f'{self.key} seed {seed}: {error}') from None
             pins, checkpoint = self.pins, member.checkpoint
             if pins is not None and pins.export_sha256 is not None:
                 problems = [text for differs, text in (

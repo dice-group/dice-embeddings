@@ -51,8 +51,12 @@ SAMPLE_RULES = {
 PathLike = Union[str, Path]
 
 
-class ManifestError(ValueError):
-    """A manifest that is malformed, or a graph that fails its hash check."""
+class InputError(ValueError):
+    """Wrong input: the command line exits with code 2 and one ``error:`` line instead of a traceback."""
+
+
+class ManifestError(InputError):
+    """A manifest that is missing or malformed, or a graph that fails its hash check."""
 
 
 class BlindSetError(PermissionError):
@@ -237,20 +241,38 @@ def read_manifest(source: PathLike, release: Optional[str] = None) -> Manifest:
 
     Raises:
         BlindSetError: For a blind manifest whose name is not ``release``.
-        ManifestError: For a malformed manifest.
+        ManifestError: For a missing or malformed manifest.
     """
     path = Path(source)
     if not path.suffix and not path.exists():
         path = MANIFESTS / f'{source}.json'
-    raw = path.read_bytes()
-    doc = json.loads(raw)
-    if not isinstance(doc, dict) or doc.get('format') != FORMAT:
-        raise ManifestError(f'{path} is not a {FORMAT} file')
+    if not path.is_file():
+        raise ManifestError(f'{source}: neither a manifest of {MANIFESTS.relative_to(REPO)} nor a manifest file')
+    doc, digest = _read_json(path, FORMAT)
     blind = bool(doc.get('blind', False))
     if blind and release != doc.get('name'):
         raise BlindSetError(f"{doc.get('name')} is a blind test set; it opens only with the release flag naming it")
-    return Manifest(name=doc['name'], blind=blind, sample_rule=doc['sample_rule'], entries=tuple(GraphEntry.from_json(g) for g in doc['graphs']),
-                    sha256=hashlib.sha256(raw).hexdigest())
+    try:
+        return Manifest(name=doc['name'], blind=blind, sample_rule=doc['sample_rule'], entries=tuple(GraphEntry.from_json(g) for g in doc['graphs']),
+                        sha256=digest)
+    except (KeyError, TypeError) as error:
+        raise ManifestError(f'{path}: a malformed manifest ({error!r})') from None
+
+
+def _read_json(path: Path, kind: str) -> tuple[dict[str, Any], str]:
+    """The JSON object of a manifest file of a format, and the file's SHA-256.
+
+    Raises:
+        ManifestError: When the file cannot be read, is not JSON or is of another format.
+    """
+    try:
+        raw = path.read_bytes()
+        doc = json.loads(raw)
+    except (OSError, ValueError) as error:   # missing, unreadable, not UTF-8 or not JSON
+        raise ManifestError(f'cannot read {path}: {error}') from None
+    if not isinstance(doc, dict) or doc.get('format') != kind:
+        raise ManifestError(f'{path} is not a {kind} file')
+    return doc, hashlib.sha256(raw).hexdigest()
 
 
 # --------------------------------------------------------------------------------------------------------- hashes
@@ -361,10 +383,12 @@ class ModelPins:
     Attributes:
         families: Arm to family pins (ported and rows-only arms).
         references: System key to reference pin.
+        external: Adapter name to the pins of its external files (``kgpfn``, ``merit``, ``anyburl``).
     """
 
     families: Mapping[str, FamilyPins]
     references: Mapping[str, ReferencePin]
+    external: Mapping[str, Mapping[str, str]]
 
     def family_of_key(self, key: str) -> Optional[FamilyPins]:
         """The family registered under a system key, or ``None``."""
@@ -388,22 +412,26 @@ def read_models(path: Optional[PathLike] = None) -> ModelPins:
     """The model pins (``manifests/models.json`` by default).
 
     Raises:
-        ManifestError: For a malformed file.
+        ManifestError: For a missing or malformed file.
     """
     path = Path(path) if path is not None else MANIFESTS / 'models.json'
-    doc = json.loads(path.read_bytes())
-    if doc.get('format') != MODELS_FORMAT:
-        raise ManifestError(f'{path} is not a {MODELS_FORMAT} file')
+    doc, _ = _read_json(path, MODELS_FORMAT)
     families = {}
-    for loadable, section in ((True, 'families'), (False, 'rows_only')):
-        for arm, item in doc[section].items():
-            pins = item['export_sha256']
-            if pins is not None and set(pins) != {str(s) for s in SEEDS}:
-                raise ManifestError(f'{path}: {arm} needs pins for the seeds {SEEDS}')
-            families[arm] = FamilyPins(arm=arm, key=item['key'], export=int(item['export']), weights=item['weights'], loadable=loadable,
-                                       export_sha256=None if pins is None else MappingProxyType({int(s): v for s, v in pins.items()}))
-    keys = [f.key for f in families.values()] + list(doc['references'])
+    try:
+        for loadable, section in ((True, 'families'), (False, 'rows_only')):
+            for arm, item in doc[section].items():
+                pins = item['export_sha256']
+                if pins is not None and set(pins) != {str(s) for s in SEEDS}:
+                    raise ManifestError(f'{path}: {arm} needs pins for the seeds {SEEDS}')
+                families[arm] = FamilyPins(arm=arm, key=item['key'], export=int(item['export']), weights=item['weights'], loadable=loadable,
+                                           export_sha256=None if pins is None else MappingProxyType({int(s): v for s, v in pins.items()}))
+        references = {key: ReferencePin(key=key, path=item.get('path'), sha256=item['sha256']) for key, item in doc['references'].items()}
+        external = {name: MappingProxyType(dict(item)) for name, item in doc.get('external', {}).items()}
+    except ManifestError:
+        raise
+    except (KeyError, TypeError, AttributeError, ValueError) as error:
+        raise ManifestError(f'{path}: malformed model pins ({error!r})') from None
+    keys = [f.key for f in families.values()] + list(references)
     if len(set(keys)) != len(keys):
         raise ManifestError(f'{path}: system keys must be unique')
-    references = {key: ReferencePin(key=key, path=item.get('path'), sha256=item['sha256']) for key, item in doc['references'].items()}
-    return ModelPins(families=MappingProxyType(families), references=MappingProxyType(references))
+    return ModelPins(families=MappingProxyType(families), references=MappingProxyType(references), external=MappingProxyType(external))

@@ -25,7 +25,6 @@ for MERIT, ``references``), and code that needs another Python environment runs 
 ``PYTHONPATH`` names the external folder. Tests that need the external code skip without it.
 """
 import hashlib
-import json
 import logging
 import os
 import platform
@@ -40,14 +39,14 @@ from dicee.evaluation._filtering import FilteredRanker
 
 from ..data import GraphData, Queries
 from ..evaluate import metrics_of, view_metrics, write_json
-from ..manifests import MANIFESTS, REPO, SAMPLE_RULES, GraphEntry, Manifest, PathLike, file_sha256
+from ..manifests import REPO, SAMPLE_RULES, GraphEntry, InputError, Manifest, PathLike, file_sha256, read_models
 
 logger = logging.getLogger(__name__)
 
 ROW_FIELDS = ('index', 'head')
 
 
-class AdapterSetupError(ValueError):
+class AdapterSetupError(InputError):
     """An adapter that cannot start: external code or runtime missing, or a file that differs from its pin."""
 
 
@@ -85,12 +84,12 @@ def external_pins(name: str, models: Optional[PathLike] = None) -> dict[str, str
 
     Raises:
         AdapterSetupError: When the section has no entry for the adapter.
+        manifests.ManifestError: For a missing or malformed file.
     """
-    path = Path(models) if models is not None else MANIFESTS / 'models.json'
-    section = json.loads(path.read_text()).get('external', {})
-    if name not in section:
-        raise AdapterSetupError(f'{path} pins no files of the {name} adapter (section external)')
-    return dict(section[name])
+    external = read_models(models).external
+    if name not in external:
+        raise AdapterSetupError(f'{models or "models.json"} pins no files of the {name} adapter (section external)')
+    return dict(external[name])
 
 
 def check_file(path: PathLike, sha256: str, what: str) -> str:

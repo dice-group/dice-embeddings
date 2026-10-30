@@ -1,10 +1,11 @@
-"""The command line: family options, list, check, run and cells on a tiny graph set, the refusals, and fv1-models."""
+"""The command line: family options, list, check, run and cells on a tiny graph set, the refusals of wrong input with
+one error line, the traceback of an internal error, and fv1-models."""
 import json
 import os
 
 import pytest
 
-from benchmarks.proofpfn import cli
+from benchmarks.proofpfn import cli, evaluate
 from benchmarks.proofpfn import manifests as mf
 
 from .golden import tiny_graph, write_graph, write_manifest
@@ -51,7 +52,21 @@ def test_refusals(tmp_path, capsys):
     for family in (f'HT:{template}', f'rec10axlepcunoa=CU:{template}'):   # S checkpoints under HT's pins; the key of another arm
         assert cli.main(['check', '--set', 'gate', '--graphs', 'UMLS', '--family', family]) == cli.EXIT_INPUT
     assert cli.main(['check', '--set', 'gate', '--graphs', 'UMLS', '--family', f'S:{template}']) == cli.EXIT_INPUT   # not the pinned exports
-    assert 'error:' in capsys.readouterr().err
+    capsys.readouterr()
+    for command in (['list', '--set', 'nosuch'], ['check', '--set', 'gate', '--references', 'trix', '--models', str(tmp_path / 'none.json')],
+                    ['run', '--set', 'gate', '--references', 'trix', '--shard', '1-2', '--out', str(tmp_path / 'rows')],
+                    ['gate', '--family', f'gs=S:{template}', '--family', f'gn=N:{template}', '--per-family', '101', '--out', str(tmp_path / 'g.json')]):
+        assert cli.main(command) == cli.EXIT_INPUT, command
+        error = capsys.readouterr().err
+        assert error.startswith('error: ') and error.count('\n') == 1, (command, error)   # one line, no traceback
+
+
+def test_internal_errors_keep_their_traceback(tmp_path, monkeypatch):
+    def broken(*args: object, **kwargs: object) -> str:
+        raise ValueError('an internal error')
+    monkeypatch.setattr(evaluate, 'evaluate_graph', broken)
+    with pytest.raises(ValueError, match='an internal error'):
+        cli.main(['run', '--set', 'gate', '--graphs', 'UMLS', '--references', 'trix', '--device', 'cpu', '--out', str(tmp_path)])
 
 
 def test_fv1_models(tmp_path):

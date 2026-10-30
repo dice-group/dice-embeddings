@@ -55,7 +55,7 @@ from dicee.synthetic_kg.determinism import THREADS, deterministic_execution, req
 from dicee.synthetic_kg.digests import json_sha256
 
 from .data import GraphData, Queries, load_graph, prepare_queries
-from .manifests import REPO, SAMPLE_RULES, GraphEntry, Manifest, PathLike, file_sha256
+from .manifests import REPO, SAMPLE_RULES, GraphEntry, InputError, Manifest, PathLike, file_sha256
 from .systems import Label, OfficialFlock, ProofPFNFamily, System, attach, build_models, official_setting
 
 logger = logging.getLogger(__name__)
@@ -271,6 +271,8 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
 
     Raises:
         manifests.ManifestError: When the graph fails its hash check.
+        manifests.InputError: For systems with the same key, a shard outside the query groups, or a part file of another
+            run.
         systems.SystemCheckError: When a system cannot run on the graph.
     """
     device = torch.device(device)
@@ -280,7 +282,7 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
         return 'exists'
     keys = [s.key for s in systems]
     if len(set(keys)) != len(keys):
-        raise ValueError(f'system keys must be unique: {keys}')
+        raise InputError(f'system keys must be unique: {keys}')
     i, k = shard
     if device.type == 'cuda':
         require_cublas_workspace()
@@ -289,7 +291,7 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
         graph = load_graph(manifest, entry, root)
         queries = prepare_queries(graph, manifest.sample_rule)
         if not 1 <= i <= k <= max(1, len(queries.groups)):
-            raise ValueError(f'{entry.name}: shard {i}/{k} for {len(queries.groups)} query groups')
+            raise InputError(f'{entry.name}: shard {i}/{k} for {len(queries.groups)} query groups')
         for system in systems:   # a family reads its files once; a reference checks its file for every graph
             if not isinstance(system, ProofPFNFamily) or set(system.members) != set(SEEDS):
                 system.check()
@@ -356,7 +358,7 @@ def _read_part(path: Path, entry: GraphEntry, keys: list[str], shard: tuple[int,
     expected = (PART_FORMAT, entry.name, keys, list(shard), groups, list(block), identity)
     if (part.get('format'), part.get('dataset'), part.get('keys'), part.get('shard'), part.get('groups_total'), part.get('block'),
             part.get('identity')) != expected:
-        raise ValueError(f'{path} is a part of another run or shard layout')
+        raise InputError(f'{path} is a part of another run or shard layout')
     return part
 
 

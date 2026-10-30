@@ -35,9 +35,11 @@ def test_external_folder_and_pins(tmp_path):
     pins = {name: adapters.external_pins(name) for name in cli.ADAPTERS}
     assert set(pins['kgpfn']) >= {'code_commit', kgpfn.CHECKPOINT, 'tabicl'} and set(pins['anyburl']) >= {anyburl.JAR, anyburl.SOURCES}
     assert set(pins['merit']) >= {'code_commit', 'kgfm/models/merit.py', 'kgfm/tasks.py'}
-    (tmp_path / 'models.json').write_text(json.dumps(dict(external={})))
+    (tmp_path / 'models.json').write_text(json.dumps(dict(json.loads((mf.MANIFESTS / 'models.json').read_text()), external={})))
     with pytest.raises(AdapterSetupError, match='pins no files'):
         adapters.external_pins('kgpfn', tmp_path / 'models.json')
+    with pytest.raises(mf.ManifestError, match='cannot read'):
+        adapters.external_pins('kgpfn', tmp_path / 'missing.json')
 
 
 def test_file_and_commit_checks(tmp_path):

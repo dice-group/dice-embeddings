@@ -28,7 +28,7 @@ import sys
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
-from .manifests import REPO, BlindSetError, ManifestError, read_manifest, read_models
+from .manifests import REPO, BlindSetError, InputError, read_manifest, read_models
 
 logger = logging.getLogger(__name__)
 EXIT_INPUT, EXIT_OOM, EXIT_PARTIAL, EXIT_TERM = 2, 3, 76, 143
@@ -36,19 +36,23 @@ EXIT_FAILED = EXIT_OOM   # a graph failed in an adapter's external step
 ADAPTERS = ('kgpfn', 'merit', 'anyburl')
 
 
+class UsageError(InputError):
+    """A command line option that is malformed or that does not fit the command."""
+
+
 def parse_family(spec: str, models: Any) -> tuple[str, str, str]:
     """``(key, arm, template)`` of a ``[KEY=]ARM:TEMPLATE`` option; the key defaults to the arm's registered key.
 
     Raises:
-        ValueError: For a malformed option or an arm without a registered key.
+        UsageError: For a malformed option or an arm without a registered key.
     """
     key, rest = spec.split('=', 1) if '=' in spec.split(':', 1)[0] else ('', spec)
     if ':' not in rest:
-        raise ValueError(f'--family {spec!r}: expected [KEY=]ARM:TEMPLATE')
+        raise UsageError(f'--family {spec!r}: expected [KEY=]ARM:TEMPLATE')
     arm, template = rest.split(':', 1)
     if not key:
         if arm not in models.families:
-            raise ValueError(f'--family {spec!r}: arm {arm!r} has no registered key')
+            raise UsageError(f'--family {spec!r}: arm {arm!r} has no registered key')
         key = models.families[arm].key
     return key, arm, template
 
@@ -120,7 +124,10 @@ def _entries(args: argparse.Namespace) -> tuple[Any, list[Any]]:
     manifest = read_manifest(args.set, release=args.release)
     graphs = [g for g in args.graphs.split(',') if g] if args.graphs else None
     codes = args.codes.split(',') if args.codes else None
-    return manifest, manifest.select(view=args.view or (None if graphs else 'all'), graphs=graphs, codes=codes)
+    try:
+        return manifest, manifest.select(view=args.view or (None if graphs else 'all'), graphs=graphs, codes=codes)
+    except KeyError as error:   # a graph or view that the manifest does not hold
+        raise UsageError(error.args[0]) from None
 
 
 def _systems(args: argparse.Namespace) -> list[Any]:
@@ -130,7 +137,7 @@ def _systems(args: argparse.Namespace) -> list[Any]:
     systems += [reference(key, models, args.checkpoint_root, one_microbatch=not args.flock_passes_in_sequence)
                 for key in args.references.split(',') if key]
     if not systems:
-        raise ValueError('give at least one --family or --references')
+        raise UsageError('give at least one --family or --references')
     return systems
 
 
@@ -156,9 +163,9 @@ def _run(args: argparse.Namespace) -> int:
     from .evaluate import error_path, evaluate_graph, row_file_path, write_json
     manifest, entries = _entries(args)
     systems = _systems(args)
-    shard = tuple(int(x) for x in args.shard.split('/'))
-    if len(shard) != 2:
-        raise ValueError(f'--shard {args.shard!r}: expected i/k')
+    shard = tuple(int(x) for x in args.shard.split('/') if x.isdigit())
+    if len(shard) != 2 or args.shard.count('/') != 1:
+        raise UsageError(f'--shard {args.shard!r}: expected i/k')
     statuses = {}
     for entry in entries:
         try:
@@ -224,13 +231,16 @@ def _adapter(args: argparse.Namespace, argv: Sequence[str]) -> int:
 def _gate(args: argparse.Namespace) -> int:
     from dicee.synthetic_kg.checkpoint import atomic_write_bytes
 
-    from .gate import FAMILIES, gate
+    from .gate import FAMILIES, PER_FAMILY, gate
     from .systems import family
     models = read_models(args.models)
     systems = {arm: family(key, arm, template, models) for key, arm, template in (parse_family(spec, models) for spec in args.family)}
     if len(args.family) != 2 or set(systems) != {'S', 'N'}:
-        raise ValueError('the gate needs one --family of arm S and one of arm N')
-    record = gate(systems['S'], systems['N'], args.families.split(',') if args.families else FAMILIES, args.per_family, args.device)
+        raise UsageError('the gate needs one --family of arm S and one of arm N')
+    families = args.families.split(',') if args.families else FAMILIES
+    if not set(families) <= set(FAMILIES) or not 1 <= args.per_family <= PER_FAMILY:
+        raise UsageError(f'the gate has 1 to {PER_FAMILY} held-out worlds (--per-family) of each of the families {FAMILIES}')
+    record = gate(systems['S'], systems['N'], families, args.per_family, args.device)
     atomic_write_bytes(args.out, (json.dumps(record, indent=1) + '\n').encode())
     print('| family | worlds | MRR S | MRR N | D = S - N | SE | reading |')
     for name, value in record['results'].items():
@@ -266,7 +276,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
         commands = dict(check=_check, cells=_cells)
         commands['fv1-models'] = _fv1_models
         return commands[args.command](args)
-    except (ManifestError, BlindSetError, KeyError, ValueError) as error:
+    except (InputError, BlindSetError) as error:
         print(f'error: {error}', file=sys.stderr)
         return EXIT_INPUT
     finally:
