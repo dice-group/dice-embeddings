@@ -1,12 +1,17 @@
 # Golden fixtures of the ProofPFN benchmark
 
 Byte-for-byte copies of small golden files of the proofpfn-golden folder (phase 2 of the ProofPFN cleanup; its
-`golden/README.md` documents inputs, commands and environment), and one fixture of phase 3a. Large goldens (the G4
-research exports, the full G6 row files) stay outside the repository: tests that need them read `PROOFPFN_GOLDEN` and
-skip without it (`../golden.py`). Digest rules: golden README section 1.
+`golden/README.md` documents inputs, commands and environment), one fixture of phase 3a and the adapter fixtures of
+phase 3d. Large goldens (the G4 research exports, the full G6 row files) stay outside the repository: tests that need
+them read `PROOFPFN_GOLDEN` and skip without it (`../golden.py`). Digest rules: golden README section 1.
 
 | File | Bytes | SHA-256 | Source | Used by |
 |---|---:|---|---|---|
+| `anyburl/NELLInductive_v1-preds-225.gz` | 4,897 | `5584038fe7b8c24b7f8d7e9a60b5b111f29639cd692f6c6bd438e0234b779304` | phase 3d: the ranking file of AnyBURL Apply with the rule file below on ultra-suite-v1/NELLInductive_v1 (`gzip -n -9`) | `test_adapter_anyburl.py` |
+| `anyburl/NELLInductive_v1-research.json` | 1,716 | `0dc588d88fb421782c517b4f19ae48ba9be1366effdc6a33315dc1d657979a97` | phase 3d: the research `anyburl_run.py` (unchanged copy) on that file: `rebuild` rows and native ranks as JSON digests, counts, `write_inputs` hashes, and the input hashes of the kiowl row | `test_adapter_anyburl.py` |
+| `anyburl/NELLInductive_v1-rules-30` | 3,254 | `bb52f8c70090c6af478b9e9a988852a4d8ad91a83bae1ebfb5cf6e738801a153` | phase 3d: the rule file of a 30-second AnyBURL Learn on ultra-suite-v1/NELLInductive_v1 (KR setting, 4 threads) | `test_adapter_anyburl.py` |
+| `kgpfn_probe_ranks.json` | 3,882 | `973e2cdf4de055b25d56726389005c29c1001442a405a7ad65e9bd08405220c0` | phase 3d: KGPFN ranks of the three probe graphs per GPU as int64 digests: the research `kgpfn_eval.py` on the local RTX 4070 Ti SUPER, and the kiowl rows (H100 NVL) | `test_adapter_kgpfn.py` |
+| `merit_check_ranks.json` | 3,397 | `3ca7f35cd262e76c2d3e0fc87f3082dfa7d5b3737ceb9b6f1d465d1a1e811ba1` | phase 3d: the raw ranks of `K/merit-ref-v1/check/*.json` (kiowl) as int64 digests, with the upstream and checkpoint pins | `test_adapter_merit.py` |
 | `g6_ranks.json.gz` | 22,956 | `8d137562cab30fdbe648122b9cc3f1f76565ad9be9d36ef8feac290a4382f8e7` | `golden/small` (G6: per-key int64 digests, row identity, metrics, header and record of the research rows on the gate graphs) | `test_manifests.py`, `test_data.py`, `test_systems.py`, `test_golden_ranks.py` |
 | `g7_cells/queries-NELLInductive_v1.csv` | 18,931 | `d164be5b1eb9521b154eaf26cff025a4347f47b6c66fd81385ae81fa46e31e47` | `golden/small/g7_cells` (G7) | `test_cells.py` |
 | `g7_cells/queries-UMLS.csv` | 62,816 | `4d07aed85f6b3e2ca4b99b1077f1a9a950766b7cacff89f6524b5d4471f6bfd7` | `golden/small/g7_cells` (G7: `fv1_cells.py --set gate:UMLS`) | `test_cells.py` |

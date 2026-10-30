@@ -77,6 +77,24 @@ string; `families` holds the system specs instead of the research run tuples; `l
 `peak_gpu_gb` and `runner_sha256` are replaced by `provenance`; `flock_official` has no `code_sha256`; the gate entry of
 grail-WN18RR_v1 keeps the audit's group (null), where the golden run's stand-in audit gave it the contamination view.
 
+## External baselines
+
+The adapters (`adapters/`, README section External baselines) rank the same test facts in both directions with the same
+filter and the same self-loop rule; each reproduces its research runner.
+
+| Adapter | Scores | Ranks | Research |
+|---|---|---|---|
+| `merit` | the five MERIT checkpoints as references of `evaluate.evaluate_graph`: the views, ranks and GT2 ranks above | as above | `ag_merit.py` over `ag_eval.py`; the model of `merit_ref.py` |
+| `kgpfn` | KGPFN's scores of every candidate (`_score_all_candidate_tails`), the answer-blind context of seed 0; a head query is KGPFN's inverse query | pessimistic over the allowed candidates on the float64 scores; on small graphs the host checks them against `FilteredRanker` on the `log_softmax` of the dumped scores; a row with a non-finite score gets the worst rank; `kgpfn` with the rule, `kgpfn:raw` without | `kgpfn_eval.py` (all-graph mode), `kgpfn_ag.py` (prepare, finalize, verify) |
+| `anyburl` | AnyBURL's printed confidence per listed candidate, `-inf` for a candidate it does not list | `FilteredRanker(tie_policy='pessimistic')`; a target that is not listed, or that ties with the last entry of a full list, gets the number of allowed candidates; `anyburl` with the rule, `anyburl:raw` without | `anyburl_run.py` (`rebuild`) |
+
+KGPFN numbers entities by first appearance in train, valid and test (its `TransductiveDataset`); a rank does not depend
+on the numbering. Its worker parses a line at tabs if it has one, else at whitespace, and the host refuses a run whose
+parse differs from the benchmark's. The rows of KGPFN and AnyBURL hold no GT2 keys (as the research rows), and their
+`allgraph.model_sha256` is empty: the registered tables compare no model hash of them. AnyBURL's input files name
+entity `i` and relation `j` of the benchmark's ids `e<i>` and `r<j>`; its `valid.txt` also holds the test rows that are
+not ranked, so that its filter is the benchmark's.
+
 ## Cells
 
 `cells.py` reproduces `fresh-v1-runtime/fv1_cells.py` with `icml-roadmap-20261025/step5/s5_measure.evaluate_rows` and
