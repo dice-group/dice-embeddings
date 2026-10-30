@@ -29,7 +29,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from collections import OrderedDict
-from typing import NamedTuple, Optional, cast
+from typing import Any, Mapping, NamedTuple, Optional, Self, cast
 
 import torch
 from torch import nn
@@ -282,7 +282,7 @@ class ULTRA(GraphKGE):
       same random seed.
 
     The options are not stored in the state dictionary. A checkpoint that records them in ``model_config`` must
-    agree with the model (``load_pretrained``).
+    agree with the model (``load_pretrained``, ``load_checkpoint``).
     """
 
     name = 'ULTRA'
@@ -353,17 +353,17 @@ class ULTRA(GraphKGE):
         self.rel_edge_type = to_device(edge_type, self.device)
         self.rel_edge_weight = None if edge_weight is None else to_device(edge_weight.to(dtype=next(self.parameters()).dtype), self.device)
 
-    def load_pretrained(self, path):
-        """Load weights; a checkpoint whose ``model_config`` records the relation-graph options must match them."""
-        stored = torch.load(path, map_location='cpu', weights_only=True)
-        config = stored.get('model_config') if isinstance(stored, dict) else None
+    def load_checkpoint(self, stored: Mapping[str, Any]) -> Self:
+        """Load weights (``GraphKGE.load_checkpoint``); a checkpoint whose ``model_config`` records the relation-graph
+        options must match them."""
+        config = stored.get('model_config')
         if isinstance(config, dict):
             options = {'ultra_relation_weighting': self.relation_weighting, 'ultra_pair_channels': self.pair_channels}
             defaults = {'ultra_relation_weighting': 'binary', 'ultra_pair_channels': 'off'}
             mismatch = {key: config.get(key, defaults[key]) for key, value in options.items() if config.get(key, defaults[key]) != value}
             if mismatch:
                 raise ValueError(f'{self.name} checkpoint was saved with {mismatch}; build the model with the same options')
-        return super().load_pretrained(path)
+        return super().load_checkpoint(stored)
 
     def _cached_relations(self, query_relations):
         # Autocast can change the cached representation's precision independently

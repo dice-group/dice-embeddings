@@ -8,8 +8,8 @@ Format ``proofpfn-checkpoint-v1`` is a dictionary that ``torch.load(path, weight
      'order_sha256': <digest of the run's world order>, 'provenance': {...}}
 
 The state dictionary has ULTRA's 82 keys; with pair channels the relation tables have 6 rows. ``model_config`` is the
-arm's (``ArmPreset.model_config``), so ``ULTRA(model_config).load_pretrained(path)`` loads a checkpoint, and
-``load_model`` does it with the checks of this module.
+arm's (``ArmPreset.model_config``), so ``ULTRA(model_config).load_pretrained(path)`` loads a checkpoint;
+``model_from_checkpoint`` (a loaded dictionary) and ``load_model`` (a file) do it with the checks of this module.
 
 ``from_research_export`` converts an ``export-<N>.pt`` of the research trainer. Its model holds ULTRA's tensors plus a
 context adapter and a role adapter that stayed frozen with zero output layers, and three marker buffers; CountULTRA
@@ -217,22 +217,41 @@ def read_checkpoint(path: Union[str, Path]) -> dict[str, Any]:
     return checkpoint
 
 
-def load_model(path: Union[str, Path], device: Union[str, torch.device] = 'cpu') -> ULTRA:
-    """ULTRA with a checkpoint's options and weights, through ``ULTRA.load_pretrained``, frozen for inference.
+def model_from_checkpoint(checkpoint: Mapping[str, Any], device: Union[str, torch.device] = 'cpu') -> ULTRA:
+    """ULTRA with a checkpoint's options and weights (``ULTRA.load_checkpoint``), frozen for inference.
 
     Args:
-        path: The checkpoint file.
+        checkpoint: The checkpoint dictionary.
         device: The device of the model.
 
     Returns:
         The model in evaluation mode without gradients, without a graph; the global random state is unchanged.
+
+    Raises:
+        CheckpointError: When the dictionary is not a valid checkpoint.
     """
-    checkpoint = read_checkpoint(path)
+    check_checkpoint(checkpoint)
     with torch.random.fork_rng(devices=[]):
         model = ULTRA(dict(checkpoint['model_config']))
-    model.load_pretrained(path)
+    model.load_checkpoint(checkpoint)
     model.to(device).eval().requires_grad_(False)
     return model
+
+
+def load_model(path: Union[str, Path], device: Union[str, torch.device] = 'cpu') -> ULTRA:
+    """ULTRA with the options and weights of a checkpoint file, frozen for inference (``model_from_checkpoint``).
+
+    Args:
+        path: The checkpoint file, read once with ``weights_only=True``.
+        device: The device of the model.
+
+    Returns:
+        The model in evaluation mode without gradients, without a graph; the global random state is unchanged.
+
+    Raises:
+        CheckpointError: When the file is not a valid checkpoint.
+    """
+    return model_from_checkpoint(torch.load(path, map_location='cpu', weights_only=True), device)
 
 
 def _research_problems(saved: Any, preset: ArmPreset) -> list[str]:

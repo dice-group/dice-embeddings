@@ -15,6 +15,7 @@ from benchmarks.proofpfn import systems as sy
 from benchmarks.proofpfn.manifests import file_sha256
 from benchmarks.proofpfn.tests.golden import fixture, golden_root
 from dicee.synthetic_kg.arms import SEEDS
+from dicee.synthetic_kg.checkpoint import model_from_checkpoint
 from dicee.synthetic_kg.priors import Slot
 
 G9 = fixture('g9_gate.json')
@@ -82,7 +83,7 @@ def test_one_world_scores_like_the_research_gate():
     models = {}
     for arm, family in (('a', s), ('b', n)):
         family.check()
-        models[arm] = {f'{family.key}.seed42': sy.ultra_from_checkpoint(family.members[42].checkpoint).train()}
+        models[arm] = {f'{family.key}.seed42': model_from_checkpoint(family.members[42].checkpoint).train()}
     scored = gt.score(models, ['attr2'], 1)
     assert scored['queries'] == {'attr2': [30]}
     assert scored['mrr']['a']['gs.seed42']['attr2'] == golden_per_world('S')[0]['attr2'][:1]

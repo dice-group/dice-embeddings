@@ -28,7 +28,7 @@ from dicee.models.graph_model import GraphKGE
 from dicee.models.trix import TRIX
 from dicee.models.ultra import ULTRA
 from dicee.synthetic_kg.arms import ARMS, SEEDS
-from dicee.synthetic_kg.checkpoint import FORMAT, CheckpointError, check_checkpoint, from_research_export
+from dicee.synthetic_kg.checkpoint import FORMAT, CheckpointError, check_checkpoint, from_research_export, model_from_checkpoint
 
 from .data import GraphData, inference_stats
 from .manifests import REPO, GraphEntry, ModelPins, file_sha256
@@ -162,15 +162,6 @@ def attach(model: Model, train: torch.Tensor, num_entities: int, num_relations: 
     return frozen(model)
 
 
-def ultra_from_checkpoint(checkpoint: Mapping[str, Any]) -> ULTRA:
-    """ULTRA with a checked checkpoint's options and weights (as ``ULTRA.load_pretrained``), frozen, on the CPU."""
-    check_checkpoint(checkpoint)
-    with torch.random.fork_rng(devices=[]):
-        model = ULTRA(dict(checkpoint['model_config']))
-    model.load_state_dict(checkpoint['model'], strict=True)
-    return frozen(model)
-
-
 @dataclass(frozen=True)
 class Member:
     """One loaded seed of a family: the checkpoint and the hashes of its file."""
@@ -252,7 +243,7 @@ class ProofPFNFamily:
         """The three frozen models on the CPU (``check`` runs first if it has not)."""
         if set(self.members) != set(SEEDS):
             self.check()
-        return {(self.key, seed): ultra_from_checkpoint(self.members[seed].checkpoint) for seed in SEEDS}
+        return {(self.key, seed): model_from_checkpoint(self.members[seed].checkpoint) for seed in SEEDS}
 
     def query_batch_size(self, setting: Optional[Mapping[str, Any]]) -> int:
         """One query per microbatch."""

@@ -29,7 +29,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 """
 from pathlib import Path
-from typing import Any, Mapping, Optional, Union
+from typing import Any, Mapping, Optional, Self, Union
 
 import torch
 from torch import nn
@@ -218,8 +218,22 @@ class GraphKGE(BaseKGE):
                                  data['num_direct_relations'])
 
     def load_pretrained(self, path):
-        state = torch.load(path, map_location='cpu', weights_only=True)
-        state = state.get('model', state)
+        return self.load_checkpoint(torch.load(path, map_location='cpu', weights_only=True))
+
+    def load_checkpoint(self, stored: Mapping[str, Any]) -> Self:
+        """Load the weights of a checkpoint that ``torch.load`` read (``load_pretrained`` reads the file).
+
+        Args:
+            stored: A state dictionary, or a dictionary with one under ``'model'``; its keys and shapes must equal the
+                model's.
+
+        Returns:
+            The model.
+
+        Raises:
+            ValueError: When the keys or shapes differ from the model's.
+        """
+        state = stored.get('model', stored)
         expected = self.state_dict()
         if set(state) != set(expected) or any(state[k].shape != expected[k].shape for k in expected if k in state):
             raise ValueError(f'Checkpoint architecture mismatch for {self.name}: {self.checkpoint_hint}')

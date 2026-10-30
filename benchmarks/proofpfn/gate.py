@@ -30,13 +30,14 @@ import torch
 from dicee.models.ultra import ULTRA
 from dicee.synthetic_kg.arms import ARMS, SEEDS
 from dicee.synthetic_kg.batch import World
+from dicee.synthetic_kg.checkpoint import model_from_checkpoint
 from dicee.synthetic_kg.determinism import THREADS, deterministic_execution, require_cublas_workspace, torch_threads
 from dicee.synthetic_kg.prepare import PreparedWorld, answers_by_anchor, prepare_world
 from dicee.synthetic_kg.priors import Slot, world
 from dicee.synthetic_kg.streams import stage2_family
 
 from .cells import rank_of
-from .systems import ProofPFNFamily, ultra_from_checkpoint
+from .systems import ProofPFNFamily
 
 FAMILIES = ('rec1', 'attr2', 'list1', 'categorical2', 'plain')
 NULLED = ('rec1', 'attr2', 'list1', 'categorical2')
@@ -200,7 +201,7 @@ def gate(s: ProofPFNFamily, n: ProofPFNFamily, families: Sequence[str] = FAMILIE
     models: dict[str, dict[str, ULTRA]] = {}
     for arm, system in (('a', s), ('b', n)):
         system.check()
-        models[arm] = {f'{system.key}.seed{seed}': ultra_from_checkpoint(system.members[seed].checkpoint).to(device).train() for seed in SEEDS}
+        models[arm] = {f'{system.key}.seed{seed}': model_from_checkpoint(system.members[seed].checkpoint, device).train() for seed in SEEDS}
     scored = score(models, families, per_family)
     results = compare(scored['mrr'], families)
     record = dict(systems={arm: dict(key=system.key, arm=system.arm, model_sha256=system.model_sha256()) for arm, system in (('a', s), ('b', n))},
