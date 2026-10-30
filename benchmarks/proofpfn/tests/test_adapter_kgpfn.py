@@ -214,6 +214,21 @@ def test_setup_tries_the_python_command(tmp_path):
         kgpfn.setup(code, ckpt, sys.executable, models)
 
 
+def test_setup_refuses_a_kernel_source_without_a_pin(tmp_path):
+    """The worker builds every file of the kernel source folder, so the setup refuses one without a pin."""
+    code, ckpt, models = fake_code(tmp_path)
+    source = code / kgpfn.KERNEL_SOURCES
+    source.mkdir(parents=True)
+    (source / 'rspmm.cu').write_text('// a kernel\n')
+    doc = json.loads(models.read_text())
+    doc['external']['kgpfn']['imported'][f'{kgpfn.KERNEL_SOURCES}/rspmm.cu'] = mf.file_sha256(source / 'rspmm.cu')
+    models.write_text(json.dumps(doc))
+    assert kgpfn.setup(code, ckpt, sys.executable, models).code == code.resolve()
+    (source / 'stray.cu').write_text('// no pin\n')
+    with pytest.raises(AdapterSetupError, match='stray.cu'):
+        kgpfn.setup(code, ckpt, sys.executable, models)
+
+
 def test_worker_parse_and_entity_order(tmp_path):
     folder = tiny_graph(tmp_path / 'g')
     for s in mf.SPLITS:

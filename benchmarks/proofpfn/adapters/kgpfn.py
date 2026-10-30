@@ -63,6 +63,8 @@ WORKER_HOURS = 24.0
 WORKER = Path(__file__).resolve().with_name('kgpfn_worker.py')
 IMPORTS = 'import pfn.tasks, pfn.util, script.test_kgpfn'
 """The worker's imports of KGPFN, which import KGPFN's requirements."""
+KERNEL_SOURCES = 'model/ultra/rspmm/source'
+"""The folder of the rspmm kernel sources below the code folder; the worker loads every file in it."""
 SETTING = 'KGPFN icl_3g (arXiv 2605.14907v2, code 4f1bc61), answer-blind context, context seed 0'
 PROTOCOL = ('inference graph = train.txt; candidates = all entities of train + valid + test; filter = train + valid + all '
             'test facts, the target kept; pessimistic ties; tail and head query of every ranked fact; KGPFN context: 20 '
@@ -99,8 +101,9 @@ def setup(code: Optional[PathLike] = None, checkpoints: Optional[PathLike] = Non
           models: Optional[PathLike] = None, gpu_gb: float = 0.0) -> KGPFN:
     """The checked KGPFN setup (options, else ``$KGPFN_CODE``, ``$KGPFN_CHECKPOINT_DIR`` and ``$KGPFN_PYTHON``).
 
-    Checks the commit, the KGPFN files that the worker loads (``imported``) and the checkpoints against their pins, and
-    that the command imports the worker's KGPFN modules in the worker's environment.
+    Checks the commit, the KGPFN files that the worker loads (``imported``) and the checkpoints against their pins, that
+    the kernel source folder holds the pinned files only, and that the command imports the worker's KGPFN modules in the
+    worker's environment.
 
     Raises:
         AdapterSetupError: For a missing folder or command, another commit, a file that differs from its pin, or a command
@@ -111,6 +114,11 @@ def setup(code: Optional[PathLike] = None, checkpoints: Optional[PathLike] = Non
     check_commit(folder, pins['code_commit'], 'KGPFN')
     for name, digest in sorted(pins['imported'].items()):
         check_file(folder / name, digest, 'KGPFN')
+    kernel = folder / KERNEL_SOURCES
+    found = sorted(f'{KERNEL_SOURCES}/{path.name}' for path in kernel.iterdir() if path.is_file()) if kernel.is_dir() else []
+    pinned = sorted(name for name in pins['imported'] if name.startswith(f'{KERNEL_SOURCES}/'))
+    if found != pinned:
+        raise AdapterSetupError(f'KGPFN: the worker builds every file of {kernel}, which holds {sorted(set(found) - set(pinned))} without a pin')
     files = external_folder(checkpoints, 'KGPFN_CHECKPOINT_DIR', 'KGPFN checkpoints')
     check_file(files / CHECKPOINT, pins[CHECKPOINT], 'KGPFN')
     check_file(files / TABICL, pins['tabicl'], 'KGPFN')
