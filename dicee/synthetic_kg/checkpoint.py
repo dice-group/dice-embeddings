@@ -15,6 +15,7 @@ arm's (``ArmPreset.model_config``), so ``ULTRA(model_config).load_pretrained(pat
 context adapter and a role adapter that stayed frozen with zero output layers, and three marker buffers; CountULTRA
 exports also keep relation-table rows 4 and 5 at zero. The converter checks that these parts are inert, drops them, and
 records the export's SHA-256. Tensors are compared, not file bytes: research exports carry their run record.
+``read_arm_checkpoint`` reads a file of either format for an arm.
 """
 import io
 import logging
@@ -200,6 +201,19 @@ def save_checkpoint(checkpoint: Mapping[str, Any], path: Union[str, Path]) -> Pa
     return atomic_save(checkpoint, path)
 
 
+def _load(path: Union[str, Path]) -> Any:
+    """``torch.load`` of a checkpoint or research export on the CPU with ``weights_only=True``.
+
+    Raises:
+        CheckpointError: When the file is missing or unreadable, empty, not a pickle or a broken archive.
+    """
+    try:
+        return torch.load(path, map_location='cpu', weights_only=True)
+    except (pickle.UnpicklingError, EOFError, RuntimeError, OSError) as error:
+        first = str(error).split('\n', 1)[0]
+        raise CheckpointError(f'{Path(path).name} does not load with weights_only=True ({type(error).__name__}: {first})') from None
+
+
 def read_checkpoint(path: Union[str, Path]) -> dict[str, Any]:
     """Read and check a checkpoint (``weights_only=True``).
 
@@ -210,9 +224,9 @@ def read_checkpoint(path: Union[str, Path]) -> dict[str, Any]:
         The checkpoint dictionary.
 
     Raises:
-        CheckpointError: When the file is not a valid checkpoint.
+        CheckpointError: When the file does not load or is not a valid checkpoint.
     """
-    checkpoint: dict[str, Any] = torch.load(path, map_location='cpu', weights_only=True)
+    checkpoint: dict[str, Any] = _load(path)
     check_checkpoint(checkpoint)
     return checkpoint
 
@@ -249,9 +263,9 @@ def load_model(path: Union[str, Path], device: Union[str, torch.device] = 'cpu')
         The model in evaluation mode without gradients, without a graph; the global random state is unchanged.
 
     Raises:
-        CheckpointError: When the file is not a valid checkpoint.
+        CheckpointError: When the file does not load or is not a valid checkpoint.
     """
-    return model_from_checkpoint(torch.load(path, map_location='cpu', weights_only=True), device)
+    return model_from_checkpoint(_load(path), device)
 
 
 def _research_problems(saved: Any, preset: ArmPreset) -> list[str]:
@@ -329,28 +343,51 @@ def from_research_export(path: Union[str, Path], arm: Union[str, ArmPreset], wei
 
     Raises:
         CheckpointError: When the file does not load as a dictionary of tensors or a check fails.
-        OSError: When the file cannot be read.
     """
-    preset = arm_preset(arm)
+    path = Path(path)
+    return _convert(_load(path), arm_preset(arm), weights, path.name, file_sha256(path))
+
+
+def read_arm_checkpoint(path: Union[str, Path], arm: Union[str, ArmPreset]) -> tuple[dict[str, Any], str]:
+    """A checkpoint of an arm from a checkpoint file or from a research export (its EMA weights, ``from_research_export``).
+
+    The file loads once and is hashed once.
+
+    Args:
+        path: A ``proofpfn-checkpoint-v1`` file or a research ``export-<N>.pt``.
+        arm: The arm or its name.
+
+    Returns:
+        ``(checkpoint, sha256)``: the checked checkpoint and the SHA-256 of the file.
+
+    Raises:
+        CheckpointError: When the file is neither a valid checkpoint of the arm nor an inert research export of it.
+    """
+    preset, path = arm_preset(arm), Path(path)
+    stored, digest = _load(path), file_sha256(path)
+    if isinstance(stored, dict) and stored.get('format') == FORMAT:
+        check_checkpoint(stored)
+        if stored['arm'] != preset.name:
+            raise CheckpointError(f"{path.name} is a checkpoint of arm {stored['arm']}, not {preset.name}")
+        return stored, digest
+    return _convert(stored, preset, 'ema', path.name, digest), digest
+
+
+def _convert(saved: Any, preset: ArmPreset, weights: str, name: str, sha256: str) -> dict[str, Any]:
+    """The checkpoint of a loaded research export (``from_research_export``) of the file ``name`` with SHA-256 ``sha256``."""
     if weights not in WEIGHTS:
         raise CheckpointError(f'weights {weights!r}; expected one of {WEIGHTS}')
-    path = Path(path)
-    try:
-        saved = torch.load(path, map_location='cpu', weights_only=True)
-    except (pickle.UnpicklingError, EOFError, RuntimeError) as error:   # not a pickle, empty, or a broken archive
-        first = str(error).split('\n', 1)[0]
-        raise CheckpointError(f'{path.name} does not load with weights_only=True ({type(error).__name__}: {first})') from None
     problems = _research_problems(saved, preset)
     if problems:
-        raise CheckpointError(f'{path.name} is not an inert research export of arm {preset.name}: ' + '; '.join(problems))
+        raise CheckpointError(f'{name} is not an inert research export of arm {preset.name}: ' + '; '.join(problems))
     state = saved['arms'][RESEARCH_ARM][weights]
     shapes = state_shapes(preset)
     clean = {k: state[k][:shape[0]] if tuple(state[k].shape) != shape else state[k] for k, shape in shapes.items()}
     run = saved['run']
-    provenance = dict(source='research-export', research_export=path.name, research_export_sha256=file_sha256(path),
+    provenance = dict(source='research-export', research_export=name, research_export_sha256=sha256,
                       research_arm=run['arm'], research_model_kind=saved['model_kind'], research_run=run,
                       dropped=sorted(set(state) - set(shapes)) + sorted(f'{k}[{shape[0]}:]' for k, shape in shapes.items() if tuple(state[k].shape) != shape))
     checkpoint = make_checkpoint(clean, arm=preset, seed=saved['seed'], updates=saved['updates'], weights=weights,
                                  order_sha256=run['order_sha256'], provenance=provenance, real_training_updates=saved['real_training_updates'])
-    logger.info('converted %s: arm %s, seed %d, update %d, %s weights', path.name, preset.name, saved['seed'], saved['updates'], weights)
+    logger.info('converted %s: arm %s, seed %d, update %d, %s weights', name, preset.name, saved['seed'], saved['updates'], weights)
     return checkpoint

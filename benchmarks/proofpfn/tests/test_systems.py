@@ -53,6 +53,13 @@ def test_family_keys_and_pins(tmp_path):
         sy.family('tu', 'UL', template, pins).check()
 
 
+def test_a_file_that_is_not_a_checkpoint_is_refused(tmp_path):
+    for seed in SEEDS:
+        (tmp_path / f'text-{seed}.pt').write_text('not a checkpoint')
+    with pytest.raises(sy.SystemCheckError, match='seed 42: text-42.pt does not load'):
+        sy.family('ts', 'S', str(tmp_path / 'text-{seed}.pt'), mf.read_models()).check()
+
+
 def test_built_models_are_frozen_and_leave_the_random_state(tmp_path):
     family = sy.family('ts', 'S', clean_checkpoints(tmp_path, 'S'), mf.read_models())
     before = torch.get_rng_state()

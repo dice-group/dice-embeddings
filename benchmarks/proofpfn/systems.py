@@ -32,7 +32,7 @@ from dicee.models.graph_model import GraphKGE
 from dicee.models.trix import TRIX
 from dicee.models.ultra import ULTRA
 from dicee.synthetic_kg.arms import ARMS, SEEDS
-from dicee.synthetic_kg.checkpoint import FORMAT, RESEARCH_ARM, CheckpointError, check_checkpoint, from_research_export, model_from_checkpoint
+from dicee.synthetic_kg.checkpoint import RESEARCH_ARM, CheckpointError, model_from_checkpoint, read_arm_checkpoint
 
 from .data import GraphData, inference_stats
 from .manifests import REPO, FamilyPins, GraphEntry, InputError, ModelPins, file_sha256
@@ -181,21 +181,21 @@ class Member:
 
 
 def read_member(path: Union[str, Path], arm: str) -> Member:
-    """Read a clean checkpoint or convert a research export of an arm (EMA weights).
+    """Read a clean checkpoint or convert a research export of an arm (EMA weights), loading the file once.
+
+    Args:
+        path: The checkpoint or research export.
+        arm: The arm of the family.
+
+    Returns:
+        The member; its research export SHA-256 is the provenance's for a converted file.
 
     Raises:
         CheckpointError: When the file is neither a valid checkpoint of the arm nor an inert research export of it.
     """
-    stored = torch.load(path, map_location='cpu', weights_only=True)
-    digest = file_sha256(path)
-    if isinstance(stored, dict) and stored.get('format') == FORMAT:
-        check_checkpoint(stored)
-        if stored['arm'] != arm:
-            raise CheckpointError(f'{Path(path).name} is a checkpoint of arm {stored["arm"]}, not {arm}')
-        provenance = stored['provenance']
-        return Member(stored, digest, provenance.get('research_export_sha256') if provenance.get('source') == 'research-export' else None)
-    checkpoint = from_research_export(path, arm, 'ema')
-    return Member(checkpoint, digest, digest)
+    checkpoint, digest = read_arm_checkpoint(path, arm)
+    provenance = checkpoint['provenance']
+    return Member(checkpoint, digest, provenance.get('research_export_sha256') if provenance.get('source') == 'research-export' else None)
 
 
 @dataclass

@@ -91,6 +91,12 @@ def test_checkpoint_checks(tmp_path):
     torch.save({**good, 'format': 'other'}, tmp_path / 'bad.pt')
     with pytest.raises(CheckpointError, match='format'):
         load_model(tmp_path / 'bad.pt')
+    (tmp_path / 'text.pt').write_text('not a checkpoint')
+    (tmp_path / 'empty.pt').write_bytes(b'')
+    for name in ('text.pt', 'empty.pt', 'missing.pt'):   # every load error is a CheckpointError
+        for reader in (read_checkpoint, load_model):
+            with pytest.raises(CheckpointError, match=f'{name} does not load'):
+                reader(tmp_path / name)
 
 
 def research_exports() -> list[tuple[str, dict, str]]:

@@ -117,7 +117,7 @@ def _train(args: argparse.Namespace) -> int:
 def _convert(args: argparse.Namespace) -> int:
     try:
         checkpoint = from_research_export(args.export, args.arm, args.weights)
-    except (CheckpointError, OSError) as error:
+    except CheckpointError as error:
         print(f'error: {error}', file=sys.stderr)
         return EXIT_INPUT
     path = save_checkpoint(checkpoint, args.out)
