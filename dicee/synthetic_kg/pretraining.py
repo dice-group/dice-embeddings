@@ -53,7 +53,7 @@ from ..models._inference import to_device
 from ..models.ultra import ULTRA
 from .arms import ArmPreset, arm_preset, initial_model
 from .checkpoint import atomic_save, atomic_write_bytes, make_checkpoint, save_checkpoint
-from .determinism import THREADS, deterministic_execution, require_cublas_workspace, torch_threads
+from .determinism import THREADS, deterministic_execution, device_problem, torch_threads
 from .digests import file_sha256
 from .prepare import PreparedWorld, prepare_slot
 from .priors import PriorConfig, Slot, build_order, order_sha256, real
@@ -70,9 +70,9 @@ SAVE_EVERY = 250
 
 
 class RunInputError(ValueError):
-    """A run that ``pretrain`` refuses for its input: its options, a folder of another run or with changed sources, a
-    world order other than its pin, a foreign training state, or real source graphs that are missing or hold other
-    content than the research files."""
+    """A run that ``pretrain`` refuses for its input: its options or device, a folder of another run or with changed
+    sources, a world order other than its pin, a foreign training state, or real source graphs that are missing or hold
+    other content than the research files."""
 
 
 @dataclass(frozen=True)
@@ -432,14 +432,15 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
     Raises:
         RunInputError: For a folder of another run, with changed sources, torch version or GPU, or in use by another
             process, a world order that differs from the arm's pin, a foreign ``last.pt``, or real source graphs that are
-            missing or hold other content than the research files.
-        RuntimeError: For CUDA without a deterministic cuBLAS workspace setting.
+            missing or hold other content than the research files, or a device that this machine lacks or that runs CUDA
+            without a deterministic cuBLAS workspace setting.
     """
     preset = arm_preset(config.arm)
     folder = Path(out_dir)
+    problem = device_problem(config.device)
+    if problem:
+        raise RunInputError(problem)
     device = torch.device(config.device)
-    if device.type == 'cuda':
-        require_cublas_workspace()
     order = build_order(config.seed, preset.prior)
     digest = order_sha256(order)
     pinned = preset.pinned_order(config.seed)

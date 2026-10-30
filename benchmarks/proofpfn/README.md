@@ -48,9 +48,11 @@ sets when it is unset), `--shard i/k`, `--parts`, `--save-minutes`, `--max-minut
 manifest paths are relative to, default the repository root), `--flock-passes-in-sequence`. `check` reports each graph
 that fails a check and goes on with the next one.
 
-Exit codes: 0 done, 2 wrong input (one `error:` line), 3 a graph ran out of CUDA memory or an adapter failed on a graph
-(its record is in `.errors/` of the row folder), 76 stopped at `--max-minutes`, 143 stopped by SIGTERM (with `--parts`
-or a shard, the part file is saved). An internal error ends with a traceback and exit code 1.
+Exit codes: 0 done, 2 wrong input (one `error:` line, also for a selection without graphs or a device that the machine
+lacks), 3 a graph ran out of CUDA memory or an adapter failed on a graph (its record is in `.errors/` of the row folder),
+or MERIT's child process ran past its time limit (no record), 76 stopped at `--max-minutes`, 143 stopped by SIGTERM
+(with `--parts` or a shard, the part file is saved) or MERIT's child process stopped by a signal. An internal error ends
+with a traceback and exit code 1.
 
 ## Graph sets
 

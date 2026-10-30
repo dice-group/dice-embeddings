@@ -7,11 +7,12 @@ the research runs used ``THREADS``.
 """
 import os
 from contextlib import contextmanager
-from typing import Iterator
+from typing import Iterator, Optional
 
 import torch
 
 CUBLAS_WORKSPACES = (':4096:8', ':16:8')
+CUBLAS_HINT = 'set CUBLAS_WORKSPACE_CONFIG=:4096:8 before CUDA starts for deterministic CUDA execution'
 
 THREADS = 2
 """The torch thread count of the research runs on the CPU, in training and in evaluation."""
@@ -55,7 +56,30 @@ def require_cublas_workspace() -> None:
         RuntimeError: When ``CUBLAS_WORKSPACE_CONFIG`` is not one of ``CUBLAS_WORKSPACES``.
     """
     if os.environ.get('CUBLAS_WORKSPACE_CONFIG') not in CUBLAS_WORKSPACES:
-        raise RuntimeError('set CUBLAS_WORKSPACE_CONFIG=:4096:8 before CUDA starts for deterministic CUDA execution')
+        raise RuntimeError(CUBLAS_HINT)
+
+
+def device_problem(device: str) -> Optional[str]:
+    """Why a device string names no device of this machine for deterministic work, or ``None`` when it names one.
+
+    Args:
+        device: ``'cpu'``, ``'cuda'`` or ``'cuda:<index>'``.
+
+    Returns:
+        ``None`` for the CPU and for an existing CUDA device with a deterministic cuBLAS workspace setting; else the
+        reason.
+    """
+    try:
+        parsed = torch.device(device)
+    except (RuntimeError, TypeError) as error:
+        return f'device {device!r}: {error}'
+    if parsed.type == 'cpu':
+        return None
+    if parsed.type != 'cuda':
+        return f'device {device!r}: expected cpu or cuda'
+    if not torch.cuda.is_available() or (parsed.index or 0) >= torch.cuda.device_count():
+        return f'device {device!r}: no such CUDA device on this machine'
+    return CUBLAS_HINT if os.environ.get('CUBLAS_WORKSPACE_CONFIG') not in CUBLAS_WORKSPACES else None
 
 
 @contextmanager

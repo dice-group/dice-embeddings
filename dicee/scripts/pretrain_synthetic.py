@@ -16,7 +16,7 @@ Examples::
 
 The command sets ``CUBLAS_WORKSPACE_CONFIG=:4096:8`` (deterministic cuBLAS) unless it is set. SIGINT and SIGTERM stop a
 run after the current update with ``last.pt``. Exit codes: 0 done, 1 error, 2 wrong input (one ``error:`` line: options,
-a folder of another run or with changed sources, real source graphs that are missing or hold other content than the
+a device that this machine lacks, a folder of another run or with changed sources, real source graphs that are missing or hold other content than the
 research files, a research export that the converter cannot read or refuses, split files that miss or hold other
 triples than the research files), 3 stopped by a signal (rerun the same command to resume).
 """
@@ -67,7 +67,7 @@ def build_parser() -> argparse.ArgumentParser:
     train.add_argument('--out', required=True, help='the run folder')
     train.add_argument('--workers', type=int, default=DEFAULTS['workers'],
                        help='worker processes that prepare the worlds ahead; 0 prepares them in this process (default: %(default)s)')
-    train.add_argument('--device', default=DEFAULTS['device'], help='the training device (default: %(default)s)')
+    train.add_argument('--device', default=DEFAULTS['device'], help='the training device: cpu, cuda or cuda:<index> (default: %(default)s)')
     train.add_argument('--real_sources', default=None,
                        help='the folder of the real source graphs of arms R and M (<name>/data.pt; default: $PROOFPFN_REAL_SOURCES)')
     train.add_argument('--threads', type=int, default=DEFAULTS['threads'],

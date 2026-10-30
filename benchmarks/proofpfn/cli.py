@@ -7,10 +7,11 @@ match. References: ``--references trix,ultra3g,flockoff`` (checkpoints below ``-
 An adapter takes its external code from ``--code`` or its environment variable (``$KGPFN_CODE``, ``$MERIT_HOME``,
 ``$ANYBURL_HOME``); ``--check`` checks the setup, the pins and the graphs without a run.
 
-Exit codes: 0 done; 2 wrong input (graph, system, hash, pins, adapter setup); 3 a graph ran out of CUDA memory, or an
-adapter failed on a graph and went on with the next one (the graph's error record is in ``.errors/`` of the row folder);
-76 stopped at ``--max-minutes`` (the part file is saved); 143 stopped by SIGTERM (with ``--parts`` or a shard, the part
-file is saved). An internal error ends with a traceback and exit code 1.
+Exit codes: 0 done; 2 wrong input (graph selection, device, system, hash, pins, adapter setup); 3 a graph ran out of
+CUDA memory, or an adapter failed on a graph and went on with the next one (the graph's error record is in ``.errors/``
+of the row folder), or MERIT's child process ran past its time limit (no error record); 76 stopped at ``--max-minutes``
+(the part file is saved); 143 stopped by SIGTERM (with ``--parts`` or a shard, the part file is saved), or MERIT's child
+process stopped by a signal. An internal error ends with a traceback and exit code 1.
 """
 import argparse
 import json
@@ -125,9 +126,21 @@ def _entries(args: argparse.Namespace) -> tuple[Any, list[Any]]:
     graphs = [g for g in args.graphs.split(',') if g] if args.graphs else None
     codes = args.codes.split(',') if args.codes else None
     try:
-        return manifest, manifest.select(view=args.view or (None if graphs else 'all'), graphs=graphs, codes=codes)
-    except KeyError as error:   # a graph or view that the manifest does not hold
+        entries = manifest.select(view=args.view or (None if graphs else 'all'), graphs=graphs, codes=codes)
+    except KeyError as error:   # a graph, view or code that the manifest does not hold
         raise UsageError(error.args[0]) from None
+    if not entries:
+        raise UsageError(f'no graph of {manifest.name} matches the selection')
+    return manifest, entries
+
+
+def _device(name: str) -> str:
+    """The device option, refused when this machine lacks it or when CUDA runs without deterministic cuBLAS."""
+    from dicee.synthetic_kg.determinism import device_problem
+    problem = device_problem(name)
+    if problem:
+        raise UsageError(problem)
+    return name
 
 
 def _systems(args: argparse.Namespace) -> list[Any]:
@@ -182,6 +195,7 @@ def _run(args: argparse.Namespace) -> int:
 
     from .evaluate import evaluate_graph, row_file_path, write_error
     manifest, entries = _entries(args)
+    device = _device(args.device)
     systems = _systems(args)
     shard = tuple(int(x) for x in args.shard.split('/') if x.isdigit())
     if len(shard) != 2 or args.shard.count('/') != 1:
@@ -189,7 +203,7 @@ def _run(args: argparse.Namespace) -> int:
     statuses = {}
     for entry in entries:
         try:
-            statuses[entry.key] = evaluate_graph(manifest, entry, systems, args.out, root=args.data_root, device=args.device,
+            statuses[entry.key] = evaluate_graph(manifest, entry, systems, args.out, root=args.data_root, device=device,
                                                  shard=(shard[0], shard[1]), parts=args.parts, save_minutes=args.save_minutes,
                                                  max_minutes=args.max_minutes)
         except torch.cuda.OutOfMemoryError as error:
@@ -216,7 +230,9 @@ def _adapter(args: argparse.Namespace, argv: Sequence[str]) -> int:
     if args.name == 'merit' and not args.worker:   # the scoring runs in a child process with MERIT's folder on its path
         from .adapters import merit
         code = merit.run_in_child(argv, len(entries), code=args.code, models=args.models, checkpoint_root=args.checkpoint_root, python=args.python)
-        return EXIT_FAILED if code is None else code
+        if code is None:   # the child ran past its time limit: exit 3, without an error record
+            return EXIT_FAILED
+        return EXIT_TERM if code < 0 else code   # a child stopped by a signal
     if args.name == 'anyburl':
         from .adapters import anyburl
         system: Any = anyburl.setup(args.code, args.models, java=args.java, scope=not args.no_scope)
@@ -267,7 +283,7 @@ def _gate(args: argparse.Namespace) -> int:
     families = args.families.split(',') if args.families else FAMILIES
     if not set(families) <= set(FAMILIES) or not 1 <= args.per_family <= PER_FAMILY:
         raise UsageError(f'the gate has 1 to {PER_FAMILY} held-out worlds (--per-family) of each of the families {FAMILIES}')
-    record = gate(systems['S'], systems['N'], families, args.per_family, args.device)
+    record = gate(systems['S'], systems['N'], families, args.per_family, _device(args.device))
     atomic_write_bytes(args.out, (json.dumps(record, indent=1) + '\n').encode())
     print('| family | worlds | MRR S | MRR N | D = S - N | SE | reading |')
     for name, value in record['results'].items():

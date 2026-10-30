@@ -20,6 +20,7 @@ evaluation attaches the inference graph with ``attach``.
 """
 import logging
 import math
+import string
 from dataclasses import dataclass, field
 from pathlib import Path
 from types import MappingProxyType
@@ -384,10 +385,15 @@ def family(key: str, arm: str, template: str, pins: ModelPins) -> ProofPFNFamily
     registered key (a test family, run without pins).
 
     Raises:
-        SystemCheckError: For a key of another arm or system, or a registered key whose pins are pending.
+        SystemCheckError: For a template without ``{seed}`` or with another field, a key of another arm or system, or a
+            registered key whose pins are pending.
     """
-    if '{seed}' not in template:
-        raise SystemCheckError(f'{key}: the checkpoint template needs {{seed}}')
+    try:
+        fields = {name for _, name, _, _ in string.Formatter().parse(template) if name is not None}
+    except ValueError as error:   # a single brace
+        raise SystemCheckError(f'{key}: the checkpoint template {template!r}: {error}') from None
+    if fields != {'seed'}:
+        raise SystemCheckError(f'{key}: the checkpoint template needs {{seed}} and no other field')
     registered = pins.family_of_key(key)
     if key in pins.references or key in REFERENCE_KEYS:
         raise SystemCheckError(f'{key} is a reference key')

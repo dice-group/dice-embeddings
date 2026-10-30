@@ -79,8 +79,14 @@ def test_refusals(tmp_path, capsys):
     assert cli.main(['check', '--set', 'gate', '--graphs', 'UMLS', '--family', f'S:{template}']) == cli.EXIT_INPUT   # not the pinned exports
     capsys.readouterr()
     for command in (['list', '--set', 'nosuch'], ['check', '--set', 'gate', '--references', 'trix', '--models', str(tmp_path / 'none.json')],
-                    ['run', '--set', 'gate', '--references', 'trix', '--shard', '1-2', '--out', str(tmp_path / 'rows')],
-                    ['gate', '--family', f'gs=S:{template}', '--family', f'gn=N:{template}', '--per-family', '101', '--out', str(tmp_path / 'g.json')]):
+                    ['run', '--set', 'gate', '--references', 'trix', '--shard', '1-2', '--device', 'cpu', '--out', str(tmp_path / 'rows')],
+                    ['run', '--set', 'gate', '--references', 'trix', '--device', 'gpu', '--out', str(tmp_path / 'rows')],
+                    ['run', '--set', 'gate', '--references', 'trix', '--device', 'cuda:99', '--out', str(tmp_path / 'rows')],
+                    ['gate', '--family', f'gs=S:{template}', '--family', f'gn=N:{template}', '--per-family', '101', '--out', str(tmp_path / 'g.json')],
+                    ['gate', '--family', f'gs=S:{template}', '--family', f'gn=N:{template}', '--device', 'cuda:99', '--out', str(tmp_path / 'g.json')],
+                    ['list', '--set', 'dev121', '--codes', 'Z'], ['list', '--set', 'dev121', '--view', 'main', '--graphs', 'UMLS'],
+                    ['check', '--set', 'gate', '--family', f'ts=S:{tmp_path}/{{seed}}-{{other}}.pt'],
+                    ['check', '--set', 'gate', '--family', f'ts=S:{tmp_path}/{{seed}}-{{}}.pt'], ['check', '--set', 'gate', '--family', 'ts=S:{seed']):
         assert cli.main(command) == cli.EXIT_INPUT, command
         error = capsys.readouterr().err
         assert error.startswith('error: ') and error.count('\n') == 1, (command, error)   # one line, no traceback

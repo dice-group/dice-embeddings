@@ -22,6 +22,7 @@ import torch
 from dicee.synthetic_kg import pretraining as pt
 from dicee.synthetic_kg.arms import ARMS, initial_model
 from dicee.synthetic_kg.checkpoint import from_research_export, load_model, read_checkpoint
+from dicee.synthetic_kg.determinism import CUBLAS_HINT, device_problem
 from dicee.synthetic_kg.digests import tensor_digest
 from dicee.synthetic_kg.priors import real
 from tests.proofpfn_fixtures import fixture, golden_large, require_cpu_training_golden_environment, require_gpu_golden_environment
@@ -244,6 +245,17 @@ def test_configuration_checks(monkeypatch, tmp_path):
         pt.provenance(pt.PretrainConfig('R', 42, device='cpu'), ARMS['R'])
     with pytest.raises(pt.RunInputError, match='missing'):
         pt.provenance(pt.PretrainConfig('R', 42, device='cpu', real_sources=tmp_path), ARMS['R'])
+
+
+def test_devices_that_this_machine_lacks_are_refused(tmp_path, monkeypatch):
+    for device, message in (('gpu', "device 'gpu'"), ('mps', 'expected cpu or cuda'), ('cuda:99', 'no such CUDA device')):
+        with pytest.raises(pt.RunInputError, match=message):
+            pt.pretrain(pt.PretrainConfig('S', 42, device=device), tmp_path / 'run')
+    assert not (tmp_path / 'run').exists() and device_problem('cpu') is None
+    monkeypatch.setattr(torch.cuda, 'is_available', lambda: True)   # CUDA without a deterministic cuBLAS setting
+    monkeypatch.setattr(torch.cuda, 'device_count', lambda: 1)
+    monkeypatch.setenv('CUBLAS_WORKSPACE_CONFIG', ':0:0')
+    assert device_problem('cuda') == CUBLAS_HINT and device_problem('cuda:0') == CUBLAS_HINT
 
 
 def test_learning_rate_schedule():

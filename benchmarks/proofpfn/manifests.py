@@ -188,7 +188,7 @@ class Manifest:
         duplicates.
 
         Raises:
-            KeyError: For an unknown graph or view.
+            KeyError: For an unknown graph, view or audit group code.
             ValueError: When neither graphs nor a view is given.
         """
         if graphs:
@@ -202,7 +202,9 @@ class Manifest:
         else:
             raise ValueError('choose graphs or a view')
         if codes is not None:
-            allowed = set(codes)
+            known, allowed = {e.code for e in self.entries if e.code}, set(codes)
+            if allowed - known:
+                raise KeyError(f'{sorted(allowed - known)} are no audit group codes of {self.name}: {sorted(known)}')
             wanted = [e for e in wanted if e.code in allowed]
         return list({e.key: e for e in wanted}.values())
 

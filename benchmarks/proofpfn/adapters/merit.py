@@ -309,12 +309,15 @@ def run_in_child(argv: Sequence[str], graphs: int, *, code: Optional[PathLike] =
         The child's exit code, or ``None`` when it ran past its time.
 
     Raises:
-        AdapterSetupError: When the setup check fails.
+        AdapterSetupError: When the setup check fails or the Python of the child does not start.
     """
     merit = setup(code, models, checkpoint_root)
     command, env = child_command(argv, merit, python)
     logger.info('MERIT: %s', ' '.join(command))
-    exit_code = call(command, timeout=GRAPH_HOURS * 3600 * max(1, graphs), env=env).code
+    try:
+        exit_code = call(command, timeout=GRAPH_HOURS * 3600 * max(1, graphs), env=env).code
+    except OSError as error:   # no such Python
+        raise AdapterSetupError(f'MERIT: cannot run {command[0]} ({error})') from None
     if exit_code is None:
         logger.error('MERIT: the child process ran past %s h per graph and was stopped', GRAPH_HOURS)
     return exit_code

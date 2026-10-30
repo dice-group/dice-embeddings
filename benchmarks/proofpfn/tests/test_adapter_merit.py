@@ -143,6 +143,33 @@ def test_setup_refusals(tmp_path):
         merit.setup(fake_home(tmp_path / 'b', pins['code_commit']))
 
 
+def pinned_setup(tmp_path: Path) -> tuple[Path, Path, Path]:
+    """A MERIT folder and five checkpoint files with a models.json that pins them: ``(code, checkpoint root, models)``."""
+    home, root = fake_home(tmp_path, '1' * 40), tmp_path / 'checkpoints'
+    (root / merit.CHECKPOINTS).mkdir(parents=True)
+    doc = json.loads((mf.MANIFESTS / 'models.json').read_text())
+    for key, seed in zip(merit.KEYS, merit.SEEDS):
+        (root / merit.CHECKPOINTS / f'merit_s{seed}.pth').write_bytes(key.encode())
+        doc['references'][key]['sha256'] = mf.file_sha256(root / merit.CHECKPOINTS / f'merit_s{seed}.pth')
+    doc['external']['merit'] = dict(code_commit='1' * 40, **{name: mf.file_sha256(home / name) for name in merit.UPSTREAM})
+    (tmp_path / 'models.json').write_text(json.dumps(doc))
+    return home, root, tmp_path / 'models.json'
+
+
+def test_the_exit_code_of_the_child_process(tmp_path, monkeypatch, capsys):
+    """A child that a signal stops gives 143, one past its time limit 3; a Python that does not start is wrong input."""
+    home, root, models = pinned_setup(tmp_path)
+    command = ['adapter', 'merit', '--set', 'gate', '--graphs', 'UMLS', '--out', str(tmp_path / 'rows'), '--code', str(home), '--models',
+               str(models), '--checkpoint-root', str(root), '--python']
+    python = tmp_path / 'python'
+    monkeypatch.setattr(merit, 'GRAPH_HOURS', 1 / 3600)
+    for script, code in (('exit 5', 5), ('kill -9 $$', cli.EXIT_TERM), ('exec sleep 30', cli.EXIT_FAILED)):
+        python.write_text(f'#!/bin/sh\n{script}\n')
+        python.chmod(0o755)
+        assert cli.main([*command, str(python)]) == code, script
+    assert cli.main([*command, str(tmp_path / 'missing')]) == cli.EXIT_INPUT and 'cannot run' in capsys.readouterr().err
+
+
 def test_child_process_command(tmp_path):
     home = fake_home(tmp_path, '0' * 40)
     setup = merit.MeritSetup(home=home, pins={}, checkpoints={}, sha256={})
