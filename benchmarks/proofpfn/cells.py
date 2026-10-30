@@ -26,6 +26,7 @@ Output (``write_queries``): ``queries.csv`` with the columns graph, query, r1_at
 sorted by index with the tail query first, CSV line ends ``\\r\\n``; and ``<out>.meta.json`` with the input hashes.
 """
 import csv
+import io
 import json
 import random
 from collections import Counter, defaultdict
@@ -235,20 +236,18 @@ def write_queries(manifest: Manifest, entries: Sequence[GraphEntry], out: PathLi
         The meta record.
     """
     out = Path(out)
-    out.parent.mkdir(parents=True, exist_ok=True)
     counts, inputs = {}, {}
-    temporary = out.with_name(f'.{out.name}.tmp')
-    with temporary.open('w', newline='') as handle:
-        writer = csv.writer(handle)
-        writer.writerow(HEADER)
-        for entry in entries:
-            graph = load_graph(manifest, entry, root)
-            rows = graph_cells(graph)
-            for query, r1, peer, r2 in rows:
-                writer.writerow([entry.name, query, repr(r1), repr(peer), repr(r2)])
-            counts[entry.name] = len(rows)
-            inputs[entry.name] = {f'{s}.txt': graph.hashes[f'{s}.txt'] for s in SPLITS}
-    temporary.replace(out)
+    text = io.StringIO(newline='')
+    writer = csv.writer(text)
+    writer.writerow(HEADER)
+    for entry in entries:
+        graph = load_graph(manifest, entry, root)
+        rows = graph_cells(graph)
+        for query, r1, peer, r2 in rows:
+            writer.writerow([entry.name, query, repr(r1), repr(peer), repr(r2)])
+        counts[entry.name] = len(rows)
+        inputs[entry.name] = {f'{s}.txt': graph.hashes[f'{s}.txt'] for s in SPLITS}
+    atomic_write_bytes(out, text.getvalue().encode())
     meta = dict(manifest=manifest.name, manifest_sha256=manifest.sha256, seed=SEED, graphs=counts, out_sha256=file_sha256(out),
                 inputs=inputs, code_sha256={f'benchmarks/proofpfn/{name}': file_sha256(Path(__file__).with_name(name)) for name in ('cells.py', 'data.py')})
     atomic_write_bytes(out.with_name(out.name + '.meta.json'), (json.dumps(meta, indent=1, sort_keys=True) + '\n').encode())
