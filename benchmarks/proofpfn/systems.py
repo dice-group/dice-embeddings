@@ -375,8 +375,8 @@ class OfficialFlock(Reference):
 System = Union[ProofPFNFamily, Reference]
 
 
-def family(key: str, arm: str, template: str, pins: ModelPins) -> ProofPFNFamily:
-    """A family from a path template with ``{seed}``, with the pins of its key.
+def family(key: str, arm: str, template: str, models: ModelPins) -> ProofPFNFamily:
+    """A family from a path template with ``{seed}``, with the pins of its key in ``models``.
 
     A key registered in ``models.json`` must be registered for this arm and have pins; any other key must not be a
     registered key (a test family, run without pins).
@@ -391,8 +391,8 @@ def family(key: str, arm: str, template: str, pins: ModelPins) -> ProofPFNFamily
         raise SystemCheckError(f'{key}: the checkpoint template {template!r}: {error}') from None
     if fields != {'seed'}:
         raise SystemCheckError(f'{key}: the checkpoint template needs {{seed}} and no other field')
-    registered = pins.family_of_key(key)
-    if key in pins.references or key in REFERENCE_KEYS:
+    registered = models.family_of_key(key)
+    if key in models.references or key in REFERENCE_KEYS:
         raise SystemCheckError(f'{key} is a reference key')
     if registered is not None and (registered.arm != arm or not registered.loadable):
         raise SystemCheckError(f'{key} is the registered key of arm {registered.arm}, not of {arm}')
@@ -401,15 +401,15 @@ def family(key: str, arm: str, template: str, pins: ModelPins) -> ProofPFNFamily
     return ProofPFNFamily(key=key, arm=arm, checkpoints=MappingProxyType({s: Path(template.format(seed=s)) for s in SEEDS}), pins=registered)
 
 
-def reference(key: str, pins: ModelPins, root: Union[str, Path] = CHECKPOINTS, one_microbatch: bool = True) -> Reference:
-    """A reference system by key (``trix``, ``ultra3g``, ``flockoff``) with its pinned checkpoint below ``root``.
+def reference(key: str, models: ModelPins, root: Union[str, Path] = CHECKPOINTS, one_microbatch: bool = True) -> Reference:
+    """A reference system by key (``trix``, ``ultra3g``, ``flockoff``) with its checkpoint below ``root``, pinned in ``models``.
 
     Raises:
         SystemCheckError: For an unknown key.
     """
-    if key not in REFERENCE_KEYS or key not in pins.references:
+    if key not in REFERENCE_KEYS or key not in models.references:
         raise SystemCheckError(f'unknown reference {key!r}; choose from {REFERENCE_KEYS}')
-    pin = pins.references[key]
+    pin = models.references[key]
     path = Path(root) / str(pin.path)
     if key == 'flockoff':
         return OfficialFlock(key=key, path=path, sha256=pin.sha256, one_microbatch=one_microbatch)

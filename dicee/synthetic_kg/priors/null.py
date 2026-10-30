@@ -46,7 +46,7 @@ def _accept(k1: np.ndarray, k2: np.ndarray, ok: np.ndarray, room: int) -> np.nda
 
 
 def _swap_relation(H: np.ndarray, T: np.ndarray, n: int, rng: np.random.Generator, budget: float, dom_mask: np.ndarray,
-                  ran_mask: np.ndarray) -> tuple[np.ndarray, int, bool]:
+                   ran_mask: np.ndarray) -> tuple[np.ndarray, int, bool]:
     """Directed swaps of one relation's facts ``(H, T)``; the heads stay in their slots (``s5_swap.swap_relation``).
 
     Returns:
@@ -84,7 +84,7 @@ def _swap_relation(H: np.ndarray, T: np.ndarray, n: int, rng: np.random.Generato
 
 
 def _swap_undirected(H: np.ndarray, T: np.ndarray, n: int, rng: np.random.Generator, budget: float,
-                    mask: np.ndarray) -> tuple[np.ndarray, np.ndarray, int, bool]:
+                     mask: np.ndarray) -> tuple[np.ndarray, np.ndarray, int, bool]:
     """Swaps of a symmetric relation as unordered pairs; each matched {a, b}, {c, d} proposes {a, c}, {b, d} or {a, d},
     {c, b} by a fair coin (``s5_swap.swap_undirected``).
 

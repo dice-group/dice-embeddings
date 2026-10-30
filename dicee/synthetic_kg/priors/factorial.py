@@ -597,7 +597,7 @@ def _factorial_world(attached: bool, family: str, sparse: tuple[Episode, list[di
 
 
 def _observation_dose(world: FactorialWorld, source: tuple[Episode, list[dict]], sparse: tuple[Episode, list[dict]],
-                     ids: tuple[list[int], list[int]]) -> FactorialWorld:
+                      ids: tuple[list[int], list[int]]) -> FactorialWorld:
     """Hide every sparse example after the first of its kind and add as many background edges in the core
     (``demo_context.layout``, ``_background`` and ``transform`` with view ``dose``).
 
