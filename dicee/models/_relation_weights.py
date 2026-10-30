@@ -51,11 +51,12 @@ def incidence_counts(direct: torch.Tensor, num_entities: int, num_relations: int
         ``a`` and role ``INCIDENCE_PAIRS[k][1]`` of relation ``b``) and ``degrees`` int64 ``[2, 2R]`` (entities per role).
     """
     triples = _with_inverses(direct, num_entities, num_relations)
-    incidence = torch.zeros((2, num_entities, 2 * num_relations), dtype=torch.long)
+    incidence = torch.zeros((2, num_entities, 2 * num_relations), dtype=torch.float64)
     for side, column in enumerate((0, 2)):
         incidence[side, triples[:, column], triples[:, 1]] = 1
-    counts = torch.stack([incidence[a].T @ incidence[b] for a, b in INCIDENCE_PAIRS])
-    return counts, incidence.sum(1)
+    # Float64 products of 0/1 matrices are exact: every partial sum is an integer of at most num_entities < 2^53.
+    counts = torch.stack([incidence[a].T @ incidence[b] for a, b in INCIDENCE_PAIRS]).long()
+    return counts, incidence.sum(1).long()
 
 
 def relation_count_weights(direct: torch.Tensor, num_entities: int, num_relations: int) -> torch.Tensor:
