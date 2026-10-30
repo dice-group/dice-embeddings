@@ -8,22 +8,11 @@ import torch
 
 from benchmarks.proofpfn import manifests as mf
 from benchmarks.proofpfn import systems as sy
-from dicee.synthetic_kg.arms import ARMS, SEEDS, initial_model
-from dicee.synthetic_kg.checkpoint import from_research_export, make_checkpoint, save_checkpoint
-from tests.test_synthetic_checkpoint import built_export
+from dicee.synthetic_kg.arms import SEEDS, initial_model
+from dicee.synthetic_kg.checkpoint import from_research_export, save_checkpoint
+from tests.proofpfn_fixtures import built_export, clean_checkpoints
 
 from .golden import fixture, g4_export
-
-
-def clean_checkpoints(folder, arm: str) -> str:
-    """Checkpoints of an arm's initial weights for the three seeds; returns the template."""
-    for seed in (42, 43, 44):
-        order = ARMS[arm].pinned_order(seed)
-        assert order is not None
-        checkpoint = make_checkpoint(initial_model(arm, seed).state_dict(), arm=arm, seed=seed, updates=0, weights='raw',
-                                     order_sha256=order, provenance={'source': 'test'})
-        save_checkpoint(checkpoint, folder / f'{arm}-{seed}.pt')
-    return str(folder / f'{arm}-{{seed}}.pt')
 
 
 def test_family_keys_and_pins(tmp_path):

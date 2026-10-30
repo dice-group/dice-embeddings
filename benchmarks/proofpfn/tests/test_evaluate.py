@@ -14,9 +14,9 @@ from benchmarks.proofpfn import evaluate as ev
 from benchmarks.proofpfn import manifests as mf
 from benchmarks.proofpfn import systems as sy
 from dicee.evaluation._filtering import FilteredRanker
+from tests.proofpfn_fixtures import clean_checkpoints
 
 from .golden import tiny_graph, write_graph, write_manifest
-from .test_systems import clean_checkpoints
 
 REGISTERED = mf.REPO / 'benchmarks' / 'proofpfn' / 'registered'
 

@@ -8,9 +8,9 @@ import pytest
 
 from benchmarks.proofpfn import cli, evaluate
 from benchmarks.proofpfn import manifests as mf
+from tests.proofpfn_fixtures import clean_checkpoints
 
 from .golden import tiny_graph, write_graph, write_manifest
-from .test_systems import clean_checkpoints
 
 
 def test_family_options():
