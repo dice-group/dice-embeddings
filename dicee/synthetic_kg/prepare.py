@@ -119,8 +119,15 @@ class PreparedWorld:
         return out
 
 
-def _answers_by_anchor(facts: frozenset[Triple]) -> tuple[defaultdict[tuple[int, int], set[int]], defaultdict[tuple[int, int], set[int]]]:
-    """The tails of every ``(h, r)`` and the heads of every ``(r, t)`` among the facts."""
+def answers_by_anchor(facts: frozenset[Triple]) -> tuple[defaultdict[tuple[int, int], set[int]], defaultdict[tuple[int, int], set[int]]]:
+    """The answers of every anchor among the facts.
+
+    Args:
+        facts: ``(h, r, t)`` facts.
+
+    Returns:
+        ``(tails, heads)``: the tails of every ``(h, r)`` and the heads of every ``(r, t)``.
+    """
     tails: defaultdict[tuple[int, int], set[int]] = defaultdict(set)
     heads: defaultdict[tuple[int, int], set[int]] = defaultdict(set)
     for h, r, t in facts:
@@ -141,7 +148,7 @@ def rbw_answers(batch: WorldBatch) -> list[list[int]]:
     Raises:
         ValueError: When a group's own answer is not among them (a query fact that is false or observed).
     """
-    tails, heads = _answers_by_anchor(batch.truth)
+    tails, heads = answers_by_anchor(batch.truth)
     context = batch.context
     out = []
     for (h, r, t), head in zip(batch.groups[:, 0].tolist(), batch.head_prediction.tolist()):
@@ -164,7 +171,7 @@ def context_answers(batch: WorldBatch) -> list[list[int]]:
     Returns:
         One sorted answer list per group.
     """
-    tails, heads = _answers_by_anchor(batch.context)
+    tails, heads = answers_by_anchor(batch.context)
     return [sorted(heads[r, t] if head else tails[h, r]) for (h, r, t), head in zip(batch.groups[:, 0].tolist(), batch.head_prediction.tolist())]
 
 

@@ -5,6 +5,7 @@ Commands:
     check       CPU only: the graphs' hash checks and counts, and the systems' files and pins; no score
     run         rank the graphs with the systems and write one row file per graph (``evaluate.evaluate_graph``)
     cells       the query cells of the graphs (``queries.csv``, ``cells.write_queries``)
+    gate        the N validity gate of amendment A1: S and N on held-out worlds of the prior (``gate.gate``)
     fv1-models  the ``--models`` file of the registered ``fv1_tables.py`` from ``models.json``
     adapter     an external baseline (``kgpfn``, ``merit``, ``anyburl``) on the graphs: one row file per graph (``adapters``)
 
@@ -81,6 +82,13 @@ def build_parser() -> argparse.ArgumentParser:
             sub.add_argument('--max-minutes', type=float, default=0.0, help='save and stop after this time (0: no limit)')
         if name == 'cells':
             sub.add_argument('--out', type=Path, required=True, help='the queries.csv file')
+    gate = commands.add_parser('gate')
+    gate.add_argument('--family', action='append', default=[], help='[KEY=]S:TEMPLATE and [KEY=]N:TEMPLATE, each with {seed}')
+    gate.add_argument('--families', default=None, help='comma list of held-out families (default: rec1, attr2, list1, categorical2, plain)')
+    gate.add_argument('--per-family', type=int, default=100, help='held-out worlds per family (at most 100)')
+    gate.add_argument('--device', default='cuda')
+    gate.add_argument('--models', type=Path, default=None, help='the model pins (default: manifests/models.json)')
+    gate.add_argument('--out', type=Path, required=True, help='the result file (JSON)')
     fv1 = commands.add_parser('fv1-models')
     fv1.add_argument('--models', type=Path, default=None)
     fv1.add_argument('--out', type=Path, required=True)
@@ -214,6 +222,25 @@ def _adapter(args: argparse.Namespace, argv: Sequence[str]) -> int:
     return EXIT_FAILED if 'failed' in statuses.values() else 0
 
 
+def _gate(args: argparse.Namespace) -> int:
+    from .gate import FAMILIES, gate
+    from .systems import family
+    models = read_models(args.models)
+    systems = {arm: family(key, arm, template, models) for key, arm, template in (parse_family(spec, models) for spec in args.family)}
+    if len(args.family) != 2 or set(systems) != {'S', 'N'}:
+        raise ValueError('the gate needs one --family of arm S and one of arm N')
+    record = gate(systems['S'], systems['N'], args.families.split(',') if args.families else FAMILIES, args.per_family, args.device)
+    args.out.parent.mkdir(parents=True, exist_ok=True)
+    args.out.write_text(json.dumps(record, indent=1) + '\n')
+    print('| family | worlds | MRR S | MRR N | D = S - N | SE | reading |')
+    for name, value in record['results'].items():
+        print(f"| {name} | {value['worlds']} | {value['mrr_a']:.4f} | {value['mrr_b']:.4f} | {value['D']:+.4f} | {value['se']:.4f} | {value['reading']} |")
+    if 'reading' in record:
+        print(f"n_validity: {record['reading']['n_validity']}")
+    print(f'-> {args.out}')
+    return 0
+
+
 def _fv1_models(args: argparse.Namespace) -> int:
     args.out.write_text(json.dumps(read_models(args.models).fv1_models(), indent=1, sort_keys=True) + '\n')
     print(f'-> {args.out}')
@@ -236,7 +263,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             return 0
         if args.command == 'adapter':
             return _adapter(args, argv)
-        commands = dict(check=_check, run=_run, cells=_cells)
+        commands = dict(check=_check, run=_run, cells=_cells, gate=_gate)
         commands['fv1-models'] = _fv1_models
         return commands[args.command](args)
     except (ManifestError, BlindSetError, KeyError, ValueError) as error:
