@@ -88,6 +88,7 @@ def test_refusals(tmp_path, capsys):
                     ['gate', '--family', f'gs=S:{template}', '--family', f'gn=N:{template}', '--per-family', '101', '--out', str(tmp_path / 'g.json')],
                     ['gate', '--family', f'gs=S:{template}', '--family', f'gn=N:{template}', '--device', 'cuda:99', '--out', str(tmp_path / 'g.json')],
                     ['list', '--set', 'dev121', '--codes', 'Z'], ['list', '--set', 'dev121', '--view', 'main', '--graphs', 'UMLS'],
+                    ['list', '--set', 'gate', '--view', 'nosuch', '--graphs', 'UMLS'],
                     ['check', '--set', 'gate', '--family', f'ts=S:{tmp_path}/{{seed}}-{{other}}.pt'],
                     ['check', '--set', 'gate', '--family', f'ts=S:{tmp_path}/{{seed}}-{{}}.pt'], ['check', '--set', 'gate', '--family', 'ts=S:{seed']):
         assert cli.main(command) == cli.EXIT_INPUT, command

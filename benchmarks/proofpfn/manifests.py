@@ -220,13 +220,13 @@ class Manifest:
             KeyError: For an unknown graph, view or audit group code.
             ValueError: When neither graphs nor a view is given.
         """
+        if view and view not in self.views:
+            raise KeyError(f'{view!r} is not a view of {self.name}: {sorted(self.views)}')
         if graphs:
             wanted = [self.entry(g) for g in graphs]
             if view:
                 wanted = [e for e in wanted if e.name in self.views[view]]
         elif view:
-            if view not in self.views:
-                raise KeyError(f'{view!r} is not a view of {self.name}: {sorted(self.views)}')
             wanted = [self.entry(g) for g in self.views[view]]
         else:
             raise ValueError('choose graphs or a view')

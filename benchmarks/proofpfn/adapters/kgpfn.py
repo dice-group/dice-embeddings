@@ -314,11 +314,11 @@ def _run_worker(system: KGPFN, entry: GraphEntry, folder: Path, meta: Mapping[st
     """
     batch, heads, candidates = meta['batch_size'], meta['entity_chunk'], meta['eval_chunk']
     env = worker_environment(system, folder)
-    for stale in ('raw.json', 'raw.error.json', 'scores.npz'):   # outputs of an earlier run of this graph
-        (folder / stale).unlink(missing_ok=True)
     code: Optional[int] = 0
     attempt = 0
     for attempt in (1, 2):
+        for stale in ('raw.json', 'raw.error.json', 'scores.npz'):   # outputs of an earlier run or attempt
+            (folder / stale).unlink(missing_ok=True)
         command = worker_command(system, entry, folder, batch, heads, candidates, meta['num_neg'], meta['dump'])
         logger.info('%s: attempt %d, batch %d, heads %d, candidates %d, negatives %d', entry.name, attempt, batch, heads, candidates,
                     meta['num_neg'])

@@ -27,8 +27,9 @@ def test_family_keys_and_pins(tmp_path):
     with pytest.raises(sy.SystemCheckError, match='pinned research export'):
         registered.check()
     assert sy.family('pcuht', 'HT', template, pins).pins == pins.families['HT']
-    for key, arm, message in (('rec10axlepcunoa', 'CU', 'registered key of arm S'), ('rec10axlenoa', 'S', 'registered key of arm S0'),
-                              ('trix', 'S', 'reference key'), ('Ts', 'S', 'lower-case')):
+    for key, arm, message in (('rec10axlepcunoa', 'CU', 'registered key of arm S'), ('rec10axlenoa', 'S', 'rows-only arm S0'),
+                              ('rec10axlenoa', 'S0', 'rows-only arm S0'), ('trix', 'S', 'reference key'), ('Ts', 'S', 'lower-case'),
+                              ('42', 'S', 'starting with a letter')):
         with pytest.raises(sy.SystemCheckError, match=message):
             sy.family(key, arm, template, pins)
     doc = json.loads((mf.MANIFESTS / 'models.json').read_text())
