@@ -418,7 +418,7 @@ def verify(dump: Path, folder: Path, graph: GraphData, queries: Queries, rows: S
         The number of rows whose rule view rank or raw rank differs from the ranks of the dumped scores.
 
     Raises:
-        ValueError: When the dump does not cover the rows.
+        ValueError: When the dump does not cover the rows, or holds a row of no query.
     """
     order = {name: i for i, name in enumerate(worker_entities(folder / 'stage'))}
     permutation = torch.tensor([order[name] for name in graph.entities])   # benchmark id -> worker id
@@ -428,6 +428,8 @@ def verify(dump: Path, folder: Path, graph: GraphData, queries: Queries, rows: S
     got = {}
     with np.load(dump) as data:
         for position, head, scores in zip(data['index'].tolist(), data['head'].tolist(), data['scores']):
+            if (position, head) not in queries_of:
+                raise ValueError(f'the dumped scores hold a row of no query (position {position}, head {head})')
             r, anchor, target, others = queries_of[position, head]
             view = torch.log_softmax(torch.from_numpy(scores).double()[permutation], 0)
             got[position, head] = view_ranks(view, target, others, anchor, r in queries.reflexive, ranker)

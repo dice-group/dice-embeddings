@@ -122,6 +122,14 @@ def test_worker_ranks_equal_the_benchmark_ranker_and_verify(tmp_path):
     assert kgpfn.verify(work / 'scores.npz', work, graph, queries, rows) == 0
     rows[3] = dict(rows[3], **{'kgpfn:raw': rows[3]['kgpfn:raw'] + 1})
     assert kgpfn.verify(work / 'scores.npz', work, graph, queries, rows) == 1
+    np.savez_compressed(work / 'short.npz', index=np.array([p for p, _ in keys[:-1]]), head=np.array([h for _, h in keys[:-1]]),
+                        scores=worker_scores[:-1])
+    with pytest.raises(ValueError, match='do not cover'):
+        kgpfn.verify(work / 'short.npz', work, graph, queries, rows)
+    np.savez_compressed(work / 'extra.npz', index=np.array([p for p, _ in keys] + [len(queries.facts)]),
+                        head=np.array([h for _, h in keys] + [False]), scores=np.concatenate([worker_scores, worker_scores[:1]]))
+    with pytest.raises(ValueError, match='row of no query'):
+        kgpfn.verify(work / 'extra.npz', work, graph, queries, rows)
 
 
 def test_rows_and_outputs_are_checked(tmp_path):
