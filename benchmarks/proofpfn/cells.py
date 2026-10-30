@@ -4,6 +4,9 @@ Per graph (``graph_cells``), as ``fresh-v1-runtime/fv1_cells.py`` runs ``icml-ro
 with the predictors of ``realsrc-v1/xrel/xr_diag.py``:
 
 - the observed graph is train.txt with 2R relations (r and its inverse r + R); the filter is train, valid and test;
+- the CSR matrix of a relation lists the edges of each row in train.txt order, a repeated fact as its own entry
+  (``_input_order_matrix``); R2 samples facts by their position in this order, so ``r2_at`` does not depend on the
+  scipy version;
 - the queries are every test fact in both directions, in the order of ``rng.sample(facts, len(facts))`` with
   ``rng = random.Random(0)``: the head queries ``(t, r + R, h)`` of that order, then the tail queries ``(h, r, t)``;
 - ``R1`` scores a candidate e of a query ``(x, q, ?)`` by the sum over relations ``r' != q`` with an observed
@@ -44,9 +47,21 @@ HEADER = ('graph', 'query', 'r1_at', 'rank_peer', 'r2_at')
 Cell = tuple[str, float, float, float]
 
 
+def _input_order_matrix(rows: np.ndarray, cols: np.ndarray, n: int) -> sparse.csr_matrix:
+    """The ``n x n`` CSR matrix with one stored 1.0 per edge ``rows[i] -> cols[i]``, each row in input order.
+
+    A stable sort by row gives the columns and the row counts give ``indptr``. A repeated edge stays its own entry. scipy
+    1.13.0, the version of the frozen run, built ``csr_matrix((data, (rows, cols)))`` this way. Later versions sort each
+    row, which changes the facts that ``rules_r2`` samples.
+    """
+    indptr = np.zeros(n + 1, dtype=np.int64)
+    np.cumsum(np.bincount(rows, minlength=n), out=indptr[1:])
+    return sparse.csr_matrix((np.ones(len(rows)), cols[np.argsort(rows, kind='stable')], indptr), shape=(n, n))
+
+
 class ObservedGraph:
-    """The observed graph with 2R relations: per relation a CSR matrix (source x destination) and its transpose, the
-    sorted edge list, and per relation the number of sources of each destination (its popularity)."""
+    """The observed graph with 2R relations: per relation a CSR matrix (source x destination, rows in input order) and its
+    transpose, the sorted edge list, and per relation the number of sources of each destination (its popularity)."""
 
     def __init__(self, edges: np.ndarray, n: int, nr: int):
         """Build the matrices of an ``[N, 3]`` int64 edge array over ``n`` entities and ``nr`` relations."""
@@ -57,10 +72,9 @@ class ObservedGraph:
         self.src, self.rel, self.dst = src[order], rel[order], dst[order]
         self.ptr = np.searchsorted(self.src, np.arange(n + 1))
         self.mat: dict[int, sparse.csr_matrix] = {}
-        for q in np.unique(rel):
+        for q in np.unique(rel).tolist():
             m = rel == q
-            self.mat[int(q)] = sparse.csr_matrix((np.ones(int(m.sum())), (src[m], dst[m])), shape=(n, n))
-            self.mat[int(q)].data[:] = 1.0
+            self.mat[q] = _input_order_matrix(src[m], dst[m], n)
         self.pop = {q: np.asarray(m.sum(0)).ravel() for q, m in self.mat.items()}
         self.matT = {q: m.T.tocsr() for q, m in self.mat.items()}
         self.invdeg = {q: np.where(self.pop[q] > 0, 1.0 / np.maximum(self.pop[q], 1), 0.0) for q in self.mat}

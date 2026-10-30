@@ -120,3 +120,8 @@ The gate's rank is the mean-tie rank of the cells (below), not the pessimistic r
 the predictors R1, R2 and PEER of `realsrc-v1/xrel/xr_diag.py` (module docstring). Their rank `data.rank_of` puts ties
 at their mean rank and excludes the anchor, on purpose a different rule from the ranks above. The predictors POP, VOTE
 and CF are not ported: no output holds them and they draw no random numbers.
+
+The CSR matrix of a relation lists the edges of each row in train.txt order and keeps a repeated fact as its own entry,
+as scipy 1.13.0 of the frozen run built it. R2 samples facts by their position in a row, and scipy 1.13.1 and later sort
+the rows of `csr_matrix((data, (row, col)))`. So `cells.py` builds each matrix from an explicit stable sort and
+`indptr`, and its `queries.csv` does not depend on the scipy version.
