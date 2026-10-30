@@ -73,6 +73,18 @@ def test_wrong_input(tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeyp
     assert 'another run' in refused('train', '--arm', 'UL', '--seed', '44', '--out', str(tmp_path / 'UL'), '--device', 'cpu', '--workers', '0')
 
 
+def test_sources_refuse_split_files_that_miss_or_differ(tmp_path, capsys):
+    graph = tmp_path / 'KGs' / 'WN18RR'
+    graph.mkdir(parents=True)
+    (graph / 'train.txt').write_text('a r b\n')
+    options = ['sources', '--graphs', str(tmp_path / 'KGs'), '--out', str(tmp_path / 'sources'), '--names', 'WN18RR']
+    assert command.main(options) == command.EXIT_INPUT and 'has no valid.txt, test.txt' in capsys.readouterr().err
+    for split in ('valid', 'test'):
+        (graph / f'{split}.txt').write_text('b r a\n')
+    assert command.main(options) == command.EXIT_INPUT and 'not the pin' in capsys.readouterr().err
+    assert not (tmp_path / 'sources' / 'WN18RR' / 'data.pt').exists()
+
+
 def test_convert_a_research_export(tmp_path):
     export = golden_large('g4/golden-runs/REC10A-XLE-UL-noA/training/43/export-20.pt')
     assert command.main(['convert', '--export', str(export), '--arm', 'UL', '--out', str(tmp_path / 'UL-43.pt'), '--weights', 'raw']) == 0

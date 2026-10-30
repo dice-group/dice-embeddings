@@ -21,7 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complex query answering (`dicee.query_answering`): CQD beam search over KGEs and KGFMs with learned score adapters, negated query types, native UltraQuery, GNN-QE, QTO, CQD, CQD-Hybrid, ConE and CLMPT checked against their upstream implementations, and resumable filtered evaluation with exact expected ranks under ties
 - Reproducible UltraQuery and +H benchmarks (`python -m benchmarks.cqa`): frozen studies verified against the pinned upstream implementations, a pinned Docker runtime, paired adapter, answer-filter and inference-graph ablations
 - ProofPFN (`dicee.synthetic_kg`): ULTRA pretrained on worlds of a synthetic prior, with presets of seven arms, resumable runs and its own checkpoint format ([guide](docs/proofpfn.md))
-- `dicee_pretrain_synthetic`: the command that pretrains an arm and converts research exports into checkpoints
+- `dicee_pretrain_synthetic`: the command that pretrains an arm, converts research exports into checkpoints and builds the real source graphs of arms R and M
 - ProofPFN benchmark (`python -m benchmarks.proofpfn`): frozen graph and model manifests, zero-shot ranks by the research protocol, query cells and the N validity gate
 - Adapters of KGPFN, MERIT and AnyBURL for the ProofPFN benchmark, and its six registered fresh-v1 analysis files, byte-identical to their freeze anchors
 - Golden tests against the research code: bitwise world orders, worlds, initial weights, first training updates, exports, ranks, query cells and gate values

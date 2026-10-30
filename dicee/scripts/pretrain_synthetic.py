@@ -5,29 +5,34 @@ Commands:
              ``last.pt`` resumes its run
     convert  convert a research ``export-<N>.pt`` into a ``proofpfn-checkpoint-v1`` file after its inertness checks
              (``dicee.synthetic_kg.checkpoint.from_research_export``)
+    sources  build the real source graphs of arms R and M from their split files (``priors.real.build_source``)
 
 Examples::
 
     dicee_pretrain_synthetic train --arm S --seed 42 --out runs/S/42
+    dicee_pretrain_synthetic sources --graphs KGs --out data/real-sources
     dicee_pretrain_synthetic train --arm R --seed 42 --out runs/R/42 --real_sources data/real-sources
     dicee_pretrain_synthetic convert --export export-24000.pt --arm S --out S-42.pt
 
 The command sets ``CUBLAS_WORKSPACE_CONFIG=:4096:8`` (deterministic cuBLAS) unless it is set. SIGINT and SIGTERM stop a
 run after the current update with ``last.pt``. Exit codes: 0 done, 1 error, 2 wrong input (one ``error:`` line: options,
 a folder of another run or with changed sources, real source graphs that are missing or not pinned, a research export
-that the converter cannot read or refuses), 3 stopped by a signal (rerun the same command to resume).
+that the converter cannot read or refuses, split files that miss or do not give a pinned source graph), 3 stopped by a
+signal (rerun the same command to resume).
 """
 import argparse
 import dataclasses
 import logging
 import signal
 import sys
+from pathlib import Path
 from typing import Any, Optional, Sequence
 
 from dicee.synthetic_kg.arms import ARMS
 from dicee.synthetic_kg.checkpoint import CheckpointError, from_research_export, save_checkpoint
 from dicee.synthetic_kg.determinism import cublas_workspace
 from dicee.synthetic_kg.pretraining import EXPORTS, PretrainConfig, RunInputError, pretrain
+from dicee.synthetic_kg.priors.real import NAMES, build_source
 from dicee.synthetic_kg.recipe import TOTAL_UPDATES
 
 logger = logging.getLogger(__name__)
@@ -78,6 +83,10 @@ def build_parser() -> argparse.ArgumentParser:
     convert.add_argument('--arm', required=True, choices=tuple(ARMS), help='the arm of the export')
     convert.add_argument('--out', required=True, help='the checkpoint file')
     convert.add_argument('--weights', choices=('ema', 'raw'), default='ema', help='the weights to convert (default: %(default)s)')
+    sources = commands.add_parser('sources', help='build the real source graphs of arms R and M from their split files')
+    sources.add_argument('--graphs', default='KGs', help='the folder with train.txt, valid.txt and test.txt of each graph in <name>/ (default: %(default)s)')
+    sources.add_argument('--out', required=True, help='the real-source folder; each graph goes to <name>/data.pt')
+    sources.add_argument('--names', default=','.join(NAMES), help='comma list of the graphs to build (default: %(default)s)')
     return parser
 
 
@@ -116,6 +125,17 @@ def _convert(args: argparse.Namespace) -> int:
     return 0
 
 
+def _sources(args: argparse.Namespace) -> int:
+    for name in (part for part in args.names.split(',') if part):
+        try:
+            path = build_source(name, Path(args.graphs) / name, args.out)
+        except ValueError as error:
+            print(f'error: {error}', file=sys.stderr)
+            return EXIT_INPUT
+        logger.info('%s -> %s', name, path)
+    return 0
+
+
 def main(argv: Optional[Sequence[str]] = None) -> int:
     """Run a command.
 
@@ -128,7 +148,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = build_parser().parse_args(argv)
     logging.basicConfig(level=logging.INFO, format='%(asctime)s %(name)s: %(message)s')
     with cublas_workspace():
-        return _train(args) if args.command == 'train' else _convert(args)
+        return dict(train=_train, convert=_convert, sources=_sources)[args.command](args)
 
 
 if __name__ == '__main__':

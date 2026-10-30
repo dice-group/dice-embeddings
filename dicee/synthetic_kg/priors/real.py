@@ -91,11 +91,14 @@ def build_source(name: str, graph: Union[str, Path], folder: Union[str, Path]) -
         The file.
 
     Raises:
-        ValueError: For an unknown name, or a file whose SHA-256 differs from the pin (other split files than the
-            research's); nothing is written then.
+        ValueError: For an unknown name, a missing split file, or a file whose SHA-256 differs from the pin (other split
+            files than the research's); nothing is written then.
     """
     if name not in LAYOUTS:
         raise ValueError(f'unknown real source graph {name!r}; expected one of {NAMES}')
+    missing = [f'{split}.txt' for split in ('train', 'valid', 'test') if not (Path(graph) / f'{split}.txt').is_file()]
+    if missing:
+        raise ValueError(f'{graph} has no {", ".join(missing)}')
     keys, row_major = LAYOUTS[name]
     kg = KG(dataset_dir=str(graph), add_reciprocal=False, eval_model='test', training_technique='NegSample', separator=r'\s+', backend='pandas')
     splits = {s: torch.as_tensor(getattr(kg, f'{s}_set').astype('int64')) for s in ('train', 'valid', 'test')}

@@ -273,7 +273,7 @@ def _real_sources(prior: PriorConfig, folder: Union[str, Path, None]) -> dict[st
         raise RunInputError(str(error)) from None
     missing = [name for name in REAL_SOURCE_SHA256 if not (root / name / 'data.pt').is_file()]
     if missing:
-        raise RunInputError(f'the real source graphs {missing} are missing in {root}')
+        raise RunInputError(f'the real source graphs {missing} are missing in {root}; dicee_pretrain_synthetic sources builds them')
     found = {name: file_sha256(root / name / 'data.pt') for name in REAL_SOURCE_SHA256}
     differing = [name for name, digest in found.items() if digest != REAL_SOURCE_SHA256[name]]
     if differing:

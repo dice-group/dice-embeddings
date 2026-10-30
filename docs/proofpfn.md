@@ -11,7 +11,8 @@ The main model, PCUltra, is ULTRA with two relation-graph options: count weighti
 covers three parts:
 
 - `dicee/synthetic_kg/`: the prior, the seven arms, the pretraining loop and the checkpoint format.
-- `dicee_pretrain_synthetic`: the command for pretraining and for the conversion of research exports.
+- `dicee_pretrain_synthetic`: the command for pretraining, for the conversion of research exports and for the real
+  source graphs.
 - `benchmarks/proofpfn/`: the zero-shot benchmark, the N validity gate, the adapters of external baselines and the
   registered analysis files.
 
@@ -142,19 +143,31 @@ of update 24,000.
 
 ### Real source graphs
 
-Arms R and M build their real worlds from the train splits of FB15k-237, WN18RR and CoDEx-M. Give the folder of these
-graphs with `--real_sources` or with the environment variable `PROOFPFN_REAL_SOURCES`:
+Arms R and M build their real worlds from the train splits of FB15k-237, WN18RR and CoDEx-M. The command `sources` builds
+the source files from the split files of the three graphs:
+
+```bash
+dicee_pretrain_synthetic sources --graphs KGs --out data/real-sources
+```
 
 ```
-real-sources/
+data/real-sources/
   FB15k-237/data.pt
   WN18RR/data.pt
   CoDEx-M/data.pt
 ```
 
-- Each `data.pt` holds the splits as id tensors and the entity list (`{'splits': {'train': ...}, 'entities': [...]}`).
-- Before training, the run checks the SHA-256 of each file against its pin (`recipe.REAL_SOURCE_SHA256`).
-- The repository holds neither these files nor a script that builds them.
+- `--graphs` names a folder with `train.txt`, `valid.txt` and `test.txt` of each graph in `<name>/`. `KGs.zip` holds
+  FB15k-237 and WN18RR.
+- CoDEx-M comes from the repository tsafavi/codex at commit `3132e426c2a6b643b70bad679905a3a6270be440`. Copy its
+  files `data/triples/codex-m/train.txt`, `valid.txt` and `test.txt` into `KGs/CoDEx-M/`. The train file has the SHA-256
+  `d99c3437ab51690391a26d96976adf6e5494dba7ef6902e77000551bfa566556`.
+- Each `data.pt` holds the splits as id tensors, the entity names and the relation names. The command writes each file
+  as the research builders did and refuses a file whose SHA-256 differs from its pin (`recipe.REAL_SOURCE_SHA256`).
+- Give the folder to a run with `--real_sources` or with the environment variable `PROOFPFN_REAL_SOURCES`. Before
+  training, the run checks each file against its pin.
+- The repository holds none of the three graphs. Check the licence of each graph at its upstream source: FB15k-237
+  (Toutanova and Chen, 2015), WN18RR (Dettmers et al., 2018) and CoDEx-M (Safavi and Koutra, 2020).
 
 ### Devices and determinism
 
@@ -363,5 +376,6 @@ Golden references (goldens) record what the research code computes at small size
   so some of its ranks, differ between GPU types.
 - The graph files of the blind test sets (fresh-v1 and block 3) are never in the repository. Their manifests follow
   after the frozen read.
-- The real source graphs of arms R and M are not in the repository.
+- The real source graphs of arms R and M are not in the repository. The command `sources` builds them from their split
+  files.
 - AnyBURL learns its rules within a time budget, so two runs can give different rules.
