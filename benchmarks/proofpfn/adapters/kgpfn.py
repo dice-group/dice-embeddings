@@ -34,7 +34,7 @@ import torch
 from dicee.evaluation._filtering import FilteredRanker
 
 from ..data import GraphData, Queries, as_triples, load_graph, prepare_queries, read_triples
-from ..evaluate import error_path, row_file_path, write_error
+from ..evaluate import row_file_path
 from ..manifests import REPO, SPLITS, GraphEntry, Manifest, PathLike, file_sha256
 from . import (
     AdapterSetupError,
@@ -281,13 +281,6 @@ def verify(dump: Path, folder: Path, graph: GraphData, queries: Queries, rows: S
     return sum(got[q] != want[q] for q in want)
 
 
-def failed(final: Path, entry: GraphEntry, record: Mapping[str, Any]) -> str:
-    """Write a graph's error record; returns ``'failed'``."""
-    path = write_error(final, entry, **record)
-    logger.error('%s: KGPFN failed at %s -> %s', entry.name, record['stage'], path)
-    return 'failed'
-
-
 def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, system: KGPFN, *, root: PathLike = REPO,
                    work: Optional[PathLike] = None) -> str:
     """Score one graph with KGPFN and write its row file ``<out>/<collection>/kgpfn/<graph>.json``.
@@ -301,11 +294,11 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, system:
         work: The work root (default ``<out>/.work``).
 
     Returns:
-        ``'exists'``, ``'done'``, or ``'failed'`` (no context size fills every query, the worker failed, or its ranks did
-        not verify; the record is in ``.errors/`` next to the row file).
+        ``'exists'`` or ``'done'``.
 
     Raises:
         manifests.ManifestError: When the graph fails its hash check.
+        ExternalStepError: When no context size fills every query, the worker fails, or its ranks do not verify.
         ValueError: When the worker's output is incomplete or of another run.
     """
     final = row_file_path(out, entry, [KEY])
@@ -316,21 +309,20 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, system:
     queries = prepare_queries(graph, manifest.sample_rule)
     folder = work_folder(work, out, KEY, entry)
     folder.mkdir(parents=True, exist_ok=True)
-    try:
-        meta = prepare(system, entry, graph, queries, folder, manifest.folder(entry, root))
-    except ExternalStepError as error:
-        return failed(final, entry, error.record)
+    meta = prepare(system, entry, graph, queries, folder, manifest.folder(entry, root))
     code, attempts = run_worker(system, entry, folder, meta)
     if code:
         oom = folder / 'raw.error.json'
-        return failed(final, entry, dict(stage='run', exit_code=code, attempts=attempts, oom=json.loads(oom.read_text()) if oom.is_file() else None,
-                                         log_tail=(folder / f'worker-{attempts}.log').read_text(errors='replace').splitlines()[-30:]))
+        raise ExternalStepError(dict(stage='run', reason=f'the worker exited with code {code}', exit_code=code, attempts=attempts,
+                                     oom=json.loads(oom.read_text()) if oom.is_file() else None,
+                                     log_tail=(folder / f'worker-{attempts}.log').read_text(errors='replace').splitlines()[-30:]))
     raw = json.loads((folder / 'raw.json').read_text())
     check_output(raw, folder / 'meta.json')
     rows = rows_of(raw, queries)
     differ = verify(folder / 'scores.npz', folder, graph, queries, rows) if meta['dump'] else 0
     if differ:
-        return failed(final, entry, dict(stage='verify', differing_rows=differ, attempts=attempts))
+        raise ExternalStepError(dict(stage='verify', reason=f'{differ} rows differ from the ranks of the dumped scores', differing_rows=differ,
+                                     attempts=attempts))
     s = raw['settings']
     kgpfn_meta = dict(mode='blind', seed=raw['seed'], batch_size=s['batch_size'], entity_chunk=s['entity_chunk_size'], eval_chunk=s['eval_chunk_size'],
                       num_pos=s['num_pos'], num_neg=s['num_neg'], unfillable_contexts=meta['unfillable'], attempts=attempts,
@@ -343,5 +335,4 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, system:
                seconds=raw['times']['total_s'], meta_name='kgpfn_meta', meta=kgpfn_meta, code=CODE)
     for s_name in SPLITS:   # the staged copies of the graph files
         (folder / 'stage' / f'{s_name}.txt').unlink(missing_ok=True)
-    error_path(final).unlink(missing_ok=True)
     return 'done'

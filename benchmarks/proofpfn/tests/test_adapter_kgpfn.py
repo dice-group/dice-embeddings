@@ -63,11 +63,9 @@ def test_prepare_stages_the_files_and_writes_the_meta(tmp_path):
         # the worker's parse (a tab split) hashes as the host's
         assert kgpfn_worker.parse_sha(kgpfn_worker.read_split(work / 'stage' / f'{s}.txt')) == meta['parse_sha256'][s]
     small = tiny(tmp_path / 'small', entities=12)
-    with pytest.raises(ExternalStepError):   # no context size fills every query: the graph fails (an error record)
-        kgpfn.prepare(fake_setup(tmp_path), small[1], small[2], small[3], tmp_path / 'small-work', small[4])
-    assert kgpfn.evaluate_graph(small[0], small[1], tmp_path / 'rows', fake_setup(tmp_path), root=tmp_path / 'small') == 'failed'
-    record = json.loads((tmp_path / 'rows' / 'tiny' / 'kgpfn' / '.errors' / 'g.json').read_text())
-    assert record['stage'] == 'prepare' and record['unfillable']['20'] > 0
+    with pytest.raises(ExternalStepError) as caught:   # no context size fills every query: the graph fails (an error record)
+        kgpfn.evaluate_graph(small[0], small[1], tmp_path / 'rows', fake_setup(tmp_path), root=tmp_path / 'small')
+    assert caught.value.record['stage'] == 'prepare' and caught.value.record['unfillable'][20] > 0
 
 
 def worker_ranks(graph, queries, scores_of) -> tuple[dict, torch.Tensor]:

@@ -16,15 +16,16 @@ match. References: ``--references trix,ultra3g,flockoff`` (checkpoints below ``-
 An adapter takes its external code from ``--code`` or its environment variable (``$KGPFN_CODE``, ``$MERIT_HOME``,
 ``$ANYBURL_HOME``); ``--check`` checks the setup, the pins and the graphs without a run.
 
-Exit codes: 0 done; 2 wrong input (graph, system, hash, pins, adapter setup); 3 a graph ran out of CUDA memory or an
-adapter's external step failed on it (its error record is in ``.errors/`` of the row folder); 76 stopped at
-``--max-minutes`` (the part file is saved); 143 stopped by SIGTERM.
+Exit codes: 0 done; 2 wrong input (graph, system, hash, pins, adapter setup); 3 a graph ran out of CUDA memory, or an
+adapter failed on a graph and went on with the next one (the graph's error record is in ``.errors/`` of the row folder);
+76 stopped at ``--max-minutes`` (the part file is saved); 143 stopped by SIGTERM.
 """
 import argparse
 import json
 import logging
 import signal
 import sys
+import traceback
 from pathlib import Path
 from typing import Any, Optional, Sequence
 
@@ -228,14 +229,28 @@ def _adapter(args: argparse.Namespace, argv: Sequence[str]) -> int:
     print(f'{args.name}: {json.dumps(system.record())}')
     if args.check:
         return _check_graphs(manifest, entries, args.data_root, f'adapter {args.name}')
+    from .adapters import ExternalStepError
+    from .evaluate import error_path, row_file_path, write_error
+    keys = list(merit.KEYS) if args.name == 'merit' else [args.name]
     statuses = {}
     for entry in entries:
-        if args.name == 'anyburl':
-            statuses[entry.key] = anyburl.evaluate_graph(manifest, entry, args.out, system, root=args.data_root, work=args.work)
-        elif args.name == 'kgpfn':
-            statuses[entry.key] = kgpfn.evaluate_graph(manifest, entry, args.out, system, root=args.data_root, work=args.work)
-        else:
-            statuses[entry.key] = merit.evaluate_graph(manifest, entry, args.out, system, root=args.data_root, device=args.device)
+        final = row_file_path(args.out, entry, keys)
+        try:
+            if args.name == 'anyburl':
+                statuses[entry.key] = anyburl.evaluate_graph(manifest, entry, args.out, system, root=args.data_root, work=args.work)
+            elif args.name == 'kgpfn':
+                statuses[entry.key] = kgpfn.evaluate_graph(manifest, entry, args.out, system, root=args.data_root, work=args.work)
+            else:
+                statuses[entry.key] = merit.evaluate_graph(manifest, entry, args.out, system, root=args.data_root, device=args.device)
+        except (InputError, BlindSetError):
+            raise
+        except Exception as error:   # the graph gets an error record, and the run goes on with the next graph
+            record = error.record if isinstance(error, ExternalStepError) else dict(
+                stage='adapter', reason=f'{type(error).__name__}: {error}', traceback=traceback.format_exc().splitlines()[-30:])
+            logger.error('%s: %s failed (%s) -> %s', entry.key, args.name, record['reason'], write_error(final, entry, adapter=args.name, **record))
+            statuses[entry.key] = 'failed'
+        if statuses[entry.key] == 'done':
+            error_path(final).unlink(missing_ok=True)   # the record of an earlier failure
         print(entry.key, statuses[entry.key], flush=True)
     return EXIT_FAILED if 'failed' in statuses.values() else 0
 

@@ -34,7 +34,7 @@ import torch
 from dicee.evaluation._filtering import FilteredRanker
 
 from ..data import GraphData, Queries, as_triples, load_graph, prepare_queries
-from ..evaluate import error_path, row_file_path, write_error, write_json
+from ..evaluate import row_file_path, write_json
 from ..manifests import REPO, GraphEntry, Manifest, PathLike, file_sha256
 from . import AdapterSetupError, ExternalStepError, check_file, external_folder, external_pins, group_targets, view_ranks, work_folder, write_rows
 
@@ -376,11 +376,11 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, anyburl
         work: The work root (default ``<out>/.work``).
 
     Returns:
-        ``'exists'`` (the row file was there), ``'done'``, or ``'failed'`` (a Java step failed; its record is in
-        ``.errors/`` next to the row file).
+        ``'exists'`` (the row file was there) or ``'done'``.
 
     Raises:
         manifests.ManifestError: When the graph fails its hash check.
+        ExternalStepError: When a Java step fails (the record of the step and the graph's sizes).
     """
     final = row_file_path(out, entry, [KEY])
     if final.exists():
@@ -400,10 +400,8 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, anyburl
         steps['apply'] = apply(anyburl, folder, k, lock)
         steps['eval'] = native_eval(anyburl, folder, k, lock)
     except ExternalStepError as error:
-        path = write_error(final, entry, **error.record, entities=graph.num_entities, train=len(graph.train), ranked=len(queries.facts),
-                           seconds=time.monotonic() - began)
-        logger.error('%s: AnyBURL %s -> %s', entry.name, error, path)
-        return 'failed'
+        error.record.update(entities=graph.num_entities, train=len(graph.train), ranked=len(queries.facts), seconds=time.monotonic() - began)
+        raise
     rows, native, counts = rebuild(folder / f'preds-{k}', graph, queries, k)
     rebuilt = native_metrics(native)
     printed = {m: steps['eval'][m] for m in ('MRR', 'H@1', 'H@3', 'H@10')}
@@ -425,5 +423,4 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, anyburl
     spec = dict(kind='external', system='AnyBURL', label=LABEL, setting=SETTING)
     write_rows(final, manifest=manifest, entry=entry, graph=graph, queries=queries, key=KEY, spec=spec, protocol=PROTOCOL, rows=rows,
                seconds=time.monotonic() - began, meta_name='anyburl_meta', meta=meta, code=CODE)
-    error_path(final).unlink(missing_ok=True)
     return 'done'

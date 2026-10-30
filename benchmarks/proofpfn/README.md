@@ -87,9 +87,10 @@ sharding.
 `fv1_tables.py` reads. Their code, checkpoints and runtimes stay outside the repository: each adapter takes its code
 folder from `--code` or an environment variable and checks it, and its files, against the pins of `manifests/models.json`
 (`external`; for MERIT also `references`). Rows, ranks and the record follow [PROTOCOL.md](PROTOCOL.md), section External
-baselines. `--check` checks the setup, the pins and the graphs without a run; a graph whose external step fails gets
-an error record in `.errors/` (exit code 3); work files stay in `<out>/.work` (or `--work`), a dot folder that the tables
-skip. Tests that need the external code skip without it.
+baselines. `--check` checks the setup, the pins and the graphs without a run. A graph on which an adapter fails (an
+external step, or an error with its traceback) gets an error record in `.errors/` next to its row file, and the run goes
+on with the next graph. The command then exits with code 3. Work files stay in `<out>/.work` (or `--work`), a dot folder
+that the tables skip. Tests that need the external code skip without it.
 
 | Adapter | Row file | Keys | Research runner |
 |---|---|---|---|

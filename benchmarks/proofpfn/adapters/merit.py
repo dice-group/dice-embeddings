@@ -43,7 +43,7 @@ from dicee.models.ultra import ULTRA
 from .. import evaluate
 from ..manifests import REPO, GraphEntry, Manifest, PathLike, file_sha256, read_models
 from ..systems import Reference, frozen
-from . import AdapterSetupError, check_commit, check_file, external_folder, external_pins
+from . import AdapterSetupError, ExternalStepError, check_commit, check_file, external_folder, external_pins
 
 logger = logging.getLogger(__name__)
 
@@ -260,7 +260,10 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, merit: 
         device: The scoring device.
 
     Returns:
-        ``'exists'``, ``'done'``, or ``'failed'`` (CUDA ran out of memory; the record is in ``.errors/`` next to the row file).
+        ``'exists'`` or ``'done'``.
+
+    Raises:
+        ExternalStepError: When CUDA runs out of memory.
     """
     meta = dict(adapter_sha256=file_sha256(Path(__file__)), upstream_sha256=dict(merit.upstream().files), merit_home=str(merit.home),
                 code_commit=merit.pins['code_commit'], noise_seed=NOISE_SEED, config=CONFIG, attention_policy=ATTENTION_POLICY)
@@ -269,9 +272,7 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, merit: 
             return evaluate.evaluate_graph(manifest, entry, merit.systems(), out, root=root, device=device, extra=dict(merit_meta=meta))
     except torch.cuda.OutOfMemoryError as error:
         torch.cuda.empty_cache()
-        evaluate.write_error(evaluate.row_file_path(out, entry, KEYS), entry, systems=list(KEYS), stage='score',
-                             error=str(error).splitlines()[0][:400])
-        return 'failed'
+        raise ExternalStepError(dict(stage='score', reason='CUDA out of memory', systems=list(KEYS), error=str(error).splitlines()[0][:400])) from None
 
 
 def child_command(argv: Sequence[str], merit: MeritSetup, python: Optional[str] = None) -> tuple[list[str], dict[str, str]]:

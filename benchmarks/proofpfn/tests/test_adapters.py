@@ -170,6 +170,28 @@ def test_registered_tables_read_the_adapter_rows(adapter_rows, tmp_path):
     assert meta['counts']['row_files'] == 3   # the work folder of an adapter is a dot folder, which the tables skip
 
 
+def test_a_failing_graph_gets_an_error_record_and_the_run_goes_on(tmp_path, monkeypatch, capsys):
+    folders = {name: tiny_graph(tmp_path / 'KGs' / name, seed=seed) for seed, name in enumerate('fgh')}
+    manifest = mf.read_manifest(write_manifest(tmp_path / 'tiny.json', tmp_path, folders))
+
+    def evaluate_graph(manifest: mf.Manifest, entry: mf.GraphEntry, out: Path, system: object, **options: object) -> str:
+        if entry.name == 'f':
+            raise KeyError('tail_rank')   # an error of the adapter, for example in a worker output
+        if entry.name == 'g':
+            raise adapters.ExternalStepError(dict(stage='learn', reason='out of memory (JVM heap -Xmx6G)'))
+        return 'done'
+    monkeypatch.setattr(anyburl, 'setup', lambda *args, **options: anyburl.AnyBURL(home=tmp_path, pins={}, version='a stand-in'))
+    monkeypatch.setattr(anyburl, 'evaluate_graph', evaluate_graph)
+    final = {name: ev.row_file_path(tmp_path / 'rows', manifest.entry(name), ['anyburl']) for name in 'fgh'}
+    ev.write_error(final['h'], manifest.entry('h'), stage='learn', reason='an earlier run')
+    assert cli.main(['adapter', 'anyburl', '--set', str(tmp_path / 'tiny.json'), '--data-root', str(tmp_path), '--out', str(tmp_path / 'rows')]) == 3
+    assert capsys.readouterr().out.splitlines()[-3:] == ['tiny/f failed', 'tiny/g failed', 'tiny/h done']
+    f, g = (json.loads(ev.error_path(final[name]).read_text()) for name in 'fg')
+    assert f['stage'] == 'adapter' and f['reason'] == "KeyError: 'tail_rank'" and "raise KeyError('tail_rank')" in '\n'.join(f['traceback'])
+    assert g['stage'] == 'learn' and g['adapter'] == 'anyburl' and 'traceback' not in g
+    assert not ev.error_path(final['h']).exists()   # a graph that is done loses the record of its earlier failure
+
+
 def test_command_line_refusals(tmp_path, capsys):
     common = ['--set', 'gate', '--graphs', 'UMLS', '--out', str(tmp_path / 'rows')]
     assert cli.main(['adapter', 'anyburl', *common, '--code', str(tmp_path / 'missing')]) == cli.EXIT_INPUT
