@@ -21,16 +21,15 @@ it, and only a blind manifest may name a folder below ``BLIND_FOLDERS``. This br
 HT's pins come from the research ``models-pcuht.json``, written after HT's training. A family whose pins are ``null``
 is refused under its registered key.
 
-The ``build_*`` functions derive the graph manifests from the research inputs named in each manifest's ``sources``;
-a test rebuilds them when the inputs are available.
+``tests/test_manifests.py`` derives the graph manifests from the research inputs named in each manifest's ``sources``
+and compares them with the committed files when the inputs are available.
 """
 import hashlib
 import json
 from dataclasses import dataclass
-from functools import lru_cache
 from pathlib import Path
 from types import MappingProxyType
-from typing import Any, Iterable, Mapping, Optional, Sequence, Union
+from typing import Any, Iterable, Mapping, Optional, Union
 
 REPO = Path(__file__).resolve().parents[2]
 MANIFESTS = Path(__file__).resolve().parent / 'manifests'
@@ -46,9 +45,6 @@ SAMPLE_RULES = {
                    'order, sorted(random.Random(0).sample(pool, 1000)); index = position in test.txt'),
     'all': 'every test row; index = position in test.txt',
 }
-GROUP_CODE = {'E': 'E', 'L': 'L', 'B': 'B', 'S': 'S', 'O': 'O', 'R': 'R', 'T (reported apart)': 'T', 'contamination view': 'C'}
-VIEW_OF_CODE = {**dict.fromkeys('ELBSOR', 'main'), 'C': 'contamination', 'T': 'apart'}
-GATE_GRAPHS = ('UMLS', 'ultra-suite-v1/NELLInductive_v1', 'inductive/grail-WN18RR_v1')
 PathLike = Union[str, Path]
 
 
@@ -138,19 +134,15 @@ class Manifest:
 
     Attributes:
         name: The manifest name (``dev121``, ``t1``, ``gate``).
-        about: What the set is and where it comes from.
         blind: True for a confirmatory test set, which opens only with its release flag.
         sample_rule: ``first-1000`` or ``all`` (``SAMPLE_RULES``).
-        sources: The input files of the build and their SHA-256.
         entries: The graphs, in manifest order.
         sha256: The SHA-256 of the manifest file.
     """
 
     name: str
-    about: str
     blind: bool
     sample_rule: str
-    sources: Mapping[str, str]
     entries: tuple[GraphEntry, ...]
     sha256: str
 
@@ -184,9 +176,9 @@ class Manifest:
                 return entry
         raise KeyError(f'{graph!r} is not a graph of manifest {self.name}')
 
-    def select(self, view: Optional[str] = None, graphs: Optional[Iterable[str]] = None, codes: Optional[Iterable[str]] = None,
-               verdicts: Optional[Iterable[str]] = None, collections: Optional[Iterable[str]] = None) -> list[GraphEntry]:
-        """The entries of explicit graphs (names or keys, in the given order) or of a view, then filtered; no duplicates.
+    def select(self, view: Optional[str] = None, graphs: Optional[Iterable[str]] = None, codes: Optional[Iterable[str]] = None) -> list[GraphEntry]:
+        """The entries of explicit graphs (names or keys, in the given order) or of a view, then of the audit group codes; no
+        duplicates.
 
         Raises:
             KeyError: For an unknown graph or view.
@@ -202,10 +194,9 @@ class Manifest:
             wanted = [self.entry(g) for g in self.views[view]]
         else:
             raise ValueError('choose graphs or a view')
-        for attribute, allowed in (('code', codes), ('verdict', verdicts), ('collection', collections)):
-            if allowed is not None:
-                allowed = set(allowed)
-                wanted = [e for e in wanted if getattr(e, attribute) in allowed]
+        if codes is not None:
+            allowed = set(codes)
+            wanted = [e for e in wanted if e.code in allowed]
         return list({e.key: e for e in wanted}.values())
 
     def folder(self, entry: GraphEntry, root: PathLike) -> Path:
@@ -249,9 +240,8 @@ def read_manifest(source: PathLike, release: Optional[str] = None) -> Manifest:
     blind = bool(doc.get('blind', False))
     if blind and release != doc.get('name'):
         raise BlindSetError(f"{doc.get('name')} is a blind test set; it opens only with the release flag naming it")
-    return Manifest(name=doc['name'], about=doc.get('about', ''), blind=blind, sample_rule=doc['sample_rule'],
-                    sources=MappingProxyType(dict(doc.get('sources', {}))),
-                    entries=tuple(GraphEntry.from_json(g) for g in doc['graphs']), sha256=hashlib.sha256(raw).hexdigest())
+    return Manifest(name=doc['name'], blind=blind, sample_rule=doc['sample_rule'], entries=tuple(GraphEntry.from_json(g) for g in doc['graphs']),
+                    sha256=hashlib.sha256(raw).hexdigest())
 
 
 # --------------------------------------------------------------------------------------------------------- hashes
@@ -326,7 +316,6 @@ class FamilyPins:
     Attributes:
         arm: The arm (``S``, ``R``, ``M``, ``N``, ``HT``, ``CU``, ``UL``; ``S0``, ``DT``, ``PV`` for rows-only arms).
         key: The registered system key (the row key prefix).
-        research_run: The run folder of the research exports.
         export: The update of the evaluated export.
         weights: The weights inside the export (``decay/ema``).
         export_sha256: Seed to the SHA-256 of the export file, or ``None`` while the pins are pending.
@@ -335,7 +324,6 @@ class FamilyPins:
 
     arm: str
     key: str
-    research_run: str
     export: int
     weights: str
     export_sha256: Optional[Mapping[int, str]]
@@ -364,12 +352,10 @@ class ModelPins:
     Attributes:
         families: Arm to family pins (ported and rows-only arms).
         references: System key to reference pin.
-        sha256: The SHA-256 of the file.
     """
 
     families: Mapping[str, FamilyPins]
     references: Mapping[str, ReferencePin]
-    sha256: str
 
     def family_of_key(self, key: str) -> Optional[FamilyPins]:
         """The family registered under a system key, or ``None``."""
@@ -389,10 +375,14 @@ class ModelPins:
         return {'models': dict(sorted(models.items()))}
 
 
-@lru_cache(maxsize=None)
-def _read_models(path: str) -> ModelPins:
-    raw = Path(path).read_bytes()
-    doc = json.loads(raw)
+def read_models(path: Optional[PathLike] = None) -> ModelPins:
+    """The model pins (``manifests/models.json`` by default).
+
+    Raises:
+        ManifestError: For a malformed file.
+    """
+    path = Path(path) if path is not None else MANIFESTS / 'models.json'
+    doc = json.loads(path.read_bytes())
     if doc.get('format') != MODELS_FORMAT:
         raise ManifestError(f'{path} is not a {MODELS_FORMAT} file')
     families = {}
@@ -401,130 +391,10 @@ def _read_models(path: str) -> ModelPins:
             pins = item['export_sha256']
             if pins is not None and set(pins) != {str(s) for s in SEEDS}:
                 raise ManifestError(f'{path}: {arm} needs pins for the seeds {SEEDS}')
-            families[arm] = FamilyPins(arm=arm, key=item['key'], research_run=item['research_run'], export=int(item['export']),
-                                       weights=item['weights'], loadable=loadable,
+            families[arm] = FamilyPins(arm=arm, key=item['key'], export=int(item['export']), weights=item['weights'], loadable=loadable,
                                        export_sha256=None if pins is None else MappingProxyType({int(s): v for s, v in pins.items()}))
     keys = [f.key for f in families.values()] + list(doc['references'])
     if len(set(keys)) != len(keys):
         raise ManifestError(f'{path}: system keys must be unique')
     references = {key: ReferencePin(key=key, path=item.get('path'), sha256=item['sha256']) for key, item in doc['references'].items()}
-    return ModelPins(families=MappingProxyType(families), references=MappingProxyType(references), sha256=hashlib.sha256(raw).hexdigest())
-
-
-def read_models(path: Optional[PathLike] = None) -> ModelPins:
-    """The model pins (``manifests/models.json`` by default)."""
-    return _read_models(str(Path(path) if path is not None else MANIFESTS / 'models.json'))
-
-
-# --------------------------------------------------------------------------------------------------------- builders
-
-def _manifest(name: str, about: str, sample_rule: str, sources: Mapping[str, str], graphs: list[dict]) -> dict:
-    return dict(format=FORMAT, name=name, about=about, blind=False, sample_rule=sample_rule, sources=dict(sources), graphs=graphs)
-
-
-def _audit_entry(g: Mapping[str, Any], inventory: Mapping[str, Mapping[str, Any]], view: Optional[str] = None) -> dict:
-    code = GROUP_CODE.get(g['group']) if g['group'] is not None else None
-    if view is None:
-        if code is None:
-            raise ManifestError(f"{g['key']}: the audit gives no group, so the graph has no view")
-        view = VIEW_OF_CODE[code]
-    inv = inventory[g['key']]
-    return dict(key=g['key'], name=g['name'], path=g['path'], collection=g['collection'], view=view,
-                code=code, group=g['group'], verdict=g['verdict'], weight=g['weight'], origin_class=g['origin_class'],
-                suite_id=g['suite_id'], size=dict(entities=g['size']['entities'], inference_edges=g['size']['inference_edges']),
-                sha256=dict.fromkeys(SPLITS), content_sha256={s: inv[f'sha_{s}'] for s in CONTENT_SPLITS}, counts=None, tail_only_view=None)
-
-
-def build_dev121(audit: Mapping[str, Any], inventory: Sequence[Mapping[str, Any]], suite: Mapping[str, Any],
-                 sources: Mapping[str, str]) -> dict:
-    """The ``dev121`` manifest from ``graph-audit-v1/graphs.json``, its ``stats/inventory.json`` and ``p0-suite-v1/manifest.json``.
-
-    The 121 graphs with an audit group, in audit order. The content hashes come from the inventory; the file hashes
-    from the suite manifest where it records the same folder.
-
-    Raises:
-        ManifestError: When the audit does not hold 121 grouped graphs with unique names (as ``ag_eval`` asserts).
-    """
-    inv = {e['key']: e for e in inventory}
-    files = {g['folder']: g['files'] for g in suite['graphs'].values()}
-    graphs = []
-    for g in audit['graphs']:
-        if g['group'] is None:
-            continue
-        if 'lockbox3' in g['path']:
-            raise ManifestError(f"{g['key']}: an audited path names lockbox3")
-        entry = _audit_entry(g, inv)
-        if g['path'] in files:
-            entry['sha256'] = {s: files[g['path']][s]['sha256'] for s in SPLITS}
-        graphs.append(entry)
-    if len(graphs) != 121 or len({g['name'] for g in graphs}) != 121:
-        raise ManifestError(f'the audit holds {len(graphs)} grouped graphs, not 121 with unique names')
-    about = ('The 121 audited development graphs of graph-audit-v1 (16 October 2026): views main (91 graphs of the groups E, L, '
-             'B, S, O, R; weights sum to 1), contamination (29) and apart (UMLS). Content hashes of train.txt and test.txt '
-             'from the audit inventory (checked before a graph loads); file hashes from the standard suite manifest where it '
-             'records the same folder, else null (the research harness checked the content hashes only).')
-    return _manifest('dev121', about, 'first-1000', sources, graphs)
-
-
-def build_t1(suite: Mapping[str, Any], audit: Mapping[str, Any], sources: Mapping[str, str]) -> dict:
-    """The ``t1`` manifest: the 54 zero-shot graphs of ``p0-suite-v1/manifest.json`` (its three pretraining graphs left out).
-
-    Names are the suite ids with ``:`` replaced by ``_``. ``size`` (the inference-graph statistics of Flock's rule) comes
-    from the audit entry of the same folder.
-
-    Raises:
-        ManifestError: When the suite does not hold 54 zero-shot graphs, or a folder has no audit entry.
-    """
-    by_path = {g['path']: g for g in audit['graphs']}
-    graphs = []
-    for sid, g in suite['graphs'].items():
-        if g['group'] == 'pretrain':
-            continue
-        audited = by_path.get(g['folder'])
-        if audited is None or audited['suite_id'] != sid:
-            raise ManifestError(f'{sid}: no audit entry with this suite id for {g["folder"]}')
-        name = sid.replace(':', '_')
-        graphs.append(dict(key=f't1/{name}', name=name, path=g['folder'], collection='t1', view=g['group'], code=None, group=g['group'],
-                           verdict=None, weight=0.0, origin_class=None, suite_id=sid,
-                           size=dict(entities=audited['size']['entities'], inference_edges=audited['size']['inference_edges']),
-                           sha256={s: g['files'][s]['sha256'] for s in SPLITS}, content_sha256={}, counts=dict(g['counts']),
-                           tail_only_view=g['tail_only_view']))
-    if len(graphs) != 54:
-        raise ManifestError(f'the suite holds {len(graphs)} zero-shot graphs, not 54')
-    about = ('T1, the standard zero-shot suite p0-suite-v1 (built under the official ULTRA conventions): 54 graphs in the groups '
-             'trans, ind_e and ind_er, every test row ranked in both directions. File SHA-256 and counts from the suite manifest; '
-             'the suite id is the key of the official Flock walk table; size from the audit entry of the same folder.')
-    return _manifest('t1', about, 'all', sources, graphs)
-
-
-def build_gate(audit: Mapping[str, Any], inventory: Sequence[Mapping[str, Any]], recorded: Mapping[str, Mapping[str, str]],
-               sources: Mapping[str, str]) -> dict:
-    """The ``gate`` manifest: the graphs of ``GATE_GRAPHS`` with the audit fields, content hashes and recorded file hashes.
-
-    Args:
-        audit: ``graph-audit-v1/graphs.json``.
-        inventory: ``graph-audit-v1/stats/inventory.json``.
-        recorded: Graph key to the file SHA-256 per split (the files that the golden runs hashed).
-        sources: The inputs and their SHA-256.
-
-    Raises:
-        ManifestError: When a gate graph lacks recorded file hashes.
-    """
-    inv = {e['key']: e for e in inventory}
-    by_key = {g['key']: g for g in audit['graphs']}
-    graphs = []
-    for key in GATE_GRAPHS:
-        if set(recorded.get(key, {})) != set(SPLITS):
-            raise ManifestError(f'{key}: no recorded file hashes')
-        entry = _audit_entry(by_key[key], inv, view='gate')
-        entry['sha256'] = {s: recorded[key][s] for s in SPLITS}
-        graphs.append(entry)
-    about = ('The gate graphs of the exact-rank goldens G6 and G7: UMLS, NELLInductive_v1 and grail-WN18RR_v1. The audit excludes '
-             'grail-WN18RR_v1 (X2: a copy of ultra-suite-v1/WN18RRInductive_v1), so it is listed here and not in dev121. File '
-             'SHA-256 as the golden runs hashed the files; content hashes from the audit inventory.')
-    return _manifest('gate', about, 'first-1000', sources, graphs)
-
-
-def dumps(doc: Mapping[str, Any]) -> str:
-    """The canonical text of a manifest file."""
-    return json.dumps(doc, indent=1) + '\n'
+    return ModelPins(families=MappingProxyType(families), references=MappingProxyType(references))

@@ -173,11 +173,11 @@ def query_groups(test: Sequence[Triple]) -> list[tuple[GroupKey, list[int]]]:
     return sorted(groups.items(), key=lambda item: item[0][1])
 
 
-def reflexive_relations(train: Sequence[Triple], rule: str = 'share1') -> set[int]:
-    """The relations the self-loop rule leaves open: ``share1`` (at least 1% self-loops) or ``any`` (at least one)."""
+def reflexive_relations(train: Sequence[Triple]) -> set[int]:
+    """The relations that the self-loop rule ``share1`` leaves open: at least 1% of their train facts are self-loops."""
     facts = Counter(r for _, r, _ in train)
     loops = Counter(r for h, r, t in train if h == t)
-    return {r for r in loops if rule == 'any' or loops[r] >= 0.01 * facts[r]}
+    return {r for r in loops if loops[r] >= 0.01 * facts[r]}
 
 
 def gt2_inputs(train: Sequence[Triple], n: int) -> dict[tuple[bool, int], tuple[np.ndarray, float]]:

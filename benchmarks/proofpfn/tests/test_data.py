@@ -49,7 +49,7 @@ def test_query_groups_known_sets_and_rules():
     train = [(i, 0, i + 1) for i in range(99)] + [(7, 0, 7)] + [(1, 1, 1), (1, 1, 2)]
     assert D.reflexive_relations(train) == {0, 1}                          # 1 of 100 and 1 of 2 facts are self-loops
     more = train + [(200, 0, 201)]                                         # 1 of 101: below 1%
-    assert D.reflexive_relations(more) == {1} and D.reflexive_relations(more, 'any') == {0, 1}
+    assert D.reflexive_relations(more) == {1}
     gt2 = D.gt2_inputs([(0, 0, 1), (2, 0, 1), (2, 0, 3)], 5)
     unseen, g = gt2[False, 0]                                              # tails of relation 0: 1 twice, 3 once
     assert unseen.tolist() == [True, False, True, False, True] and g == (1 + 0.5) / (3 + 1)

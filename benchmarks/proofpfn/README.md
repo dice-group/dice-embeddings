@@ -52,8 +52,8 @@ input, 3 a graph ran out of CUDA memory (its record is in `.errors/` of the row 
 | `gate` | UMLS, `ultra-suite-v1/NELLInductive_v1`, `inductive/grail-WN18RR_v1` | file SHA-256 and content | `first-1000` rule (all rows here) | the audit and the golden records |
 
 The audit excludes grail-WN18RR_v1 as a copy of `ultra-suite-v1/WN18RRInductive_v1`, so it is in `gate` and not in
-`dev121`. Each manifest lists its inputs and their SHA-256 under `sources`; `manifests.build_dev121`, `build_t1` and
-`build_gate` derive the files from them (`tests/test_manifests.py` rebuilds them when the inputs are available).
+`dev121`. Each manifest lists its inputs and their SHA-256 under `sources`. The builders of `tests/test_manifests.py`
+derive the files from them and compare them with the committed files when the inputs are available.
 
 Blind sets. A manifest with `"blind": true` opens only with `--release NAME` naming it, and only such a manifest may name
 a folder below `KGs/fresh-v1` or `KGs/lockbox3`. This branch holds no blind manifest; the fresh-v1 and block-3 manifests

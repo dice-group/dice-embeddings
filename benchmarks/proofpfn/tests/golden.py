@@ -13,7 +13,7 @@ from typing import Any
 
 import numpy as np
 
-from benchmarks.proofpfn.manifests import FORMAT, content_sha256, dumps, file_sha256
+from benchmarks.proofpfn.manifests import FORMAT, content_sha256, file_sha256
 from tests.proofpfn_fixtures import FIXTURES, golden_large, golden_root
 
 GOLDEN = Path(__file__).resolve().parent / 'golden'
@@ -68,8 +68,7 @@ def write_manifest(path: Path, root: Path, folders: dict[str, Path], name: str =
                            size=dict(entities=len({e for h, _, t in train for e in (h, t)}), inference_edges=len({tuple(r) for r in train})),
                            sha256={s: file_sha256(folder / f'{s}.txt') for s in ('train', 'valid', 'test')},
                            content_sha256={s: content_sha256(folder / f'{s}.txt') for s in ('train', 'test')}, counts=None, tail_only_view=None))
-    path.write_text(dumps(dict(format=FORMAT, name=name, about='a test manifest', blind=blind, sample_rule=sample_rule, sources={},
-                               graphs=graphs)))
+    path.write_text(json.dumps(dict(format=FORMAT, name=name, blind=blind, sample_rule=sample_rule, graphs=graphs), indent=1))
     return path
 
 

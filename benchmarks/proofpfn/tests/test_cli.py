@@ -24,7 +24,7 @@ def test_list(capsys):
     assert cli.main(['list', '--set', 'dev121', '--view', 'apart']) == 0
     assert capsys.readouterr().out.split() == ['UMLS']
     assert cli.main(['list', '--set', 'gate']) == 0
-    assert capsys.readouterr().out.split() == list(mf.GATE_GRAPHS)
+    assert capsys.readouterr().out.split() == [e.key for e in mf.read_manifest('gate').entries]
 
 
 def test_check_run_and_cells(tmp_path, capsys):
