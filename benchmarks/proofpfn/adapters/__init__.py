@@ -10,10 +10,13 @@ The external code is never part of this repository. Its folder comes from a comm
 variable (``external_folder``), and its files are checked against the pins of ``manifests/models.json``.
 """
 import os
+import resource
+import signal
 import socket
 import subprocess
+import time
 from pathlib import Path
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Mapping, NamedTuple, Optional, Sequence
 
 import torch
 
@@ -25,6 +28,8 @@ from ..manifests import GraphEntry, InputError, Manifest, PathLike, file_sha256,
 
 STOP_SECONDS = 30.0
 """The time between SIGTERM and SIGKILL when an external process stops (``call``)."""
+POLL_SECONDS = 0.2
+"""The interval at which ``call`` checks whether an external process has ended."""
 
 
 class AdapterSetupError(InputError):
@@ -133,30 +138,85 @@ def check_commit(folder: PathLike, commit: str, what: str) -> str:
     return head
 
 
-def call(command: Sequence[str], *, timeout: float, **options: Any) -> Optional[int]:
-    """Run an external process to its end; returns its exit code, or ``None`` when it ran past the timeout.
+class Finished(NamedTuple):
+    """The end of an external process (``call``).
+
+    Attributes:
+        code: The exit code (``-N`` after signal N), or ``None`` when the process ran past its timeout.
+        seconds: The wall seconds of the process.
+        usage: Its resource usage from ``os.wait4``: CPU seconds and peak resident memory.
+    """
+
+    code: Optional[int]
+    seconds: float
+    usage: resource.struct_rusage
+
+
+def _reap(process: subprocess.Popen, deadline: float) -> Optional[resource.struct_rusage]:
+    """The resource usage of a child process once it has ended, or ``None`` at the deadline.
+
+    ``os.wait4`` reaps the process (``Popen.wait`` would drop its usage) and its exit code goes to ``process.returncode``.
+    """
+    while True:
+        pid, status, usage = os.wait4(process.pid, os.WNOHANG)
+        if pid:
+            process.returncode = os.waitstatus_to_exitcode(status)
+            return usage
+        if time.monotonic() >= deadline:
+            return None
+        time.sleep(POLL_SECONDS)
+
+
+def _stop(process: subprocess.Popen) -> resource.struct_rusage:
+    """Stop a child process: SIGTERM, then SIGKILL after ``STOP_SECONDS`` or at a second interruption; returns its usage."""
+    try:
+        os.kill(process.pid, signal.SIGTERM)   # not Popen.terminate: its poll could reap the process before os.wait4
+        usage = _reap(process, time.monotonic() + STOP_SECONDS)
+    except BaseException:   # a second interruption
+        if process.returncode is None:
+            _kill(process)
+        raise
+    return usage if usage is not None else _kill(process)
+
+
+def _kill(process: subprocess.Popen) -> resource.struct_rusage:
+    """SIGKILL to a child process, which ends at once; returns the usage of the reaped process."""
+    os.kill(process.pid, signal.SIGKILL)
+    _, status, usage = os.wait4(process.pid, 0)
+    process.returncode = os.waitstatus_to_exitcode(status)
+    return usage
+
+
+def call(command: Sequence[str], *, timeout: float, **options: Any) -> Finished:
+    """Run an external process to its end.
 
     At the timeout, and when this process stops while the other one runs (a signal, an error), the other process gets
-    SIGTERM and, after ``STOP_SECONDS``, SIGKILL: a container client forwards SIGTERM to the container, SIGKILL it cannot.
+    SIGTERM and, after ``STOP_SECONDS`` or at a second interruption, SIGKILL (``_stop``). A container that runs with
+    ``docker run --init`` gets the SIGTERM through its client; a SIGKILL stops only the client.
 
     Args:
         command: The command line.
         timeout: The seconds after which the process stops.
         options: Further options of ``subprocess.Popen``.
+
+    Returns:
+        The exit code (``None`` after the timeout), the wall seconds and the resource usage.
+
+    Raises:
+        OSError: When the command does not start.
     """
+    began = time.monotonic()
     process = subprocess.Popen(command, **options)
+    timed_out = False
     try:
-        return process.wait(timeout)
-    except BaseException as error:
-        process.terminate()
-        try:
-            process.wait(STOP_SECONDS)
-        except subprocess.TimeoutExpired:
-            process.kill()
-            process.wait()
-        if isinstance(error, subprocess.TimeoutExpired):
-            return None
+        usage = _reap(process, began + timeout)
+        if usage is None:
+            timed_out, usage = True, _stop(process)
+    except BaseException:
+        if process.returncode is None:   # an interruption of this process: a signal or an error
+            _stop(process)
         raise
+    return Finished(None if timed_out else process.returncode, time.monotonic() - began, usage)
 
 
 # ------------------------------------------------------------------------------------------------------ ranks

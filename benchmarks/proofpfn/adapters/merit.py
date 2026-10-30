@@ -314,7 +314,7 @@ def run_in_child(argv: Sequence[str], graphs: int, *, code: Optional[PathLike] =
     merit = setup(code, models, checkpoint_root)
     command, env = child_command(argv, merit, python)
     logger.info('MERIT: %s', ' '.join(command))
-    exit_code = call(command, timeout=GRAPH_HOURS * 3600 * max(1, graphs), env=env)
+    exit_code = call(command, timeout=GRAPH_HOURS * 3600 * max(1, graphs), env=env).code
     if exit_code is None:
         logger.error('MERIT: the child process ran past %s h per graph and was stopped', GRAPH_HOURS)
     return exit_code

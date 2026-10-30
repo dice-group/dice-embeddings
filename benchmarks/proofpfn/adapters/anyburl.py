@@ -21,7 +21,6 @@ import logging
 import os
 import re
 import shutil
-import signal
 import subprocess
 import time
 from collections import Counter
@@ -37,7 +36,7 @@ from dicee.evaluation._filtering import FilteredRanker
 from ..data import GraphData, Queries, as_triples, load_graph, prepare_queries
 from ..evaluate import row_file_path, write_json
 from ..manifests import REPO, GraphEntry, Manifest, PathLike, file_sha256
-from . import AdapterSetupError, ExternalStepError, check_file, external_folder, external_pins, group_targets, view_ranks, work_folder, write_rows
+from . import AdapterSetupError, ExternalStepError, call, check_file, external_folder, external_pins, group_targets, view_ranks, work_folder, write_rows
 
 logger = logging.getLogger(__name__)
 
@@ -101,38 +100,22 @@ class AnyBURL:
     def run(self, main: str, config: Path, log: Path, lock: Path) -> dict[str, Any]:
         """One AnyBURL step (``Learn``, ``Apply``, ``Eval``) on a configuration file, one Java process at a time.
 
-        The scope runs the JVM as this process's child, so ``os.wait4`` gives the CPU seconds and the peak memory of the JVM.
-        The JVM is killed after ``STEP_HOURS``, and also when this process stops while it runs (a signal, an error), before
+        The scope runs the JVM as this process's child, so ``call`` gives the CPU seconds and the peak memory of the JVM.
+        The JVM stops after ``STEP_HOURS``, and also when this process stops while it runs (a signal, an error), before
         the lock is released.
 
         Returns:
-            The exit code, wall and CPU seconds, peak resident memory and whether the step was stopped.
+            The exit code (``None`` when stopped), wall and CPU seconds, peak resident memory and whether the step was
+            stopped.
         """
         command = [*self.scope, self.java, *JVM, '-cp', str(self.home / JAR), f'de.unima.ki.anyburl.{main}', str(config)]
         lock.parent.mkdir(parents=True, exist_ok=True)
         with open(lock, 'w') as held, open(log, 'w') as output:
             fcntl.flock(held, fcntl.LOCK_EX)
-            began = time.monotonic()
-            process = subprocess.Popen(command, stdout=output, stderr=subprocess.STDOUT, cwd=config.parent)
-            pid = status = 0
-            stopped = False
-            try:
-                while not pid:
-                    pid, status, usage = os.wait4(process.pid, os.WNOHANG)
-                    if not pid and time.monotonic() - began > STEP_HOURS * 3600:
-                        os.kill(process.pid, signal.SIGKILL)   # not Popen.kill: its poll can reap the JVM before wait4
-                        pid, status, usage = os.wait4(process.pid, 0)
-                        stopped = True
-                    elif not pid:
-                        time.sleep(0.2)
-            except BaseException:
-                if not pid:
-                    os.kill(process.pid, signal.SIGKILL)
-                    os.wait4(process.pid, 0)
-                raise
-            process.returncode = os.waitstatus_to_exitcode(status)
-        return dict(code=process.returncode, wall=time.monotonic() - began, cpu=usage.ru_utime + usage.ru_stime, user=usage.ru_utime,
-                    sys=usage.ru_stime, max_rss_mb=usage.ru_maxrss / 1024, timed_out=stopped)
+            end = call(command, timeout=STEP_HOURS * 3600, stdout=output, stderr=subprocess.STDOUT, cwd=config.parent)
+        usage = end.usage
+        return dict(code=end.code, wall=end.seconds, cpu=usage.ru_utime + usage.ru_stime, user=usage.ru_utime, sys=usage.ru_stime,
+                    max_rss_mb=usage.ru_maxrss / 1024, timed_out=end.code is None)
 
 
 def setup(code: Optional[PathLike] = None, models: Optional[PathLike] = None, java: str = 'java', scope: bool = True) -> AnyBURL:

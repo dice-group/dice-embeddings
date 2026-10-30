@@ -24,8 +24,9 @@ answer-blind context and context seed 0:
 
 Output: one JSON with the per-position ranks (``tail_rank``, ``head_rank``, ``tail_rank_rule``, ``head_rank_rule``, the
 optimistic ranks as a tie diagnostic), counts, settings, the strict-load check, times, GPU memory and provenance (with
-the SHA-256 of every KGPFN file that the run loaded, which the host compares with the pins), but no metric. ``--dump-scores`` also writes the score rows (small graphs, for the host's check). Exit code 3: CUDA out of
-memory (an error JSON next to the output).
+the SHA-256 of every KGPFN file that the run loaded, which the host compares with the pins), but no metric.
+``--dump-scores`` also writes the score rows (small graphs, for the host's check). Exit codes: 3 CUDA out of memory (an
+error JSON next to the output), 143 SIGTERM.
 """
 import argparse
 import hashlib
@@ -33,6 +34,7 @@ import json
 import logging
 import os
 import random
+import signal
 import sys
 import time
 import types
@@ -49,7 +51,7 @@ logger = logging.getLogger('kgpfn_worker')
 
 CHECKPOINT, TABICL = 'kgpfn_icl_3g.pth', 'tabicl-regressor-v2-20260212.ckpt'
 SEED = 0
-EXIT_OOM = 3
+EXIT_OOM, EXIT_TERM = 3, 143
 Split = list[tuple[str, str, str]]
 
 
@@ -191,6 +193,7 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
 
 def main(argv: Optional[list[str]] = None) -> int:
     """Score one graph; returns the exit code."""
+    signal.signal(signal.SIGTERM, lambda *_: sys.exit(EXIT_TERM))   # as PID 1 of a container, Python drops SIGTERM without a handler
     logging.basicConfig(level=logging.INFO, format='%(asctime)s kgpfn_worker: %(message)s')
     a = parse_args(argv)
     began = time.time()

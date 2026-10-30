@@ -234,7 +234,7 @@ def run_worker(system: KGPFN, entry: GraphEntry, folder: Path, meta: Mapping[str
         logger.info('%s: attempt %d, batch %d, heads %d, candidates %d, negatives %d', entry.name, attempt, batch, heads, candidates,
                     meta['num_neg'])
         with open(folder / f'worker-{attempt}.log', 'w') as log:
-            code = call(command, timeout=WORKER_HOURS * 3600, env=env, stdout=log, stderr=subprocess.STDOUT, cwd=folder)
+            code = call(command, timeout=WORKER_HOURS * 3600, env=env, stdout=log, stderr=subprocess.STDOUT, cwd=folder).code
         if code != EXIT_OOM or attempt == 2 or batch <= 1:
             break
         batch, heads, candidates = max(1, batch // 2), max(1, heads // 2), candidates * 2

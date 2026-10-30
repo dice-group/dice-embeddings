@@ -133,11 +133,12 @@ checkpoints. Check the terms of each upstream project before you copy or publish
   The environment sets `PYTHONPATH` to the code folder, keeps the kernel build cache (`TORCH_EXTENSIONS_DIR`) in the
   work root, and names the folders that a container mounts (`KGPFN_CODE`, `KGPFN_CHECKPOINT_DIR`, `KGPFN_WORKER_DIR`,
   `KGPFN_WORK`). A wrapper for the image `kgfm/kgpfn:af415c33` (which is built on an NVIDIA CUDA image under the NVIDIA
-  Deep Learning Container License) mounts them at their host paths:
+  Deep Learning Container License) mounts them at their host paths. Its `--init` passes the adapter's SIGTERM on to the
+  worker:
 
   ```bash
   #!/bin/bash
-  exec docker run --rm --network none --gpus '"device=0"' --memory=8g --memory-swap=8g --cpus=4 --user "$(id -u):$(id -g)" \
+  exec docker run --rm --init --network none --gpus '"device=0"' --memory=8g --memory-swap=8g --cpus=4 --user "$(id -u):$(id -g)" \
     -e PYTHONPATH -e PYTHONDONTWRITEBYTECODE -e TORCH_EXTENSIONS_DIR -e MPLCONFIGDIR -e WANDB_MODE -e HF_HUB_OFFLINE \
     -e KGPFN_CODE -e KGPFN_CHECKPOINT_DIR -e HOME=/tmp -e OMP_NUM_THREADS=4 -e MKL_NUM_THREADS=4 \
     -v "$KGPFN_CODE:$KGPFN_CODE:ro" -v "$KGPFN_CHECKPOINT_DIR:$KGPFN_CHECKPOINT_DIR:ro" -v "$KGPFN_WORKER_DIR:$KGPFN_WORKER_DIR:ro" \

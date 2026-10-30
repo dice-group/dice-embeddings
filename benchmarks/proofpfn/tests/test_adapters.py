@@ -190,8 +190,9 @@ def test_registered_tables_read_the_adapter_rows(adapter_rows, tmp_path):
 
 def test_call_stops_a_process_at_its_timeout_and_with_this_process(tmp_path, monkeypatch):
     began = time.monotonic()
-    assert adapters.call([sys.executable, '-c', 'import time; time.sleep(60)'], timeout=0.5) is None and time.monotonic() - began < 20
-    assert adapters.call([sys.executable, '-c', 'raise SystemExit(7)'], timeout=30) == 7
+    assert adapters.call([sys.executable, '-c', 'import time; time.sleep(60)'], timeout=0.5).code is None and time.monotonic() - began < 20
+    done = adapters.call([sys.executable, '-c', 'raise SystemExit(7)'], timeout=30)
+    assert done.code == 7 and done.usage.ru_maxrss > 0 and done.seconds > 0
     stubborn = tmp_path / 'stubborn.py'   # it ignores SIGTERM, so SIGKILL follows after STOP_SECONDS
     stubborn.write_text('import os, pathlib, signal, time\nsignal.signal(signal.SIGTERM, signal.SIG_IGN)\n'
                         'pathlib.Path("pid").write_text(str(os.getpid()))\ntime.sleep(60)\n')
@@ -205,6 +206,33 @@ def test_call_stops_a_process_at_its_timeout_and_with_this_process(tmp_path, mon
         signal.setitimer(signal.ITIMER_REAL, 0)
         signal.signal(signal.SIGALRM, previous)
     with pytest.raises(ProcessLookupError):
+        os.kill(int((tmp_path / 'pid').read_text()), 0)
+
+
+def test_a_second_interruption_kills_the_process_at_once(tmp_path, monkeypatch):
+    """A second signal during the time between SIGTERM and SIGKILL sends SIGKILL at once, and the process is reaped."""
+    stubborn = tmp_path / 'stubborn.py'
+    stubborn.write_text('import os, pathlib, signal, time\nsignal.signal(signal.SIGTERM, signal.SIG_IGN)\n'
+                        'pathlib.Path("pid").write_text(str(os.getpid()))\ntime.sleep(60)\n')
+    monkeypatch.setattr(adapters, 'STOP_SECONDS', 60.0)
+    signals = []
+
+    def interrupt(*_) -> None:
+        if (tmp_path / 'pid').exists():   # the child ignores SIGTERM from here on
+            signals.append(time.monotonic())
+            if len(signals) == 2:
+                signal.setitimer(signal.ITIMER_REAL, 0)
+            sys.exit(143)
+    previous = signal.signal(signal.SIGALRM, interrupt)
+    signal.setitimer(signal.ITIMER_REAL, 0.2, 0.2)
+    try:
+        with pytest.raises(SystemExit):
+            adapters.call([sys.executable, str(stubborn)], timeout=60, cwd=tmp_path)
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0)
+        signal.signal(signal.SIGALRM, previous)
+    assert len(signals) == 2 and time.monotonic() - signals[1] < 10
+    with pytest.raises(ProcessLookupError):   # killed and reaped
         os.kill(int((tmp_path / 'pid').read_text()), 0)
 
 
