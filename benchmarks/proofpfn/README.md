@@ -104,7 +104,9 @@ checkpoints; check the terms of each upstream project before you copy or publish
 ### KGPFN
 
 - Code: a clone of github.com/HKUST-KnowComp/KGPFN at `4f1bc61dcc998cf0672deaca148899b505797af6` (`--code` or
-  `$KGPFN_CODE`). Checkpoints: `kgpfn_icl_3g.pth` and `tabicl-regressor-v2-20260212.ckpt` (`--checkpoints` or
+  `$KGPFN_CODE`). The 54 files that the worker loads (its modules and the sources of the rspmm kernel) are pinned by
+  SHA-256 (`external.kgpfn.imported` of `models.json`): the setup checks them, and a run refuses a worker that loaded
+  other files. Checkpoints: `kgpfn_icl_3g.pth` and `tabicl-regressor-v2-20260212.ckpt` (`--checkpoints` or
   `$KGPFN_CHECKPOINT_DIR`), as KGPFN's `script/download.py` fetches them.
 - Runtime: KGPFN's own environment (its `requirements.txt`: torch 2.5.1+cu121, torch-geometric, tabicl, and a CUDA
   toolkit for the JIT build of its rspmm kernel). `--python` or `$KGPFN_PYTHON` is the command that starts its Python,

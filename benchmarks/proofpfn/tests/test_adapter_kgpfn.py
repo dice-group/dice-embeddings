@@ -131,14 +131,18 @@ def test_rows_and_outputs_are_checked(tmp_path):
     raw['tail_rank_rule'][0] = 2   # the rule view moves a rank down only for a target that is its anchor
     with pytest.raises(ValueError, match='position 0'):
         kgpfn.rows_of(raw, queries)
+    imported = kgpfn.external_pins('kgpfn')['imported']
     good: dict[str, Any] = dict(status='complete', context_mode='blind', seed=0, settings=dict(meta_sha256=mf.file_sha256(work / 'meta.json')),
-                                strict_load=dict(missing=[], shape_mismatch=[], value_mismatch=[], unexpected=[]), counts=dict(nonfinite_rows=0))
-    kgpfn.check_output(good, work / 'meta.json')
+                                strict_load=dict(missing=[], shape_mismatch=[], value_mismatch=[], unexpected=[]), counts=dict(nonfinite_rows=0),
+                                provenance=dict(imported=imported))
+    kgpfn.check_output(good, work / 'meta.json', imported)
     for change, message in ((dict(status='partial'), 'partial'), (dict(context_mode='native'), 'native'),
                             (dict(settings=dict(meta_sha256='0')), 'another meta'),
-                            (dict(strict_load=dict(good['strict_load'], missing=['x'])), 'exactly'), (dict(counts=dict(nonfinite_rows=2)), 'non-finite')):
-        with pytest.raises(ValueError, match=message):
-            kgpfn.check_output(dict(good, **change), work / 'meta.json')
+                            (dict(strict_load=dict(good['strict_load'], missing=['x'])), 'exactly'), (dict(counts=dict(nonfinite_rows=2)), 'non-finite'),
+                            (dict(provenance=dict(imported=dict(imported, **{'pfn/tasks.py': '0' * 64}))), r"other files than the pins.*\['pfn/tasks.py'\]"),
+                            (dict(provenance=dict(imported=dict(imported, **{'pfn/extra.py': '0' * 64}))), 'pfn/extra.py')):
+        with pytest.raises(ValueError, match=message):   # AdapterSetupError is a ValueError too
+            kgpfn.check_output(dict(good, **change), work / 'meta.json', imported)
 
 
 def test_worker_command_and_environment(tmp_path, monkeypatch):
@@ -167,11 +171,7 @@ def test_setup_refusals(tmp_path):
     pins = kgpfn.external_pins('kgpfn')
     (code / '.git' / 'HEAD').write_text('ref: refs/heads/main\n')
     (code / '.git' / 'packed-refs').write_text(f"# pack-refs\n{pins['code_commit']} refs/heads/main\n")
-    with pytest.raises(AdapterSetupError, match='missing'):
-        kgpfn.setup(code, ckpt, 'python3.12')
-    for name in (kgpfn.CHECKPOINT, kgpfn.TABICL):
-        (ckpt / name).write_bytes(b'x')
-    with pytest.raises(AdapterSetupError, match='SHA-256'):
+    with pytest.raises(AdapterSetupError, match='missing .*model/kgpfnsem.py'):   # the first pinned file that the worker loads
         kgpfn.setup(code, ckpt, 'python3.12')
 
 
@@ -187,8 +187,8 @@ def fake_code(tmp_path: Path) -> tuple[Path, Path, Path]:
     for name in (kgpfn.CHECKPOINT, kgpfn.TABICL):
         (ckpt / name).write_bytes(name.encode())
     doc = json.loads((mf.MANIFESTS / 'models.json').read_text())
-    doc['external']['kgpfn'] = dict(code_commit='f' * 40, tabicl=mf.file_sha256(ckpt / kgpfn.TABICL),
-                                    **{kgpfn.CHECKPOINT: mf.file_sha256(ckpt / kgpfn.CHECKPOINT)})
+    doc['external']['kgpfn'] = dict(code_commit='f' * 40, tabicl=mf.file_sha256(ckpt / kgpfn.TABICL), **{kgpfn.CHECKPOINT: mf.file_sha256(ckpt / kgpfn.CHECKPOINT)},
+                                    imported={f'pfn/{name}': mf.file_sha256(code / 'pfn' / name) for name in ('tasks.py', 'util.py')})
     (tmp_path / 'models.json').write_text(json.dumps(doc))
     return code, ckpt, tmp_path / 'models.json'
 
@@ -201,6 +201,13 @@ def test_setup_tries_the_python_command(tmp_path):
         kgpfn.setup(code, ckpt, str(tmp_path / 'no-python'), models)
     (code / 'script' / 'test_kgpfn.py').write_text("raise ImportError('No module named tabicl')\n")
     with pytest.raises(AdapterSetupError, match='(?s)does not import KGPFN.s modules.*No module named tabicl'):
+        kgpfn.setup(code, ckpt, sys.executable, models)
+    (code / 'pfn' / 'util.py').write_text('# a modified checkout at the pinned commit\n')
+    with pytest.raises(AdapterSetupError, match='SHA-256 of .*util.py'):
+        kgpfn.setup(code, ckpt, sys.executable, models)
+    (code / 'pfn' / 'util.py').write_text('')
+    (ckpt / kgpfn.TABICL).write_bytes(b'another checkpoint')
+    with pytest.raises(AdapterSetupError, match=f'SHA-256 of .*{kgpfn.TABICL}'):
         kgpfn.setup(code, ckpt, sys.executable, models)
 
 

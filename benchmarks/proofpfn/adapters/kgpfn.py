@@ -86,7 +86,7 @@ class KGPFN:
     code: Path
     checkpoints: Path
     python: tuple[str, ...]
-    pins: Mapping[str, str]
+    pins: Mapping[str, Any]
     gpu_gb: float = 0.0
 
     def record(self) -> dict[str, Any]:
@@ -99,16 +99,18 @@ def setup(code: Optional[PathLike] = None, checkpoints: Optional[PathLike] = Non
           models: Optional[PathLike] = None, gpu_gb: float = 0.0) -> KGPFN:
     """The checked KGPFN setup (options, else ``$KGPFN_CODE``, ``$KGPFN_CHECKPOINT_DIR`` and ``$KGPFN_PYTHON``).
 
-    Checks the commit and the checkpoints against their pins, and that the command imports the worker's KGPFN modules in
-    the worker's environment.
+    Checks the commit, the KGPFN files that the worker loads (``imported``) and the checkpoints against their pins, and
+    that the command imports the worker's KGPFN modules in the worker's environment.
 
     Raises:
-        AdapterSetupError: For a missing folder or command, another commit, a checkpoint that differs from its pin, or a
-            command that does not import KGPFN.
+        AdapterSetupError: For a missing folder or command, another commit, a file that differs from its pin, or a command
+            that does not import KGPFN.
     """
     pins = external_pins(KEY, models)
     folder = external_folder(code, 'KGPFN_CODE', 'KGPFN')
     check_commit(folder, pins['code_commit'], 'KGPFN')
+    for name, digest in sorted(pins['imported'].items()):
+        check_file(folder / name, digest, 'KGPFN')
     files = external_folder(checkpoints, 'KGPFN_CHECKPOINT_DIR', 'KGPFN checkpoints')
     check_file(files / CHECKPOINT, pins[CHECKPOINT], 'KGPFN')
     check_file(files / TABICL, pins['tabicl'], 'KGPFN')
@@ -236,12 +238,18 @@ def run_worker(system: KGPFN, entry: GraphEntry, folder: Path, meta: Mapping[str
     return code, attempt
 
 
-def check_output(raw: Mapping[str, Any], meta_path: Path) -> None:
-    """Refuse a worker output that is incomplete, of another mode or meta, or with a failed load or non-finite scores.
+def check_output(raw: Mapping[str, Any], meta_path: Path, imported: Mapping[str, str]) -> None:
+    """Refuse a worker output that is incomplete, of another mode or meta, with a failed load or non-finite scores, or of
+    KGPFN files other than the pinned ``imported`` ones.
 
     Raises:
-        ValueError: For such an output.
+        AdapterSetupError: When the worker loaded other KGPFN files than the pins.
+        ValueError: For another such output.
     """
+    loaded = raw['provenance']['imported']
+    if loaded != imported:
+        differ = sorted(name for name in set(loaded) | set(imported) if loaded.get(name) != imported.get(name))
+        raise AdapterSetupError(f'KGPFN: the worker loaded other files than the pins (models.json, external.kgpfn.imported): {differ[:8]}')
     if (raw['status'], raw['context_mode'], raw['seed']) != ('complete', 'blind', 0):
         raise ValueError(f"the worker output is {raw['status']}, {raw['context_mode']}, seed {raw['seed']}")
     if raw['settings']['meta_sha256'] != file_sha256(meta_path):
@@ -341,7 +349,7 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, system:
                                      oom=json.loads(oom.read_text()) if oom.is_file() else None,
                                      log_tail=(folder / f'worker-{attempts}.log').read_text(errors='replace').splitlines()[-30:]))
     raw = json.loads((folder / 'raw.json').read_text())
-    check_output(raw, folder / 'meta.json')
+    check_output(raw, folder / 'meta.json', system.pins['imported'])
     rows = rows_of(raw, queries)
     differ = verify(folder / 'scores.npz', folder, graph, queries, rows) if meta['dump'] else 0
     if differ:
@@ -351,8 +359,8 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, out: PathLike, system:
     kgpfn_meta = dict(mode='blind', seed=raw['seed'], batch_size=s['batch_size'], entity_chunk=s['entity_chunk_size'], eval_chunk=s['eval_chunk_size'],
                       num_pos=s['num_pos'], num_neg=s['num_neg'], unfillable_contexts=meta['unfillable'], attempts=attempts,
                       reflexive_names=meta['reflexive'], verified=meta['dump'], setup=system.record(), times=raw['times'], gpu=raw['gpu'],
-                      provenance=raw['provenance'], strict_load_passed=True, rank_mismatches_vs_native=raw['rank_mismatches_vs_native'],
-                      nonfinite_rows=raw['counts']['nonfinite_rows'], queries_with_target_tie=raw['queries_with_target_tie'], order=s['order'],
+                      provenance=raw['provenance'], rank_mismatches_vs_native=raw['rank_mismatches_vs_native'],
+                      queries_with_target_tie=raw['queries_with_target_tie'], order=s['order'],
                       seeding=s['seeding'], raw_sha256=file_sha256(folder / 'raw.json'), meta_sha256=s['meta_sha256'], work=str(folder))
     spec = dict(kind='external', system='KGPFN', setting=SETTING)
     write_rows(final, manifest=manifest, entry=entry, graph=graph, queries=queries, key=KEY, spec=spec, protocol=PROTOCOL, rows=rows,

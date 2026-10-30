@@ -388,7 +388,7 @@ class ModelPins:
 
     families: Mapping[str, FamilyPins]
     references: Mapping[str, ReferencePin]
-    external: Mapping[str, Mapping[str, str]]
+    external: Mapping[str, Mapping[str, Any]]
 
     def family_of_key(self, key: str) -> Optional[FamilyPins]:
         """The family registered under a system key, or ``None``."""

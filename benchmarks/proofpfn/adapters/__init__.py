@@ -68,7 +68,7 @@ def external_folder(option: Optional[PathLike], variable: str, what: str) -> Pat
     return folder
 
 
-def external_pins(name: str, models: Optional[PathLike] = None) -> dict[str, str]:
+def external_pins(name: str, models: Optional[PathLike] = None) -> dict[str, Any]:
     """The pins of an external adapter in the ``external`` section of ``models.json``.
 
     Raises:

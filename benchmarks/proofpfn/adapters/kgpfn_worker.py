@@ -23,8 +23,8 @@ answer-blind context and context seed 0:
   KGPFN's native ranks (``tasks.compute_ranking``) are compared.
 
 Output: one JSON with the per-position ranks (``tail_rank``, ``head_rank``, ``tail_rank_rule``, ``head_rank_rule``, the
-optimistic ranks as a tie diagnostic), counts, settings, the strict-load check, times, GPU memory and provenance, but no
-metric. ``--dump-scores`` also writes the score rows (small graphs, for the host's check). Exit code 3: CUDA out of
+optimistic ranks as a tie diagnostic), counts, settings, the strict-load check, times, GPU memory and provenance (with
+the SHA-256 of every KGPFN file that the run loaded, which the host compares with the pins), but no metric. ``--dump-scores`` also writes the score rows (small graphs, for the host's check). Exit code 3: CUDA out of
 memory (an error JSON next to the output).
 """
 import argparse
@@ -160,6 +160,14 @@ def package_version(name: str) -> Optional[str]:
         return version(name)
     except PackageNotFoundError:
         return None
+
+
+def imported_files(code: Path, kernel: Path) -> dict[str, str]:
+    """The SHA-256 of KGPFN's files that this run loaded, by their path below the code folder: the modules imported from
+    the code folder and the sources of the kernel build in ``kernel``."""
+    files = {Path(path).resolve() for path in (getattr(m, '__file__', None) for m in list(sys.modules.values())) if path}
+    files = {f for f in files if f.is_relative_to(code)} | {f.resolve() for f in kernel.iterdir() if f.is_file()}
+    return {f.relative_to(code).as_posix(): sha256(f) for f in sorted(files)}
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
@@ -345,7 +353,8 @@ def main(argv: Optional[list[str]] = None) -> int:
                    context_s=secs['context'], score_s=secs['score'], rank_s=secs['rank']),
         gpu=dict(name=torch.cuda.get_device_name(device), peak_allocated_gb=torch.cuda.max_memory_allocated(device) / 2**30,
                  peak_reserved_gb=torch.cuda.max_memory_reserved(device) / 2**30),
-        provenance=dict(worker_sha256=sha256(Path(__file__)), python=sys.version.split()[0],
+        provenance=dict(worker_sha256=sha256(Path(__file__)), imported=imported_files(code, Path(rspmm.__file__).resolve().parent / 'source'),
+                        python=sys.version.split()[0],
                         torch=torch.__version__, cuda=torch.version.cuda, tabicl=package_version('tabicl'),
                         torch_geometric=package_version('torch_geometric'),
                         split_sha256={s: sha256(a.graph_dir / f'{s}.txt') for s in ('train', 'valid', 'test')}),
