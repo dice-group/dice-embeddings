@@ -164,6 +164,8 @@ data/real-sources/
 
 - `--graphs` names a folder with `train.txt`, `valid.txt` and `test.txt` of each graph in `<name>/`. `KGs.zip` holds
   FB15k-237 and WN18RR.
+- The command reads the split files with dicee's `KG`, which loads the GPT-2 encoding of tiktoken. Without that encoding
+  in tiktoken's cache, the first run needs the network.
 - CoDEx-M comes from the repository tsafavi/codex at commit `3132e426c2a6b643b70bad679905a3a6270be440`. Copy its
   files `data/triples/codex-m/train.txt`, `valid.txt` and `test.txt` into `KGs/CoDEx-M/`. The train file has the SHA-256
   `d99c3437ab51690391a26d96976adf6e5494dba7ef6902e77000551bfa566556` (`tests/test_synthetic_real.py` lists all three).
