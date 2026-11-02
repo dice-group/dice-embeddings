@@ -23,8 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Regression bounds updated for the new embedding initialization (AConEx, CoKE)
 - DeCaL initialization delegates embedding setup to dedicated methods (part of #427)
 - CI ratchets the mypy error count instead of `continue-on-error`
+- `KGE.answer_multi_hop_query` now defaults to `use_logits=False` and combines sigmoid probabilities. The T-norms and negation norms are defined on [0, 1]; with raw logits the product T-norm misranked answers (UMLS `2i` MRR 0.009 vs ~0.63). Pass `use_logits=True` for the old behaviour.
 
 ### Fixed
+- `QueryGenerator.save_queries` crashed on undefined attributes and is fixed; `QueryGenerator` reseeds before generating each query type, so queries of one type no longer depend on which types were generated earlier
 - Label smoothing in `LabelSmoothingLoss.forward`, `KvsAll`, `AllvsAll` and `KvsSample` targets
 - `WeightedBCELoss` wired into `loss_fn` dispatch; unreachable `adversarial_temperature` branch; `current_epoch` threading in `loss_function` (#442, #443)
 - Gradient accumulation in `TorchTrainer`; batch-size finder returns the last safe size; auto batch finding rejected for FSDP
