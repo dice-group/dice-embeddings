@@ -139,9 +139,15 @@ Module Contents
 
 
 
-   .. py:method:: save_queries(query_type: str, gen_num: int, save_path: str)
+   .. py:method:: save_queries(query_type: str, gen_num: int, save_path: str) -> None
 
-      
+      Generate queries of one type and write them and their answers as pickle files.
+
+      :param query_type: Key of ``query_name_to_struct``, e.g. ``"2p"``.
+      :param gen_num: Number of queries to sample.
+      :param save_path: Directory for the ``*-queries/-easy-answers/-false-positives/-hard-answers`` files.
+
+      :raises ValueError: If ``query_type`` is not a known query type.
 
 
 

@@ -232,7 +232,7 @@ Module Contents
    .. py:method:: single_hop_query_answering(query: tuple, only_scores: bool = True, k: Optional[int] = None, use_logits: bool = True)
 
 
-   .. py:method:: answer_multi_hop_query(query_type: Optional[str] = None, query: Optional[Tuple[Union[str, Tuple[str, str]], ...]] = None, queries: Optional[List[Tuple[Union[str, Tuple[str, str]], ...]]] = None, tnorm: str = 'prod', neg_norm: str = 'standard', lambda_: float = 0.0, k: int = 10, only_scores: bool = False, use_logits: bool = True) -> Union[List[Tuple[str, torch.Tensor]], List[List[Tuple[str, torch.Tensor]]]]
+   .. py:method:: answer_multi_hop_query(query_type: Optional[str] = None, query: Optional[Tuple[Union[str, Tuple[str, str]], ...]] = None, queries: Optional[List[Tuple[Union[str, Tuple[str, str]], ...]]] = None, tnorm: str = 'prod', neg_norm: str = 'standard', lambda_: float = 0.0, k: int = 10, only_scores: bool = False, use_logits: bool = False) -> Union[List[Tuple[str, torch.Tensor]], List[List[Tuple[str, torch.Tensor]]]]
 
       Answer multi-hop EPFO (Existential Positive First-Order) queries.
 
@@ -256,7 +256,9 @@ Module Contents
       :param lambda_: Parameter for sugeno and yager negation (0.0-1.0).
       :param k: Number of top answer entities to return.
       :param only_scores: If True, return only scores tensor. If False, return (entity, score) tuples.
-      :param use_logits: If True, use raw model logits. If False, use sigmoid probabilities.
+      :param use_logits: If False (default), combine sigmoid probabilities in [0, 1], which is what the
+                         T-norms and negation norms are defined on. If True, combine raw logits; the product
+                         T-norm and the negation norms then give meaningless rankings for negative scores.
 
       :returns: List[(entity, score), ...] of top-k answers.
                 For batch queries: List of such lists, one per query.
