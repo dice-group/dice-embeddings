@@ -751,7 +751,7 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
         lambda_: float = 0.0,
         k: int = 10,
         only_scores: bool = False,
-        use_logits: bool = True
+        use_logits: bool = False
     ) -> Union[List[Tuple[str, torch.Tensor]], List[List[Tuple[str, torch.Tensor]]]]:
         """
         Answer multi-hop EPFO (Existential Positive First-Order) queries.
@@ -777,7 +777,9 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             lambda_: Parameter for sugeno and yager negation (0.0-1.0).
             k: Number of top answer entities to return.
             only_scores: If True, return only scores tensor. If False, return (entity, score) tuples.
-            use_logits: If True, use raw model logits. If False, use sigmoid probabilities.
+            use_logits: If False (default), combine sigmoid probabilities in [0, 1], which is what the
+                T-norms and negation norms are defined on. If True, combine raw logits; the product
+                T-norm and the negation norms then give meaningless rankings for negative scores.
 
         Returns:
             For single query: List[(entity, score), ...] of top-k answers.
@@ -816,6 +818,10 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             - docs/guides/multi_hop_queries.md: Complete guide with all query patterns
             - tests/test_answer_multi_hop_query.py: Usage examples
         """
+
+        if use_logits and (tnorm == "prod" or (query_type is not None and "n" in query_type)):
+            logger.warning("use_logits=True with tnorm='prod' or a negation query combines unbounded scores; "
+                           "use_logits=False (sigmoid probabilities) or tnorm='min' for meaningful rankings.")
 
         if queries is not None:
             if query is not None:

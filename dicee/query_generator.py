@@ -454,6 +454,8 @@ class QueryGenerator:
         """
 
 
+        # Reseed so that the queries of one type do not depend on which types were generated before it.
+        self.set_global_seed(self.seed)
         train_tail_relation_to_heads, train_head_relation_to_tails = self.construct_graph(paths=[self.train_path])
         val_tail_relation_to_heads, val_head_relation_to_tails = self.construct_graph(
             paths=[self.train_path, self.val_path])
@@ -475,21 +477,20 @@ class QueryGenerator:
             f"General structure is {query_struct} with name {query_type}. Number of queries generated: {len(test_tp_answers)}")
         return test_queries, test_tp_answers, test_fp_answers, test_fn_answers
 
-    def save_queries(self, query_type: str, gen_num: int, save_path: str):
-        """
+    def save_queries(self, query_type: str, gen_num: int, save_path: str) -> None:
+        """Generate queries of one type and write them and their answers as pickle files.
 
-        """
+        Args:
+            query_type: Key of ``query_name_to_struct``, e.g. ``"2p"``.
+            gen_num: Number of queries to sample.
+            save_path: Directory for the ``*-queries/-easy-answers/-false-positives/-hard-answers`` files.
 
-        # Find the index of query_type in query_names
-        try:
-            gen_id = self.query_names.index(query_type)
-        except ValueError:
-            logger.warning(f"Invalid query_type: {query_type}")
-            return []
-        queries, tp_answers, fp_answers, fn_answers = self.generate_queries(self.query_structures[gen_id:gen_id + 1],
-                                                                            gen_num, query_type)
-        unmapped_queries, easy_answers, false_positives, hard_answers = self.unmap(query_type, queries, tp_answers,
-                                                                                   fp_answers, fn_answers)
+        Raises:
+            ValueError: If ``query_type`` is not a known query type.
+        """
+        if query_type not in self.query_name_to_struct:
+            raise ValueError(f"Invalid query_type: {query_type}. Choose from {sorted(self.query_name_to_struct)}")
+        unmapped_queries, easy_answers, false_positives, hard_answers = self.get_queries(query_type, gen_num)
 
         # Save the unmapped queries and answers
         name_to_save = f'{self.mode}-{query_type}'
