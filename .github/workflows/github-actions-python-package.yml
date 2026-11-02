@@ -6,6 +6,7 @@ jobs:
 
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         python-version: ["3.11", "3.12", "3.13"]
 
@@ -18,12 +19,12 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -e .["dev"] --extra-index-url https://download.pytorch.org/whl/cpu
-          pip install mypy
+          python -m pip install -e ".[dev]" -c .github/ci-constraints.txt --extra-index-url https://download.pytorch.org/whl/cpu
+          python -m pip check
       
       - name: Lint with ruff
         run: |
-          ruff check dicee/ --line-length=200
+          ruff check dicee/ benchmarks/ --line-length=200
       
       - name: "Type check with mypy (ratchet: error count must not increase)"
         run: |
@@ -34,8 +35,12 @@ jobs:
           # add fresh type errors while existing debt is paid down gradually.
           # If you fix errors, lower .github/mypy-baseline.txt to lock in the
           # improvement; only raise it if a change unavoidably adds errors.
-          mypy dicee/ --config-file=pyproject.toml > mypy_output.txt 2>&1 || true
+          MYPY_EXIT=0
+          mypy dicee/ --config-file=pyproject.toml --python-version "${{ matrix.python-version }}" > mypy_output.txt 2>&1 || MYPY_EXIT=$?
           cat mypy_output.txt
+          if [ "$MYPY_EXIT" -gt 1 ]; then
+            exit "$MYPY_EXIT"
+          fi
           CURRENT_ERRORS=$(grep -oP 'Found \K[0-9]+(?= errors?)' mypy_output.txt || echo 0)
           BASELINE_ERRORS=$(cat .github/mypy-baseline.txt)
           echo "mypy errors: $CURRENT_ERRORS (baseline: $BASELINE_ERRORS)"

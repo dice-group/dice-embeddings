@@ -4,6 +4,13 @@ Both implementations run sequentially in fresh processes using the same Python
 environment. Dataset loading, graph construction, filtering, and fixed-walk
 transfers are outside warm inference timings. Flock additionally replays the
 official sampler's records through both neural models for a score parity check.
+
+KG-ICL's official worker runs in its own environment (``--upstream-python``)
+on the pinned checkout plus tests/fixtures/kgicl/upstream-fixes.patch, unless
+``--upstream-variant unpatched`` is given. Both models read the same graph,
+the same DICE-sampled prompt graphs, written in the official case format, and
+the same answer-distance mask. Prompt graph extraction is preprocessing and
+is not timed for either implementation.
 """
 import argparse
 import importlib.metadata
@@ -24,8 +31,10 @@ REVISIONS = {
     'ULTRA': '427966ad8ed60420eef034063d44f3153addff90',
     'TRIX': '7596e14eefefe89e61396205a0550172cadeddb0',
     'Flock': 'f35103d25a78bdf4075de5c673a51de4979aa4d7',
+    'KGICL': '6a3166e347ae468acdfb30a70a2cf3608b66b8f1',
 }
-SOURCE_DIRS = {'ULTRA': 'ultra', 'TRIX': 'src', 'Flock': 'src_entity'}
+SOURCE_DIRS = {'ULTRA': 'ultra', 'TRIX': 'src', 'Flock': 'src_entity', 'KGICL': 'src'}
+KGICL_PATCH = ROOT / 'tests' / 'fixtures' / 'kgicl' / 'upstream-fixes.patch'
 
 
 def git(root, *args):
@@ -63,11 +72,14 @@ def filtered_metrics(scores, triples, directory):
             **{f'H@{k}': (ranks <= k).double().mean().item() for k in (1, 3, 10)}}
 
 
-def gpu_processes():
+def gpu_processes(require=True):
     if not shutil.which('nvidia-smi'):
         raise RuntimeError('nvidia-smi is required to detect competing CUDA jobs')
     run = subprocess.run(['nvidia-smi', '--query-compute-apps=pid,process_name,used_memory',
-                          '--format=csv,noheader,nounits'], check=True, text=True, capture_output=True)
+                          '--format=csv,noheader,nounits'], check=require, text=True, capture_output=True)
+    if run.returncode:
+        # Explicitly allowed (--allow-unchecked-gpu), e.g. after an NVML driver/library mismatch.
+        return ['unavailable: ' + (run.stdout + run.stderr).strip()]
     lines = [line for line in run.stdout.splitlines() if line.strip()]
     desktop = {'/usr/bin/kwin_wayland', '/usr/bin/kwin_x11', '/usr/lib/Xorg', '/usr/bin/Xorg'}
     other = [line for line in lines if int(line.split(',')[0]) != os.getpid()
@@ -75,6 +87,91 @@ def gpu_processes():
     if other:
         raise RuntimeError('Another CUDA process is active: ' + '; '.join(other))
     return lines
+
+
+def kgicl_data(args, facts, valid, triples, metadata):
+    """Write the splits and DICE's prompt graphs in the official processed layout.
+
+    The test background is the training graph DICE attaches. Examples are those
+    DICE samples, so both models read identical prompts. Returns the distance
+    mask both models apply: hop distances holding under 2% of validation facts.
+    """
+    sys.path.insert(0, str(ROOT))
+    from dicee.models import KGICL
+    from dicee.models.kgicl_prompts import answer_distance_rates
+
+    nr = metadata['num_relations']
+    model = KGICL(dict(num_entities=metadata['num_entities'], num_relations=nr, kgicl_prompt_seed=args.prompt_seed))
+    model.set_graph(facts)
+    data = args.output / 'kgicl-data'
+    queried = set(triples[:, 1].tolist())
+
+    def write(path, rows):
+        path.write_text(''.join('\t'.join(map(str, row)) + '\n' for row in rows))
+
+    for split, queries in (('valid', valid), ('test', triples)):
+        directory = data / split
+        directory.mkdir(parents=True, exist_ok=True)
+        write(directory / 'background.txt', facts.tolist())
+        write(directory / 'facts.txt', queries.tolist())
+        write(directory / 'filter.txt', torch_cat(facts, valid, triples).tolist())
+        write(directory / 'entity2id.txt', [(f'e{i}', i) for i in range(metadata['num_entities'])])
+        write(directory / 'relation2id.txt', [(f'r{i}', i) for i in range(nr)])
+        for relation in range(nr):
+            cases = directory / 'cases' / f'r{relation}'
+            cases.mkdir(parents=True, exist_ok=True)
+            if relation not in queried:
+                continue
+            for index, example in enumerate(model.sampler.examples(relation)):
+                local = example.triples.tolist()
+                first = [0, relation, 0 if example.self_loop else 1]
+                local.remove(first)
+                write(cases / f'{index}.triples', [first, *local])
+                write(cases / f'{index}.labels', [(node, *label) for node, label in enumerate(example.labels.tolist())])
+                write(cases / f'{index}.node2id', [(entity, node) for node, entity in enumerate(example.entities.tolist())])
+    rates = answer_distance_rates(valid, facts, metadata['num_entities'])
+    masked = [d for d in range(7) if rates[d] < 0.02]
+    (data / 'distance_mask.json').write_text(json.dumps(dict(rates=rates, masked_distances=masked)) + '\n')
+    return masked
+
+
+def torch_cat(*parts):
+    import torch
+    return torch.cat(parts)
+
+
+def official_kgicl(args, metadata):
+    """Official EntityEncoder and DataLoader, pinned and optionally patched, on the written data."""
+    import tempfile
+
+    import torch
+    work = Path(tempfile.mkdtemp(prefix='kgicl-'))
+    # The official loader derives split paths by replacing these words in the path.
+    assert not any(word in str(work) for word in ('train', 'valid', 'test'))
+    for name in ('src', 'run_your_own_dataset'):
+        shutil.copytree(args.upstream_root / name, work / name)
+    if args.upstream_variant == 'patched':
+        subprocess.run(['patch', '-p1', '-s', '-d', str(work), '-i', str(KGICL_PATCH)], check=True)
+    shutil.copytree(args.output / 'kgicl-data', work / 'data')
+    sys.path.insert(0, str(work / 'src'))
+    from types import SimpleNamespace
+
+    from data_loader import DataLoader
+    from encoder.EntityEncoder import EntityEncoder
+
+    options = SimpleNamespace(
+        finetune=False, train_batch_size=8, test_batch_size=args.query_batch_size, shot=5, device=torch.device(args.device),
+        use_attn=True, attn_type='Sigmoid', AGG='max', AGG_rel='max', MSG='concat', use_augment=False,
+        use_token_set=True, use_prompt_graph=True, prompt_graph_type='all', path_hop=3, hidden_dim=32, attn_dim=5,
+        n_relation_encoder_layer=3, n_layer=6, act='idd', dropout=0.0, relation_mask_rate=0.0, use_rspmm=False)
+    loader = DataLoader(options, str(work / 'data' / 'test') + '/', metadata['dataset'])
+    expected = json.loads((work / 'data' / 'distance_mask.json').read_text())['rates']
+    assert all(abs(loader.kg.answer_distance[d] - expected[d]) < 1e-12 for d in range(7)), 'distance rates differ'
+    model = EntityEncoder(options)
+    state = torch.load(ROOT / 'checkpoints' / CHECKPOINTS['KGICL'], map_location='cpu', weights_only=True)['state_dict']
+    # Official evaluation drops the checkpoint's unused NBFNet keys the same way (strict=False).
+    model.load_state_dict({key: value for key, value in state.items() if key in model.state_dict()}, strict=True)
+    return model, loader
 
 
 def official_model(args, facts, metadata):
@@ -139,16 +236,23 @@ def worker(args):
     triples = triples_cpu.to(args.device)
     checkpoint = ROOT / 'checkpoints' / CHECKPOINTS[args.model]
     started = time.perf_counter()
-    if args.variant == 'official':
+    loader = None
+    if args.variant == 'official' and args.model == 'KGICL':
+        model, loader = official_kgicl(args, metadata)
+    elif args.variant == 'official':
         model, graph = official_model(args, facts, metadata)
     else:
         sys.path.insert(0, str(ROOT))
-        from dicee.models import TRIX, ULTRA, Flock
+        from dicee.models import KGICL, TRIX, ULTRA, Flock
 
-        cls = {'ULTRA': ULTRA, 'TRIX': TRIX, 'Flock': Flock}[args.model]
+        cls = {'ULTRA': ULTRA, 'TRIX': TRIX, 'Flock': Flock, 'KGICL': KGICL}[args.model]
+        masked = None
+        if args.model == 'KGICL':
+            masked = json.loads((args.output / 'kgicl-data' / 'distance_mask.json').read_text())['masked_distances']
         model = cls(dict(num_entities=metadata['num_entities'], num_relations=metadata['num_relations'],
                          **{args.model.lower() + '_query_batch_size': args.query_batch_size},
-                         flock_walk_num=args.walk_num, flock_test_samples=1, flock_seed=args.seed))
+                         flock_walk_num=args.walk_num, flock_test_samples=1, flock_seed=args.seed,
+                         kgicl_prompt_seed=args.prompt_seed, kgicl_masked_distances=masked))
         model.load_pretrained(checkpoint).set_graph(facts)
     model.eval().requires_grad_(False).to(device=args.device, dtype=getattr(torch, args.dtype))
     initial_weights = {name: value.detach().cpu().clone() for name, value in model.state_dict().items()}
@@ -176,6 +280,9 @@ def worker(args):
                 kw['dtype'] = torch.float64
             return original_ones(*a, **kw)
         torch.ones = double_ones
+        if loader is not None:
+            # Official KG-ICL's incidence matrices only select neighbors; they multiply default-dtype one-hots.
+            loader.M_sub, loader.M_obj = loader.M_sub.double(), loader.M_obj.double()
     records = {}
     if args.mode == 'replay':
         for i in range(len(triples)):
@@ -193,6 +300,15 @@ def worker(args):
         if args.variant == 'dice' and args.mode == 'native':
             return torch.stack((model.forward_k_vs_all(query[:, :2]),
                                 model.forward_k_vs_all_heads(query[:, 1:])), 1)
+        if loader is not None:
+            # Official KG-ICL: tail queries (h, r) and head queries (t, r + R) as inverse tail queries.
+            sides = []
+            for heads, relations in ((query[:, 0], query[:, 1]), (query[:, 2], query[:, 1] + metadata['num_relations'])):
+                sides.append(torch.cat([model(heads[s:s + args.query_batch_size].cpu().numpy(),
+                                              relations[s:s + args.query_batch_size].cpu().numpy(),
+                                              loader=loader, training=False)[0]
+                                        for s in range(0, len(query), args.query_batch_size)]))
+            return torch.stack(sides, 1)
         outputs = []
         for side in ('tail', 'head'):
             chunks = []
@@ -232,7 +348,7 @@ def worker(args):
         torch.cuda.synchronize(args.device)
         return time.perf_counter() - begin, scores
 
-    snapshots = [gpu_processes()]
+    snapshots = [gpu_processes(not args.allow_unchecked_gpu)]
     if args.scores_only:
         with torch.no_grad():
             scores = predict().cpu()
@@ -253,11 +369,11 @@ def worker(args):
         baseline_memory = torch.cuda.memory_allocated(args.device) / 2**20
         timings = []
         for _ in range(args.repeats):
-            snapshots.append(gpu_processes())
+            snapshots.append(gpu_processes(not args.allow_unchecked_gpu))
             elapsed, scores = timed()
             timings.append(elapsed)
             del scores
-            snapshots.append(gpu_processes())
+            snapshots.append(gpu_processes(not args.allow_unchecked_gpu))
         peak = torch.cuda.max_memory_allocated(args.device) / 2**20
         scores = predict().cpu()
         if args.variant == 'official' and args.model == 'Flock' and args.mode == 'native' and args.replay_queries:
@@ -277,6 +393,9 @@ def worker(args):
         if not hasattr(extension, 'rspmm_add_mul_forward_cuda'):
             raise RuntimeError('The official fused CUDA extension is missing')
         dependencies['rspmm_binary_sha256'] = digest(Path(extension.__file__))
+    if args.model == 'KGICL' and args.variant == 'official':
+        source['patch'] = None if args.upstream_variant == 'unpatched' else dict(path=str(KGICL_PATCH.relative_to(ROOT)),
+                                                                               sha256=digest(KGICL_PATCH))
     report = dict(model=args.model, variant=args.variant, mode=args.mode, source=source,
                   dataset=metadata['dataset'], test_indices=indices.tolist(), test_triples=len(triples),
                   ranked_queries=2 * len(triples), query_batch_size=args.query_batch_size,
@@ -300,13 +419,14 @@ def worker(args):
     print(json.dumps({key: report[key] for key in ['model', 'variant', 'mode', 'median_forward_seconds', 'metrics']}), flush=True)
 
 
-def compare(directory, stochastic=False, fp64_path=None, raise_on_failure=True):
+def compare(directory, stochastic=False, fp64_path=None, raise_on_failure=True, same_environment=True):
     import torch
 
     official, dice = [json.loads((directory / f'{name}.json').read_text()) for name in ('official', 'dice')]
     for key in ('test_indices', 'query_batch_size', 'walk_num', 'test_samples', 'seed', 'torch', 'cuda', 'dtype',
                 'tf32', 'hardware', 'device', 'checkpoint_sha256', 'train_sha256', 'test_sha256'):
-        assert official[key] == dice[key], key
+        if same_environment or key not in ('torch', 'cuda'):
+            assert official[key] == dice[key], key
     left, right = [torch.load(directory / f'{name}.pt', weights_only=True) for name in ('official', 'dice')]
     assert torch.isfinite(left).all() and torch.isfinite(right).all()
     differences = {key: dice['metrics'][key] - value for key, value in official['metrics'].items()}
@@ -351,6 +471,12 @@ def main():
     parser.add_argument('--seed', type=int, default=42)
     parser.add_argument('--walk-num', type=int, default=128)
     parser.add_argument('--replay-queries', type=int, default=8)
+    parser.add_argument('--upstream-python', type=Path, help='Interpreter of the official model (KG-ICL: its own environment)')
+    parser.add_argument('--upstream-variant', choices=['patched', 'unpatched'], default='patched',
+                        help='KG-ICL: apply tests/fixtures/kgicl/upstream-fixes.patch to the official code (default)')
+    parser.add_argument('--prompt-seed', type=int, default=0, help='KG-ICL prompt sampling seed')
+    parser.add_argument('--allow-unchecked-gpu', action='store_true',
+                        help='Record, instead of rejecting, an unavailable nvidia-smi process check')
     parser.add_argument('--variant', choices=['official', 'dice'], help=argparse.SUPPRESS)
     parser.add_argument('--mode', choices=['native', 'replay'], default='native', help=argparse.SUPPRESS)
     parser.add_argument('--walks', type=Path, help=argparse.SUPPRESS)
@@ -384,13 +510,26 @@ def main():
     for mode, queries in modes:
         directory = args.output / mode
         directory.mkdir(parents=True, exist_ok=True)
+        if args.model == 'KGICL':
+            import numpy as np
+            import torch
+            metadata = json.loads((args.indexed_data / 'result.json').read_text())
+            facts = torch.from_numpy(np.load(args.indexed_data / 'train_set.npy').astype(np.int64))
+            valid = torch.from_numpy(np.load(args.indexed_data / 'valid_set.npy').astype(np.int64))
+            test = torch.from_numpy(np.load(args.indexed_data / 'test_set.npy').astype(np.int64))
+            indices = torch.randperm(len(test), generator=torch.Generator().manual_seed(args.seed))[:queries]
+            kgicl_data(argparse.Namespace(output=directory, prompt_seed=args.prompt_seed), facts, valid, test[indices], metadata)
+
         def run_worker(variant, **overrides):
-            command = [sys.executable, str(Path(__file__).resolve())]
+            python = args.upstream_python if variant == 'official' and args.upstream_python else sys.executable
+            command = [str(python), str(Path(__file__).resolve())]
             options = vars(args) | dict(mode=mode, queries=queries, output=directory, variant=variant) | overrides
             for key, value in options.items():
-                if key == 'scores_only':
+                if key in ('scores_only', 'allow_unchecked_gpu'):
                     if value:
-                        command.append('--scores-only')
+                        command.append('--' + key.replace('_', '-'))
+                    continue
+                if value is None:
                     continue
                 command.extend(['--' + key.replace('_', '-'), str(value)])
             label = 'official-fp64' if options['scores_only'] else variant
@@ -400,7 +539,7 @@ def main():
         for variant in ('official', 'dice'):
             run_worker(variant)
         stochastic = args.model == 'Flock' and mode == 'native'
-        result = compare(directory, stochastic=stochastic, raise_on_failure=False)
+        result = compare(directory, stochastic=stochastic, raise_on_failure=False, same_environment=args.upstream_python is None)
         if not result['scores_close'] and args.model != 'Flock':
             run_worker('official', dtype='float64', scores_only=True)
             compare(directory, fp64_path=directory / 'official-fp64.pt')

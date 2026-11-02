@@ -13,15 +13,46 @@ CUDA = pytest.mark.skipif(not torch.cuda.is_available(), reason='CUDA unavailabl
 FACTS = torch.tensor([[0, 0, 1], [0, 0, 2], [1, 1, 2], [2, 0, 3], [3, 1, 0]])
 
 
+def ieee_cudnn():
+    """Turn off TF32 in cuDNN, as the KGFM benchmark runners do, and return a function that restores the settings.
+
+    The reference fixtures are IEEE float32 CPU runs. cuDNN uses TF32 by default, also for Flock's GRU, and
+    ``torch.set_float32_matmul_precision`` does not change that: the Flock scores then differ by about 1e-3.
+    The precision objects come from the class: after ``torch.backends.cudnn.rnn`` is imported, the module
+    attribute of that name is the submodule (see ``dicee.models._inference.float32_precision_backends``).
+    The legacy ``allow_tf32`` is not read on this path, because PyTorch rejects a mix of the two APIs.
+    """
+    cudnn = type(torch.backends.cudnn)
+    backends = [backend for backend in (getattr(cudnn, 'conv', None), getattr(cudnn, 'rnn', None))
+                if hasattr(backend, 'fp32_precision')]
+    if backends:
+        previous = [backend.fp32_precision for backend in backends]
+        for backend in backends:
+            backend.fp32_precision = 'ieee'
+
+        def restore():
+            for backend, value in zip(backends, previous):
+                backend.fp32_precision = value
+        return restore
+    previous = torch.backends.cudnn.allow_tf32
+    torch.backends.cudnn.allow_tf32 = False
+
+    def restore():
+        torch.backends.cudnn.allow_tf32 = previous
+    return restore
+
+
 @pytest.fixture(autouse=True)
 def small_thread_pool():
     previous = torch.get_num_threads()
     previous_precision = torch.get_float32_matmul_precision()
     torch.set_float32_matmul_precision('highest')
+    restore_cudnn = ieee_cudnn()
     try:
         torch.set_num_threads(2)
         yield
     finally:
+        restore_cudnn()
         torch.set_num_threads(previous)
         torch.set_float32_matmul_precision(previous_precision)
 

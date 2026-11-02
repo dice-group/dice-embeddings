@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "method": "incoming-relation",
+  "reference_commit": "ab49a0e64e3449e687e484a42269d9898e1d1325",
+  "ranking": "query-seeded random shuffle within Boolean classes"
+}

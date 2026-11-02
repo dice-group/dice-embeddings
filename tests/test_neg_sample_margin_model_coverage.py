@@ -8,7 +8,7 @@ Excluded on purpose:
   matrix rather than gathering per-row scores, so NegSample-family techniques
   do not produce a correctly shaped batch for it.
 - Pyke is excluded per project convention (not covered by this sweep).
-- ULTRA, TRIX, TRIXRelation, Flock, and FlockRelation only support the
+- ULTRA, TRIX, TRIXRelation, Flock, FlockRelation, and KGICL only support the
   scoring techniques validated in static_preprocess_funcs.py (KvsAll and, for
   the entity-prediction variants, NegSample/FixedNegSample/1vsAll/1vsSample/
   KvsSample). Their forward_triples loops over unique (head, relation)
@@ -22,7 +22,7 @@ from dicee.config import Namespace
 from dicee.executer import Execute
 from dicee.static_funcs import MODEL_REGISTRY
 
-EXCLUDED_MODELS = {"Shallom", "Pyke", "ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation"}
+EXCLUDED_MODELS = {"Shallom", "Pyke", "ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation", "KGICL"}
 
 NATIVE_MODELS = sorted(set(MODEL_REGISTRY) - EXCLUDED_MODELS - {"BytE"})
 

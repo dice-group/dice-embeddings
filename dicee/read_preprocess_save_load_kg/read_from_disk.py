@@ -1,5 +1,6 @@
 import glob
 import logging
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -50,15 +51,18 @@ class ReadFromDisk:
             self.kg.raw_test_set = None
         elif self.kg.dataset_dir:
             for i in glob.glob(self.kg.dataset_dir + '/*'):
-                if 'train' in i:
+                # Route by the file name only: a parent folder named like "pytest-..." or "train-..." must not
+                # decide the split.
+                name = Path(i).name
+                if 'train' in name:
                     self.kg.raw_train_set = read_from_disk(i, self.kg.read_only_few, self.kg.sample_triples_ratio,
                                                        backend=self.kg.backend, separator=self.kg.separator)
 
                     if self.kg.add_noise_rate:
                         self.add_noisy_triples_into_training()
-                elif 'test' in i and self.kg.eval_model is not None:
+                elif 'test' in name and self.kg.eval_model is not None:
                     self.kg.raw_test_set = read_from_disk(i, backend=self.kg.backend, separator=self.kg.separator)
-                elif 'valid' in i and self.kg.eval_model is not None:
+                elif 'valid' in name and self.kg.eval_model is not None:
                     self.kg.raw_valid_set = read_from_disk(i, backend=self.kg.backend, separator=self.kg.separator)
                 else:
                     logger.warning(f'Not processed data: {i}')

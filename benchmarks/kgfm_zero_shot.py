@@ -27,13 +27,15 @@ from dicee.evaluation._filtering import TIE_POLICIES
 from dicee.evaluation._graph_inference import GraphRankPlan
 from dicee.evaluation.link_prediction import evaluate_lp
 from dicee.knowledge_graph import KG
-from dicee.models import TRIX, ULTRA, Flock
+from dicee.models import KGICL, TRIX, ULTRA, Flock
+from dicee.models.kgicl_prompts import answer_distance_rates
 
-MODELS = {"ULTRA": ULTRA, "TRIX": TRIX, "Flock": Flock}
+MODELS = {"ULTRA": ULTRA, "TRIX": TRIX, "Flock": Flock, "KGICL": KGICL}
 CHECKPOINTS = {
     "ULTRA": "checkpoints/ultra_3g.pth",
     "TRIX": "checkpoints/trix/entity_prediction.pth",
     "Flock": "checkpoints/flock/flock_entity.pth",
+    "KGICL": "checkpoints/kgicl/KG-ICL-6L/model_best.tar",
 }
 METRICS = ("MRR", "H@1", "H@3", "H@10")
 
@@ -85,6 +87,12 @@ ULTRA_50G_GRAPHS = frozenset((
 
 
 def pretraining_status(model, variant, dataset):
+    if model == "KGICL":
+        # KG-ICL pretrains on FB V1, NELL V1 and CoDEx-small. GraIL's FB/NELL splits are
+        # subgraphs of FB15k-237 and NELL-995, so those graphs share facts with pretraining.
+        if dataset in ("CoDEx-Small", "FB237_v1", "NELL_v1"):
+            return "yes"
+        return "related" if dataset == "FB15k-237" or dataset.startswith("NELL-995") else "no"
     dataset = {"FB15k-237": "FB15k237", "CoDEx-Medium": "CoDExMedium",
                "YAGO3-10": "YAGO310", "NELL-995": "NELL995"}.get(dataset, dataset)
     if model == "ULTRA" and variant in ("4g", "50g") and dataset.startswith("NELL-995-"):
@@ -123,6 +131,10 @@ def main():
     parser.add_argument('--pack-walks', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--reuse-queries', action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument('--prefetch-walks', action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument('--prompt-seed', type=int, default=0, help='KG-ICL prompt sampling seed')
+    parser.add_argument('--distance-mask', action='store_true',
+                        help="KG-ICL: zero entities first reached at distances where under 2%% of validation "
+                             "facts lie (the official evaluation's default heuristic)")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--tie-policy", choices=TIE_POLICIES, default="sort")
     parser.add_argument("--tie-seed", type=int, default=None,
@@ -131,6 +143,8 @@ def main():
     args = parser.parse_args()
     if args.model != "ULTRA" and args.ultra_checkpoint != "3g":
         parser.error("--ultra-checkpoint applies only to ULTRA")
+    if args.model != "KGICL" and (args.distance_mask or args.prompt_seed):
+        parser.error("--distance-mask and --prompt-seed apply only to KGICL")
     if args.tie_seed is None:
         args.tie_seed = args.seed
     if min(args.batch_size, args.query_batch_size, args.threads, args.walk_num, args.test_samples) < 1:
@@ -202,6 +216,11 @@ def main():
     if overlap["train_test"]:
         logging.warning("Original-split evaluation includes %d distinct test facts in the "
                         "inference graph; these results contain leakage", overlap["train_test"])
+    masked = None
+    if args.distance_mask:
+        rates = answer_distance_rates(kg.valid_set, kg.train_set, kg.num_entities)
+        masked = [d for d in range(7) if rates[d] < 0.02]
+        write_json(output / "distance_mask.json", {"rates": rates, "masked_distances": masked, "threshold": 0.02})
     settings = dict(num_entities=kg.num_entities, num_relations=kg.num_relations,
                     **{f"{args.model.lower()}_query_batch_size": args.query_batch_size},
                     flock_walk_num=args.walk_num, flock_test_samples=args.test_samples,
@@ -209,7 +228,8 @@ def main():
                     graph_inference_backend=args.inference_backend, graph_relation_cache_mb=args.relation_cache_mb,
                     graph_projection_cache_mb=args.projection_cache_mb, graph_inference_compile=args.compile_inference,
                     flock_compact_state=args.compact_state, flock_compile_sampler=args.compile_sampler,
-                    flock_pack_walks=args.pack_walks)
+                    flock_pack_walks=args.pack_walks, kgicl_prompt_seed=args.prompt_seed,
+                    kgicl_masked_distances=masked)
     model = MODELS[args.model](settings).load_pretrained(checkpoint)
     model.set_graph(kg.train_set).eval().requires_grad_(False)
     initial_weights = {key: value.clone() for key, value in model.state_dict().items()}
@@ -264,6 +284,7 @@ def main():
         "split_overlap": overlap, "test_facts_in_inference_graph": bool(overlap["train_test"]),
         "model_label": model_label, "pretraining_status": pretraining,
         "target_graph_in_pretraining": {"yes": True, "no": False}.get(pretraining),
+        "kgicl_masked_distances": masked,
         "test_triples": len(kg.test_set), "ranked_queries": 2 * len(kg.test_set),
         "num_entities": kg.num_entities, "num_relations": kg.num_relations,
         "inference_edges": model.edge_type.numel(), "metrics": metrics,

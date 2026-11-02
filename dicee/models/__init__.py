@@ -12,3 +12,4 @@ from .ultra import ULTRA # noqa
 from .trix import TRIX, TRIXRelation # noqa
 
 from .flock import Flock, FlockRelation # noqa
+from .kgicl import KGICL # noqa
