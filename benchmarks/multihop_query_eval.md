@@ -15,7 +15,7 @@ python benchmarks/multihop_query_eval.py \
 
 `--path_to_model` is the directory of a trained dicee run. `--dataset_dir` holds `train.txt`, `valid.txt`
 and `test.txt`. Other options: `--k` (intermediate entities kept for multi-hop projections), `--seed`,
-`--probabilities`. Run `--help` for the full list.
+`--logits`. Run `--help` for the full list.
 
 ## What it does
 
@@ -33,9 +33,11 @@ How `QueryGenerator` samples queries is described in
 
 ## Things to watch
 
-- **Use `--tnorm min`** (the script default). The library default, `tnorm="prod"` on raw logits, multiplies
-  scores that can be negative and misranks answers. On UMLS the `2i` MRR was 0.009 with `prod` and about
-  0.63 with `min`. Combining sigmoid probabilities (`--probabilities`) also avoids the problem.
+- **Combine probabilities, not logits.** T-norms are defined on [0, 1]. Before
+  [#480](https://github.com/dice-group/dice-embeddings/pull/480), `answer_multi_hop_query` defaulted to raw
+  logits, and `tnorm="prod"` on them misranked answers: on UMLS the `2i` MRR was 0.009 with `prod` on
+  logits and about 0.63 with `min` or with probabilities. The script combines probabilities by default;
+  `--logits` reproduces the old behaviour.
 - **1p corresponds to tail prediction only.** The link-prediction MRR dicee reports averages tail
   `(h, r, ?)` and head `(?, r, t)` prediction, so it is not directly comparable. Compare 1p with tail-only
   MRR. On FB15k-237 with DistMult the tail MRR is 0.318, the head MRR 0.136 and the reported MRR 0.227

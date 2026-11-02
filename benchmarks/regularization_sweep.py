@@ -61,6 +61,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--lr", type=float, default=0.1)
     p.add_argument("--batch_size", type=int, default=1024)
     p.add_argument("--trainer", default="PL", help="dicee trainer, e.g. PL or torchCPUTrainer.")
+    p.add_argument("--skip_done", action="store_true", help="Skip (dataset, model, type, seed) runs already present in --out.")
     return p.parse_args()
 
 
@@ -73,6 +74,10 @@ def main() -> None:
 
     cli.out.parent.mkdir(parents=True, exist_ok=True)
     write_header = not cli.out.is_file()
+    done = set()
+    if cli.skip_done and not write_header:
+        with open(cli.out, newline="", encoding="utf-8") as f:
+            done = {(r["DB"], r["Model"], r["Type"], r["Seed"]) for r in csv.DictReader(f)}
     with open(cli.out, "a", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(f, fieldnames=FIELDNAMES)
         if write_header:
@@ -80,6 +85,8 @@ def main() -> None:
         for db in cli.datasets:
             for model in cli.models:
                 for exp_type in cli.exp_types:
+                    if (db, model, exp_type, str(cli.seed)) in done:
+                        continue
                     args = Namespace()
                     for key, value in exp_settings(exp_type).items():
                         setattr(args, key, value)

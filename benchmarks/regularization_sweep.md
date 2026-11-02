@@ -36,7 +36,8 @@ settings. Run `--help` for the full list.
 ## Notes
 
 - **Output.** `--out` is appended to, so rerunning a sweep with the same file adds duplicate rows.
-  Use one file per job.
+  Pass `--skip_done` to resume a sweep: runs whose dataset, model, type and seed are already in `--out`
+  are skipped.
 - **AMWA needs more than 20 epochs**, since averaging starts at epoch 20.
 - **ASWA can equal the final model.** It replaces its ensemble whenever validation MRR improves, so
   while validation MRR is still rising every epoch, `*_ASWA` results are identical to the

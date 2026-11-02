@@ -559,10 +559,11 @@ queries, easy_answers, _, hard_answers = generator.get_queries("2p", gen_num=100
 reports for link prediction averages tail and head prediction, so it is lower than the tail-only MRR. On
 FB15k-237 with DistMult the tail MRR is 0.318, the head MRR 0.136 and the reported MRR 0.227.
 
-**T-norm and logits.** `answer_multi_hop_query` defaults to `tnorm="prod"` with raw logits, which
-multiplies scores that can be negative. On UMLS this gave a `2i` MRR of 0.009, against about 0.63 with
-`tnorm="min"` or with `use_logits=False`. The evaluation script defaults to `min`; use
-`--tnorm prod --probabilities` to combine sigmoid probabilities instead.
+**T-norm and logits.** T-norms and negation norms are defined on [0, 1], so `answer_multi_hop_query`
+combines sigmoid probabilities by default (`use_logits=False`). Older versions defaulted to raw logits, and
+`tnorm="prod"` on logits multiplies scores that can be negative: on UMLS this gave a `2i` MRR of 0.009,
+against about 0.63 with `tnorm="min"` or with probabilities. Passing `use_logits=True` logs a warning for
+`prod` and for negation queries.
 
 ---
 
