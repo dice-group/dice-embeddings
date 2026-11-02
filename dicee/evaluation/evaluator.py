@@ -257,7 +257,12 @@ class Evaluator:
         test_set=None,
         trained_model
     ) -> None:
-        """Evaluate with negative sampling scoring."""
+        """Evaluate with negative sampling scoring.
+
+        Ranks both tail (h, r, ?) and head (?, r, t) predictions, filters all known
+        answers from train, valid and test, and reports the mean over both
+        directions. A 1-hop query corresponds to the tail direction only.
+        """
         if 'train' in self.args.eval_model:
             res = self.evaluate_lp(
                 trained_model, train_set,
@@ -378,7 +383,13 @@ class Evaluator:
         trained_model,
         form_of_labelling
     ) -> None:
-        """Evaluate with KvsAll or 1vsAll scoring."""
+        """Evaluate with KvsAll or 1vsAll scoring.
+
+        These techniques train with reciprocal triples, so the evaluated triples
+        include each test triple's inverse. The reported metrics therefore average
+        tail (h, r, ?) and head (?, r, t) prediction. A 1-hop query corresponds to
+        the tail direction only.
+        """
         if 'train' in self.args.eval_model:
             self.report['Train'] = self.evaluate_lp_k_vs_all(
                 trained_model, train_set,

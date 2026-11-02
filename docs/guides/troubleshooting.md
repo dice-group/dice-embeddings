@@ -145,7 +145,7 @@ Epoch:10: loss_step=nan, loss_epoch=nan
 3. **Use weight averaging**
    ```bash
    # Adaptive SWA
-   dicee --dataset_dir KGs/UMLS --model Keci --aswa
+   dicee --dataset_dir KGs/UMLS --model Keci --adaptive_swa
    ```
 
 4. **Reduce model capacity**

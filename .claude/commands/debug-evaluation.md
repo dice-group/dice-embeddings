@@ -21,6 +21,7 @@ Systematically diagnose and improve the link prediction metrics (MRR, HITS@k) fo
 ### Layer 1 — Data
 - **Train/Val/Test split ratio** — is it standard (80/10/10)? Low test MRR with high train MRR → data leakage or overfitting.
 - **Reciprocal relations** — are inverse relations (`rel_inverse`) present? Models like Keci benefit significantly from reciprocal training.
+- **Metric definition** — the reported MRR averages tail and head prediction, and depends on the filter set (all splits by default). Compare like with like before calling an MRR low, e.g. a 1-hop query equals tail-only MRR. Check `tnorm`/`use_logits` before blaming multi-hop MRR (`tnorm="prod"` on logits misranks).
 - **KG noise** — duplicate or contradictory triples? `--add_noise_rate` should be `None` unless intentional.
 - **Separator mismatch** — does `--separator` match the file format? Wrong separator parses entities incorrectly.
 

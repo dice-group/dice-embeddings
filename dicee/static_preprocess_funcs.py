@@ -57,7 +57,8 @@ def preprocesses_input_args(args):
                                    'train_val_test'], f'Unexpected input for eval_model ***\t{args.eval_model}\t***'
     if args.eval_model == 'None':
         args.eval_model = None
-    # reciprocal checking
+    # Reciprocal triples are derived from scoring_technique, not read from args: any user value is overwritten.
+    # With them, evaluation averages tail and head prediction (see Evaluator.eval_with_vs_all).
     if args.scoring_technique in ["AllvsAll", "1vsSample", "KvsAll", "1vsAll", "KvsSample"]:
         args.apply_reciprical_or_noise = True
     elif args.scoring_technique in ["FixedNegSample", "NegSample", "NegSampleMargin", "FSDP1vsSample", "Sentence"]:

@@ -149,7 +149,10 @@ Requires Python >= 3.11. Test datasets: `wget https://files.dice-research.org/da
 - `args` passed to a model's `__init__` is a plain `dict` (`vars(namespace)`), not a `Namespace` — use `self.args.get("key", default)`.
 - Don't redefine `entity_embeddings`/`relation_embeddings` in a new model — `BaseKGE.__init__` creates them.
 - Loss function is chosen in `BaseKGE.__init__` based on `form_of_labelling` (`"EntityPrediction"` or `"RelationPrediction"`).
-- Reciprocal training auto-creates `rel_inverse` relations when enabled.
+- Reciprocal training auto-creates `rel_inverse` relations. It is not a user setting: `apply_reciprical_or_noise` is derived from `scoring_technique` in `static_preprocess_funcs.py` (on for `KvsAll`, `1vsAll`, `AllvsAll`, `1vsSample`, `KvsSample`; off for `NegSample`, `FixedNegSample`, `NegSampleMargin`, `FSDP1vsSample`) and overwrites whatever is passed.
+- The reported test MRR averages tail `(h, r, ?)` and head `(?, r, t)` prediction, with or without reciprocal triples. A 1-hop (`1p`) query is the tail direction only, so compare it with tail-only MRR (FB15k-237 DistMult: tail 0.318, head 0.136, reported 0.227). Filtered MRR also depends on the filter set (none 0.214, train 0.286, train+valid 0.297, all splits 0.318 for the same model).
+- `answer_multi_hop_query` defaults to `tnorm="prod"` on raw logits, which misranks negative scores (UMLS `2i` MRR 0.009 vs ~0.63 with `tnorm="min"`). Use `tnorm="min"` or `use_logits=False`. Test queries come from `QueryGenerator` (see `docs/guides/multi_hop_queries.md`).
+- `adaptive_swa` equals the final model while validation MRR still improves each epoch, so `*_ASWA` results can be identical to the baseline.
 - BPE models (`--byte_pair_encoding`) use subword token sequences as entity/relation indices.
 - Type hints required on new public functions (`Optional[T]`, explicit return types); Google-style docstrings.
 - Conventional commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `perf:`); PRs target `develop`.
