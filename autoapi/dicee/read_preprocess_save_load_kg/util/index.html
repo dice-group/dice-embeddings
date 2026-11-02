@@ -155,10 +155,10 @@
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.polars_dataframe_indexer" title="dicee.read_preprocess_save_load_kg.util.polars_dataframe_indexer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">polars_dataframe_indexer</span></code></a>(→ polars.DataFrame)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.polars_dataframe_indexer" title="dicee.read_preprocess_save_load_kg.util.polars_dataframe_indexer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">polars_dataframe_indexer</span></code></a>(df_polars, idx_entity, ...) → polars.DataFrame</p></td>
 <td><p>Replaces 'subject', 'relation', and 'object' columns in the input Polars DataFrame with their corresponding index values</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.pandas_dataframe_indexer" title="dicee.read_preprocess_save_load_kg.util.pandas_dataframe_indexer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pandas_dataframe_indexer</span></code></a>(→ pandas.DataFrame)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.pandas_dataframe_indexer" title="dicee.read_preprocess_save_load_kg.util.pandas_dataframe_indexer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pandas_dataframe_indexer</span></code></a>(df_pandas, idx_entity, ...) → pandas.DataFrame</p></td>
 <td><p>Replaces 'subject', 'relation', and 'object' columns in the input Pandas DataFrame with their corresponding index values</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.apply_reciprocal_or_noise" title="dicee.read_preprocess_save_load_kg.util.apply_reciprocal_or_noise"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply_reciprocal_or_noise</span></code></a>(add_reciprocal, eval_model)</p></td>
@@ -167,16 +167,16 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.timeit" title="dicee.read_preprocess_save_load_kg.util.timeit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">timeit</span></code></a>(func)</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_with_polars" title="dicee.read_preprocess_save_load_kg.util.read_with_polars"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_with_polars</span></code></a>(→ polars.DataFrame)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_with_polars" title="dicee.read_preprocess_save_load_kg.util.read_with_polars"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_with_polars</span></code></a>(data_path[, read_only_few, ...]) → polars.DataFrame</p></td>
 <td><p>Load and Preprocess via Polars</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_with_pandas" title="dicee.read_preprocess_save_load_kg.util.read_with_pandas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_with_pandas</span></code></a>(data_path[, read_only_few, ...])</p></td>
 <td><p>Load and Preprocess via Pandas</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_from_disk" title="dicee.read_preprocess_save_load_kg.util.read_from_disk"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_from_disk</span></code></a>(→ Tuple[polars.DataFrame, pandas.DataFrame])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.read_from_disk" title="dicee.read_preprocess_save_load_kg.util.read_from_disk"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_from_disk</span></code></a>(data_path[, read_only_few, ...]) → Tuple[polars.DataFrame, pandas.DataFrame]</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.count_triples" title="dicee.read_preprocess_save_load_kg.util.count_triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">count_triples</span></code></a>(→ int)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.count_triples" title="dicee.read_preprocess_save_load_kg.util.count_triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">count_triples</span></code></a>(endpoint) → int</p></td>
 <td><p>Returns the total number of triples in the triple store.</p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.fetch_worker" title="dicee.read_preprocess_save_load_kg.util.fetch_worker"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fetch_worker</span></code></a>(endpoint, offsets, chunk_size, ...)</p></td>
@@ -203,7 +203,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.create_constraints" title="dicee.read_preprocess_save_load_kg.util.create_constraints"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_constraints</span></code></a>(triples[, file_path])</p></td>
 <td><p></p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.load_with_pandas" title="dicee.read_preprocess_save_load_kg.util.load_with_pandas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_with_pandas</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.load_with_pandas" title="dicee.read_preprocess_save_load_kg.util.load_with_pandas"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_with_pandas</span></code></a>(self) → None</p></td>
 <td><p>Deserialize data</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.save_numpy_ndarray" title="dicee.read_preprocess_save_load_kg.util.save_numpy_ndarray"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_numpy_ndarray</span></code></a>(*, data, file_path)</p></td>
@@ -221,7 +221,7 @@
 <tr class="row-even"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples" title="dicee.read_preprocess_save_load_kg.util.create_recipriocal_triples"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_recipriocal_triples</span></code></a>(x)</p></td>
 <td><p>Add inverse triples into dask dataframe</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking" title="dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dataset_sanity_checking</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking" title="dicee.read_preprocess_save_load_kg.util.dataset_sanity_checking"><code class="xref py py-obj docutils literal notranslate"><span class="pre">dataset_sanity_checking</span></code></a>(train_set, num_entities, ...) → None</p></td>
 <td><p></p></td>
 </tr>
 </tbody>

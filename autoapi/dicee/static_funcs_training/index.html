@@ -145,16 +145,16 @@ for new code. This module will continue to export training utilities.</p>
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs_training.evaluate_bpe_lp" title="dicee.static_funcs_training.evaluate_bpe_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_bpe_lp</span></code></a>(→ Dict[str, float])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs_training.evaluate_bpe_lp" title="dicee.static_funcs_training.evaluate_bpe_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_bpe_lp</span></code></a>(model, triple_idx, ...[, info, ...]) → Dict[str, float]</p></td>
 <td><p>Evaluate link prediction with BPE-encoded entities.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs_training.evaluate_lp" title="dicee.static_funcs_training.evaluate_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_lp</span></code></a>(→ Dict[str, float])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs_training.evaluate_lp" title="dicee.static_funcs_training.evaluate_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_lp</span></code></a>(model, triple_idx, num_entities, er_vocab, ...) → Dict[str, float]</p></td>
 <td><p>Evaluate link prediction with batched processing.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs_training.efficient_zero_grad" title="dicee.static_funcs_training.efficient_zero_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficient_zero_grad</span></code></a>(→ None)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.static_funcs_training.efficient_zero_grad" title="dicee.static_funcs_training.efficient_zero_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficient_zero_grad</span></code></a>(model) → None</p></td>
 <td><p>Efficiently zero gradients using parameter.grad = None.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs_training.make_iterable_verbose" title="dicee.static_funcs_training.make_iterable_verbose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_iterable_verbose</span></code></a>(→ Iterable)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.static_funcs_training.make_iterable_verbose" title="dicee.static_funcs_training.make_iterable_verbose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_iterable_verbose</span></code></a>(iterable_object, verbose[, ...]) → Iterable</p></td>
 <td><p>Wrap an iterable with tqdm progress bar if verbose is True.</p></td>
 </tr>
 </tbody>

@@ -171,13 +171,13 @@ including PyTorch Lightning, DDP, and custom CPU/GPU trainers.</p>
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.load_term_mapping" title="dicee.trainer.dice_trainer.load_term_mapping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_term_mapping</span></code></a>(→ polars.DataFrame)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.load_term_mapping" title="dicee.trainer.dice_trainer.load_term_mapping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_term_mapping</span></code></a>(file_path) → polars.DataFrame</p></td>
 <td><p>Load term-to-index mapping from CSV file.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.initialize_trainer" title="dicee.trainer.dice_trainer.initialize_trainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initialize_trainer</span></code></a>(...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.initialize_trainer" title="dicee.trainer.dice_trainer.initialize_trainer"><code class="xref py py-obj docutils literal notranslate"><span class="pre">initialize_trainer</span></code></a>(args, callbacks) → Union[dicee.trainer.torch_trainer.TorchTrainer, dicee.trainer.model_parallelism.TensorParallel, dicee.trainer.torch_trainer_ddp.TorchDDPTrainer, dicee.trainer.torch_trainer_fsdp.TorchFSDPTrainer, lightning.Trainer]</p></td>
 <td><p>Initialize the appropriate trainer based on configuration.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.get_callbacks" title="dicee.trainer.dice_trainer.get_callbacks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_callbacks</span></code></a>(→ List)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.trainer.dice_trainer.get_callbacks" title="dicee.trainer.dice_trainer.get_callbacks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_callbacks</span></code></a>(args) → List</p></td>
 <td><p>Create list of callbacks based on configuration.</p></td>
 </tr>
 </tbody>

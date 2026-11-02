@@ -163,22 +163,22 @@ evaluation components.</p>
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.utils.make_iterable_verbose" title="dicee.evaluation.utils.make_iterable_verbose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_iterable_verbose</span></code></a>(→ Iterable)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.utils.make_iterable_verbose" title="dicee.evaluation.utils.make_iterable_verbose"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_iterable_verbose</span></code></a>(iterable_object, verbose[, ...]) → Iterable</p></td>
 <td><p>Wrap an iterable with tqdm progress bar if verbose is True.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.utils.compute_metrics_from_ranks" title="dicee.evaluation.utils.compute_metrics_from_ranks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_metrics_from_ranks</span></code></a>(→ Dict[str, float])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.utils.compute_metrics_from_ranks" title="dicee.evaluation.utils.compute_metrics_from_ranks"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_metrics_from_ranks</span></code></a>(ranks, num_triples, hits_dict) → Dict[str, float]</p></td>
 <td><p>Compute standard link prediction metrics from ranks.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.utils.compute_metrics_from_ranks_simple" title="dicee.evaluation.utils.compute_metrics_from_ranks_simple"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_metrics_from_ranks_simple</span></code></a>(→ Dict[str, float])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.utils.compute_metrics_from_ranks_simple" title="dicee.evaluation.utils.compute_metrics_from_ranks_simple"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_metrics_from_ranks_simple</span></code></a>(ranks, num_triples, ...) → Dict[str, float]</p></td>
 <td><p>Compute link prediction metrics without scaling factor.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.utils.update_hits" title="dicee.evaluation.utils.update_hits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_hits</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.utils.update_hits" title="dicee.evaluation.utils.update_hits"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_hits</span></code></a>(hits, rank[, hits_range]) → None</p></td>
 <td><p>Update hits dictionary based on rank.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.utils.create_hits_dict" title="dicee.evaluation.utils.create_hits_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_hits_dict</span></code></a>(→ Dict[int, List[float]])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.utils.create_hits_dict" title="dicee.evaluation.utils.create_hits_dict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">create_hits_dict</span></code></a>([hits_range]) → Dict[int, List[float]]</p></td>
 <td><p>Create an initialized hits dictionary.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.utils.efficient_zero_grad" title="dicee.evaluation.utils.efficient_zero_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficient_zero_grad</span></code></a>(→ None)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.utils.efficient_zero_grad" title="dicee.evaluation.utils.efficient_zero_grad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficient_zero_grad</span></code></a>(model) → None</p></td>
 <td><p>Efficiently zero gradients using parameter.grad = None.</p></td>
 </tr>
 </tbody>

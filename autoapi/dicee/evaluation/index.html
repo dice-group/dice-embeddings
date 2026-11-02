@@ -228,31 +228,31 @@ _filtering: Internal helpers for filtered ranking (not exported)</p>
 <h2>Functions<a class="headerlink" href="#functions" title="Link to this heading"></a></h2>
 <table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_ensemble_link_prediction_performance" title="dicee.evaluation.evaluate_ensemble_link_prediction_performance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_ensemble_link_prediction_performance</span></code></a>(...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_ensemble_link_prediction_performance" title="dicee.evaluation.evaluate_ensemble_link_prediction_performance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_ensemble_link_prediction_performance</span></code></a>(models, ...) → Dict[str, float]</p></td>
 <td><p>Evaluate link prediction performance of an ensemble of KGE models.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_bpe_lp" title="dicee.evaluation.evaluate_bpe_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_bpe_lp</span></code></a>(→ Dict[str, float])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_bpe_lp" title="dicee.evaluation.evaluate_bpe_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_bpe_lp</span></code></a>(model, triple_idx, ...[, info, ...]) → Dict[str, float]</p></td>
 <td><p>Evaluate link prediction with BPE-encoded entities.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_link_prediction_performance" title="dicee.evaluation.evaluate_link_prediction_performance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance</span></code></a>(→ Dict[str, float])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_link_prediction_performance" title="dicee.evaluation.evaluate_link_prediction_performance"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance</span></code></a>(model, triples, ...) → Dict[str, float]</p></td>
 <td><p>Evaluate link prediction performance with head and tail prediction.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_link_prediction_performance_with_bpe" title="dicee.evaluation.evaluate_link_prediction_performance_with_bpe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance_with_bpe</span></code></a>(...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_link_prediction_performance_with_bpe" title="dicee.evaluation.evaluate_link_prediction_performance_with_bpe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance_with_bpe</span></code></a>(model, ...) → Dict[str, float]</p></td>
 <td><p>Evaluate link prediction with BPE encoding (head and tail).</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_link_prediction_performance_with_bpe_reciprocals" title="dicee.evaluation.evaluate_link_prediction_performance_with_bpe_reciprocals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance_with_bpe_reciprocals</span></code></a>(...)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_link_prediction_performance_with_bpe_reciprocals" title="dicee.evaluation.evaluate_link_prediction_performance_with_bpe_reciprocals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance_with_bpe_reciprocals</span></code></a>(...) → Dict[str, float]</p></td>
 <td><p>Evaluate link prediction with BPE encoding and reciprocals.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_link_prediction_performance_with_reciprocals" title="dicee.evaluation.evaluate_link_prediction_performance_with_reciprocals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance_with_reciprocals</span></code></a>(...)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_link_prediction_performance_with_reciprocals" title="dicee.evaluation.evaluate_link_prediction_performance_with_reciprocals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_link_prediction_performance_with_reciprocals</span></code></a>(...) → Dict[str, float]</p></td>
 <td><p>Evaluate link prediction with reciprocal relations.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_lp" title="dicee.evaluation.evaluate_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_lp</span></code></a>(→ Dict[str, float])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_lp" title="dicee.evaluation.evaluate_lp"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_lp</span></code></a>(model, triple_idx, num_entities, er_vocab, ...) → Dict[str, float]</p></td>
 <td><p>Evaluate link prediction with batched processing.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_lp_bpe_k_vs_all" title="dicee.evaluation.evaluate_lp_bpe_k_vs_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_lp_bpe_k_vs_all</span></code></a>(→ Dict[str, float])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_lp_bpe_k_vs_all" title="dicee.evaluation.evaluate_lp_bpe_k_vs_all"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_lp_bpe_k_vs_all</span></code></a>(model, triples[, er_vocab, ...]) → Dict[str, float]</p></td>
 <td><p>Evaluate BPE link prediction with KvsAll scoring.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_literal_prediction" title="dicee.evaluation.evaluate_literal_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_literal_prediction</span></code></a>(→ Optional[pandas.DataFrame])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="#dicee.evaluation.evaluate_literal_prediction" title="dicee.evaluation.evaluate_literal_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">evaluate_literal_prediction</span></code></a>(kge_model[, ...]) → Optional[pandas.DataFrame]</p></td>
 <td><p>Evaluate trained literal prediction model on a test file.</p></td>
 </tr>
 </tbody>
