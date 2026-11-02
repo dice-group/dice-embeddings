@@ -153,6 +153,7 @@ Requires Python >= 3.11. Test datasets: `wget https://files.dice-research.org/da
 - BPE models (`--byte_pair_encoding`) use subword token sequences as entity/relation indices.
 - Type hints required on new public functions (`Optional[T]`, explicit return types); Google-style docstrings.
 - Conventional commits (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`, `perf:`); PRs target `develop`.
+- Record codebase-quality findings and improvement ideas by opening a GitHub issue (`gh issue create`), not by adding tracking files to the repo.
 - `KGs.zip` and any loose root-level scratch scripts (e.g. `demo.py`, `example*.md`) are local artifacts, not canonical entry points — don't treat them as documented API.
 
 ## Specialized Subagents
