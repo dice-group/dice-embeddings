@@ -528,6 +528,44 @@ def benchmark_query(query_type, query, k=10, n_runs=10):
 
 ---
 
+## Generating Queries and Evaluating
+
+`dicee.QueryGenerator` samples queries with known answers from a dataset, and
+`benchmarks/multihop_query_eval.py` scores a trained model on them:
+
+```bash
+python benchmarks/multihop_query_eval.py --path_to_model Experiments/<run> --dataset_dir KGs/UMLS \
+    --query_types 1p 2p 3p 2i 3i --gen_num 100 --out results.json
+```
+
+**How queries are generated.** `QueryGenerator` builds a full graph (train + valid + test) and a small
+graph (train + valid). It picks a random answer entity, walks backwards along incoming edges to sample
+the anchor entities and relations of the requested structure, and then computes the answer set by forward
+traversal on both graphs. *Easy* answers are reachable in the small graph, *hard* answers only in the full
+graph. A query is kept only if it has at least one hard answer.
+
+**How it is evaluated.** Each hard answer is ranked against all entities that are not answers (easy
+answers are filtered), and MRR / Hits@k are averaged over hard answers, then over queries.
+
+```python
+from dicee import KGE, QueryGenerator
+
+# Files must be tab-separated. rel2id needs even ids (odd ids are reserved for inverse relations).
+generator = QueryGenerator(train_path, val_path, test_path, ent2id=ent2id, rel2id=rel2id, seed=1)
+queries, easy_answers, _, hard_answers = generator.get_queries("2p", gen_num=100)
+```
+
+**Relation to link prediction.** A `1p` query is a tail prediction on an original relation. The MRR dicee
+reports for link prediction averages tail and head prediction, so it is lower than the tail-only MRR. On
+FB15k-237 with DistMult the tail MRR is 0.318, the head MRR 0.136 and the reported MRR 0.227.
+
+**T-norm and logits.** `answer_multi_hop_query` defaults to `tnorm="prod"` with raw logits, which
+multiplies scores that can be negative. On UMLS this gave a `2i` MRR of 0.009, against about 0.63 with
+`tnorm="min"` or with `use_logits=False`. The evaluation script defaults to `min`; use
+`--tnorm prod --probabilities` to combine sigmoid probabilities instead.
+
+---
+
 ## Common Patterns & Use Cases
 
 ### Social Network Analysis
