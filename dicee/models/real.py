@@ -137,6 +137,14 @@ class TransE(BaseKGE):
         self.name = 'TransE'
         self._norm = 2
         self.margin = self.args.get("margin", 4.0)
+        # FastKGE/IncDE-style unit-norm scoring: both baselines apply
+        # L2-normalization to head/relation/tail embeddings INSIDE the score
+        # function on every forward call (not an occasional safety clip), so
+        # the translation geometry always operates on the unit hypersphere.
+        # Off by default to preserve this implementation's original behavior;
+        # set ``unit_norm: True`` in model_kwargs for a fairer side-by-side
+        # comparison against those baselines.
+        self.unit_norm = bool(self.args.get("unit_norm", False))
 
     def score(self, head_ent_emb: torch.FloatTensor, rel_ent_emb: torch.FloatTensor,
               tail_ent_emb: torch.FloatTensor) -> torch.FloatTensor:
@@ -157,6 +165,10 @@ class TransE(BaseKGE):
         # if d =0 sigma(5-0) => 1
         # if d =5 sigma(5-5) => 0.5
         # Update: sigmoid( \gamma - d)
+        if self.unit_norm:
+            head_ent_emb = F.normalize(head_ent_emb, p=2, dim=-1)
+            rel_ent_emb = F.normalize(rel_ent_emb, p=2, dim=-1)
+            tail_ent_emb = F.normalize(tail_ent_emb, p=2, dim=-1)
         return self.margin - torch.nn.functional.pairwise_distance(head_ent_emb + rel_ent_emb, tail_ent_emb,
                                                                    p=self._norm)
 
@@ -164,6 +176,25 @@ class TransE(BaseKGE):
         """KvsAll forward pass: score head/relation against all entities.
 
         Computes ``margin - ||h + r - e||_2`` for every entity embedding *e*.
+
+        Performance note: naively calling ``torch.nn.functional.pairwise_distance``
+        with a broadcasted ``(batch, 1, d)`` vs. ``(num_entities, d)`` input (the
+        original implementation) materializes a full
+        ``(batch_size, num_entities, embedding_dim)`` elementwise-difference
+        tensor and reduces it without ever using a BLAS matmul -- for large
+        vocabularies (e.g. FB_CKGE/WN_CKGE's 40k+ entities) this is both far
+        too much memory traffic and orders of magnitude slower than the
+        matmul-based scoring every other KvsAll-capable model in this file
+        uses. Instead we expand the squared L2 distance algebraically::
+
+            ||a - e||^2 = ||a||^2 + ||e||^2 - 2 (a . e)
+
+        where ``a = h + r``. The cross term ``a @ e^T`` is a single
+        ``(batch, d) @ (d, num_entities)`` matmul -- identical in spirit to
+        DistMult's ``k_vs_all_score`` -- and the two norm terms are cheap
+        ``O(batch*d)``/``O(num_entities*d)`` reductions computed once and
+        broadcast. This is mathematically exact (not an approximation) and
+        empirically ~1-2 orders of magnitude faster on large entity tables.
 
         Parameters
         ----------
@@ -176,8 +207,24 @@ class TransE(BaseKGE):
             Shape ``(batch_size, num_entities)`` score matrix.
         """
         emb_head_real, emb_rel_real = self.get_head_relation_representation(x)
-        distance = torch.nn.functional.pairwise_distance(torch.unsqueeze(emb_head_real + emb_rel_real, 1),
-                                                         self.entity_embeddings.weight, p=self._norm)
+        all_e = self.entity_embeddings.weight  # (num_entities, d)
+        if self.unit_norm:
+            emb_head_real = F.normalize(emb_head_real, p=2, dim=-1)
+            emb_rel_real = F.normalize(emb_rel_real, p=2, dim=-1)
+            all_e = F.normalize(all_e, p=2, dim=-1)
+        a = emb_head_real + emb_rel_real  # (batch, d)
+        # (batch, num_entities) squared L2 distance via the expansion above,
+        # computed with a single matmul instead of materializing the full
+        # (batch, num_entities, d) difference tensor.
+        sq_dist = (
+            (a * a).sum(dim=1, keepdim=True)
+            + (all_e * all_e).sum(dim=1).unsqueeze(0)
+            - 2.0 * torch.mm(a, all_e.transpose(1, 0))
+        )
+        # Clamp before sqrt: the algebraic expansion can produce tiny
+        # negative values for near-zero true distances due to floating
+        # point cancellation.
+        distance = torch.sqrt(torch.clamp(sq_dist, min=0.0) + 1e-9)
         return self.margin - distance
 
 

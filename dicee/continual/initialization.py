@@ -92,7 +92,8 @@ def extend_entity_embeddings(
         logger.info("extend_entity_embeddings: no new entities, returning table unchanged.")
         return old_embedding
 
-    new_embedding = torch.nn.Embedding(new_num_entities, dim)
+    device = old_embedding.weight.device
+    new_embedding = torch.nn.Embedding(new_num_entities, dim).to(device)
     param_init = getattr(model, "param_init", None)
     if callable(param_init):
         param_init(new_embedding.weight.data)
@@ -110,7 +111,7 @@ def extend_entity_embeddings(
                 neighbors = new_entity_neighbors.get(new_id, [])
                 known_neighbors = [n for n in neighbors if n < old_num_entities]
                 if known_neighbors:
-                    idx = torch.tensor(known_neighbors, dtype=torch.long)
+                    idx = torch.tensor(known_neighbors, dtype=torch.long, device=device)
                     new_embedding.weight.data[new_id] = old_embedding.weight.data[idx].mean(dim=0)
                 # else: keep the default (param_init) initialization already set above.
 

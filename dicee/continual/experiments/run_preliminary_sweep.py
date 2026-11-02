@@ -43,6 +43,8 @@ import time
 from pathlib import Path
 from typing import Dict, List, Optional
 
+from tqdm.auto import tqdm
+
 from dicee.continual.experiments.run_experiment import DEFAULT_CONFIG, run_experiment
 
 logging.basicConfig(level=logging.INFO)
@@ -107,6 +109,7 @@ def _make_config(
     dataset_dir: str, scenario: str, seed: int, num_steps: int,
     experiment_id: str, output_dir: str, methods: List[str], include_oracle: bool,
     beta: Optional[float] = None, cheb_K: Optional[int] = None, force_regenerate: bool = False,
+    device: Optional[str] = None,
 ) -> Dict:
     config = dict(DEFAULT_CONFIG)
     config.update({
@@ -122,6 +125,8 @@ def _make_config(
         "save_losses_csv": None,
         "force_regenerate_sequence": force_regenerate,
     })
+    if device is not None:
+        config["device"] = device
     if beta is not None:
         config["beta"] = beta
     if cheb_K is not None:
@@ -139,11 +144,14 @@ def run_sweep(
     output_root: str = "Experiments/continual_prelim",
     output_csv: str = "ckge_prelimary_results.csv",
     force_regenerate: bool = False,
+    device: Optional[str] = None,
 ) -> str:
     all_rows: List[Dict] = []
     t_sweep_start = time.time()
     total_runs = len(datasets) * len(scenarios) * len(seeds) * (1 + len(betas) * len(cheb_Ks))
     run_idx = 0
+    logger.info("Sweep device=%s", device or "(auto: cuda if available else cpu)")
+    sweep_pbar = tqdm(total=total_runs, desc="Sweep runs", unit="run")
 
     for dataset_dir in datasets:
         dname = _dataset_name(dataset_dir)
@@ -152,17 +160,19 @@ def run_sweep(
                 # --- 1. Base run: finetune + uniform + oracle (beta-independent) ---
                 run_idx += 1
                 base_id = f"{dname}_{scenario}_seed{seed}_base"
+                sweep_pbar.set_description(f"BASE {dname}/{scenario}/seed{seed}")
                 logger.info("[%s/%s] BASE run: %s / %s / seed=%s", run_idx, total_runs, dname, scenario, seed)
                 base_config = _make_config(
                     dataset_dir, scenario, seed, num_steps,
                     experiment_id=base_id, output_dir=output_root,
                     methods=["finetune", "uniform"], include_oracle=True,
-                    force_regenerate=force_regenerate,
+                    force_regenerate=force_regenerate, device=device,
                 )
                 t0 = time.time()
                 base_result = run_experiment(base_config)
                 logger.info("  done in %.1fs", time.time() - t0)
                 all_rows.extend(_flatten_report(base_result["report"], dname, scenario, seed, beta=None))
+                sweep_pbar.update(1)
 
                 # --- 2. Chebyshev runs, one per (beta, cheb_K) grid cell (oracle already captured above) ---
                 # Only force-regenerate once (on the base run above); the materialized snapshots are
@@ -172,18 +182,23 @@ def run_sweep(
                     for cheb_K in cheb_Ks:
                         run_idx += 1
                         cheb_id = f"{dname}_{scenario}_seed{seed}_cheb_beta{beta}_K{cheb_K}"
+                        sweep_pbar.set_description(f"CHEB {dname}/{scenario}/seed{seed}/beta{beta}/K{cheb_K}")
                         logger.info("[%s/%s] CHEBYSHEV run: %s / %s / seed=%s / beta=%s / cheb_K=%s",
                                     run_idx, total_runs, dname, scenario, seed, beta, cheb_K)
                         cheb_config = _make_config(
                             dataset_dir, scenario, seed, num_steps,
                             experiment_id=cheb_id, output_dir=output_root,
                             methods=["chebyshev"], include_oracle=False, beta=beta, cheb_K=cheb_K,
+                            device=device,
                         )
                         t0 = time.time()
                         cheb_result = run_experiment(cheb_config)
                         logger.info("  done in %.1fs", time.time() - t0)
                         all_rows.extend(_flatten_report(cheb_result["report"], dname, scenario, seed,
                                                          beta=beta, cheb_K=cheb_K))
+                        sweep_pbar.update(1)
+
+    sweep_pbar.close()
 
     with open(output_csv, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=CSV_FIELDS)
@@ -211,6 +226,9 @@ def main():
     parser.add_argument("--num_steps", type=int, default=5)
     parser.add_argument("--output_root", default="Experiments/continual_prelim")
     parser.add_argument("--output_csv", default="ckge_prelimary_results.csv")
+    parser.add_argument("--device", default=None,
+                         help="Device to train/evaluate all runs on, e.g. 'cuda', 'cuda:0', or 'cpu' "
+                              "(default: auto -- 'cuda' if available, else 'cpu').")
     parser.add_argument("--force_regenerate", action="store_true",
                          help="Rebuild materialized dataset snapshots from scratch even if already "
                               "cached on disk (use this if a cached snapshot folder was built with a "
@@ -220,7 +238,7 @@ def main():
     run_sweep(
         datasets=args.datasets, scenarios=args.scenarios, seeds=args.seeds, betas=args.betas,
         cheb_Ks=args.cheb_Ks, num_steps=args.num_steps, output_root=args.output_root, output_csv=args.output_csv,
-        force_regenerate=args.force_regenerate,
+        force_regenerate=args.force_regenerate, device=args.device,
     )
 
 
