@@ -5,8 +5,24 @@ share it and moving/replacing a graph naturally drops it. No graph or compiled
 kernel is included in a checkpoint. Triton is imported only on the CUDA path.
 """
 import weakref
+from typing import NamedTuple
 
 import torch
+
+# Rows with more 32-edge tiles than this are hubs: balanced programs sum their tiles.
+HUB_TILES = 8
+
+
+class CSRLayout(NamedTuple):
+    """Edges grouped by output row, cut into 32-edge tiles."""
+    offsets: torch.Tensor      # [N + 1] row pointers
+    sources: torch.Tensor      # input node of each edge, grouped by row
+    types: torch.Tensor        # relation of each edge
+    tile_rows: torch.Tensor    # row of each tile
+    tile_starts: torch.Tensor  # first edge of each tile
+    hub_rows: torch.Tensor     # tile rows/starts restricted to hub rows
+    hub_starts: torch.Tensor
+    hub_first: torch.Tensor    # [N] index of a hub row's first tile, else -1
 
 
 def tensor_version(tensor):
@@ -25,7 +41,11 @@ def csr_layout(edge_index, edge_type, num_nodes):
     tile_offsets = tile_counts.cumsum(0) - tile_counts
     rows = torch.arange(num_nodes, device=counts.device).repeat_interleave(tile_counts)
     starts = offsets[rows] + (torch.arange(len(rows), device=rows.device) - tile_offsets[rows]) * 32
-    layout = (offsets, edge_index[1, order].contiguous(), edge_type[order].contiguous(), rows, starts)
+    hub = tile_counts > HUB_TILES
+    hub_counts = torch.where(hub, tile_counts, 0)
+    layout = CSRLayout(offsets, edge_index[1, order].contiguous(), edge_type[order].contiguous(), rows, starts,
+                       rows[hub[rows]].contiguous(), starts[hub[rows]].contiguous(),
+                       torch.where(hub, hub_counts.cumsum(0) - hub_counts, -1))
     # Inference tensors lack mutation counters. Do not retain a potentially
     # stale layout for graphs constructed inside inference_mode().
     if not edge_index.is_inference() and not edge_type.is_inference():

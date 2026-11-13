@@ -84,7 +84,7 @@ def preprocesses_input_args(args):
         temperature = getattr(args, "adversarial_temperature", None)
         if temperature is not None and (not np.isfinite(temperature) or temperature < 0):
             raise ValueError("adversarial_temperature must be finite and nonnegative")
-    if args.model in ("ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation"):
+    if args.model in ("ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation", "KGICL"):
         if args.trainer not in ("torchCPUTrainer", "PL"):
             raise ValueError(f"{args.model} currently supports CPU/single GPU native and Lightning trainers")
         if args.byte_pair_encoding or args.num_folds_for_cv or args.save_embeddings_as_csv:

@@ -23,6 +23,10 @@ lists all 50 graphs. It includes FB15k-237, WN18RR, YAGO3-10, and NELL995;
 KINSHIP, UMLS, and Countries are absent. **No** indicates transfer outside a
 checkpoint's documented training mixture. The original 4g/50g run records retain
 the earlier metadata; these corrected labels do not change the measured scores.
+KG-ICL was pretrained on FB V1, NELL V1, and CoDEx-small
+([configuration](https://github.com/nju-websoft/KG-ICL/blob/6a3166e347ae468acdfb30a70a2cf3608b66b8f1/src/pretrain.py#L72)).
+FB V1 and NELL V1 are GraIL subgraphs of FB15k-237 and NELL-995, so **Partial**
+marks those targets for KG-ICL (counts below).
 
 ## Checkpoints and evaluation settings
 
@@ -33,6 +37,7 @@ the earlier metadata; these corrected labels do not change the measured scores.
 | ULTRA-50g | [ultra_50g.pth](https://github.com/DeepGraphLearning/ULTRA/blob/427966ad8ed60420eef034063d44f3153addff90/ckpts/ultra_50g.pth) | `checkpoints/ultra_50g.pth` | [ULTRA](ultra.md) |
 | TRIX | [entity_prediction.pth](https://github.com/yuchengz99/TRIX/blob/7596e14eefefe89e61396205a0550172cadeddb0/entity_prediction.pth) | `checkpoints/trix/entity_prediction.pth` | [TRIX](trix.md) |
 | Flock | [flock_entity.pth](https://github.com/jw9730/flock/blob/f35103d25a78bdf4075de5c673a51de4979aa4d7/checkpoints/flock_entity.pth) | `checkpoints/flock/flock_entity.pth` | [Flock](flock.md) |
+| KG-ICL | [KG-ICL-6L/model_best.tar](https://github.com/nju-websoft/KG-ICL/blob/6a3166e347ae468acdfb30a70a2cf3608b66b8f1/checkpoint/KG-ICL-6L/model_best.tar) | `checkpoints/kgicl/KG-ICL-6L/model_best.tar` | [KG-ICL](kgicl.md) |
 
 Runs use float32, TF32 disabled on GPU, four CPU threads, 128 test triples per
 batch, and seed 42. ULTRA/TRIX on UMLS use batches of 8 and seed 1.
@@ -40,18 +45,20 @@ Flock uses 128 base walks of length 128, six refinements, and one prediction per
 query: a single-seed result, not an ensemble. Its query order and batch boundaries
 affect sampling; see the [sampling notes](flock.md#checkpoints-and-zero-shot-evaluation).
 
-| Dataset | ULTRA device / query batch | TRIX device / query batch | Flock device / query batch |
-|---|---|---|---|
-| Countries-S1 / S2 / S3, UMLS | CPU / 8 | CPU / 8 | CUDA / 1 |
-| WN18RR | CUDA / 8 | CUDA / 4 | CUDA / 1 |
-| YAGO3-10 | CUDA / 2 | CUDA / 2 | CUDA / 1 |
-| FB15k-237 | CUDA / 4 | CUDA / 2 | CUDA / 1 |
-| KINSHIP | CUDA / 8 | CUDA / 2 | CUDA / 1 |
-| NELL-995-h25 / h50 / h75 / h100 | CUDA / 4 | CUDA / 2 | CUDA / 1 |
+| Dataset | ULTRA device / query batch | TRIX device / query batch | Flock device / query batch | KG-ICL device / query batch |
+|---|---|---|---|---|
+| Countries-S1 / S2 / S3, UMLS | CPU / 8 | CPU / 8 | CUDA / 1 | CUDA / 16 |
+| WN18RR | CUDA / 8 | CUDA / 4 | CUDA / 1 | CUDA / 16 |
+| YAGO3-10 | CUDA / 2 | CUDA / 2 | CUDA / 1 | CUDA / 16 |
+| FB15k-237 | CUDA / 4 | CUDA / 2 | CUDA / 1 | CUDA / 16 |
+| KINSHIP | CUDA / 8 | CUDA / 2 | CUDA / 1 | CUDA / 16 |
+| NELL-995-h25 / h50 / h75 / h100 | CUDA / 4 | CUDA / 2 | CUDA / 1 | CUDA / 16 |
 
+KG-ICL uses prompt seed 0 and no answer-distance mask; its official evaluation
+protocol differs, see the [KG-ICL guide](kgicl.md#scores-and-the-official-evaluation-protocol).
 The September 10 runs used PyTorch 2.5.1, Triton 3.1.0, an AMD Ryzen 7 7800X3D
 CPU, and an RTX 4070 Ti SUPER GPU. KINSHIP, all four NELL variants, and the ULTRA-4g/50g runs (September 21) use
-PyTorch 2.9.1+cu128, Triton 3.5.1, and an RTX 5070 Laptop GPU. These are accuracy
+PyTorch 2.9.1+cu128, Triton 3.5.1, and an RTX 5070 Laptop GPU, as do the KG-ICL runs (October 5). These are accuracy
 results; controlled timings are in the [inference speed comparison](kgfm_inference.md).
 
 ## KINSHIP and NELL variants
@@ -94,6 +101,22 @@ zero-shot held-out estimates. The upstream data commit predates both checkpoints
 file hashes and all split comparisons are saved in
 `Experiments/nell-pretraining-overlap/audit.json`.
 
+**Pretraining overlap (KG-ICL):** exact triple matches against the training and
+validation files of FB V1, NELL V1, and CoDEx-small in the official `datasets.zip`
+at the pinned commit. GraIL's NELL V1 names entities `concept:type:name`; they are
+compared as `concept_type_name`, the NELL-995 variants' spelling.
+
+| Target | Pretraining graph | Distinct test facts present | Percentage | Shared entities |
+|---|---|---:|---:|---:|
+| FB15k-237 | FB V1 | 0 / 20,466 | 0.00% | 1,594 |
+| NELL-995-h25 | NELL V1 | 257 / 9,185 | 2.80% | 2,929 |
+| NELL-995-h50 | NELL V1 | 200 / 5,392 | 3.71% | 2,825 |
+| NELL-995-h75 | NELL V1 | 192 / 4,389 | 4.37% | 2,750 |
+| NELL-995-h100 | NELL V1 | 174 / 3,746 | 4.64% | 2,488 |
+
+All 4,734 FB V1 training and validation facts are FB15k-237 training facts. No
+other README target shares entities with KG-ICL's pretraining graphs.
+
 ## Reproduction
 
 Place the checkpoints at the paths above and datasets under `KGs/<dataset>/`
@@ -129,7 +152,18 @@ python benchmarks/kgfm_zero_shot.py --model ULTRA --ultra-checkpoint 4g \
   --output Experiments/kgfm-ultra-checkpoints-20260921/NELL-995-h50/ULTRA-4g
 ```
 
-Use a separate output per checkpoint. For other datasets, use the settings above. The
+Use a separate output per checkpoint. For other datasets, use the settings above.
+KG-ICL runs every dataset with the same settings; `--prompt-seed` selects the
+prompt sampling seed (default 0) and `--distance-mask` applies the official
+answer-distance heuristic, which the README results do not use:
+
+```bash
+python benchmarks/kgfm_zero_shot.py --model KGICL --dataset FB15k-237 --device cuda:0 \
+  --query-batch-size 16 --batch-size 128 --threads 4 --seed 42 --tie-policy pessimistic \
+  --output Experiments/kgfm-kgicl-20261005/FB15k-237/KGICL
+```
+
+The
 [runner](../benchmarks/kgfm_zero_shot.py) verifies unchanged weights and saves
 progress after each batch. An identical invocation resumes; changed settings or
 source require a new output directory. Local reports include metrics, exact
