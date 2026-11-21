@@ -1,5 +1,6 @@
 """Shared inference contracts for native, checkpoint-compatible methods."""
 
+import math
 from collections import OrderedDict
 from functools import reduce
 from typing import Any
@@ -10,7 +11,7 @@ from torch import nn
 from ...models._inference import float32_precision_token
 from .._query import compile_query, validate_tree
 from ..context import evaluation_mode, state_token
-from ..score_adapter import SOFTMAX_DEGREE_CEILING
+from ..score_adapter import CAP_TIE_EPSILON, RULE_CALIBRATION, SOFTMAX_DEGREE_CEILING
 
 
 class QueryMethod(nn.Module):
@@ -113,22 +114,46 @@ class FuzzyGNN(QueryMethod):
     exactly at every projection: a tail receives at least the highest membership of a head linked to it by the
     projected relation, as with symbolic traversal (max over heads of a product with one).
 
-    ``calibration='softmax-degree'`` (off by default, not part of any upstream method) replaces the sigmoid of every
-    projection by QTO's calibration, generalized to fuzzy head sets: the softmax of the projection logits over all
-    entities times d, the membership mass of the observed tails that the traversal reaches (at least one), capped at
-    0.9999. For a single anchor head, d is the number of its observed tails, as in the beam executor's calibration.
+    ``calibration='softmax-degree-ties'`` (off by default, not part of any upstream method) replaces the sigmoid of
+    every projection by the rule calibration of the beam executor (``score_adapter.RULE_CALIBRATION``), generalized to
+    fuzzy head sets: the softmax of the projection logits over all entities times d, the membership mass of the observed
+    tails that the traversal reaches (at least one), capped at 0.9999. The candidates at the cap keep the order of their
+    projection logits: a capped log-membership is lowered by CAP_TIE_EPSILON * (1/2 - atan(logit) / pi). For a single
+    anchor head, d is the number of its observed tails, as in the beam executor.
+
+    A calibrated executor with this order holds its memberships in float64: the calibration, the traversal, the fuzzy
+    operations and the final scores. The projection model still reads each fuzzy set in float32. float32 has about 16
+    values inside a relative reduction of 1e-6 below the cap, so it cannot hold the order.
+
+    Control: ``calibration='softmax-degree-tied-cap'`` leaves the candidates at the cap tied, as QTO publishes its
+    calibration. It runs in float32 by default; ``double_precision=True`` separates the effect of the precision from
+    the effect of the order.
     """
 
-    def __init__(self, context, logic='product', observed_traversal=False, calibration=None):
+    CALIBRATIONS = (RULE_CALIBRATION, 'softmax-degree-tied-cap')
+
+    def __init__(self, context, logic='product', observed_traversal=False, calibration=None, double_precision=None):
         super().__init__(context)
         fuzzy_combine([torch.tensor(0.)], 'and', logic)
         if type(observed_traversal) is not bool:
             raise ValueError('observed_traversal must be a boolean')
-        if calibration not in (None, 'softmax-degree'):
-            raise ValueError('calibration must be None or softmax-degree')
+        if calibration == 'softmax-degree':
+            raise ValueError("The calibration 'softmax-degree' is now the control 'softmax-degree-tied-cap' (tied candidates at "
+                             f'the cap); with ordered candidates it is {RULE_CALIBRATION!r}')
+        if calibration not in (None, *self.CALIBRATIONS):
+            raise ValueError(f'calibration must be None or one of {", ".join(self.CALIBRATIONS)}')
+        if double_precision is None:
+            double_precision = calibration == RULE_CALIBRATION
+        if type(double_precision) is not bool:
+            raise ValueError('double_precision must be a boolean')
+        if double_precision and calibration is None:
+            raise ValueError('double_precision needs a calibrated projection')
+        if calibration == RULE_CALIBRATION and not double_precision:
+            raise ValueError(f'{RULE_CALIBRATION} needs float64 memberships: float32 cannot hold the order at the cap')
         self.logic = logic
         self.observed_traversal = observed_traversal
         self.calibration = calibration
+        self.double_precision = double_precision
         self._relation_edges = None
 
     def membership(self, tree):
@@ -144,7 +169,8 @@ class FuzzyGNN(QueryMethod):
             raise ValueError('GNN batches must share a query structure')
         if op == 'anchor':
             heads = torch.tensor([tree[1] for tree in trees], device=self.device)
-            return torch.nn.functional.one_hot(heads, self.context.num_entities).float()
+            anchors = torch.nn.functional.one_hot(heads, self.context.num_entities)
+            return anchors.double() if self.double_precision else anchors.float()
         if op == 'project':
             relation_ids = tuple(tree[1] for tree in trees)
             relations = torch.tensor(relation_ids, device=self.device)
@@ -153,9 +179,21 @@ class FuzzyGNN(QueryMethod):
                 projected = self.project_batch(source, relations, relation_ids=relation_ids)
                 return torch.maximum(projected, self.traverse(source, relations)) if self.observed_traversal else projected
             known = self.traverse(source, relations)
-            logits = self.project_batch(source, relations, relation_ids=relation_ids, logits=True)
-            degree = known.sum(1, keepdim=True).clamp_min(1)
-            projected = (logits.log_softmax(1) + degree.log()).exp().clamp_max(SOFTMAX_DEGREE_CEILING)
+            # The projection model reads the fuzzy set in float32; with double precision everything after its logits is
+            # float64.
+            logits = self.project_batch(source.float() if self.double_precision else source, relations, relation_ids=relation_ids,
+                                        logits=True)
+            if self.double_precision:
+                logits = logits.double()
+                logs = logits.log_softmax(1) + known.sum(1, keepdim=True).clamp_min(1).log()
+                capped = logs >= math.log(SOFTMAX_DEGREE_CEILING)
+                logs = logs.clamp_max(math.log(SOFTMAX_DEGREE_CEILING))
+                if self.calibration == RULE_CALIBRATION:
+                    logs = torch.where(capped, logs - CAP_TIE_EPSILON * (.5 - torch.atan(logits) / math.pi), logs)
+                projected = logs.exp()
+            else:
+                degree = known.sum(1, keepdim=True).clamp_min(1)
+                projected = (logits.log_softmax(1) + degree.log()).exp().clamp_max(SOFTMAX_DEGREE_CEILING)
             return torch.maximum(projected, known) if self.observed_traversal else projected
         if op == 'not':
             return 1 - self.membership_batch([tree[1] for tree in trees])

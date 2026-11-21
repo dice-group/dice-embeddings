@@ -18,17 +18,30 @@ from ._deferred import require
 from .context import checkpoint_state, state_fingerprint, state_token
 
 FEATURE_COUNTS = {'global': 1, 'context': 4, 'context_scores': 8}
-# Fixed calibrations of published executors, applied instead of the sigmoid when ``fixed_calibration`` selects them:
-# CQD-Hybrid's min-max normalization below the observed-fact membership, and QTO's softmax times the observed degree.
-FIXED_CALIBRATIONS = ('minmax', 'softmax-degree', 'softmax', 'softmax-degree-ties', 'softmax-mass')
-# Softmax calibrations: QTO's softmax times the observed degree, the plain softmax (degree one), QTO with the ties at
-# its cap ordered by the raw score, so that a beam or a ranking keeps the backbone's order among capped entities, and
-# FIT's softmax times the observed degree over the softmax mass on the observed tails (softmax-mass).
-SOFTMAX_CALIBRATIONS = ('softmax-degree', 'softmax', 'softmax-degree-ties', 'softmax-mass')
+# Training-free calibrations, applied instead of the sigmoid when ``fixed_calibration`` selects them:
+#   softmax-degree-ties      the rule calibration (RULE_CALIBRATION): QTO's softmax over the tails times the number of
+#                            observed tails (at least one), capped at 0.9999, with the candidates at the cap ordered by
+#                            their raw score, so that a beam or a ranking keeps the backbone's order among them.
+#   softmax-mass-ties        FIT's softmax times the number of observed tails over their softmax mass, with the same cap
+#                            and the same order at the cap.
+#   softmax                  the plain softmax (degree one), with the same cap.
+#   minmax                   CQD-Hybrid's min-max normalization below the observed-fact membership.
+# Controls: softmax-degree-tied-cap and softmax-mass-tied-cap are the two calibrations as QTO and FIT publish them. All
+# candidates at the cap get the same membership, and the tie rule of the ranking then decides their order.
+RULE_CALIBRATION = 'softmax-degree-ties'
+ORDERED_CAP_CALIBRATIONS = ('softmax-degree-ties', 'softmax-mass-ties')
+TIED_CAP_CONTROLS = ('softmax-degree-tied-cap', 'softmax-mass-tied-cap')
+MASS_CALIBRATIONS = ('softmax-mass-ties', 'softmax-mass-tied-cap')
+SOFTMAX_CALIBRATIONS = ('softmax', *ORDERED_CAP_CALIBRATIONS, *TIED_CAP_CONTROLS)
+FIXED_CALIBRATIONS = ('minmax', *SOFTMAX_CALIBRATIONS)
+# Earlier names of the two controls. A file with one of them is refused with the new name, so that no stored
+# calibration changes its meaning silently.
+RENAMED_CALIBRATIONS = {'softmax-degree': 'softmax-degree-tied-cap', 'softmax-mass': 'softmax-mass-tied-cap'}
 MINMAX_CEILING = .9
 SOFTMAX_DEGREE_CEILING = .9999
-# softmax-degree-ties lowers a capped log-membership by CAP_TIE_EPSILON * (1/2 - atan(raw) / pi), less than this
-# much and strictly decreasing in the raw score: resolvable at the cap and after summing log-memberships over atoms.
+# The calibrations with ordered candidates lower a capped log-membership by CAP_TIE_EPSILON * (1/2 - atan(raw) / pi),
+# less than this much and strictly decreasing in the raw score: resolvable at the cap and after summing log-memberships
+# over atoms.
 CAP_TIE_EPSILON = 1e-6
 # With observed_tie_break, a known fact gets membership exp(-OBSERVED_TIE_EPSILON * (1 - mu)), mu its calibrated
 # membership, instead of exactly one: still one for every practical purpose, but a beam over more known tails than it
@@ -89,9 +102,11 @@ class QueryScoreAdapter(nn.Module):
     interpolate memberships. Newly fitted adapters bind to a backbone state hash.
     ``membership_threshold`` zeroes memberships at or below a fixed value, the hand-set
     calibration of UltraQuery LP; it is not trained. ``fixed_calibration`` replaces the sigmoid by a training-free
-    row calibration: ``minmax`` (CQD-Hybrid: 0.9 times the min-max normalized row), ``softmax-degree`` (QTO: the
-    softmax over tails times the number of observed tails, at least one, capped below one) or ``softmax-mass`` (FIT: the
-    softmax times the number of observed tails over their softmax mass, capped below one). They take no weights.
+    row calibration (``FIXED_CALIBRATIONS``). The rule calibration ``softmax-degree-ties`` is QTO's softmax over tails
+    times the number of observed tails, at least one, capped below one, with the candidates at the cap in the order of
+    their raw scores; ``rule`` builds it. ``softmax-mass-ties`` is FIT's form of it: the softmax times the number of
+    observed tails over their softmax mass. ``minmax`` is CQD-Hybrid's 0.9 times the min-max normalized row. They take
+    no weights.
     ``score_input='log_softmax'`` makes the sigmoid calibration read each row's log-softmax over all entities instead of
     the raw row (``scores``), before the score features and before sigmoid(alpha z + beta); fixed calibrations take the
     raw row only.
@@ -118,6 +133,9 @@ class QueryScoreAdapter(nn.Module):
             raise ValueError('membership_threshold must be in [0, 1)')
         if type(hidden_dim) is not int or hidden_dim < 0:
             raise ValueError('hidden_dim must be a nonnegative integer')
+        if fixed_calibration in RENAMED_CALIBRATIONS:
+            raise ValueError(f'The calibration {fixed_calibration!r} is now the control {RENAMED_CALIBRATIONS[fixed_calibration]!r} '
+                             f'(tied candidates at the cap); with ordered candidates it is {fixed_calibration}-ties')
         if fixed_calibration not in (None, *FIXED_CALIBRATIONS):
             raise ValueError(f'Choose a fixed calibration: {", ".join(FIXED_CALIBRATIONS)}, or None for the sigmoid')
         if fixed_calibration and (feature_mode != 'global' or hidden_dim or normalization != 'none'
@@ -125,7 +143,7 @@ class QueryScoreAdapter(nn.Module):
             raise ValueError('Training-free calibrations take no weights, features or normalization')
         if mask_known_logits and fixed_calibration not in SOFTMAX_CALIBRATIONS:
             raise ValueError('Masking known-tail logits applies to the softmax calibrations only')
-        if mask_known_logits and fixed_calibration == 'softmax-mass':
+        if mask_known_logits and fixed_calibration in MASS_CALIBRATIONS:
             raise ValueError('softmax-mass divides by the softmax mass on the known tails, so they cannot leave the softmax')
         self.feature_mode, self.observed_mix = feature_mode, float(observed_mix)
         self.bias_bound, self.normalization, self.hidden_dim = float(bias_bound), normalization, hidden_dim
@@ -247,7 +265,7 @@ class QueryScoreAdapter(nn.Module):
                 # gives them membership one.
                 scores = torch.where(observed.all(1, keepdim=True), raw, raw.masked_fill(observed, -math.inf))
             logs = scores.log_softmax(1)
-            if self.fixed_calibration == 'softmax-mass':
+            if self.fixed_calibration in MASS_CALIBRATIONS:
                 # FIT (Yin et al., 2024, Section 5.2): the softmax is scaled so that the observed tails together hold
                 # their count, which makes their mean membership one before the cap. A row without observed tails keeps
                 # the softmax. The cap stays QTO's 0.9999, below the membership of an observed fact.
@@ -258,7 +276,7 @@ class QueryScoreAdapter(nn.Module):
                 logs = logs + observed.sum(1, keepdim=True).clamp_min(1).to(raw.dtype).log()
             capped = logs >= math.log(SOFTMAX_DEGREE_CEILING)
             logs = logs.clamp_max(math.log(SOFTMAX_DEGREE_CEILING))
-            if self.fixed_calibration == 'softmax-degree-ties':
+            if self.fixed_calibration in ORDERED_CAP_CALIBRATIONS:
                 logs = torch.where(capped, logs - CAP_TIE_EPSILON * (.5 - torch.atan(raw) / math.pi), logs)
         return self._finish(logs, observed)
 
@@ -292,6 +310,27 @@ class QueryScoreAdapter(nn.Module):
             raise ValueError('Adapter belongs to different or modified backbone weights')
         self._verified_model = weakref.ref(model)
         self._verified_state = (expected, token) if token is not None else None
+
+    @classmethod
+    def rule(cls, model=None, *, calibration=RULE_CALIBRATION, observed_mix=1., mask_known_logits=False, metadata=None):
+        """A training-free calibration of a frozen backbone, by default the rule calibration.
+
+        Args:
+            model: The backbone. The adapter binds to its state hash, as a fitted adapter does, so ``save`` writes a file
+                that ``load`` accepts for this backbone only. Without a model, pass a state hash in ``metadata``.
+            calibration: One of ``FIXED_CALIBRATIONS``; the default is ``RULE_CALIBRATION``.
+            observed_mix: 1 gives every observed fact membership one (the default), 0 uses the calibration alone.
+            mask_known_logits: Leave the logits of the known tails out of the softmax.
+            metadata: Further metadata of the adapter file.
+
+        Returns:
+            The adapter, without weights.
+        """
+        metadata = dict(metadata or {})
+        if model is not None:
+            metadata.setdefault('backbone_state_sha256', state_fingerprint(model))
+        metadata.setdefault('calibration', calibration)
+        return cls('global', observed_mix, fixed_calibration=calibration, mask_known_logits=mask_known_logits, metadata=metadata)
 
     def to_dict(self):
         version = 3 if self.score_input == 'raw' else SCORE_INPUT_VERSION

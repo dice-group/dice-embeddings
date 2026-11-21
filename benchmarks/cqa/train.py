@@ -204,7 +204,7 @@ def add_arguments(parser):
     parser.add_argument('--batch-size', type=int)
     parser.add_argument('--epochs', type=int)
     parser.add_argument('--reference-deps', type=Path, nargs='+', default=[], help='Extra import roots for author dependencies')
-    parser.add_argument('--smoke', action='store_true', help='Tiny model and one-step fixture test; never paper weights')
+    parser.add_argument('--smoke', action='store_true', help='Tiny model and one update, to test the setup; not a baseline')
 
 
 def run(args):
@@ -288,7 +288,6 @@ def run(args):
             local = dict(recipes, seed=args.seed, threads=args.threads, data_root=args.data_root,
                          entries=[dict(job, checkpoint=manifest_path('checkpoint.pt'), training=manifest_path('training.json'))])
             local['entries'][0]['reference']['training_profile'] = provenance['profile']
-            local['entries'][0]['blockers'] = ['Training smoke checkpoint; not a paper baseline'] if args.smoke else []
             write(output / 'manifest.json', local)
         except Exception as error:
             provenance.update(status='failed', error=str(error))

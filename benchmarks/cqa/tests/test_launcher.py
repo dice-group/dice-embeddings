@@ -1,4 +1,4 @@
-"""Portable preparation profiles and launcher checks without Docker or inference."""
+"""Recipe selection, execution profiles and launcher checks without Docker."""
 import json
 import subprocess
 
@@ -6,8 +6,7 @@ import pytest
 
 from benchmarks.cqa import cli
 from benchmarks.cqa.manifests import prepare_manifest, read_manifest, suite_directory, validate_entry
-from benchmarks.cqa.study import entry_inputs_identity, freeze, read, run_job, verify_bundle
-from benchmarks.cqa.tests.test_protocol import paper_fixture
+from benchmarks.cqa.tests.test_protocol import fixture_manifest, read
 
 PUBLIC = suite_directory('plus_h')
 IMAGE = ['--image', 'example/plus-h:local', '--dry-run']
@@ -51,15 +50,10 @@ def test_hardware_profile_cli_and_container_forwarding(tmp_path, capsys, suite):
               '--output', str(output), '--dry-run'])
     entries = json.loads(capsys.readouterr().out)['entries']
     assert all(e['options']['backend_batch_size'] == 16 and e['options']['raw_cache_granularity'] == 'row' for e in entries)
-    common = ['--input-root', str(tmp_path), '--output', str(output), *IMAGE]
-    flags = ['--hardware-profile', 'h100', '--kgfm-batch-size', '16']
-    cli.main([suite, 'prepare', *common, *flags])
+    cli.main([suite, 'evaluate', '--split', 'test', '--input-root', str(tmp_path), '--output', str(output), *IMAGE,
+              '--hardware-profile', 'h100', '--kgfm-batch-size', '16'])
     assert '--hardware-profile h100 --kgfm-batch-size 16' in capsys.readouterr().out
     assert not output.exists()
-    # Frozen bundles fix the execution options; a run cannot change them.
-    with pytest.raises(SystemExit):
-        cli.main([suite, 'run', *common, *flags])
-    assert 'unrecognized arguments' in capsys.readouterr().err
 
 
 def test_profiles_preserve_beams_and_per_shape_settings():
@@ -82,7 +76,7 @@ def test_profiles_preserve_beams_and_per_shape_settings():
                 assert actual['options'][key] == value
         assert actual['query_types'] == expected['query_types']
         assert actual['query_batch_size'] == expected['query_batch_size']
-        assert 'bounded' in actual['reference']['status']
+        assert any('Bounded profile' in note for note in actual['reference']['notes'])
     selected = prepare_manifest(paths, entries=[original[0]['id']])
     assert [entry['id'] for entry in selected['entries']] == [original[0]['id']]
     with pytest.raises(ValueError, match='distinct'):
@@ -153,7 +147,7 @@ def test_direct_subset_evaluation_scores_only_selected_methods_datasets_and_quer
     from dicee.models.complex import ComplEx
     from dicee.query_answering.methods.cqd import CQD
 
-    manifest = paper_fixture(tmp_path)
+    manifest = fixture_manifest(tmp_path)
     model = ComplEx(dict(model='ComplEx', num_entities=8, num_relations=4, embedding_dim=8, normalization=None))
     torch.save(model.state_dict(), tmp_path / 'complex.pt')
     for method in ('cqd', 'cqd-hybrid'):
@@ -206,7 +200,7 @@ def test_observed_fact_recipes_reuse_checkpoints_and_select_only_kgfms():
         validate_entry(one[0])
 
 
-def test_graph_ablation_freezes_weights_and_reuses_graph_independent_methods():
+def test_graph_ablation_keeps_weights_and_reuses_graph_independent_methods():
     paths = [PUBLIC / name for name in ('baselines.json', 'kgfm_adapters.json')]
     original = {e['id']: e for e in prepare_manifest(paths)['entries']}
     expanded = prepare_manifest(paths, inference_graphs=['train', 'train+valid'])['entries']
@@ -243,51 +237,43 @@ def test_public_test_graph_defaults_and_explicit_train_override():
 
 def test_container_dry_run_forwards_selection_and_rejects_bad_arguments(tmp_path, capsys):
     output = tmp_path / 'run'
-    common = ['--input-root', str(tmp_path), '--output', str(output), *IMAGE]
+    common = ['--split', 'valid', '--input-root', str(tmp_path), '--output', str(output), *IMAGE]
 
-    def launched(command, *extra):
-        cli.main(['plus_h', command, *common, *extra])
+    def launched(*extra):
+        cli.main(['plus_h', 'evaluate', *common, *extra])
         return capsys.readouterr().out
 
-    result = launched('prepare', '--entries', 'cqd-FB15k237+H')
+    result = launched('--entries', 'cqd-FB15k237+H')
     assert result.startswith('docker run --rm --network none --read-only')
     assert f'source={tmp_path},target=/inputs,readonly' in result and f'source={output},target=/results' in result
-    assert 'example/plus-h:local plus_h prepare --input-root /inputs --output /results --entries cqd-FB15k237+H --no-setup' in result
+    assert 'example/plus-h:local plus_h evaluate --input-root /inputs --output /results --entries cqd-FB15k237+H --split valid --no-setup' in result
     assert not output.exists()
-    assert '--observed-facts none atomic' in launched('prepare', '--observed-facts', 'none', '--observed-facts', 'atomic')
-    assert '--inference-graphs train train+valid' in launched('prepare', '--inference-graphs', 'train', '--inference-graphs', 'train+valid')
-    assert '--answer-filter released' in launched('prepare', '--answer-filter', 'released')
-    for extra in (['--profile', 'invalid'], ['--output', str(tmp_path.parent / 'outside')], ['--unknown', 'x']):
-        with pytest.raises(SystemExit):
-            launched('prepare', *extra)
-    assert 'plus_h run --input-root /inputs --output /results --no-setup' in launched('run')
-    selected = launched('run', '--entries', 'ultra-product-14type-FB15k237+H-facts-none', '--entries', 'trix-product-14type-NELL995+H-facts-atomic')
-    assert '--entries ultra-product-14type-FB15k237+H-facts-none trix-product-14type-NELL995+H-facts-atomic' in selected
-    for extra in (['--answer-filter', 'corrected'], ['--observed-facts', 'none']):
-        with pytest.raises(SystemExit):
-            launched('run', *extra)
-
-
-def test_container_forwards_combination_selectors_and_keeps_queries_frozen(tmp_path, capsys):
-    common = ['--input-root', str(tmp_path), '--output', str(tmp_path / 'run'), *IMAGE]
-
-    def launched(command, *extra):
-        cli.main(['plus_h', command, *common, *extra])
-        return capsys.readouterr().out
-
-    result = launched('evaluate', '--methods', 'cqd', 'cqd-hybrid', '--datasets', 'FB15k237+H', 'NELL995+H', '--query-types', 'negation',
-                      '--atomic-negation', '--split', 'valid', '--max-queries-per-shape', '3')
+    assert '--observed-facts none atomic' in launched('--observed-facts', 'none', '--observed-facts', 'atomic')
+    assert '--inference-graphs train train+valid' in launched('--inference-graphs', 'train', '--inference-graphs', 'train+valid')
+    assert '--answer-filter released' in launched('--answer-filter', 'released')
+    result = launched('--methods', 'cqd', 'cqd-hybrid', '--datasets', 'FB15k237+H', 'NELL995+H', '--query-types', 'negation',
+                      '--atomic-negation', '--max-queries-per-shape', '3')
     assert '--methods cqd cqd-hybrid --datasets FB15k237+H NELL995+H --query-types negation --atomic-negation' in result
     assert '--split valid --max-queries-per-shape 3' in result
-    assert not (tmp_path / 'run').exists()
-    assert '--methods qto --datasets ICEWS18+H --query-types 2p 3p' in launched('prepare', '--methods', 'qto', '--datasets', 'ICEWS18+H',
-                                                                                 '--query-types', '2p', '3p')
-    assert '--methods qto --datasets ICEWS18+H' in launched('run', '--methods', 'qto', '--datasets', 'ICEWS18+H')
-    for command, extra in [('run', ['--query-types', '2p']), ('run', ['--atomic-negation']), ('run', ['--split', 'valid']),
-                           ('evaluate', ['--split', 'valid', '--methods']), ('evaluate', ['--split', 'valid', '--max-queries-per-shape', '0']),
-                           ('evaluate', ['--methods', 'qto'])]:
+    for extra in (['--profile', 'invalid'], ['--output', str(tmp_path.parent / 'outside')], ['--unknown', 'x'], ['--methods'],
+                  ['--max-queries-per-shape', '0']):
         with pytest.raises(SystemExit):
-            launched(command, *extra)
+            launched(*extra)
+    with pytest.raises(SystemExit):   # the split is always explicit
+        cli.main(['plus_h', 'evaluate', '--methods', 'qto', '--output', str(output), *IMAGE])
+    assert not output.exists()
+
+
+@pytest.mark.parametrize('selection,suffixes', [(['--observed-facts', 'none', 'atomic'], ('-facts-none', '-facts-atomic')),
+                                                (['--inference-graphs', 'train', 'train+valid'], ('-graph-train', '-graph-train-valid'))])
+def test_evaluate_resolves_ablation_variants_of_the_selected_recipes(tmp_path, capsys, selection, suffixes):
+    cli.main(['plus_h', 'evaluate', '--split', 'valid', '--methods', 'ultra-adapter', '--datasets', 'FB15k237+H', *selection,
+              '--input-root', str(tmp_path / 'missing-inputs'), '--output', str(tmp_path / 'no-results'), '--dry-run'])
+    entries = json.loads(capsys.readouterr().out)['entries']
+    assert [entry['id'] for entry in entries] == ['ultra-product-intersections-FB15k237+H' + suffix for suffix in suffixes]
+    for entry in entries:
+        validate_entry(entry)
+    assert not (tmp_path / 'no-results').exists()
 
 
 class _FakeWorkers:
@@ -341,152 +327,56 @@ def test_parallel_failure_stops_new_entries_but_lets_running_workers_finish(tmp_
     assert json.loads((tmp_path / 'status.json').read_text())['failed'] == ['a']
 
 
-def pilot_study(tmp_path):
-    """A frozen two-entry study and the fake worker processes that run its pilot in this process."""
+def test_parallel_evaluation_uses_one_fresh_worker_per_entry_and_resumes(tmp_path, monkeypatch):
     from types import SimpleNamespace
-    manifest = paper_fixture(tmp_path)
+
+    from dicee.query_answering.methods import ConE
+    manifest = fixture_manifest(tmp_path)
     manifest['entries'].append(dict(manifest['entries'][0], id='second'))
-    study = tmp_path / 'study'
-    freeze(manifest, study / 'bundle', tmp_path)
+    (tmp_path / 'manifest.json').write_text(json.dumps(manifest))
     seen = []
 
     class Worker:
+        """Popen stand-in that evaluates the worker's entry in this process, on the CPU."""
         pid, returncode = 1, 0
 
         def __init__(self, command, *, env, **kwargs):
-            entry = command[command.index('--entries') + 1]
-            device = command[command.index('--device') + 1] if '--device' in command else 'cuda'
-            seen.append((entry, env.get('CUDA_VISIBLE_DEVICES'), device))
-            run_job(study / 'bundle', entry, tmp_path, study / 'pilot' / entry)
+            assert command[1:4] == ['-u', '-m', 'benchmarks.cqa'] and '--gpus' not in command and command[-1] == '--no-setup'
+            seen.append((command[command.index('--entries') + 1], env.get('CUDA_VISIBLE_DEVICES')))
+            cli.main([*command[4:], '--device', 'cpu'])
 
         def poll(self):
             return 0
 
-    workers = SimpleNamespace(Popen=Worker, DEVNULL=subprocess.DEVNULL, STDOUT=subprocess.STDOUT)
-    return study, ['plus_h', 'run', '--phase', 'pilot', '--input-root', str(tmp_path), '--output', str(study)], workers, seen
-
-
-def test_parallel_run_uses_fresh_workers_and_resumes_like_sequential_runs(tmp_path, monkeypatch):
-    study, args, workers, seen = pilot_study(tmp_path)
-    monkeypatch.setattr(cli, 'subprocess', workers)
-    args += ['--device', 'cuda']
+    monkeypatch.setattr(cli, 'subprocess', SimpleNamespace(Popen=Worker, DEVNULL=subprocess.DEVNULL, STDOUT=subprocess.STDOUT))
+    output = tmp_path / 'results'
+    args = ['plus_h', 'evaluate', '--split', 'valid', '--manifests', str(tmp_path / 'manifest.json'), '--input-root', str(tmp_path),
+            '--output', str(output)]
     cli.main(args + ['--gpus', '3', '5'])
-    assert sorted(seen) == [('cone-fixture', '3', 'cuda'), ('second', '5', 'cuda')]
-    assert read(study / 'pilot/status.json') == dict(state='complete', entries=['cone-fixture', 'second'])
-    stamp = (study / 'pilot/second/result.json').stat().st_mtime_ns
+    assert sorted(seen) == [('cone-fixture', '3'), ('second', '5')]
+    assert read(output / 'status.json') == dict(state='complete', entries=['cone-fixture', 'second'])
+    assert (output / 'second/worker.log').is_file()
+    result = read(output / 'second/result.json')
+    assert result['queries'] == 16 and result['split'] == 'valid'
+    # A repeated launch finds the completed entries and scores nothing again.
+    monkeypatch.setattr(ConE, 'encode_trees', lambda *args: pytest.fail('Completed entry was recomputed'))
     cli.main(args + ['--gpus', '0', '--workers-per-gpu', '2'])
-    assert (study / 'pilot/second/result.json').stat().st_mtime_ns == stamp
-    for invalid in (['--gpus', '0', '0'], ['--gpus', '0', '--workers-per-gpu', '0'], ['--workers-per-gpu', '2']):
+    assert read(output / 'second/result.json')['per_shape'] == result['per_shape']
+    for invalid in (['--gpus', '0', '0'], ['--gpus', '0', '--workers-per-gpu', '0'], ['--workers-per-gpu', '2'],
+                    ['--gpus', '0', '--device', 'cpu']):
         with pytest.raises(SystemExit):
             cli.main(args + invalid)
-    with pytest.raises(SystemExit):
-        cli.main(args[:-2] + ['--device', 'cpu', '--gpus', '0'])
 
 
-def test_container_forwards_parallel_gpus_only_for_evaluate_verify_and_run(tmp_path, capsys):
-    common = ['--input-root', str(tmp_path), '--output', str(tmp_path / 'out'), *IMAGE]
-    cli.main(['plus_h', 'run', *common, '--gpus', '0', '1', 'GPU-2c', '--workers-per-gpu', '2'])
+def test_container_forwards_parallel_gpus(tmp_path, capsys):
+    common = ['--split', 'test', '--input-root', str(tmp_path), '--output', str(tmp_path / 'out'), *IMAGE]
+    cli.main(['plus_h', 'evaluate', *common, '--gpus', '0', '1', 'GPU-2c', '--workers-per-gpu', '2'])
     assert '--gpus 0 1 GPU-2c --workers-per-gpu 2' in capsys.readouterr().out
-    cli.main(['plus_h', 'evaluate', *common, '--split', 'test', '--gpus', '1'])
-    assert '--gpus 1' in capsys.readouterr().out
-    cli.main(['plus_h', 'verify', *common, '--gpus', '0', '1'])
-    assert '--gpus 0 1' in capsys.readouterr().out
-    for command, extra in [('prepare', ['--gpus', '0']), ('run', ['--workers-per-gpu', '2']), ('run', ['--gpus'])]:
+    for extra in (['--workers-per-gpu', '2'], ['--gpus']):
         with pytest.raises(SystemExit):
-            cli.main(['plus_h', command, *common, *extra])
-
-
-def test_run_subsets_share_lock_and_resume_without_recomputing(tmp_path, monkeypatch, capsys):
-    from dicee.query_answering._checkpoint import BenchmarkCheckpoint, checksum
-    study, args, workers, seen = pilot_study(tmp_path)
-    monkeypatch.setattr(cli, 'subprocess', workers)
-    args += ['--device', 'cpu']
-    cli.main(args + ['--entries', 'cone-fixture'])
-    first_result = study / 'pilot/cone-fixture/result.json'
-    stamp = first_result.stat().st_mtime_ns
-    assert not (study / 'pilot/second/result.json').exists()
-    cli.main(args + ['--entries', 'second'])
-    cli.main(args)
-    assert first_result.stat().st_mtime_ns == stamp
-    assert read(study / 'pilot/status.json')['entries'] == ['cone-fixture', 'second']
-    identity = dict(bundle=checksum(study / 'bundle/bundle.json'), phase='pilot', device='cpu', pilot_queries=2)
-    with BenchmarkCheckpoint(study / 'pilot/suite', identity):
-        with pytest.raises(RuntimeError, match='already running'):
-            cli.main(args + ['--entries', 'second'])
-    assert [entry for entry, _, _ in seen] == ['cone-fixture', 'second', 'cone-fixture', 'second']
-    with pytest.raises(SystemExit):
-        cli.main(args + ['--pilot-queries', '3'])
-    assert 'settings changed' in capsys.readouterr().err
-
-
-def test_verification_runs_each_entry_in_a_fresh_process_and_requires_oracles(tmp_path, monkeypatch, capsys):
-    study = tmp_path / 'study'
-    manifest = paper_fixture(tmp_path)
-    manifest['entries'].append(dict(manifest['entries'][0], id='cqd-example', method='cqd', options={'atomic_negation': True}))
-    freeze(manifest, study / 'bundle', tmp_path)
-    references, comparisons = tmp_path / 'references', tmp_path / 'dense'
-    references.mkdir()
-    comparisons.mkdir()
-    args = ['plus_h', 'verify', '--input-root', str(tmp_path), '--output', str(study), '--references', str(references),
-            '--comparison-references', str(comparisons)]
-
-    def rejected(message):
-        with pytest.raises(SystemExit):
-            cli.main(args)
-        assert message in capsys.readouterr().err
-
-    rejected('Missing baseline oracle cone-fixture.pt')
-    for name in ('cone-fixture', 'cqd-example'):
-        (references / f'{name}.pt').touch()
-    rejected('Missing comparison oracle')
-    (comparisons / 'cqd-example.pt').touch()
-    commands = []
-
-    def parity(command):
-        commands.append(command)
-        evidence = command[command.index('--output') + 1]
-        cli.write_json(evidence, dict(passed=True))
-        return subprocess.CompletedProcess(command, 0)
-
-    monkeypatch.setattr(cli.subprocess, 'run', parity)
-    cli.main(args)
-    assert [command[command.index('--entry') + 1] for command in commands] == ['cone-fixture', 'cqd-example']
-    assert all(command[5] == 'parity' for command in commands)
-    assert '--comparison-reference' in commands[1] and '--comparison-reference' not in commands[0]
-    verified = read(study / 'verified-manifest.json')
-    assert [entry['verification'] for entry in verified['entries']] == ['study/evidence/cone-fixture.json', 'study/evidence/cqd-example.json']
-    assert (study / 'verified-bundle/bundle.json').is_file()
-
-
-def test_verification_reuses_passing_parity_evidence_for_the_same_oracle(tmp_path, monkeypatch):
-    from dicee.query_answering._checkpoint import checksum
-    from dicee.query_answering.context import fingerprint
-    study = tmp_path / 'study'
-    freeze(paper_fixture(tmp_path), study / 'bundle', tmp_path)
-    bundle = verify_bundle(study / 'bundle', tmp_path)
-    entry = bundle['manifest']['entries'][0]
-    references = tmp_path / 'references'
-    references.mkdir()
-    (references / f'{entry["id"]}.pt').write_bytes(b'oracle')
-    evidence = dict(passed=True, source_sha256=bundle['source_sha256'], inputs_sha256=entry_inputs_identity(bundle, entry),
-                    entry_sha256=fingerprint({k: v for k, v in entry.items() if k != 'verification'}),
-                    reference_sha256=checksum(references / f'{entry["id"]}.pt'))
-    cli.write_json(study / 'evidence' / f'{entry["id"]}.json', dict(evidence, reference_sha256='another oracle'))
-    commands = []
-
-    def parity(command):
-        commands.append(command)
-        cli.write_json(command[command.index('--output') + 1], evidence)
-        return subprocess.CompletedProcess(command, 0)
-
-    monkeypatch.setattr(cli.subprocess, 'run', parity)
-    args = ['plus_h', 'verify', '--input-root', str(tmp_path), '--output', str(study), '--references', str(references)]
-    cli.main(args)
-    assert len(commands) == 1
-    # Evidence for the same entry, inputs, source and oracle is reused.
-    (study / 'verified-bundle').rename(tmp_path / 'first-verified-bundle')
-    cli.main(args)
-    assert len(commands) == 1 and (study / 'verified-bundle/bundle.json').is_file()
+            cli.main(['plus_h', 'evaluate', *common, *extra])
+    with pytest.raises(SystemExit):   # setup starts no workers
+        cli.main(['plus_h', 'setup', '--input-root', str(tmp_path), '--dry-run', '--gpus', '0'])
 
 
 def test_container_rejects_retagged_image_before_launch(tmp_path, monkeypatch):
@@ -496,5 +386,5 @@ def test_container_rejects_retagged_image_before_launch(tmp_path, monkeypatch):
     launches = []
     monkeypatch.setattr(docker.subprocess, 'run', lambda *a, **k: launches.append(a))
     with pytest.raises(ValueError, match='Image differs'):
-        docker.run('example/plus-h:local', ['plus_h', 'verify'], inputs=tmp_path, results=tmp_path)
+        docker.run('example/plus-h:local', ['plus_h', 'evaluate'], inputs=tmp_path, results=tmp_path)
     assert launches == []

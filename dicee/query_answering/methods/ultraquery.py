@@ -9,8 +9,8 @@ from ._ordered_aggregation import aggregate, cached_layout
 
 class UltraQuery(FuzzyGNN):
     def __init__(self, context, *, dim=64, num_layers=6, threshold=0., logic='product', cache_bytes=64 * 2**20,
-                 observed_traversal=False, calibration=None):
-        super().__init__(context, logic, observed_traversal, calibration)
+                 observed_traversal=False, calibration=None, double_precision=None):
+        super().__init__(context, logic, observed_traversal, calibration, double_precision)
         if not 0 <= threshold <= 1:
             raise ValueError('Threshold must be between zero and one')
         if calibration and threshold:

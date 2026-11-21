@@ -5,8 +5,8 @@
   "seed": 0,
   "threads": 4,
   "archives": {
-    "datasets": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90#datasets-1", "checksum_status": "Every extracted runtime input is independently pinned by freeze."},
-    "models": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90/ckpts", "checksum_status": "Released checkpoint and adapter bytes are independently pinned by freeze."}
+    "datasets": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90#datasets-1"},
+    "models": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90/ckpts"}
   },
   "recipes": [
     {
@@ -19,11 +19,10 @@
         "query_batch_size": 32,
         "query_order": "upstream-pickle",
         "reference": {
-          "status": "released PyG port; frozen validation parity required",
+          "status": "released PyG port",
           "settings": "https://arxiv.org/html/2404.07198v2#S0.SS2",
           "notes": ["Released PyG 3g link-prediction checkpoint; thresholds follow UltraQuery arXiv v2, Appendix B.", "Released PyG checkpoint is distinct from original TorchDrug paper weights."]
-        },
-        "blockers": []
+        }
       },
       "entries": [
         {"dataset": "FB15k237LogicalQuery", "options": {"threshold": 0.8}},
@@ -176,11 +175,10 @@
         "query_batch_size": 32,
         "query_order": "upstream-pickle",
         "reference": {
-          "status": "untrained authors heuristic; independent validation parity required",
+          "status": "untrained authors heuristic",
           "settings": "https://github.com/DeepGraphLearning/InductiveQE/tree/ab49a0e64e3449e687e484a42269d9898e1d1325",
           "notes": ["Boolean incoming-relation classes; query-seeded random shuffle for resumable evaluation."]
-        },
-        "blockers": []
+        }
       },
       "entries": [
         {"dataset": "WikiTopicsQuery:art"},
@@ -207,10 +205,9 @@
         "reference": {
           "status": "native reference port; full reproduction pending",
           "settings": "https://arxiv.org/html/2410.12537v3#A6",
-          "notes": ["Reuse +H released weights: original ID maps and training triples are identical; verify against QTO on original query sets."],
+          "notes": ["Reuse +H released weights: original ID maps and training triples are identical."],
           "inference_graph": "train"
-        },
-        "blockers": []
+        }
       },
       "entries": [
         {

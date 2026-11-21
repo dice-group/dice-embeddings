@@ -2,7 +2,7 @@
 
 Reimplementation of Cui et al., "A Prompt-Based Knowledge Graph Foundation
 Model for Universal In-Context Reasoning" (NeurIPS 2024,
-https://arxiv.org/abs/2410.12288), verified against
+https://arxiv.org/abs/2410.12288), following
 https://github.com/nju-websoft/KG-ICL at UPSTREAM_COMMIT. Module names follow
 the released ``model_best.tar`` state dictionaries. Prompt graphs are runtime
 context derived from the attached graph (see kgicl_prompts.py), never part of

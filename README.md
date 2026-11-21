@@ -581,10 +581,9 @@ python -m benchmarks.cqa plus_h evaluate --split valid --output results/plus-h-s
   --methods cqd cqd-hybrid qto --datasets FB15k237+H NELL995+H --query-types 2p 3p
 ```
 
-The verified workflow freezes inputs and query batches, checks validation predictions against
-the pinned upstream implementations, runs in a pinned Docker image, and reports sort-based and
-expected random-tie metrics with paired adapter controls. The [protocol](benchmarks/cqa/PROTOCOL.md)
-records every known deviation from the publications.
+Results hold sort-based and expected random-tie metrics, with paired adapter controls. The harness
+can also run in a pinned Docker image. The [protocol](benchmarks/cqa/PROTOCOL.md) records every
+known deviation from the publications.
 
 ## Literal Prediction
 <details> <summary> Predicting Numeric/Literal Values </summary>
@@ -724,8 +723,8 @@ sampling budgets, reproducibility, training, and verification against upstream.
 
 [KG-ICL](docs/kgicl.md) answers queries in context, from prompt graphs around a few
 example facts of the query relation. The official checkpoints run in pure PyTorch,
-with fused Triton kernels for CUDA inference. Scores and gradients are verified
-against the official implementation, with five upstream defects corrected.
+with fused Triton kernels for CUDA inference. DICE corrects five defects of the
+official implementation.
 
 <details>
 <summary>KG-ICL checkpoint download and inference</summary>
@@ -742,7 +741,7 @@ python -m dicee --model KGICL --dataset_dir KGs/UMLS \
 
 Prompt examples are drawn with a seed per graph and relation, so predictions are
 deterministic. The [KG-ICL guide](docs/kgicl.md) covers prompt graphs, the official
-evaluation protocol, training, the corrected defects, and verification.
+evaluation protocol, training and the corrected defects.
 
 </details>
 
@@ -884,10 +883,6 @@ RTX 4070 Ti SUPER, float32, matched query batches, and five-repeat medians on sa
 
 \* Flock includes independently sampled walks at the same budget; identical-walk neural speedups are **1.23–2.01×**.
 YAGO3-10 Flock timings varied more. See the [full comparison and validation](docs/kgfm_inference.md).
-
-KG-ICL, measured separately on an RTX 5070 Laptop GPU against the official code with its
-[corrected defects](docs/kgicl.md#upstream-defects-corrected-in-dice), is **49.76×** faster on FB15k-237,
-**4.43×** on WN18RR, and **35.58×** on YAGO3-10 ([details](docs/kgfm_inference.md#kg-icl)).
 
 </details>
 

@@ -5,8 +5,8 @@
   "seed": 0,
   "threads": 4,
   "archives": {
-    "datasets": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90#datasets-1", "checksum_status": "Every extracted runtime input is independently pinned by freeze."},
-    "models": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90/ckpts", "checksum_status": "Released checkpoint and adapter bytes are independently pinned by freeze."}
+    "datasets": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90#datasets-1"},
+    "models": {"source": "https://github.com/DeepGraphLearning/ULTRA/tree/427966ad8ed60420eef034063d44f3153addff90/ckpts"}
   },
   "recipes": [
     {
@@ -19,11 +19,10 @@
         "query_batch_size": 32,
         "query_order": "upstream-pickle",
         "reference": {
-          "status": "released PyG port; frozen validation parity required",
+          "status": "released PyG port",
           "settings": "https://github.com/DeepGraphLearning/ULTRA/blob/427966ad8ed60420eef034063d44f3153addff90/README.md#ultraquery",
           "notes": ["Public query-trained checkpoint, product logic, threshold 0.0, published batch size 32.", "Released PyG implementation; original paper used a different TorchDrug checkpoint."]
-        },
-        "blockers": []
+        }
       },
       "entries": [
         {"dataset": "FB15k237LogicalQuery"},

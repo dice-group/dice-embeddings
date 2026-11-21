@@ -73,9 +73,8 @@ def expand(recipes):
 
 
 def read_manifest(path):
-    """A recipe manifest with resolved entries, or the manifest pinned in a frozen bundle."""
+    """A recipe manifest with resolved entries."""
     value = json.loads(Path(path).read_text())
-    value = value.get('manifest', value)
     if 'recipes' in value:
         value = {key: item for key, item in value.items() if key != 'recipes'} | {'entries': expand(value['recipes'])}
     return value
@@ -147,17 +146,12 @@ def select_entries(entries, *, entry_ids=None, methods=None, datasets=None, quer
             if changed and options.get('atomic_negation') and 'reference' in entry:
                 entry['reference'].setdefault('notes', []).append(
                     'CQD-A signed-atom negation with +H scoring.')
-        if changed:
-            entry.pop('verification', None)
-            if 'reference' in entry:
-                entry['reference']['status'] = 'custom query selection or executor; independent validation required'
     return selected
 
 
 def validate_entry(entry):
     required = {'id', 'method', 'dataset', 'checkpoint', 'options', 'query_types', 'query_batch_size', 'query_order', 'reference'}
-    optional = {'adapters', 'operators', 'selection_protocol', 'finalized', 'blockers', 'verification', 'adapter_ablation',
-                'inference_graph', 'graph_ablation', 'training'}
+    optional = {'adapters', 'operators', 'selection_protocol', 'adapter_ablation', 'inference_graph', 'graph_ablation', 'training'}
     if required - entry.keys() or entry.keys() - required - optional:
         raise ValueError(f'Invalid benchmark entry fields: {entry.get("id")}')
     if (entry['method'] not in catalog().METHODS
@@ -172,9 +166,9 @@ def validate_entry(entry):
     if entry.get('inference_graph') not in (None, 'train', 'train+valid'):
         raise ValueError('Inference graph must be train or train+valid')
     if entry.get('graph_ablation') is not None and not isinstance(entry['graph_ablation'], str):
-        raise ValueError('Graph ablation must identify the shared frozen recipe')
+        raise ValueError('Graph ablation must identify the shared recipe')
     if entry['method'] == 'clmpt' and entry['query_order'] != 'upstream-pickle':
-        raise ValueError('CLMPT requires frozen reference conversion order')
+        raise ValueError('CLMPT requires the reference conversion order')
 
 
 def prepare_manifest(paths, *, profile='bounded', entries=None, methods=None, datasets=None, query_types=None,
@@ -212,7 +206,6 @@ def prepare_manifest(paths, *, profile='bounded', entries=None, methods=None, da
                 variant = copy.deepcopy(entry)
                 variant['id'] += f'-facts-{mode}'
                 variant['options']['observed_facts'] = mode
-                variant['reference']['status'] = 'observed-fact ablation; verification pending'
                 variant['reference'].setdefault('notes', []).append(
                     f'Inference observed-fact mode: {mode}. Keep the trained weights and graph inputs fixed; '
                     'apply this mode to both learned and identity calibration. No adapter refitting.')
@@ -251,23 +244,18 @@ def prepare_manifest(paths, *, profile='bounded', entries=None, methods=None, da
     if kgfm_batch_size is not None and not any(e['method'] in kgfm_methods for e in manifest['entries']):
         raise ValueError('KGFM batch size requires at least one selected KGFM adapter')
     for entry in manifest['entries']:
-        entry.pop('verification', None)
         if profile == 'bounded' and entry['method'] in ('cqd', 'cqd-hybrid'):
             entry['options'].update(reference_batching=False, row_batch_size=32, final_batch_size=32)
-            entry['reference']['status'] = 'bounded execution profile; independent validation required'
             entry['reference'].setdefault('notes', []).append(
                 'Bounded profile: reference_batching=false, row_batch_size=32, and final_batch_size=32; beams and per-shape '
-                'recipes retained. Requires independent bounded-profile validation scores, orders, and ties.')
+                'recipes retained.')
         kgfm = entry['method'] in kgfm_methods
         if hardware_profile != 'default' and kgfm:
             entry['options'].update(KGFM_EXECUTION[hardware_profile])
-            entry['reference']['status'] = 'H100 execution profile; independent validation required'
             entry['reference'].setdefault('notes', []).append(
                 'H100 / H100 NVL configuration measured on full validation splits. Float32 IEEE, query batches, beams, '
-                'operators and observed facts retained. Validate memory, scores, orders and ties on the target GPU.')
+                'operators and observed facts retained.')
         if kgfm and kgfm_batch_size is not None:
             entry['options'].update(row_batch_size=kgfm_batch_size, backend_batch_size=kgfm_batch_size)
-            entry['reference']['status'] = 'custom KGFM atomic batch; independent validation required'
-            entry['reference'].setdefault('notes', []).append(
-                f'Atomic row and backbone batch size {kgfm_batch_size}; frozen before verification.')
+            entry['reference'].setdefault('notes', []).append(f'Atomic row and backbone batch size {kgfm_batch_size}.')
     return manifest

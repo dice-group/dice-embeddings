@@ -129,15 +129,9 @@ def plus_h_files(icews=False):
         files -= {'train.txt', 'valid.txt', 'test.txt'}
         files |= {f'KG_splits/{split}.txt' for split in ('train', 'valid', 'test')}
     else:
+        # The corrected answer filters of the test split read the authors' recomputed 2in and pni answers.
         files |= {f'test-query-reduction/{shape}/all/test-{kind}.pkl'
                   for shape in ('2in', 'pni') for kind in ('queries', 'easy-answers', 'hard-answers')}
-        reductions = {'ip': ('1p', '2i', '2p', 'ip'), 'pi': ('1p', '2i', '2p', 'pi'),
-                      'up': ('1p', '2u', 'up')}
-        reductions.update({f'{n}{op}': ('1p', *(f'{i}{op}' for i in range(2, n + 1)))
-                           for op in ('p', 'i') for n in (2, 3, 4)})
-        reductions.update({s: ('pos-exist', 'pos-only-miss') for s in ('3in', 'pin', 'inp')})
-        files |= {f'test-query-reduction/{shape}/{label}/test-hard-answers.pkl'
-                  for shape, labels in reductions.items() for label in labels}
     return files
 
 
@@ -171,7 +165,7 @@ def plan(manifest, suite):
 
 
 def missing_files(root, job, test_labels=True):
-    """Required files of a dataset job that are absent; ``test_labels=False`` skips +H test reduction labels."""
+    """Required files of a dataset job that are absent; ``test_labels=False`` skips the +H test filter files."""
     return [f"{job['root']}/{folder}/{name}" for folder, names in job['folders'].items()
             for name in sorted(names) if (test_labels or not name.startswith('test-query-reduction/'))
             and not target(root, f"{job['root']}/{folder}/{name}").is_file()]
@@ -201,7 +195,7 @@ def fetch_dataset(root, job):
     receipt = state / f"{job['id']}.json"
     if not missing_files(root, job):
         if not receipt.is_file():
-            print(f"Dataset inputs already present: {job['id']} (freeze pins their hashes)", flush=True)
+            print(f"Dataset inputs already present: {job['id']}", flush=True)
             return
         saved = json.loads(receipt.read_text())
         if saved['url'] == job['url'] and all(target(root, p).is_file() and digest(target(root, p)) == h
@@ -274,8 +268,8 @@ def fetch_weights(root, weights, models_archive=None):
 def ensure_inputs(manifest, input_root, *, suite, models_archive=None, download_missing=True, test_labels=True):
     """Set up only requested public inputs; custom data/checkpoints stay explicit.
 
-    ``test_labels=False`` (validation-only evaluation) neither requires nor downloads
-    the +H test reduction labels, which only test-split difficulty reports read.
+    ``test_labels=False`` (validation-only evaluation) does not require the +H
+    files that only the corrected test answer filters read.
     """
     root = Path(input_root).expanduser().resolve()
     root.mkdir(parents=True, exist_ok=True)

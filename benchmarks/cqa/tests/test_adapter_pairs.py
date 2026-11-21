@@ -1,16 +1,14 @@
-"""Paired calibration controls, shared logits, and crash-safe comparison traces."""
+"""Score adapters, paired identity controls, shared backbone rows and crash-safe comparison traces."""
 
-import subprocess
-import sys
+import json
 
 import pytest
 import torch
 
 from benchmarks.cqa import cli
-from benchmarks.cqa.manifests import REPO, suite_directory
-from benchmarks.cqa.reports import adapter_effects, export_reports, trace_queries
-from benchmarks.cqa.study import freeze, integration_passed, read, run_job, verify_bundle, write_json
-from benchmarks.cqa.tests.test_protocol import paper_fixture, small_data, use_ultraquery_fixture
+from benchmarks.cqa.tests.test_protocol import fixture_manifest, read, small_data, trace_rows, use_ultraquery_fixture
+from dicee.query_answering import AdapterQuery, AdapterTrainingData, QueryContext, QueryScoreAdapter, fit_query_adapter
+from dicee.query_answering._checkpoint import write_json
 from dicee.query_answering.benchmark import evaluate_benchmark
 from dicee.query_answering.context import state_fingerprint
 from dicee.query_answering.engine import AtomicBatchCache, AtomicScorer
@@ -112,183 +110,9 @@ def test_paired_resume_replays_both_variants_and_preserves_metrics(tmp_path):
     assert seen == [2, 3, 4, 5]
     assert result['per_shape'] == evaluate_benchmark(data, learned)['per_shape']
     assert result['comparisons']['without-adapter']['per_shape'] == evaluate_benchmark(data, control)['per_shape']
-    left, right = tmp_path / 'ranks.sqlite3', tmp_path / 'without-adapter/ranks.sqlite3'
-    assert len(list(trace_queries(left))) == len(list(trace_queries(right))) == 6
-    effects = adapter_effects(left, right, bootstrap_samples=10)
-    assert effects['macro']['expected']['mrr'] == pytest.approx(.75)
-    assert effects['macro']['expected']['mrr_ci95'] == pytest.approx([.75, .75])
-    assert adapter_effects(left, left, bootstrap_samples=0)['macro']['sort']['mrr'] == 0
-
-
-@pytest.mark.parametrize('backbone', ['ultra', 'trix', 'kgicl'])
-@pytest.mark.parametrize('facts,ultraquery', [(None, False), ('none', False), ('atomic', False), ('both', False), ('both', True)])
-def test_paired_kgfm_verification_full_run_and_reports(tmp_path, backbone, facts, ultraquery):
-    from dicee.models import KGICL, TRIX, ULTRA
-    from dicee.query_answering.score_adapter import QueryScoreAdapter
-    manifest = paper_fixture(tmp_path)
-    if ultraquery:
-        use_ultraquery_fixture(manifest, tmp_path)
-    count = len(manifest['entries'][0]['query_types'])
-    model = {'ultra': ULTRA, 'trix': TRIX, 'kgicl': KGICL}[backbone](dict(num_entities=1, num_relations=1))
-    # KG-ICL checkpoints keep their weights under 'state_dict'.
-    torch.save({'state_dict' if backbone == 'kgicl' else 'model': model.state_dict()}, tmp_path / 'kgfm.pt')
-    QueryScoreAdapter('context_scores', 1., bias_bound=8.,
-                      weights=torch.randn(2, 8, generator=torch.Generator().manual_seed(4)).double() / 5,
-                      metadata={'backbone_state_sha256': state_fingerprint(model)}).save(tmp_path / 'adapter.json')
-    entry = manifest['entries'][0]
-    entry.update(id=f'{backbone}-paired', method=f'{backbone}-adapter', checkpoint='kgfm.pt',
-                 options={'beam_size': 2, 'row_batch_size': 1, 'backend_batch_size': 1, 'cache_bytes': 4096, 'raw_cache_bytes': 4096},
-                 adapters={'product': 'adapter.json'}, operators={shape: 'product' for shape in entry['query_types']},
-                 selection_protocol='source-validation', finalized=True, adapter_ablation=True,
-                 query_batch_size=4, query_order='relation')
-    if facts is not None:
-        entry['options']['observed_facts'] = facts
-    if ultraquery:
-        entry['options'].update(raw_cache_device='model', relation_cache_mb=1, projection_cache_mb=1)
-    freeze(manifest, tmp_path / 'bundle', tmp_path)
-    subprocess.run([sys.executable, '-m', 'benchmarks.cqa', 'plus_h', 'integration', '--bundle', str(tmp_path / 'bundle'),
-                    '--input-root', str(tmp_path), '--entry', entry['id'], '--output', str(tmp_path / 'verification'),
-                    '--device', 'cpu', '--probes', '1'], check=True, cwd=REPO)
-    evidence = read(tmp_path / 'verification/integration.json')
-    assert evidence['passed'] and len(evidence['queries']) == count * 2
-    entry['verification'] = 'verification/integration.json'
-    freeze(manifest, tmp_path / 'verified-bundle', tmp_path)
-    result = run_job(tmp_path / 'verified-bundle', entry['id'], tmp_path, tmp_path / 'test', phase='test')
-    control = read(tmp_path / 'test/without-adapter/result.json')
-    assert result['queries'] == control['queries'] == count
-    assert result['inference']['cache_statistics']['backbone_reused_rows'] > 0
-    assert control['paired_with'] == entry['id']
-    assert control['inference']['calibration'] == 'without-adapter'
-    settings = result['inference']['observed_facts']
-    assert settings == control['inference']['observed_facts']
-    assert settings['atomic_mix'] == {'product': float(facts != 'none')}
-    assert settings['restore_answers'] == (facts in (None, 'both'))
-    assert read(tmp_path / 'adapter.json')['observed_mix'] == 1
-    assert run_job(tmp_path / 'verified-bundle', entry['id'], tmp_path, tmp_path / 'test', phase='test') == result
-    rows = export_reports(tmp_path / 'test', suite_directory('plus_h') / 'published_results.json', tmp_path / 'reports', bootstrap_samples=10)
-    assert len(rows) == 2 and all(row['complete_test'] for row in rows)
-    assert all(row['complete_16_type_test'] == (not ultraquery) for row in rows)
-    assert all(row['observed_facts'] == settings for row in rows)
-    # Combined reports carry no result files, so the details keep the candidate and context identity.
-    details = {d['id']: d for d in read(tmp_path / 'reports/comparison.json')['details']}
-    for raw in (result, control):
-        detail = details[raw.get('benchmark_run', raw.get('paper_run'))['entry']]
-        assert detail['candidate_sha256'] and detail['context_sha256']
-        assert {k: detail[k] for k in ('num_candidates', 'candidate_sha256', 'context_sha256')} == \
-            {k: raw[k] for k in ('num_candidates', 'candidate_sha256', 'context_sha256')}
-    assert len(read(tmp_path / 'reports/adapter-effects.json')) == 1
-    if ultraquery:
-        write_json(tmp_path / 'manifest.json', manifest)
-        args = ['ultraquery', 'evaluate', '--manifests', str(tmp_path / 'manifest.json'), '--input-root', str(tmp_path),
-                '--output', str(tmp_path / 'cli'), '--entries', entry['id'], '--split', 'test', '--device', 'cpu']
-        cli.main(args)
-        direct = read(tmp_path / 'cli' / entry['id'] / 'result.json')
-        direct_control = read(tmp_path / 'cli' / entry['id'] / 'without-adapter/result.json')
-        assert direct['per_shape'] == result['per_shape']
-        assert direct_control['per_shape'] == control['per_shape']
-        cli.main(args)
-        assert read(tmp_path / 'cli' / entry['id'] / 'result.json')['per_shape'] == direct['per_shape']
-    (tmp_path / 'test/without-adapter/result.json').write_text('{}')
-    with pytest.raises(ValueError, match='comparison checksum'):
-        run_job(tmp_path / 'verified-bundle', entry['id'], tmp_path, tmp_path / 'test', phase='test')
-
-
-def test_verify_reuses_passing_integration_checks_and_rejects_partial_ones(tmp_path, monkeypatch, capsys):
-    from dicee.models import ULTRA
-    from dicee.query_answering.score_adapter import QueryScoreAdapter
-    manifest = paper_fixture(tmp_path)
-    model = ULTRA(dict(num_entities=1, num_relations=1))
-    torch.save({'model': model.state_dict()}, tmp_path / 'kgfm.pt')
-    QueryScoreAdapter('context_scores', 1., bias_bound=8., weights=torch.full((2, 8), .1, dtype=torch.float64),
-                      metadata={'backbone_state_sha256': state_fingerprint(model)}).save(tmp_path / 'adapter.json')
-    entry = manifest['entries'][0]
-    entry.update(id='ultra-paired', method='ultra-adapter', checkpoint='kgfm.pt',
-                 options={'beam_size': 2, 'row_batch_size': 1, 'backend_batch_size': 1, 'cache_bytes': 4096, 'raw_cache_bytes': 4096},
-                 adapters={'product': 'adapter.json'}, operators={shape: 'product' for shape in entry['query_types']},
-                 selection_protocol='source-validation', finalized=True, adapter_ablation=True,
-                 query_batch_size=4, query_order='relation')
-    manifest['entries'] = [entry]
-    study = tmp_path / 'study'
-    freeze(manifest, study / 'bundle', tmp_path)
-    target = study / 'verification' / entry['id']
-    # The check verify would run, launched as a separate job.
-    subprocess.run([sys.executable, '-m', 'benchmarks.cqa', 'plus_h', 'integration', '--bundle', str(study / 'bundle'),
-                    '--input-root', str(tmp_path), '--entry', entry['id'], '--output', str(target), '--device', 'cpu'],
-                   check=True, cwd=REPO)
-    bundle = verify_bundle(study / 'bundle', tmp_path)
-    assert integration_passed(target / 'integration.json', bundle, entry)
-    assert not integration_passed(target / 'integration.json', bundle, dict(entry, options=dict(entry['options'], beam_size=3)))
-    args = ['plus_h', 'verify', '--input-root', str(tmp_path), '--output', str(study), '--device', 'cpu']
-    (target / 'integration.json').rename(tmp_path / 'integration.json')
-    with pytest.raises(SystemExit):
-        cli.main(args)
-    assert 'KGFM verification requires a fresh directory' in capsys.readouterr().err
-    (tmp_path / 'integration.json').rename(target / 'integration.json')
-    monkeypatch.setattr(cli.subprocess, 'run', lambda command: pytest.fail('A passing check was run again'))
-    cli.main(args)
-    assert read(study / 'verified-manifest.json')['entries'][0]['verification'] == 'study/evidence/ultra-paired.json'
-    assert read(study / 'evidence/ultra-paired.json') == read(target / 'integration.json')
-
-
-def test_graph_effects_pair_calibrations_and_reject_changed_recipes(tmp_path):
-    from dataclasses import replace
-
-    from dicee.query_answering.method_evaluation import save_results
-    results = tmp_path / 'results'
-    for graph, scores in [('train', [10., 1., 2., 3., 4., 5.]), ('train+valid', [10., 8., 7., 6., 5., 4.])]:
-        data = replace(small_data(), name='FB15k237+H', split='test',
-                       metadata=dict(inference_graph=graph, expected_query_types=['1p']))
-        destination = results / graph
-        report = evaluate_benchmark(data, lambda query: torch.tensor(scores),
-                    comparison_predictors={'without-adapter': lambda query: torch.zeros(6)},
-                    checkpoint_dir=destination / 'progress', checkpoint_identity={'fixture': graph},
-                    rank_trace_path=destination / 'ranks.sqlite3', additional_tie_policies=('expected',))
-        report['inference'] = dict(method='ultra-adapter', calibration='learned')
-        report['comparisons']['without-adapter']['inference'] = dict(method='ultra-adapter', calibration='without-adapter')
-        save_results(report, destination, run=dict(entry=graph, phase='test'),
-                     metadata=dict(reference={}, graph_ablation='paired', graph_recipe_sha256='same'))
-    export_reports(results, None, tmp_path / 'reports', bootstrap_samples=10)
-    effects = {row['calibration']: row for row in read(tmp_path / 'reports/graph-effects.json')}
-    assert len(read(tmp_path / 'reports/adapter-effects.json')) == 2
-    assert effects['learned']['macro']['expected']['mrr'] == pytest.approx(.75)
-    assert effects['without-adapter']['macro']['expected']['mrr'] == 0
-    target = results / 'train+valid/result.json'
-    value = read(target)
-    value['graph_recipe_sha256'] = 'changed'
-    write_json(target, value)
-    with pytest.raises(ValueError, match='Graph ablation changed'):
-        export_reports(results, None, tmp_path / 'invalid', bootstrap_samples=0)
-
-
-def test_parallel_reports_are_byte_identical_to_sequential_reports(tmp_path):
-    from dataclasses import replace
-
-    from dicee.query_answering.method_evaluation import save_results
-
-    def scores(offset):
-        return lambda query: torch.rand(6, generator=torch.Generator().manual_seed(17 * query[0] + offset))
-
-    results = tmp_path / 'results'
-    for offset, graph in enumerate(('train', 'train+valid')):
-        data = replace(small_data(), name='FB15k237LogicalQuery', split='test',
-                       metadata=dict(inference_graph=graph, expected_query_types=['1p']))
-        destination = results / graph
-        report = evaluate_benchmark(data, scores(offset), comparison_predictors={'without-adapter': scores(5)},
-                                    checkpoint_dir=destination / 'progress', checkpoint_identity={'fixture': graph},
-                                    rank_trace_path=destination / 'ranks.sqlite3', additional_tie_policies=('expected',))
-        report['inference'] = dict(method='ultra-adapter', calibration='learned')
-        report['comparisons']['without-adapter']['inference'] = dict(method='ultra-adapter', calibration='without-adapter')
-        save_results(report, destination, run=dict(entry=graph, phase='test'),
-                     metadata=dict(reference={}, graph_ablation='paired', graph_recipe_sha256='same'))
-    export_reports(results, None, tmp_path / 'sequential', bootstrap_samples=50)
-    export_reports(results, None, tmp_path / 'parallel', bootstrap_samples=50, workers=3)
-    names = sorted(path.name for path in (tmp_path / 'sequential').iterdir())
-    assert names == sorted(path.name for path in (tmp_path / 'parallel').iterdir())
-    assert all((tmp_path / 'sequential' / name).read_bytes() == (tmp_path / 'parallel' / name).read_bytes() for name in names)
-    suite = read(tmp_path / 'parallel/suite-effects.json')
-    assert len(read(tmp_path / 'parallel/adapter-effects.json')) == 2 and len(suite) == 2
-    low, high = suite[0]['macro']['sort']['all']['ci95']
-    assert low < high
+    left, right = trace_rows(tmp_path / 'ranks.sqlite3'), trace_rows(tmp_path / 'without-adapter/ranks.sqlite3')
+    # Both traces hold every query once, in the same order.
+    assert len(left) == 6 and [row[:2] for row in left] == [row[:2] for row in right]
 
 
 def test_filter_controls_share_predictions_and_resume_all_traces(tmp_path, monkeypatch):
@@ -322,38 +146,69 @@ def test_filter_controls_share_predictions_and_resume_all_traces(tmp_path, monke
     for name, result in [(None, report), *report['comparisons'].items()]:
         result['inference'] = dict(method='ultra-adapter', calibration='without-adapter' if name and name.startswith('without-adapter') else 'learned')
     save_results(report, tmp_path, run={'entry': 'paired', 'phase': 'pilot'}, metadata={'reference': {}})
-    rows = export_reports(tmp_path, None, tmp_path / 'reports', bootstrap_samples=10)
-    assert len(rows) == 4
-    assert len(read(tmp_path / 'reports/adapter-effects.json')) == 2
-    filters = read(tmp_path / 'reports/filter-effects.json')
-    assert len(filters) == 2
-    assert all(row['macro']['expected']['mrr'] == -.5 for row in filters)
+    # One result and one complete rank trace per calibration and answer filter.
     for name in ('', 'without-adapter', 'released-filters', 'without-adapter-released-filters'):
-        assert len(list(trace_queries(tmp_path / name / 'ranks.sqlite3'))) == 6
+        assert read(tmp_path / name / 'result.json')['queries'] == 6
+        assert len(trace_rows(tmp_path / name / 'ranks.sqlite3')) == 6
     options['filter_corrections'] = {}
     with pytest.raises(ValueError, match='inputs/settings changed'):
         evaluate_benchmark(data, predict, **options)
 
 
-@pytest.mark.parametrize('backbone', ['ultra', 'trix', 'kgicl'])
-def test_row_granular_raw_cache_reaches_the_engine_and_keeps_scores(tmp_path, backbone):
+def kgfm_entry(tmp_path, manifest, backbone, **options):
+    """Turn the fixture's entry into a paired adapter recipe of a random ``backbone`` checkpoint."""
     from dicee.models import KGICL, TRIX, ULTRA
-    from dicee.query_answering.score_adapter import QueryScoreAdapter
-    manifest = paper_fixture(tmp_path)
-    use_ultraquery_fixture(manifest, tmp_path)
     model = {'ultra': ULTRA, 'trix': TRIX, 'kgicl': KGICL}[backbone](dict(num_entities=1, num_relations=1))
     # KG-ICL checkpoints keep their weights under 'state_dict'.
     torch.save({'state_dict' if backbone == 'kgicl' else 'model': model.state_dict()}, tmp_path / 'kgfm.pt')
-    QueryScoreAdapter('context_scores', 1., bias_bound=8.,
-                      weights=torch.randn(2, 8, generator=torch.Generator().manual_seed(4)).double() / 5,
-                      metadata={'backbone_state_sha256': state_fingerprint(model)}).save(tmp_path / 'adapter.json')
+    state = state_fingerprint(model)
+    QueryScoreAdapter('context_scores', 1., bias_bound=8., weights=torch.randn(2, 8, generator=torch.Generator().manual_seed(4)).double() / 5,
+                      metadata={'backbone_state_sha256': state}).save(tmp_path / 'product.json')
+    QueryScoreAdapter('global', 1., metadata={'backbone_state_sha256': state, 'training': {'tnorm': 'min'}}).save(tmp_path / 'min.json')
     entry = manifest['entries'][0]
     entry.update(id=f'{backbone}-paired', method=f'{backbone}-adapter', checkpoint='kgfm.pt',
-                 options={'beam_size': 2, 'row_batch_size': 2, 'backend_batch_size': 2, 'cache_bytes': 4096,
-                          'raw_cache_bytes': 1 << 20, 'raw_cache_device': 'model', 'relation_cache_mb': 1, 'projection_cache_mb': 1},
-                 adapters={'product': 'adapter.json'}, operators={shape: 'product' for shape in entry['query_types']},
-                 selection_protocol='source-validation', finalized=True, adapter_ablation=True,
-                 query_batch_size=4, query_order='relation')
+                 options={'beam_size': 2, 'cache_bytes': 4096, **options}, adapters={'product': 'product.json', 'min': 'min.json'},
+                 operators={shape: 'min' if 'n' in shape else 'product' for shape in entry['query_types']},
+                 selection_protocol='source-validation', adapter_ablation=True, query_batch_size=4, query_order='relation')
+    return entry
+
+
+@pytest.mark.parametrize('backbone', ['ultra', 'trix', 'kgicl'])
+@pytest.mark.parametrize('facts', [None, 'none', 'atomic', 'both'])
+def test_paired_kgfm_evaluation_shares_backbone_rows_and_applies_observed_fact_modes(tmp_path, monkeypatch, backbone, facts):
+    from dicee.query_answering import QueryAnswerer
+    manifest = fixture_manifest(tmp_path)
+    entry = kgfm_entry(tmp_path, manifest, backbone, row_batch_size=1, backend_batch_size=1, raw_cache_bytes=4096)
+    write_json(tmp_path / 'manifest.json', manifest)
+    args = ['plus_h', 'evaluate', '--manifests', str(tmp_path / 'manifest.json'), '--answer-filter', 'released', '--input-root', str(tmp_path),
+            '--output', str(tmp_path / 'results'), '--split', 'test', '--device', 'cpu']
+    name = entry['id']
+    if facts is not None:
+        args += ['--observed-facts', facts]
+        name += f'-facts-{facts}'
+    cli.main(args)
+    result, control = read(tmp_path / 'results' / name / 'result.json'), read(tmp_path / 'results' / name / 'without-adapter/result.json')
+    assert result['queries'] == control['queries'] == 16
+    assert result['inference']['selection_protocol'] == 'source-validation'
+    assert result['inference']['cache_statistics']['backbone_reused_rows'] > 0
+    assert control['paired_with'] == name and control['inference']['calibration'] == 'without-adapter'
+    settings = result['inference']['observed_facts']
+    assert settings == control['inference']['observed_facts']
+    assert settings['atomic_mix'] == dict.fromkeys(('product', 'min'), float(facts != 'none'))
+    assert settings['restore_answers'] == (facts in (None, 'both'))
+    # The mode applies at inference; the adapter file keeps its own observed-fact weight.
+    assert read(tmp_path / 'product.json')['observed_mix'] == 1
+    monkeypatch.setattr(QueryAnswerer, 'predict', lambda *args, **kwargs: pytest.fail('Completed queries were rescored'))
+    cli.main(args)
+    assert read(tmp_path / 'results' / name / 'result.json')['per_shape'] == result['per_shape']
+
+
+@pytest.mark.parametrize('backbone', ['ultra', 'trix', 'kgicl'])
+def test_row_granular_raw_cache_reaches_the_engine_and_keeps_scores(tmp_path, backbone):
+    manifest = fixture_manifest(tmp_path)
+    use_ultraquery_fixture(manifest, tmp_path)
+    entry = kgfm_entry(tmp_path, manifest, backbone, row_batch_size=2, backend_batch_size=2, raw_cache_bytes=1 << 20,
+                       raw_cache_device='model', relation_cache_mb=1, projection_cache_mb=1)
     results = {}
     for granularity in ('batch', 'row'):
         entry['options']['raw_cache_granularity'] = granularity
@@ -367,3 +222,54 @@ def test_row_granular_raw_cache_reaches_the_engine_and_keeps_scores(tmp_path, ba
         assert row['per_shape'][shape]['mrr'] == pytest.approx(values['mrr'], abs=1e-6)
     statistics = row['inference']['cache_statistics'], batch['inference']['cache_statistics']
     assert statistics[0]['backbone_computed_rows'] <= statistics[1]['backbone_computed_rows']
+
+
+class Rows(torch.nn.Module):
+    num_entities, num_relations = 7, 4
+
+    def __init__(self):
+        super().__init__()
+        self.values = torch.nn.Parameter(torch.randn(7, 4, 7, generator=torch.Generator().manual_seed(8)))
+
+    def forward_k_vs_all(self, conditions):
+        return self.values[conditions[:, 0], conditions[:, 1]]
+
+
+@pytest.mark.parametrize('name', ['DistMult', 'ULTRA', 'TRIX', 'Flock'])
+def test_default_adapter_fits_and_reloads_for_every_backbone(name, tmp_path):
+    from dicee.models import TRIX, ULTRA, DistMult, Flock
+
+    model = {'DistMult': DistMult, 'ULTRA': ULTRA, 'TRIX': TRIX, 'Flock': Flock}[name](dict(
+        num_entities=7, num_relations=4, embedding_dim=8, ultra_dim=8, ultra_num_layers=2,
+        trix_dim=8, flock_dim=8, flock_walk_num=2, flock_walk_len=8, flock_refinements=2, flock_seed=17,
+    )).eval()
+    context = QueryContext([(0, 0, 2), (1, 1, 2)], 7, 4)
+    data = AdapterTrainingData('source', context, (AdapterQuery(((0, (0,)), (1, (1,))), {2, 3}),))
+    before = state_fingerprint(model)
+    result = fit_query_adapter(model, [data], epochs=2)
+    assert result.adapter.feature_mode == QueryScoreAdapter().feature_mode == 'context_scores'
+    assert result.adapter.hidden_dim == 0 and result.adapter.weights.numel() == 16
+    assert result.adapter.weights.count_nonzero() > 0
+    assert state_fingerprint(model) == before
+    result.adapter.save(tmp_path / 'adapter.json')
+    restored = QueryScoreAdapter.load(tmp_path / 'adapter.json', model=model)
+    assert restored.feature_mode == 'context_scores'
+    torch.testing.assert_close(restored.weights, result.adapter.weights, atol=0, rtol=0)
+
+
+@pytest.mark.parametrize('hidden_dim', [0, 5])
+def test_adapter_feature_alias_preserves_scores_and_saves_canonical_name(hidden_dim, tmp_path):
+    model = Rows()
+    context = QueryContext([(0, 0, 2), (1, 1, 2)], 7, 4)
+    expected = QueryScoreAdapter('context_scores', 1., hidden_dim=hidden_dim,
+                                weights=torch.full((2, hidden_dim or 8), .1),
+                                metadata={'backbone_state_sha256': state_fingerprint(model)})
+    payload = dict(expected.to_dict(), feature_mode='context_scores_v1')
+    path = tmp_path / 'adapter.json'
+    path.write_text(json.dumps(payload))
+    actual = QueryScoreAdapter.load(path, model=model)
+    raw = model.forward_k_vs_all(torch.tensor([[0, 0], [1, 1]]))
+    observed, base = context.features([(0, 0), (1, 1)], device='cpu')
+    torch.testing.assert_close(actual(raw, observed, base), expected(raw, observed, base), atol=0, rtol=0)
+    actual.save(tmp_path / 'canonical.json')
+    assert json.loads((tmp_path / 'canonical.json').read_text())['feature_mode'] == 'context_scores'

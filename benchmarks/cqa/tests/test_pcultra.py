@@ -1,17 +1,14 @@
 """PCUltra as a CQA backbone: the catalog entry, loading from a ProofPFN checkpoint and the recipe option score_input."""
 
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
 import torch
 
-from benchmarks.cqa.manifests import REPO, suite_directory
-from benchmarks.cqa.reports import export_reports
-from benchmarks.cqa.study import freeze, read, run_job
-from benchmarks.cqa.tests.test_protocol import paper_fixture
+from benchmarks.cqa import cli
+from benchmarks.cqa.tests.test_protocol import fixture_manifest, read
 from dicee.query_answering import QueryScoreAdapter
+from dicee.query_answering._checkpoint import write_json
 from dicee.query_answering.catalog import KGFM_ADAPTERS, KGFM_BACKBONES, NATIVE_KGFM_BACKBONES, check_recipe
 from dicee.query_answering.context import state_fingerprint
 from dicee.query_answering.method_evaluation import evaluate_method, load_kgfm_backbone
@@ -60,8 +57,8 @@ def test_the_pcultra_backbone_loads_as_its_checkpoint_says(checkpoints, tmp_path
 
 
 def pcultra_entry(tmp_path, checkpoints, *, adapter, score_input, ablation=True):
-    """The paper fixture with one pcultra-adapter entry of the given adapter file and score input."""
-    manifest = paper_fixture(tmp_path)
+    """The fixture manifest with one pcultra-adapter entry of the given adapter file and score input."""
+    manifest = fixture_manifest(tmp_path)
     (tmp_path / 'pcultra.pt').write_bytes(Path(checkpoints.format(seed=42)).read_bytes())
     entry = manifest['entries'][0]
     options = {'beam_size': 2, 'row_batch_size': 1, 'backend_batch_size': 1, 'cache_bytes': 1 << 20, 'raw_cache_bytes': 1 << 20}
@@ -69,8 +66,7 @@ def pcultra_entry(tmp_path, checkpoints, *, adapter, score_input, ablation=True)
         options['score_input'] = score_input
     entry.update(id='pcultra-paired', method='pcultra-adapter', checkpoint='pcultra.pt', options=options,
                  adapters={'product': adapter}, operators={shape: 'product' for shape in entry['query_types']},
-                 selection_protocol='source-validation', finalized=True, adapter_ablation=ablation,
-                 query_batch_size=4, query_order='relation')
+                 selection_protocol='source-validation', adapter_ablation=ablation, query_batch_size=4, query_order='relation')
     return manifest, entry
 
 
@@ -88,30 +84,21 @@ def learned_adapter(model, path, score_input):
                       metadata={'backbone_state_sha256': state_fingerprint(model)}).save(path)
 
 
-def test_paired_pcultra_study_verifies_and_runs_with_log_softmax_input(checkpoints, tmp_path):
+def test_paired_pcultra_evaluation_runs_with_log_softmax_input(checkpoints, tmp_path):
     model, _ = load_kgfm_backbone('pcultra', checkpoints.format(seed=42))
     learned_adapter(model, tmp_path / 'adapter.json', 'log_softmax')
     manifest, entry = pcultra_entry(tmp_path, checkpoints, adapter='adapter.json', score_input='log_softmax')
-    count = len(entry['query_types'])
-    freeze(manifest, tmp_path / 'bundle', tmp_path)
-    # The independent reference recomputes both the learned adapter and the identity control on log-softmax rows.
-    subprocess.run([sys.executable, '-m', 'benchmarks.cqa', 'plus_h', 'integration', '--bundle', str(tmp_path / 'bundle'),
-                    '--input-root', str(tmp_path), '--entry', entry['id'], '--output', str(tmp_path / 'verification'),
-                    '--device', 'cpu', '--probes', '1'], check=True, cwd=REPO)
-    evidence = read(tmp_path / 'verification/integration.json')
-    assert evidence['passed'] and len(evidence['queries']) == 2 * count
-    entry['verification'] = 'verification/integration.json'
-    freeze(manifest, tmp_path / 'verified-bundle', tmp_path)
-    result = run_job(tmp_path / 'verified-bundle', entry['id'], tmp_path, tmp_path / 'test', phase='test')
-    control = read(tmp_path / 'test/without-adapter/result.json')
-    assert result['queries'] == control['queries'] == count
+    write_json(tmp_path / 'manifest.json', manifest)
+    cli.main(['plus_h', 'evaluate', '--manifests', str(tmp_path / 'manifest.json'), '--answer-filter', 'released', '--input-root', str(tmp_path),
+              '--output', str(tmp_path / 'results'), '--split', 'test', '--device', 'cpu'])
+    result = read(tmp_path / 'results' / entry['id'] / 'result.json')
+    control = read(tmp_path / 'results' / entry['id'] / 'without-adapter/result.json')
+    assert result['queries'] == control['queries'] == len(entry['query_types'])
+    assert control['paired_with'] == entry['id'] and control['inference']['calibration'] == 'without-adapter'
     for report in (result, control):
         assert report['inference']['options']['score_input'] == 'log_softmax'
         backbone = report['inference']['backbone']
         assert (backbone['variant'], backbone['seed'], backbone['format']) == ('PCUltra-S', 42, 'proofpfn-checkpoint-v1')
-    rows = export_reports(tmp_path / 'test', suite_directory('plus_h') / 'published_results.json', tmp_path / 'reports',
-                          bootstrap_samples=10)
-    assert len(rows) == 2 and all(row['complete_test'] for row in rows)
 
 
 @pytest.mark.parametrize('adapter_input,recipe_input', [('raw', 'log_softmax'), ('log_softmax', None), ('log_softmax', 'raw')])
@@ -125,9 +112,9 @@ def test_the_recipe_score_input_must_match_every_learned_adapter(checkpoints, tm
 
 def test_rule_calibration_reads_raw_rows_and_its_control_reads_the_recipe_input(checkpoints, tmp_path):
     model, _ = load_kgfm_backbone('pcultra', checkpoints.format(seed=42))
-    # The rule calibration of the thesis: the degree-scaled softmax with ordered candidates at the cap.
-    QueryScoreAdapter('global', 1., bias_bound=8., fixed_calibration='softmax-degree-ties',
-                      metadata={'backbone_state_sha256': state_fingerprint(model)}).save(tmp_path / 'rule.json')
+    rule = QueryScoreAdapter.rule(model)   # the degree-scaled softmax with ordered candidates at the cap
+    assert rule.fixed_calibration == 'softmax-degree-ties' and rule.score_input == 'raw'
+    rule.save(tmp_path / 'rule.json')
     with pytest.raises(ValueError, match='raw scores'):
         QueryScoreAdapter('global', 1., fixed_calibration='softmax-degree-ties', score_input='log_softmax')
     predictions = {}

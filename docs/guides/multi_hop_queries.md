@@ -637,7 +637,7 @@ candidate_drugs = model.answer_multi_hop_query(
 
 - **Tests:** [test_answer_multi_hop_query.py](../../tests/test_answer_multi_hop_query.py) — Complete examples
 - **Research:** [Query2Box paper](https://arxiv.org/abs/2002.05969) — Theoretical foundation
-- **Benchmarks:** [benchmarks/cqa](../../benchmarks/cqa/README.md) — Reproducible UltraQuery and +H evaluation
+- **Benchmarks:** [benchmarks/cqa](../../benchmarks/cqa/README.md) — UltraQuery and +H evaluation
 
 ---
 
@@ -670,6 +670,20 @@ frozen, and the saved adapter records its configuration and backbone fingerprint
 The default is linear `context_scores` (16 parameters) for every backbone;
 `--feature-mode context` or `global` selects simpler alternatives.
 
+A backbone also runs without a fitted adapter, with the rule calibration. It turns each score
+row into memberships with a softmax over the tails times the number of observed tails, capped
+below one. Candidates at the cap keep the order of their scores:
+
+```python
+from dicee.query_answering import QueryScoreAdapter
+
+QueryScoreAdapter.rule(model).save("rule.json")   # bound to this backbone, no training
+```
+
+Use the file as the adapter of a recipe. `QueryScoreAdapter.rule(model, calibration="softmax-mass-ties")`
+gives the calibration of FIT in the same way, and `load_method("ultraquery", ...,
+calibration="softmax-degree-ties")` applies the rule calibration in UltraQuery's executor.
+
 The `dicee.query_answering.methods` package exposes ConE, CLMPT, CQD/CQD-Hybrid,
 GNN-QE, QTO, UltraQuery, and `load_method()` for their released checkpoints.
 `dicee.query_answering.evaluate_method()` evaluates these methods and our
@@ -690,8 +704,7 @@ python -m dicee.scripts.evaluate_query_methods \
 
 It supports every loaded dataset family, including UltraQuery and +H. The
 [benchmark harness](../../benchmarks/cqa/README.md) selects methods, datasets and
-query types from the public recipes, freezes query batches, verifies upstream
-parity:
+query types from the public recipes:
 
 ```bash
 python -m benchmarks.cqa plus_h evaluate --methods ultra-adapter --datasets FB15k237+H \

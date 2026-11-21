@@ -24,11 +24,8 @@ COPY benchmarks/adapters benchmarks/adapters
 COPY benchmarks/plus_h benchmarks/plus_h
 COPY benchmarks/ultraquery benchmarks/ultraquery
 ARG SOURCE_COMMIT=unknown
-ARG SOURCE_DIRTY=unknown
 LABEL org.opencontainers.image.revision=$SOURCE_COMMIT
-ENV DICEE_SOURCE_COMMIT=$SOURCE_COMMIT \
-    DICEE_SOURCE_DIRTY=$SOURCE_DIRTY \
-    PYTHONPATH=/opt/dicee \
+ENV PYTHONPATH=/opt/dicee \
     PYTHONHASHSEED=0 \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \

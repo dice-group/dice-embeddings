@@ -181,7 +181,7 @@ cython_debug/
 .cursorindexingignore
 KGs/
 Experiments/
-# Benchmark reports are local artifacts; recipes, adapters and published scores are tracked.
+# Benchmark reports are local artifacts; recipes and adapters are tracked.
 /benchmarks/**/*.json
 !/benchmarks/adapters/*.json
 !/benchmarks/adapters/**/*.json

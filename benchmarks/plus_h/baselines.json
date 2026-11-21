@@ -8,7 +8,7 @@
     "models": {"sha256": "d30b77a9c84d28de766bb5722c600bdc3c1e46d16cdaa3066ed4faca2b9b236f", "bytes": 4507216854, "source": "https://github.com/april-tools/is-cqa-complex#pre-trained-models"},
     "datasets": {
       "source": "https://github.com/april-tools/is-cqa-complex/releases/tag/benchs-1.0",
-      "checksum_status": "Official release API digest; extracted runtime files are independently pinned by freeze.",
+      "checksum_status": "Official release API digest.",
       "sha256": "bf60135d7b1bc109ab9d90892e318fa96ace905fdc8204afd270b1fd98002a80",
       "bytes": 1675873193
     }
@@ -28,7 +28,6 @@
           "notes": ["Query batch size 4 follows the released checkpoint configuration."],
           "graph_independent": true
         },
-        "blockers": [],
         "inference_graph": "train"
       },
       "entries": [
@@ -47,10 +46,9 @@
         "reference": {
           "status": "native reference port; full reproduction pending",
           "settings": "https://arxiv.org/html/2410.12537v3#A6",
-          "notes": ["Inference preserves the released query batch sizes, sparse reduction order and normalization arithmetic.", "Validation GPU scores, orders and ties match the pinned upstream batches."],
+          "notes": ["Inference preserves the released query batch sizes, sparse reduction order and normalization arithmetic."],
           "inference_graph": "train"
         },
-        "blockers": [],
         "inference_graph": "train+valid"
       },
       "entries": [
@@ -73,12 +71,10 @@
           "settings": "https://arxiv.org/html/2410.12537v3#A6",
           "notes": [
             "The +H model archive README explicitly references this public PyG checkpoint.",
-            "Inference preserves the released query batch sizes, sparse reduction order and normalization arithmetic.",
-            "Validation GPU scores, orders and ties match the pinned upstream batches."
+            "Inference preserves the released query batch sizes, sparse reduction order and normalization arithmetic."
           ],
           "inference_graph": "train"
         },
-        "blockers": [],
         "inference_graph": "train+valid"
       },
       "entries": [{"dataset": "FB15k237+H"}, {"dataset": "NELL995+H"}, {"dataset": "ICEWS18+H"}]
@@ -101,7 +97,6 @@
           ],
           "graph_independent": true
         },
-        "blockers": [],
         "inference_graph": "train"
       },
       "entries": [
@@ -141,7 +136,6 @@
         "query_batch_size": 1,
         "query_order": "upstream-pickle",
         "reference": {"status": "native reference port; full reproduction pending", "settings": "https://arxiv.org/html/2410.12537v3#A6", "graph_independent": true},
-        "blockers": [],
         "inference_graph": "train"
       },
       "entries": [
@@ -240,7 +234,6 @@
         "query_batch_size": 1,
         "query_order": "upstream-pickle",
         "reference": {"status": "native reference port; full reproduction pending", "settings": "https://arxiv.org/html/2410.12537v3#A6"},
-        "blockers": [],
         "inference_graph": "train+valid"
       },
       "entries": [
@@ -334,7 +327,6 @@
           "notes": [],
           "inference_graph": "train"
         },
-        "blockers": [],
         "inference_graph": "train+valid"
       },
       "entries": [
