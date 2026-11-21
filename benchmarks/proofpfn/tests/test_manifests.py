@@ -36,6 +36,14 @@ def test_the_standard_suite():
         suite.select()
 
 
+def test_the_held_out_collection():
+    held = mf.read_manifest('heldout44')
+    assert {k: len(v) for k, v in held.views.items()} == {'all': 44, 'published': 16, 'converted': 28}
+    assert held.sample_rule == 'first-1000' and all(e.suite_id is None and all(e.sha256.values()) for e in held.entries)
+    assert all(e.counts is not None and tuple(e.counts) == mf.COUNTS and e.path == f'KGs/fresh-v1/{e.view}/{e.name}' for e in held.entries)
+    assert not {e.name for e in held.entries} & {e.name for e in mf.read_manifest('ultra54').entries}
+
+
 def test_gate_graphs_match_the_golden_record():
     gate = mf.read_manifest(GATE)
     assert [e.name for e in gate.entries] == ['UMLS', 'NELLInductive_v1', 'grail-WN18RR_v1'] and gate.sample_rule == 'first-1000'
@@ -114,6 +122,25 @@ def build_ultra54(suite: Mapping[str, Any], audit: Mapping[str, Any], sources: M
     return dict(format=mf.FORMAT, name='ultra54', about=about, sample_rule='all', sources=dict(sources), graphs=graphs)
 
 
+def build_heldout44(collection: Mapping[str, Any], counts: Mapping[str, Mapping[str, int]], sources: Mapping[str, str]) -> dict:
+    """``heldout44``: the 44 graphs of the collection manifest ``KGs/fresh-v1/MANIFEST.json`` with its file hashes; ``size``
+    is its count of the entities and distinct triples of train.txt. ``counts`` (graph name to ``COUNTS``) comes from the
+    graph files, as the benchmark's reader counts them."""
+    graphs = []
+    for name, g in sorted(collection['graphs'].items()):
+        view = g['folder'].split('/')[2]
+        assert view in ('published', 'converted') and g['folder'] == f'KGs/fresh-v1/{view}/{name}', name
+        graphs.append(dict(name=name, path=g['folder'], view=view, suite_id=None,
+                           size=dict(entities=g['counts']['entities'], inference_edges=g['counts']['inference_edges']),
+                           sha256={s: g['sha256'][s] for s in mf.SPLITS}, content_sha256={},
+                           counts={k: counts[name][k] for k in mf.COUNTS}))
+    assert len(graphs) == 44
+    about = ('The held-out collection of the thesis: 44 graphs outside the standard suites, 16 published graphs and 28 graphs converted from '
+             'public sources. The test file of each graph holds the 1,000 test facts that the collection sampled, and every row is ranked in '
+             'both directions. File SHA-256 and size from the manifest of the collection; counts from the graph files.')
+    return dict(format=mf.FORMAT, name='heldout44', about=about, sample_rule='first-1000', sources=dict(sources), graphs=graphs)
+
+
 def build_gate(audit: Mapping[str, Any], inventory: Sequence[Mapping[str, Any]], recorded: Mapping[str, Mapping[str, str]],
                sources: Mapping[str, str]) -> dict:
     """``gate``: the graphs of ``GATE_GRAPHS`` with the content hashes of the audit inventory and the file hashes that the
@@ -138,7 +165,7 @@ def test_manifests_rebuild_from_their_inputs():
     kiowl = root / 'inputs' / 'kiowl'
     audit, inventory, suite = (json.loads((kiowl / p).read_text()) for p in
                                ('graph-audit-v1/graphs.json', 'graph-audit-v1/stats/inventory.json', 'p0-suite-v1/manifest.json'))
-    for name, path in (('ultra54', mf.MANIFESTS / 'ultra54.json'), ('gate', GATE)):
+    for name, path in (('ultra54', mf.MANIFESTS / 'ultra54.json'), ('heldout44', mf.MANIFESTS / 'heldout44.json'), ('gate', GATE)):
         committed = path.read_text()
         sources = json.loads(committed)['sources']
         for source, digest in sources.items():   # 'K/<file>' (a kiowl input) or 'golden/small/<file> (what it holds)'
@@ -146,6 +173,9 @@ def test_manifests_rebuild_from_their_inputs():
             assert mf.file_sha256(file) == digest, source
         if name == 'ultra54':
             doc = build_ultra54(suite, audit, sources)
+        elif name == 'heldout44':   # the counts need the graph files; test_data.py checks them when the graphs are there
+            collection = json.loads((root / 'inputs' / 'fresh-v1' / 'MANIFEST.json').read_text())
+            doc = build_heldout44(collection, {g['name']: g['counts'] for g in json.loads(committed)['graphs']}, sources)
         else:
             g6 = json.loads(gzip.decompress((root / 'golden' / 'small' / 'g6_ranks.json.gz').read_bytes()))
             recorded = {g['record']['key']: {s: g['record']['sha256'][f'{s}.txt'] for s in mf.SPLITS} for g in g6['graphs'].values()}

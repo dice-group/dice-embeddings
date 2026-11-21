@@ -50,6 +50,7 @@ internal error ends with a traceback and exit code 1.
 | Manifest | Graphs | Hashes checked before a graph loads | Test rows |
 |---|---|---|---|
 | `ultra54` | the 54 graphs of the standard zero-shot suite, built under the official ULTRA conventions; views `trans` (13), `ind_e` (18), `ind_er` (23) | file SHA-256 of the three splits, counts | all |
+| `heldout44` | the 44 graphs of the held-out collection of the thesis; views `published` (16) and `converted` (28, from public sources) | file SHA-256 of the three splits, counts | all 1,000 of each test file, which holds the sample of the collection |
 
 The graph files are not in the repository. A manifest names each folder relative to `--data-root`, with `train.txt`,
 `valid.txt` and `test.txt` (three whitespace-separated names per line). `--set` also takes the path of a manifest file

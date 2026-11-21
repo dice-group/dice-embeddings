@@ -34,8 +34,8 @@ class UsageError(InputError):
 
 def _graph_options(sub: argparse.ArgumentParser) -> None:
     """The options that select the graphs of a manifest."""
-    sub.add_argument('--set', required=True, help='a manifest name (ultra54) or a manifest file')
-    sub.add_argument('--view', default=None, help='a view of the manifest (ultra54: trans, ind_e, ind_er; default: all)')
+    sub.add_argument('--set', required=True, help='a manifest name (ultra54, heldout44) or a manifest file')
+    sub.add_argument('--view', default=None, help='a view of the manifest (ultra54: trans, ind_e, ind_er; heldout44: published, converted; default: all)')
     sub.add_argument('--graphs', default=None, help='comma list of graph names')
     sub.add_argument('--data-root', type=Path, default=REPO, help='the folder that the manifest paths are relative to (default: the repository)')
 

@@ -379,7 +379,7 @@ python -m benchmarks.proofpfn prior --model 'mys=runs/S/{seed}/export-24000-ema.
   the sample standard deviation over the three seeds. The command `table` computes these values.
 - The registered analysis of the held-out test and the runners of the external baselines (KGPFN, MERIT, AnyBURL)
   are archived with the research code. They are not part of this package.
-- The manifest of the held-out collection is not in the repository yet.
+- The manifest `heldout44` lists the 44 graphs of the held-out collection with their hashes.
 
 ## Testing
 
@@ -427,7 +427,6 @@ Golden references (goldens) record what the research code computes at small size
 ## Known limits
 
 - CUDA results can differ between GPU types. The GPU goldens hold for the RTX 4070 Ti SUPER only.
-- The graph files of the benchmark are not in the repository. The manifest of the held-out collection of the thesis is
-  not in the repository yet.
+- The graph files of the benchmark are not in the repository. The manifests name the folders and the hashes.
 - The real source graphs of the arms with real worlds are not in the repository. The command `sources` builds them from their split
   files.

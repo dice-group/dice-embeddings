@@ -6,12 +6,15 @@ before it loads:
 - ``ultra54``: the 54 zero-shot graphs of the standard suite, built under the official ULTRA conventions, with their
   suite ids (the keys of Flock's walk table), file hashes and counts. Views: the suite groups ``trans``, ``ind_e`` and
   ``ind_er``. Every test row is ranked.
+- ``heldout44``: the 44 graphs of the held-out collection of the thesis, with file hashes and counts. Views:
+  ``published`` (16 graphs) and ``converted`` (28 graphs from public sources). Each test file holds the 1,000 sampled
+  test facts of the collection, and every row is ranked.
 
 A manifest file can also be given by its path, for example for a graph set of your own. ``sample_rule`` is ``all``
 (every test row) or ``first-1000`` (``data.ranked_positions``).
 
-``tests/test_manifests.py`` derives ``ultra54`` from the research inputs named in its ``sources`` and compares it with
-the committed file when the inputs are available.
+``tests/test_manifests.py`` derives the manifests from the inputs named in their ``sources`` and compares them with
+the committed files when the inputs are available.
 """
 import hashlib
 import json
@@ -100,7 +103,7 @@ class Manifest:
     """A frozen graph set.
 
     Attributes:
-        name: The manifest name (``ultra54``, or the name of your own manifest); result folders carry it.
+        name: The manifest name (``ultra54``, ``heldout44`` or the name of your own manifest); result folders carry it.
         sample_rule: ``first-1000`` or ``all`` (``SAMPLE_RULES``).
         entries: The graphs, in manifest order.
         sha256: The SHA-256 of the manifest file.
