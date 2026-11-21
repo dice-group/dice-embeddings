@@ -1,6 +1,6 @@
-"""The evaluation runner on the CPU: ranks and views, the row file, sharding and resume."""
-import json
-from pathlib import Path
+"""The evaluation runner on the CPU: ranks, the result file, stored results, the summary, and official Flock."""
+import shutil
+import statistics
 
 import numpy as np
 import pytest
@@ -16,7 +16,7 @@ from .golden import tiny_graph, write_graph, write_manifest
 
 
 def research_rank(v: torch.Tensor, target: int, mask: torch.Tensor) -> int:
-    """``lockbox-v5-runtime/lb5_eval.rank``: the research pessimistic rank."""
+    """``lockbox-v5-runtime/lb5_eval.rank``: the pessimistic rank of the thesis runs."""
     return int(((v >= v[target]) & mask).sum())
 
 
@@ -28,120 +28,115 @@ def test_pessimistic_ranker_equals_the_research_rank():
         v = torch.tensor(np.round(rng.normal(size=n), 1))        # rounding makes ties
         anchor, target = (int(x) for x in rng.integers(0, n, 2))
         if rng.random() < 0.5:
-            v[anchor] = -float('inf')                            # the rule view, also when the target is the anchor
+            v[anchor] = -float('inf')                            # also when the target is the anchor
         others = sorted(set(rng.integers(0, n, int(rng.integers(0, n))).tolist()) - {target})
         mask = torch.ones(n, dtype=torch.bool)
         mask[torch.tensor(others, dtype=torch.long)] = False
         assert ranker.rank(v, target, others, exclude_target=False) == research_rank(v, target, mask)
 
 
-def test_gt2_rank():
-    v = torch.log(torch.tensor([0.5, 0.3, 0.2], dtype=torch.float64))
-    allowed, unseen = np.ones(3, bool), np.array([False, False, True])
-    # p = (0.5, 0.3, 0.2); the unseen mass 0.2 moves half-way towards g = 0.5: q = (0.395, 0.237, 0.316)
-    assert [ev.gt2_rank(v, allowed, t, unseen, 0.5) for t in range(3)] == [1, 3, 2]
-    allowed[0] = False                                           # a filtered candidate leaves the distribution
-    assert [ev.gt2_rank(v, allowed, t, unseen, 0.5) for t in (1, 2)] == [1, 2]   # p = (0, 0.6, 0.4)
+def test_metrics():
+    metrics = ev.metrics_of([False, True, False, True], [1, 2, 4, 20])
+    assert metrics['both'] == {'MRR': (1 + 0.5 + 0.25 + 0.05) / 4, 'H@1': 0.25, 'H@3': 0.5, 'H@10': 0.75}
+    assert metrics['tail']['MRR'] == (1 + 0.25) / 2 and metrics['head']['H@10'] == 0.5
+    assert set(ev.metrics_of([False], [3])) == {'both', 'tail'}
 
 
 @pytest.fixture(scope='module')
 def tiny(tmp_path_factory):
-    """A tiny graph set, the clean checkpoints of two arms, the systems and one run of all of them.
+    """A set of two tiny graphs in two views, the checkpoints of two arms, the systems and one run of all of them.
 
-    The S family has the registered key of S (built directly, without pins), so that the registered tables read its rows.
     TRIX and ULTRA-3g join when their checkpoints are available. Official Flock takes 1.5 s per query group on the CPU,
     so it has its own test on a smaller graph.
     """
     root = tmp_path_factory.mktemp('tiny')
-    manifest = mf.read_manifest(write_manifest(root / 'tiny.json', root, {'g': tiny_graph(root / 'KGs' / 'g')}))
-    pins = mf.read_models()
-    template = clean_checkpoints(root, 'S')
-    systems: list = [sy.ProofPFNFamily(key='rec10axlepcunoa', arm='S', checkpoints={s: Path(template.format(seed=s)) for s in (42, 43, 44)}),
-                     sy.family('tu', 'UL', clean_checkpoints(root, 'UL'), pins)]
-    for key in ('trix', 'ultra3g'):
-        reference = sy.reference(key, pins)
+    folders = {'g': tiny_graph(root / 'KGs' / 'g'), 'h': tiny_graph(root / 'KGs' / 'h', seed=1)}
+    manifest = mf.read_manifest(write_manifest(root / 'tiny.json', root, folders, views={'g': 'a', 'h': 'b'}))
+    systems: list = sy.checkpoints(f"ts={clean_checkpoints(root, 'S')}") + sy.checkpoints(f"tu={clean_checkpoints(root, 'UL').format(seed=42)}")
+    for label in ('trix', 'ultra3g'):
+        reference = sy.reference(label)
         if reference.path.is_file():
             systems.append(reference)
-    status, whole = run(root, manifest, systems, root / 'whole')
-    assert status == 'done'
-    return root, manifest, systems, whole
+    for entry in manifest.entries:
+        assert set(ev.evaluate_graph(manifest, entry, systems, root / 'out', root=root, device='cpu').values()) == {'done'}
+    return root, manifest, systems
 
 
-def run(root, manifest, systems, out, **options):
-    status = ev.evaluate_graph(manifest, manifest.entry('g'), systems, out, root=root, device='cpu', **options)
-    return status, ev.row_file_path(out, manifest.entry('g'), [s.key for s in systems])
-
-
-def test_row_file(tiny):
-    root, manifest, systems, path = tiny
-    assert run(root, manifest, systems, root / 'whole')[0] == 'exists'
-    doc = json.loads(path.read_text())
-    assert list(doc) == ['dataset', 'families', 'entities', 'relations', 'reflexive', 'protocol', 'metrics', 'rows', 'seconds', 'allgraph',
-                         'metrics_views', 'provenance']
-    rows, keys = doc['rows'], ev.row_keys(systems)
+def test_result_file(tiny):
+    root, manifest, systems = tiny
+    entry = manifest.entry('g')
+    assert set(ev.evaluate_graph(manifest, entry, systems, root / 'out', root=root, device='cpu').values()) == {'exists'}
     facts = len((root / 'KGs' / 'g' / 'test.txt').read_text().splitlines())
-    assert len(rows) == 2 * facts and all(list(r) == ['index', 'head', *keys] for r in rows)
-    assert keys[:7] == ['rec10axlepcunoa', 'rec10axlepcunoa:gt2', 'rec10axlepcunoa:raw', 'rec10axlepcunoa:raw:gt2',
-                        'rec10axlepcunoa.seed42:raw', 'rec10axlepcunoa.seed42', 'rec10axlepcunoa.seed42:gt2']
-    assert doc['reflexive'] == [0] and doc['metrics'] == {k: float(np.mean([1 / r[k] for r in rows])) for k in keys}
-    seed_raw = [k for k in keys if '.seed' in k and k.endswith(':raw')]
-    for r in rows:   # the rule view moves a seed's rank by at most one, except where the target is the anchor
-        assert all(r[k] - r[k.removesuffix(':raw')] in (0, 1) or r[k.removesuffix(':raw')] > r[k] for k in seed_raw)
-    planted = [r for r in rows if r['index'] == facts - 1]   # the fact whose answer is its anchor, in a closed relation
-    rule_keys = [k.removesuffix(':raw') for k in seed_raw] + [s.key for s in systems]
-    assert len(planted) == 2 and all(len({r[k] for k in rule_keys}) == 1 for r in planted)   # the same last rank in every view
-    record = doc['allgraph']
-    assert record['key'] == 'tiny/g' and record['ranked_facts'] == facts and record['sampled'] is False
-    assert record['sha256']['train.txt'] == mf.file_sha256(root / 'KGs' / 'g' / 'train.txt')
-    assert record['model_sha256']['rec10axlepcunoa'] == {str(s): mf.file_sha256(root / f'S-{s}.pt') for s in (42, 43, 44)}
-    assert 'flock_official' not in record and doc['provenance']['deterministic'] and doc['provenance']['threads'] == 2
-    assert doc['provenance']['code_sha256'] == ev.code_sha256() and 'dicee/models/_inference.py' in ev.code_sha256()
+    for system in systems:
+        result = ev.read_result(ev.result_path(root / 'out', manifest, system.label, entry))
+        assert (result['label'], result['graph'], result['manifest']) == (system.label, 'g', dict(name='tiny', sha256=manifest.sha256))
+        assert len(result['rank']) == len(result['index']) == len(result['head']) == 2 * facts == 2 * result['ranked_facts']
+        assert result['metrics'] == ev.metrics_of(result['head'], result['rank']) and result['model_sha256'] == system.sha256()
+        assert result['files']['train.txt'] == mf.file_sha256(root / 'KGs' / 'g' / 'train.txt') and result['system'] == system.spec()
+        assert 'flock_setting' not in result and result['provenance']['deterministic'] and result['provenance']['threads'] == 2
+    assert ev.result_path(root / 'out', manifest, 'ts.seed42', entry) == root / 'out' / 'tiny' / 'ts.seed42' / 'g.json'
+    with pytest.raises(mf.InputError, match='is not a proofpfn-ranks-v1 file'):
+        ev.read_result(root / 'tiny.json')
 
 
-def test_shards_and_resumed_runs_equal_one_run(tiny):
-    root, manifest, systems, whole = tiny
-    rows = json.loads(whole.read_text())['rows']
-    statuses = [run(root, manifest, systems, root / 'sharded', shard=(i, 3))[0] for i in (2, 3, 1)]
-    assert statuses == ['shard-done', 'shard-done', 'done']
-    sharded = json.loads(run(root, manifest, systems, root / 'sharded')[1].read_text())
-    assert sharded['rows'] == rows and sharded['metrics'] == json.loads(whole.read_text())['metrics'] and sharded['provenance']['shards'] == 3
-    status, stopped = run(root, manifest, systems, root / 'resumed', parts=True, max_minutes=1e-9)   # stops after the first group
-    assert status == 'stopped' and not stopped.exists()
-    part = json.loads(ev.part_path(stopped, (1, 1)).read_text())
-    assert part['done'] == 1 and not part['complete']
-    assert run(root, manifest, systems, root / 'resumed', parts=True)[0] == 'done'
-    resumed = json.loads(stopped.read_text())
-    assert resumed['rows'] == rows and resumed['provenance']['runs'] == [2]
-    bad = ev.part_path(ev.row_file_path(root / 'resumed2', manifest.entry('g'), [s.key for s in systems]), (1, 1))
-    bad.parent.mkdir(parents=True)
-    bad.write_text(json.dumps(dict(part, identity='0' * 64)))
-    with pytest.raises(mf.InputError, match='another run'):   # a part of other systems or graph files is refused
-        run(root, manifest, systems, root / 'resumed2', parts=True)
-    assert run(root, manifest, systems, root / 'stale', shard=(1, 2))[0] == 'shard-done'
-    other = ev.part_path(ev.row_file_path(root / 'stale', manifest.entry('g'), [s.key for s in systems]), (2, 2))
-    other.write_text(json.dumps(dict(complete=True, identity='0' * 64)))   # the stale part of another run blocks the merge
-    with pytest.raises(mf.InputError, match='shard-2-of-2.json is a part of another run'):
-        run(root, manifest, systems, root / 'stale', shard=(1, 2))
+def test_a_new_system_runs_beside_stored_results(tiny, tmp_path):
+    root, manifest, systems = tiny
+    shutil.copytree(root / 'out', tmp_path / 'out')
+    entry = manifest.entry('g')
+    other = sy.checkpoints(f"tc={root / 'S-43.pt'}")   # the same file under another label
+    assert ev.evaluate_graph(manifest, entry, [systems[0], *other], tmp_path / 'out', root=root, device='cpu') == {'ts.seed42': 'exists', 'tc': 'done'}
+    a, b = (ev.read_result(ev.result_path(tmp_path / 'out', manifest, label, entry)) for label in ('tc', 'ts.seed43'))
+    assert a['rank'] == b['rank'] and a['model_sha256'] == b['model_sha256']
+    with pytest.raises(mf.InputError, match='unique'):
+        ev.evaluate_graph(manifest, entry, [systems[0], systems[0]], tmp_path / 'twice', root=root, device='cpu')
 
 
-def test_official_flock_rows_do_not_depend_on_the_sharding(tmp_path):
-    """Official Flock draws the walks of each query from a generator seeded per call: two shards give the rows of one run."""
-    flock = sy.reference('flockoff', mf.read_models())
+def test_summary(tiny, tmp_path):
+    root, manifest, _ = tiny
+    out = tmp_path / 'out'
+    shutil.copytree(root / 'out', out)
+    (out / 'tiny' / 'tu' / 'h.json').unlink()   # a label without every graph
+    summary = ev.summarize(out, manifest, manifest.entries)
+    assert summary['graphs'] == ['g', 'h'] and summary['views'] == {'a': ['g'], 'b': ['h']} and summary['direction'] == 'both'
+    per_graph, row = summary['per_graph']['ts.seed42'], summary['labels']['ts.seed42']
+    assert row['complete'] and row['found'] == 2 and row['a'] == per_graph['g'] and row['b'] == per_graph['h']
+    assert row['all']['MRR'] == pytest.approx((per_graph['g']['MRR'] + per_graph['h']['MRR']) / 2)
+    partial = summary['labels']['tu']
+    assert not partial['complete'] and partial['found'] == 1 and 'a' in partial and 'b' not in partial and 'all' not in partial
+    values = [summary['labels'][f'ts.seed{seed}']['all']['MRR'] for seed in (42, 43, 44)]
+    group = summary['groups']['ts']
+    assert group['seeds'] == [42, 43, 44] and group['all']['MRR']['mean'] == pytest.approx(statistics.fmean(values))
+    assert group['all']['MRR']['sd'] == pytest.approx(statistics.stdev(values)) and 'tu' not in summary['groups']
+    tail = ev.summarize(out, manifest, [manifest.entry('g')], 'tail')
+    assert tail['graphs'] == ['g'] and tail['labels']['tu']['complete']
+    result = ev.read_result(ev.result_path(out, manifest, 'tu', manifest.entry('g')))
+    assert tail['per_graph']['tu']['g']['MRR'] == result['metrics']['tail']['MRR']
+    with pytest.raises(mf.InputError, match='direction'):
+        ev.summarize(out, manifest, manifest.entries, 'up')
+    changed = mf.read_manifest(write_manifest(tmp_path / 'tiny.json', root, {'g': root / 'KGs' / 'g'}))   # another file of the name "tiny"
+    with pytest.raises(mf.InputError, match='another version of manifest tiny'):
+        ev.summarize(out, changed, changed.entries)
+    assert ev.summarize(tmp_path / 'none', manifest, manifest.entries)['labels'] == {}
+
+
+def test_official_flock_gives_the_same_ranks_in_two_runs(tmp_path):
+    """Official Flock draws the walks of each query from a generator seeded per call."""
+    flock = sy.reference('flock')
     if not flock.path.is_file():
         pytest.skip(f'{flock.path} is not available')
     folder = write_graph(tmp_path / 'KGs' / 'g', ['a\tr0\tb', 'b\tr0\tc', 'c\tr1\ta', 'a\tr1\tc', 'b\tr1\td', 'd\tr0\ta'], [],
                          ['a\tr0\tc', 'd\tr1\tb'])
     manifest = mf.read_manifest(write_manifest(tmp_path / 'm.json', tmp_path, {'g': folder}))
-    status, whole = run(tmp_path, manifest, [flock], tmp_path / 'whole')
-    assert status == 'done' and [run(tmp_path, manifest, [flock], tmp_path / 'sharded', shard=(i, 2))[0] for i in (2, 1)] == ['shard-done', 'done']
-    doc = json.loads(whole.read_text())
-    assert json.loads(ev.row_file_path(tmp_path / 'sharded', manifest.entry('g'), [flock.key]).read_text())['rows'] == doc['rows']
-    assert doc['allgraph']['flock_official']['keys'] == {'flockoff': dict(walks=16, passes=16)}
+    entry = manifest.entry('g')
+    for out in ('one', 'two'):
+        assert ev.evaluate_graph(manifest, entry, [flock], tmp_path / out, root=tmp_path, device='cpu') == {'flock': 'done'}
+    one, two = (ev.read_result(ev.result_path(tmp_path / out, manifest, 'flock', entry)) for out in ('one', 'two'))
+    assert one['rank'] == two['rank'] and (one['flock_setting']['walks'], one['flock_setting']['passes']) == (16, 16)
 
 
-def test_global_settings_are_restored(tiny):
-    root, manifest, systems, _ = tiny
+def test_global_settings_are_restored(tiny, tmp_path):
+    root, manifest, systems = tiny
     threads, deterministic, rng = torch.get_num_threads(), torch.are_deterministic_algorithms_enabled(), torch.get_rng_state()
-    run(root, manifest, systems[:1], root / 'settings')
+    ev.evaluate_graph(manifest, manifest.entry('g'), systems[:1], tmp_path / 'settings', root=root, device='cpu')
     assert (torch.get_num_threads(), torch.are_deterministic_algorithms_enabled()) == (threads, deterministic)
     assert torch.equal(torch.get_rng_state(), rng)

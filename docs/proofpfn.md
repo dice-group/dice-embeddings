@@ -13,7 +13,7 @@ covers three parts:
 - `dicee/synthetic_kg/`: the prior, the seven arms, the pretraining loop and the checkpoint format.
 - `dicee_pretrain_synthetic`: the command for pretraining, for the conversion of research exports and for the real
   source graphs.
-- `benchmarks/proofpfn/`: the zero-shot benchmark and the N validity gate.
+- `benchmarks/proofpfn/`: the zero-shot benchmark and the evaluation on worlds of the prior.
 
 The code is a port of the research code of the thesis runs. Golden references of the research code test it bit for
 bit (see [Testing](#testing)).
@@ -87,8 +87,6 @@ arm trains ULTRA with dimension 64 and 6 layers, with the seeds 42, 43 and 44.
   0.01. The learning rate stays constant for 20,000 updates and decays linearly to zero over 4,000 more.
 - The EMA of the weights has decay 0.999. An update backpropagates its query rows in chunks of 2.
 - The initial weights come from the seeded stream `capacity-prior-v1:<seed>:initial:d64` (`arms.initial_model`).
-- The registered analysis also reads rows of the arms S0, DT and PV of an older architecture. These rows come from the
-  frozen run. This package does not train or load these arms.
 
 ## Pretraining
 
@@ -129,7 +127,7 @@ Files of a run folder:
 | `progress.json` | the last logged update, every 50 updates and at the end |
 | `.lock` | the lock that the training process holds while it trains |
 
-Pretraining writes checkpoints at the export updates and after update 24,000. The registered models are the EMA weights
+Pretraining writes checkpoints at the export updates and after update 24,000. The thesis models are the EMA weights
 of update 24,000.
 
 ### Resume
@@ -246,64 +244,64 @@ dicee_pretrain_synthetic convert --export export-24000.pt --arm S --out S-42.pt
 - The checkpoint keeps ULTRA's tensors. Its `provenance` records the export's file name and SHA-256.
 - `--weights ema` (the default) takes the EMA weights. `--weights raw` takes the raw weights.
 - If a check fails, the command writes nothing and exits with code 2.
-- The benchmark also accepts research exports directly. It converts them on load with the same checks.
 
 ## Zero-shot evaluation
 
-The benchmark `benchmarks/proofpfn/` ranks the test facts of frozen graph sets by the protocol of the research runs.
-Its [README](../benchmarks/proofpfn/README.md) lists the commands, the graph sets and the row files. Its
-[protocol](../benchmarks/proofpfn/PROTOCOL.md) states each rule with the research module that it reproduces.
+The benchmark `benchmarks/proofpfn/` ranks the test facts of frozen graph sets. Its
+[README](../benchmarks/proofpfn/README.md) lists the commands, the graph sets and the result files. Its
+[protocol](../benchmarks/proofpfn/PROTOCOL.md) states each rule.
 
 ```bash
 # Hash checks, counts and the model files on the CPU; no score
-python -m benchmarks.proofpfn check --set gate --graphs UMLS \
-  --family mine=S:runs/S/{seed}/export-24000-ema.pt --references trix,ultra3g,flockoff
+python -m benchmarks.proofpfn check --set ultra54 --view trans \
+  --model 'mine=runs/S/{seed}/export-24000-ema.pt' --references trix,ultra3g,flock
 
-# Rank the test facts of UMLS with the model family and the references
-python -m benchmarks.proofpfn run --set gate --graphs UMLS --out rows \
-  --family mine=S:runs/S/{seed}/export-24000-ema.pt --references trix,ultra3g,flockoff
+# Rank the test facts of the 54 graphs with the three seeds and the references
+python -m benchmarks.proofpfn run --set ultra54 --out rows \
+  --model 'mine=runs/S/{seed}/export-24000-ema.pt' --references trix,ultra3g,flock
+
+# Mean MRR and Hits@10 per system, and mean and standard deviation over the seeds
+python -m benchmarks.proofpfn table --set ultra54 --rows rows
 ```
 
-- A model family is `--family [KEY=]ARM:TEMPLATE`. The benchmark fills `{seed}` with 42, 43 and 44.
-- The template names checkpoints or research exports.
-- Without a key, the family takes the arm's registered key, for example `rec10axlepcunoa` for S.
-- Under a registered key, every file must match the research export pins of `manifests/models.json`.
-- For other checkpoints, choose a key of lower-case letters and digits, for example `mine`.
+- A model is `--model NAME=TEMPLATE`. The template names a checkpoint. With `{seed}`, the benchmark fills in the seeds
+  of `--seeds` (default 42, 43 and 44) and labels each checkpoint `NAME.seed<S>`.
+- A checkpoint carries its own model options, so the benchmark needs no arm.
 - `run` scores on CUDA by default. For a run on the CPU, pass `--device cpu`.
-- The row file of this example is `rows/top/mine-trix-ultra3g-flockoff/UMLS.json`. The registered analysis reads
-  this format.
+- The result file of seed 42 on CoDExSmall in this example is `rows/ultra54/mine.seed42/CoDExSmall.json`.
+- A system whose result file exists is not run again.
+- The command `python -m dicee --model ULTRA ... --eval_model test --eval_tie_policy pessimistic` gives the same ranks
+  on a graph that it reads. It does not read a graph with an empty `valid.txt`.
 
-## N validity gate
+## Worlds of the prior
 
-The N validity gate is a manipulation check of arm N. It asks whether N scores below S on intact worlds of every
-nulled world family and close to S on plain worlds. The fresh-v1 registration fixes its rule (amendment A1, section
-8.4). The command `gate` applies the rule:
+The command `prior` scores checkpoints on intact worlds of the synthetic prior that no training order reaches. The
+thesis uses it for the structural null: the model of arm S against the model of arm N.
 
 ```bash
-python -m benchmarks.proofpfn gate --family mys=S:runs/S/{seed}/export-24000-ema.pt \
-  --family myn=N:runs/N/{seed}/export-24000-ema.pt --out gate.json
+python -m benchmarks.proofpfn prior --model 'mys=runs/S/{seed}/export-24000-ema.pt' \
+  --model 'myn=runs/N/{seed}/export-24000-ema.pt' --out prior.json
 ```
 
-- The gate scores the model families of S and N on intact held-out worlds of S's prior, seed 42.
-- No training order reaches these worlds. The gate takes up to 100 worlds of each nulled world family and of plain.
+- The worlds are held-out worlds of S's prior, seed 42: up to 100 of each of the world families `rec1`, `attr2`,
+  `list1`, `categorical2` and `plain`.
 - Each model scores every query of a world against all entities, through the training-mode path of pretraining.
 - The value of a world is its mean reciprocal rank. The rank excludes the other true answers and the anchor, with
   ties at their mean rank.
-- Per world family, D is the mean over S's seeds minus the mean over N's seeds. Its standard error SE combines the
-  spread over worlds and over seeds (`gate.compare`).
-- The reading `n_validity` is `pass` when D > 2 SE on every nulled world family and |D| <= 2 SE on plain.
-- Options: `--per-family` (held-out worlds per world family, at most 100), `--families` (the reading needs all five)
-  and `--device` (default `cuda`).
-- The command prints D and SE per world family and writes the record to `--out`, with the per-world values and a
-  provenance record (code hashes, versions, device, checkpoint records).
+- With two `--model` options, D is the mean over the seeds of the first model minus the mean over the seeds of the
+  second, per world family. Its standard error SE combines the spread over worlds and over seeds (`prior.compare`).
+- Options: `--per-family` (held-out worlds per world family, at most 100), `--families` and `--device` (default
+  `cuda`).
+- The command prints the MRR per world family and writes the record to `--out`, with the per-world values.
 
 ## Reproducing the thesis results
 
 - The thesis rows come from the frozen run of the research code.
-- The ported code reproduces the research code bit for bit on the goldens, so its row files hold the same ranks.
-- To evaluate the thesis models, pass their pinned research exports under the registered keys. The checkpoints
-  that `convert` makes from these exports with the EMA weights (the default) pass the pins too. A raw conversion does
-  not.
+- The ported code reproduces the research code bit for bit on the goldens, so its result files hold the same ranks.
+- To evaluate a thesis model, convert its research export with `convert` (EMA weights, the default) and pass the
+  checkpoint to the benchmark.
+- The thesis tables give, per collection, the mean over the graphs of the MRR of both directions, and then the mean and
+  the sample standard deviation over the three seeds. The command `table` computes these values.
 - The registered analysis of the held-out test and the runners of the external baselines (KGPFN, MERIT, AnyBURL)
   are archived with the research code. They are not part of this package.
 - The manifest of the held-out collection is not in the repository yet.
@@ -331,8 +329,8 @@ Golden references (goldens) record what the research code computes at small size
 | G3 | the initial weights | bitwise |
 | G4 | the first 20 or 100 updates on the CPU: loss, gradient norm, weights, EMA, AdamW state | bitwise |
 | G5 | the research exports and the checkpoints converted from them | bitwise per tensor |
-| G6 | every row key of the research harness on three development graphs | bitwise |
-| G9 | the N validity gate | equal values |
+| G6 | the ranks of the research harness on three development graphs | bitwise |
+| G9 | the evaluation on worlds of the prior, S against N | equal values |
 | G10 | the first updates of the research trainer on the GPU | bitwise on the golden GPU |
 
 - Small goldens are in `tests/fixtures/proofpfn/` and `benchmarks/proofpfn/tests/golden/`. Their READMEs list the
@@ -354,7 +352,7 @@ Golden references (goldens) record what the research code computes at small size
 ## Known limits
 
 - CUDA results can differ between GPU types. The GPU goldens hold for the RTX 4070 Ti SUPER only.
-- The graph files of the blind test sets (fresh-v1 and block 3) are never in the repository. Their manifests follow
-  after the frozen read.
+- The graph files of the benchmark are not in the repository. The manifest of the held-out collection of the thesis is
+  not in the repository yet.
 - The real source graphs of arms R and M are not in the repository. The command `sources` builds them from their split
   files.

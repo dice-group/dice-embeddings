@@ -11,18 +11,15 @@
 - Filter (``known_sets``): every known fact of train, valid and test, per (relation, anchor) and direction.
 - Query groups (``query_groups``): (head direction, relation, anchor) with its test members in index order, stably
   sorted by relation (``lockbox-v5-runtime/lb5_eval.query_groups``).
-- Self-loop rule (``reflexive_relations``): ``share1`` opens a relation when at least 1% of its train facts are
-  self-loops (``ib_rule_eval.open_relations``).
-- GT2 inputs (``gt2_inputs``): per direction and relation, the candidates unseen in the query role of train.txt and
-  the Good-Turing estimate ``(n1 + 0.5) / (N + 1)`` (``lockbox-v6-runtime/fair_eval.gt_inputs``).
-- Mean-tie rank (``rank_of``): the rank of the cells and of the N gate, with the banned candidates excluded and ties at
-  their mean rank (``realsrc-v1/xrel/xr_diag.rank_of``), on purpose not the pessimistic rank of the evaluation.
+- Mean-tie rank (``rank_of``): the rank of the evaluation on worlds of the prior (``prior``), with the banned candidates
+  excluded and ties at their mean rank (``realsrc-v1/xrel/xr_diag.rank_of``), on purpose not the pessimistic rank of the
+  evaluation on graphs.
 
 dicee's ``KG`` is not used: its pandas reader turns tokens such as ``NA`` and ``null`` into missing values, which
 merges distinct entities (``tests/test_data.py`` shows it); the research loader keeps every token.
 """
 import random
-from collections import Counter, OrderedDict, defaultdict
+from collections import OrderedDict, defaultdict
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, Optional, Sequence
@@ -32,7 +29,7 @@ import torch
 
 from dicee.synthetic_kg.batch import Triple
 
-from .manifests import SAMPLE, SAMPLE_SEED, SPLITS, GraphEntry, Manifest, ManifestError, PathLike, graph_problems
+from .manifests import SAMPLE, SAMPLE_SEED, SPLITS, GraphEntry, ManifestError, PathLike, graph_problems
 
 GroupKey = tuple[bool, int, int]
 
@@ -112,11 +109,10 @@ def read_graph(folder: PathLike, hashes: Optional[dict[str, str]] = None) -> Gra
     return GraphData(tuple(entities), tuple(relations), ids['train'], ids['valid'], ids['test'], dict(hashes or {}))
 
 
-def load_graph(manifest: Manifest, entry: GraphEntry, root: PathLike) -> GraphData:
+def load_graph(entry: GraphEntry, root: PathLike) -> GraphData:
     """Hash-check a graph of a manifest, then load it.
 
     Args:
-        manifest: The graph's manifest (its blind flag decides whether a blind folder may load).
         entry: The graph.
         root: The data root that the manifest paths are relative to.
 
@@ -125,9 +121,8 @@ def load_graph(manifest: Manifest, entry: GraphEntry, root: PathLike) -> GraphDa
 
     Raises:
         ManifestError: When a file is missing, a hash or a manifest count differs, or a line does not hold three names.
-        manifests.BlindSetError: For a blind folder outside a released blind manifest.
     """
-    folder = manifest.folder(entry, root)
+    folder = Path(root) / entry.path
     problems, hashes = graph_problems(entry, folder)
     if problems:
         raise ManifestError('; '.join(problems))
@@ -136,7 +131,7 @@ def load_graph(manifest: Manifest, entry: GraphEntry, root: PathLike) -> GraphDa
         c = entry.counts
         found = (graph.num_entities, graph.num_relations, len(graph.train), len(graph.test))
         if found != (c['entities'], c['relations'], c['inference_rows'], c['test_rows']):
-            raise ManifestError(f'{entry.key}: entities, relations, train rows and test rows {found} differ from the manifest counts')
+            raise ManifestError(f'{entry.name}: entities, relations, train rows and test rows {found} differ from the manifest counts')
     return graph
 
 
@@ -226,49 +221,6 @@ def query_groups(test: Sequence[Triple]) -> list[tuple[GroupKey, list[int]]]:
     return sorted(groups.items(), key=lambda item: item[0][1])
 
 
-def reflexive_relations(train: Sequence[Triple]) -> set[int]:
-    """The relations that the self-loop rule ``share1`` leaves open: at least 1% of their train facts are self-loops.
-
-    Args:
-        train: The train facts (every row counts).
-
-    Returns:
-        The ids of the open relations.
-    """
-    facts = Counter(r for _, r, _ in train)
-    loops = Counter(r for h, r, t in train if h == t)
-    return {r for r in loops if loops[r] >= 0.01 * facts[r]}
-
-
-def gt2_inputs(train: Sequence[Triple], n: int) -> dict[tuple[bool, int], tuple[np.ndarray, float]]:
-    """Per (head direction, relation) of train: the mask of candidates unseen in the query role and
-    ``(n1 + 0.5) / (N + 1)``.
-
-    The query role is the tail for a tail query and the head for a head query. ``N`` is the number of train facts of
-    the relation, and ``n1`` the number of entities that fill the role in exactly one of them.
-
-    Args:
-        train: The train facts (every row counts).
-        n: The number of entities.
-
-    Returns:
-        The inputs ``{(head, relation): (unseen, good_turing)}`` of every relation of train. ``unseen`` is a boolean
-        mask over the ``n`` entities and ``good_turing`` the estimate.
-    """
-    counts: dict[bool, dict[int, Counter]] = {False: defaultdict(Counter), True: defaultdict(Counter)}
-    for h, r, t in train:
-        counts[False][r][t] += 1
-        counts[True][r][h] += 1
-    out = {}
-    for head in (False, True):
-        for r, c in counts[head].items():
-            seen = np.zeros(n, bool)
-            seen[list(c)] = True
-            total, n1 = sum(c.values()), sum(1 for k in c.values() if k == 1)
-            out[head, r] = (~seen, (n1 + 0.5) / (total + 1))
-    return out
-
-
 @dataclass(frozen=True)
 class Queries:
     """The ranked test facts of a graph and everything their ranks need.
@@ -279,8 +231,6 @@ class Queries:
         test_rows: The number of rows of test.txt.
         groups: The query groups over ``facts`` (members are indices into ``facts``).
         known: The filter of all facts of train, valid and test.
-        reflexive: The relations open under the self-loop rule.
-        gt2: The GT2 inputs per (head direction, relation).
     """
 
     facts: list[Triple]
@@ -288,8 +238,6 @@ class Queries:
     test_rows: int
     groups: list[tuple[GroupKey, list[int]]]
     known: dict[bool, dict[tuple[int, int], set[int]]]
-    reflexive: set[int]
-    gt2: dict[tuple[bool, int], tuple[np.ndarray, float]]
 
     def index(self, member: int) -> int:
         """The position in test.txt of a ranked fact.
@@ -304,15 +252,14 @@ class Queries:
 
 
 def prepare_queries(graph: GraphData, sample_rule: str) -> Queries:
-    """The ranked facts, query groups, filter, open relations and GT2 inputs of a graph under a sample rule.
+    """The ranked facts, query groups and filter of a graph under a sample rule.
 
     Args:
         graph: The loaded graph.
         sample_rule: The sample rule, ``first-1000`` or ``all`` (``ranked_positions``).
 
     Returns:
-        The queries. The filter holds the facts of train, valid and test, and the open relations and the GT2 inputs
-        come from train.
+        The queries. The filter holds the facts of train, valid and test.
 
     Raises:
         ValueError: For an unknown sample rule.
@@ -321,8 +268,7 @@ def prepare_queries(graph: GraphData, sample_rule: str) -> Queries:
     positions = ranked_positions(test, sample_rule)
     facts = test if positions is None else [test[i] for i in positions]
     return Queries(facts=facts, positions=positions, test_rows=len(test), groups=query_groups(facts),
-                   known=known_sets(train + test + as_triples(graph.valid)), reflexive=reflexive_relations(train),
-                   gt2=gt2_inputs(train, graph.num_entities))
+                   known=known_sets(train + test + as_triples(graph.valid)))
 
 
 def inference_stats(train: torch.Tensor) -> tuple[int, int]:

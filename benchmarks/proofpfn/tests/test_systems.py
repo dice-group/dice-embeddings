@@ -1,115 +1,80 @@
-"""The systems: family pins and keys, the converter path, and Flock's official setting."""
-import json
-from dataclasses import replace
-from pathlib import Path
-
+"""The systems: model options and labels, built models, the reference pins, and Flock's official setting."""
 import pytest
 import torch
 
 from benchmarks.proofpfn import manifests as mf
 from benchmarks.proofpfn import systems as sy
 from dicee.synthetic_kg.arms import SEEDS, initial_model
-from dicee.synthetic_kg.checkpoint import from_research_export, save_checkpoint
-from tests.proofpfn_fixtures import built_export, clean_checkpoints
+from tests.proofpfn_fixtures import clean_checkpoints
 
-from .golden import fixture, g4_export
+from .golden import GATE, fixture
 
 
-def test_family_keys_and_pins(tmp_path):
-    pins = mf.read_models()
+def test_model_options_give_one_system_per_seed(tmp_path):
     template = clean_checkpoints(tmp_path, 'S')
-    test_family = sy.family('ts', 'S', template, pins)   # an unregistered key: no pins
-    test_family.check()
-    assert test_family.pins is None and set(test_family.model_sha256()) == {'42', '43', '44'}
-    assert test_family.model_sha256()['42'] == mf.file_sha256(tmp_path / 'S-42.pt')   # no research export: the file's hash
-    registered = sy.family('rec10axlepcunoa', 'S', template, pins)
-    assert registered.pins == pins.families['S']
-    with pytest.raises(sy.SystemCheckError, match='pinned research export'):
-        registered.check()
-    assert sy.family('pcuht', 'HT', template, pins).pins == pins.families['HT']
-    for key, arm, message in (('rec10axlepcunoa', 'CU', 'registered key of arm S'), ('trix', 'S', 'reference key'),
-                              ('Ts', 'S', 'lower-case'), ('42', 'S', 'starting with a letter')):
+    systems = sy.checkpoints(f'ts={template}')
+    assert [s.label for s in systems] == ['ts.seed42', 'ts.seed43', 'ts.seed44']
+    assert [s.path for s in systems] == [tmp_path / f'S-{seed}.pt' for seed in SEEDS]
+    assert [s.label for s in sy.checkpoints(f'ts={template}', (7,))] == ['ts.seed7']
+    one = sy.checkpoints(f"single={tmp_path / 'S-42.pt'}")
+    assert [s.label for s in one] == ['single'] and one[0].sha256() == mf.file_sha256(tmp_path / 'S-42.pt')
+    spec = one[0].spec()
+    assert spec['kind'] == 'checkpoint' and (spec['arm'], spec['seed'], spec['updates'], spec['weights']) == ('S', 42, 0, 'raw')
+    assert spec['model_config']['ultra_pair_channels'] == 'on'
+    for bad, message in (('ts', 'NAME=TEMPLATE'), ('=x.pt', 'NAME=TEMPLATE'), ('ts=', 'NAME=TEMPLATE'), ('4s=x.pt', 'starting with a letter'),
+                         ('t s=x.pt', 'letters, digits'), ('trix=x.pt', 'label of a reference'), ('ts=x{seed}-{other}.pt', 'no other field'),
+                         ('ts=x{}.pt', 'no other field'), ('ts=x{seed.pt', 'template')):
         with pytest.raises(sy.SystemCheckError, match=message):
-            sy.family(key, arm, template, pins)
-    doc = json.loads((mf.MANIFESTS / 'models.json').read_text())
-    doc['families']['HT']['export_sha256'] = None   # a registered key whose pins are pending is refused
-    (tmp_path / 'pending.json').write_text(json.dumps(doc))
-    with pytest.raises(sy.SystemCheckError, match='no pins'):
-        sy.family('pcuht', 'HT', template, mf.read_models(tmp_path / 'pending.json'))
-    with pytest.raises(sy.SystemCheckError, match='seed'):
-        sy.family('ts', 'S', str(tmp_path / 'S.pt'), pins)
-    with pytest.raises(Exception, match='arm S, not UL'):
-        sy.family('tu', 'UL', template, pins).check()
+            sy.checkpoints(bad)
 
 
-def test_a_file_that_is_not_a_checkpoint_is_refused(tmp_path):
-    for seed in SEEDS:
-        (tmp_path / f'text-{seed}.pt').write_text('not a checkpoint')
-    with pytest.raises(sy.SystemCheckError, match='seed 42: text-42.pt does not load'):
-        sy.family('ts', 'S', str(tmp_path / 'text-{seed}.pt'), mf.read_models()).check()
+def test_a_missing_or_invalid_file_is_refused(tmp_path):
+    (tmp_path / 'text.pt').write_text('not a checkpoint')
+    with pytest.raises(sy.SystemCheckError, match='ts: text.pt does not load'):
+        sy.checkpoints(f"ts={tmp_path / 'text.pt'}")[0].check()
+    with pytest.raises(sy.SystemCheckError, match='ts: missing'):
+        sy.checkpoints(f"ts={tmp_path / 'none.pt'}")[0].check()
 
 
 def test_built_models_are_frozen_and_leave_the_random_state(tmp_path):
-    family = sy.family('ts', 'S', clean_checkpoints(tmp_path, 'S'), mf.read_models())
+    systems = sy.checkpoints(f"ts={clean_checkpoints(tmp_path, 'S')}")
     before = torch.get_rng_state()
-    models = family.build()
+    models = [system.build_model(0, 0) for system in systems]
     assert torch.equal(torch.get_rng_state(), before)
-    assert list(models) == [('ts', 42), ('ts', 43), ('ts', 44)]
-    for (_, seed), model in models.items():
-        assert seed is not None and not model.training and not any(p.requires_grad for p in model.parameters())
+    for seed, model in zip(SEEDS, models):
+        assert not model.training and not any(p.requires_grad for p in model.parameters())
         assert (model.relation_weighting, model.pair_channels) == ('normalized', 'on')
         reference = initial_model('S', seed).state_dict()
         assert all(torch.equal(v, reference[k]) for k, v in model.state_dict().items())
 
 
-def test_research_exports_convert_under_their_pins():
-    """A G4 research export loads through the converter; its file hash is the model hash and matches given pins."""
-    template = g4_export('gs')
-    digests = {s: mf.file_sha256(template.format(seed=s)) for s in SEEDS}
-    pins = mf.FamilyPins(arm='S', key='gs', export=20, weights='decay/ema', export_sha256=digests)
-    family = sy.ProofPFNFamily(key='gs', arm='S', checkpoints={s: Path(template.format(seed=s)) for s in SEEDS}, pins=pins)
-    family.check()
-    assert family.model_sha256() == {str(s): v for s, v in digests.items()}
-    assert family.members[42].checkpoint['provenance']['research_arm'] == 'REC10A-XLE-PCU-noA'
-    wrong = sy.ProofPFNFamily(key='gs', arm='S', checkpoints=family.checkpoints, pins=replace(pins, export_sha256={**digests, 44: digests[42]}))
-    with pytest.raises(sy.SystemCheckError, match='seed 44'):
-        wrong.check()
-
-
-def test_a_pinned_family_takes_only_the_pinned_ema_export_of_each_seed(tmp_path):
-    """Converted checkpoints of the pinned research exports pass with the EMA weights of the pinned update and their own
-    seed only: a raw conversion, another update and the file of another seed are refused."""
-    digests = {}
-    for seed in SEEDS:
-        torch.save(built_export('S', seed), tmp_path / f'export-{seed}.pt')
-        digests[seed] = mf.file_sha256(tmp_path / f'export-{seed}.pt')
-        for weights in ('raw', 'ema'):
-            save_checkpoint(from_research_export(tmp_path / f'export-{seed}.pt', 'S', weights), tmp_path / f'{weights}-{seed}.pt')
-    pins = mf.FamilyPins(arm='S', key='rec10axlepcunoa', export=0, weights='decay/ema', export_sha256=digests)
-
-    def family(weights: str, pins: mf.FamilyPins = pins, files: tuple = SEEDS) -> sy.ProofPFNFamily:
-        return sy.ProofPFNFamily(key=pins.key, arm='S', checkpoints={s: tmp_path / f'{weights}-{f}.pt' for s, f in zip(SEEDS, files)}, pins=pins)
-    family('ema').check()
-    with pytest.raises(sy.SystemCheckError, match='weights raw, the pins decay/ema'):
-        family('raw').check()
-    with pytest.raises(sy.SystemCheckError, match='update 0, the pins 24000'):
-        family('ema', replace(pins, export=24000)).check()
-    with pytest.raises(sy.SystemCheckError, match='seed 42: .* the checkpoint of seed 43'):   # the pin and the file of seed 43 under seed 42
-        family('ema', replace(pins, export_sha256={**digests, 42: digests[43]}), files=(43, 43, 44)).check()
+def test_references(tmp_path):
+    assert set(sy.REFERENCES) == {'trix', 'ultra3g', 'flock'}
+    flock = sy.reference('flock', tmp_path)
+    assert isinstance(flock, sy.OfficialFlock) and flock.path == tmp_path / 'flock' / 'flock_entity.pth'
+    assert flock.sha256() == sy.REFERENCES['flock'][1] and flock.spec()['model'] == 'Flock'
+    assert not isinstance(sy.reference('trix', tmp_path), sy.OfficialFlock) and sy.reference('trix', tmp_path).spec()['model'] == 'TRIX'
+    with pytest.raises(sy.SystemCheckError, match='ultra3g: missing'):
+        sy.reference('ultra3g', tmp_path).check()
+    (tmp_path / 'ultra_3g.pth').write_text('another file')
+    with pytest.raises(sy.SystemCheckError, match='differs from the released checkpoint'):
+        sy.reference('ultra3g', tmp_path).check()
+    with pytest.raises(sy.SystemCheckError, match='unknown reference'):
+        sy.reference('flockoff', tmp_path)
 
 
 def test_flock_setting_of_the_gate_graphs():
-    gate = mf.read_manifest('gate')
+    gate = mf.read_manifest(GATE)
     for name, graph in fixture('g6_ranks.json.gz')['graphs'].items():
         recorded = graph['record']['flock_official']
         entry = gate.entry(name)
         setting = sy.flock_setting(entry.size['entities'], entry.size['inference_edges'], entry.suite_id)
         assert setting == {k: recorded[k] for k in setting}, name
-        assert recorded['rule'] == sy.FLOCK_RULE and recorded['keys'] == {'flockoff': dict(walks=16, passes=16)}
+        assert recorded['rule'] == sy.FLOCK_RULE and (setting['walks'], setting['passes']) == (16, 16)
 
 
-def test_the_script_table_covers_t1():
-    assert {e.suite_id for e in mf.read_manifest('t1').entries} == set(sy.FLOCK_SCRIPT)
+def test_the_script_table_covers_the_standard_suite():
+    assert {e.suite_id for e in mf.read_manifest('ultra54').entries} == set(sy.FLOCK_SCRIPT)
 
 
 def test_flock_rule():

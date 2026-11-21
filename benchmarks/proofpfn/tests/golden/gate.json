@@ -1,8 +1,7 @@
 {
- "format": "proofpfn-graph-manifest-v1",
+ "format": "proofpfn-graph-manifest-v2",
  "name": "gate",
- "about": "The gate graphs of the exact-rank golden G6: UMLS, NELLInductive_v1 and grail-WN18RR_v1. The audit excludes grail-WN18RR_v1 (X2: a copy of ultra-suite-v1/WN18RRInductive_v1), so it is listed here explicitly. File SHA-256 as the golden runs hashed the files; content hashes from the audit inventory.",
- "blind": false,
+ "about": "The three graphs of the exact-rank golden G6: UMLS, NELLInductive_v1 and grail-WN18RR_v1. File SHA-256 as the golden runs hashed the files; content hashes from the audit inventory.",
  "sample_rule": "first-1000",
  "sources": {
   "K/graph-audit-v1/graphs.json": "2b813453f3c1188f10beb5781bc5222b6feac2d01201f6926dad63f0f4d6c098",
@@ -11,16 +10,9 @@
  },
  "graphs": [
   {
-   "key": "UMLS",
    "name": "UMLS",
    "path": "KGs/UMLS",
-   "collection": "top",
    "view": "gate",
-   "code": "T",
-   "group": "T (reported apart)",
-   "verdict": "keep-flag",
-   "weight": 0.0,
-   "origin_class": "published",
    "suite_id": null,
    "size": {
     "entities": 135,
@@ -35,20 +27,12 @@
     "train": "de6801fd5ca13372b5a0f314462fac674346badc292462c58e2f2852c147534f",
     "test": "cc119a3289e7f3a4f389b9f9e42d76e36a305f48ae5292315cfd0488083a2e14"
    },
-   "counts": null,
-   "tail_only_view": null
+   "counts": null
   },
   {
-   "key": "ultra-suite-v1/NELLInductive_v1",
    "name": "NELLInductive_v1",
    "path": "KGs/ultra-suite-v1/NELLInductive_v1",
-   "collection": "ultra-suite-v1",
    "view": "gate",
-   "code": "E",
-   "group": "E",
-   "verdict": "keep-flag",
-   "weight": 0.005952380952380952,
-   "origin_class": "published",
    "suite_id": "NELLInductive:v1",
    "size": {
     "entities": 225,
@@ -63,20 +47,12 @@
     "train": "1f74950ee88cfd3d9e5a07bfdedc6e2af842602a317cc579e773adc3968556c5",
     "test": "5ee2dd97c9ef7b3f776a268d6937bd56f87dd83fbd0f2157fbab33bbff657262"
    },
-   "counts": null,
-   "tail_only_view": null
+   "counts": null
   },
   {
-   "key": "inductive/grail-WN18RR_v1",
    "name": "grail-WN18RR_v1",
    "path": "KGs/inductive/grail-WN18RR_v1",
-   "collection": "inductive",
    "view": "gate",
-   "code": null,
-   "group": null,
-   "verdict": "exclude",
-   "weight": 0.0,
-   "origin_class": "published",
    "suite_id": "WN18RRInductive:v1",
    "size": {
     "entities": 922,
@@ -91,8 +67,7 @@
     "train": "d937c0c5443874d959e6116372590f2fd3be0f1ff6e3c49d5cb8e991c5dd41ca",
     "test": "cb8305231c82ee85cf61ebb444d75175b925ffed2eb79ed9c30423ee77300cbc"
    },
-   "counts": null,
-   "tail_only_view": null
+   "counts": null
   }
  ]
 }

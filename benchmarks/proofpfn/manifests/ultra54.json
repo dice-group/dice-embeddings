@@ -1,8 +1,7 @@
 {
- "format": "proofpfn-graph-manifest-v1",
- "name": "t1",
- "about": "T1, the standard zero-shot suite p0-suite-v1 (built under the official ULTRA conventions): 54 graphs in the groups trans, ind_e and ind_er, every test row ranked in both directions. File SHA-256 and counts from the suite manifest; the suite id is the key of the official Flock walk table; size from the audit entry of the same folder.",
- "blind": false,
+ "format": "proofpfn-graph-manifest-v2",
+ "name": "ultra54",
+ "about": "The standard zero-shot suite of 54 graphs, built under the official ULTRA conventions, in the groups trans, ind_e and ind_er. Every test row is ranked in both directions. File SHA-256 and counts from the suite manifest p0-suite-v1; the suite id is the key of the official Flock walk table; size from the audit entry of the same folder.",
  "sample_rule": "all",
  "sources": {
   "K/p0-suite-v1/manifest.json": "cabe63343f2ac5880325df8238feaee10de2357f84e34a6d9c1c31e46bc60286",
@@ -10,16 +9,9 @@
  },
  "graphs": [
   {
-   "key": "t1/CoDExSmall",
    "name": "CoDExSmall",
    "path": "KGs/ultra-suite-v1/CoDExSmall",
-   "collection": "t1",
    "view": "trans",
-   "code": null,
-   "group": "trans",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "CoDExSmall",
    "size": {
     "entities": 2034,
@@ -34,30 +26,15 @@
    "counts": {
     "entities": 2034,
     "relations": 42,
-    "relations_inference": 42,
     "inference_rows": 32888,
-    "inference_unique": 32888,
     "valid_rows": 1827,
-    "test_rows": 1828,
-    "test_unique": 1828,
-    "filter_unique": 36543,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1828
+   }
   },
   {
-   "key": "t1/CoDExLarge",
    "name": "CoDExLarge",
    "path": "KGs/ultra-suite-v1/CoDExLarge",
-   "collection": "t1",
    "view": "trans",
-   "code": null,
-   "group": "trans",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "CoDExLarge",
    "size": {
     "entities": 77951,
@@ -72,30 +49,15 @@
    "counts": {
     "entities": 77951,
     "relations": 69,
-    "relations_inference": 69,
     "inference_rows": 551193,
-    "inference_unique": 551193,
     "valid_rows": 30622,
-    "test_rows": 30622,
-    "test_unique": 30622,
-    "filter_unique": 612437,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 30622
+   }
   },
   {
-   "key": "t1/NELL995",
    "name": "NELL995",
    "path": "KGs/ultra-suite-v1/NELL995",
-   "collection": "t1",
    "view": "trans",
-   "code": null,
-   "group": "trans",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "NELL995",
    "size": {
     "entities": 74432,
@@ -110,30 +72,15 @@
    "counts": {
     "entities": 74536,
     "relations": 200,
-    "relations_inference": 200,
     "inference_rows": 149678,
-    "inference_unique": 149678,
     "valid_rows": 543,
-    "test_rows": 2818,
-    "test_unique": 2818,
-    "filter_unique": 153039,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 2818
+   }
   },
   {
-   "key": "t1/YAGO310",
    "name": "YAGO310",
    "path": "KGs/YAGO3-10",
-   "collection": "t1",
    "view": "trans",
-   "code": null,
-   "group": "trans",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "YAGO310",
    "size": {
     "entities": 123143,
@@ -148,30 +95,15 @@
    "counts": {
     "entities": 123182,
     "relations": 37,
-    "relations_inference": 37,
     "inference_rows": 1079040,
-    "inference_unique": 1079040,
     "valid_rows": 5000,
-    "test_rows": 5000,
-    "test_unique": 5000,
-    "filter_unique": 1089040,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 18,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 5000
+   }
   },
   {
-   "key": "t1/WDsinger",
    "name": "WDsinger",
    "path": "KGs/ultra-suite-v1/WDsinger",
-   "collection": "t1",
    "view": "trans",
-   "code": null,
-   "group": "trans",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WDsinger",
    "size": {
     "entities": 10282,
@@ -186,30 +118,15 @@
    "counts": {
     "entities": 10282,
     "relations": 135,
-    "relations_inference": 131,
     "inference_rows": 16142,
-    "inference_unique": 15906,
     "valid_rows": 2163,
-    "test_rows": 2203,
-    "test_unique": 2192,
-    "filter_unique": 20122,
-    "test_rows_in_inference": 64,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 1
-   },
-   "tail_only_view": true
+    "test_rows": 2203
+   }
   },
   {
-   "key": "t1/NELL23k",
    "name": "NELL23k",
    "path": "KGs/ultra-suite-v1/NELL23k",
-   "collection": "t1",
    "view": "trans",
-   "code": null,
-   "group": "trans",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "NELL23k",
    "size": {
     "entities": 22925,
@@ -224,30 +141,15 @@
    "counts": {
     "entities": 22925,
     "relations": 200,
-    "relations_inference": 200,
     "inference_rows": 25445,
-    "inference_unique": 25445,
     "valid_rows": 4961,
-    "test_rows": 4952,
-    "test_unique": 4952,
-    "filter_unique": 35358,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": true
+    "test_rows": 4952
+   }
   },
   {
-   "key": "t1/FB15k237_10",
    "name": "FB15k237_10",
    "path": "KGs/ultra-suite-v1/FB15k237_10",
-   "collection": "t1",
    "view": "trans",
-   "code": null,
-   "group": "trans",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "FB15k237_10",
    "size": {
     "entities": 11512,
@@ -262,30 +164,15 @@
    "counts": {
     "entities": 11512,
     "relations": 237,
-    "relations_inference": 237,
     "inference_rows": 27211,
-    "inference_unique": 27211,
     "valid_rows": 15624,
-    "test_rows": 18150,
-    "test_unique": 18150,
-    "filter_unique": 60985,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": true
+    "test_rows": 18150
+   }
   },
   {
-   "key": "t1/FB15k237_20",
    "name": "FB15k237_20",
    "path": "KGs/ultra-suite-v1/FB15k237_20",
-   "collection": "t1",
    "view": "trans",
-   "code": null,
-   "group": "trans",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "FB15k237_20",
    "size": {
     "entities": 13166,
@@ -300,30 +187,15 @@
    "counts": {
     "entities": 13166,
     "relations": 237,
-    "relations_inference": 237,
     "inference_rows": 54423,
-    "inference_unique": 54423,
     "valid_rows": 16963,
-    "test_rows": 19776,
-    "test_unique": 19776,
-    "filter_unique": 91162,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": true
+    "test_rows": 19776
+   }
   },
   {
-   "key": "t1/FB15k237_50",
    "name": "FB15k237_50",
    "path": "KGs/ultra-suite-v1/FB15k237_50",
-   "collection": "t1",
    "view": "trans",
-   "code": null,
-   "group": "trans",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "FB15k237_50",
    "size": {
     "entities": 14149,
@@ -338,30 +210,15 @@
    "counts": {
     "entities": 14149,
     "relations": 237,
-    "relations_inference": 237,
     "inference_rows": 136057,
-    "inference_unique": 136057,
     "valid_rows": 17449,
-    "test_rows": 20324,
-    "test_unique": 20324,
-    "filter_unique": 173830,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": true
+    "test_rows": 20324
+   }
   },
   {
-   "key": "t1/Hetionet",
    "name": "Hetionet",
    "path": "KGs/ultra-suite-v1/Hetionet",
-   "collection": "t1",
    "view": "trans",
-   "code": null,
-   "group": "trans",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "Hetionet",
    "size": {
     "entities": 44907,
@@ -376,30 +233,15 @@
    "counts": {
     "entities": 45158,
     "relations": 24,
-    "relations_inference": 24,
     "inference_rows": 2025177,
-    "inference_unique": 2025177,
     "valid_rows": 112510,
-    "test_rows": 112510,
-    "test_unique": 112510,
-    "filter_unique": 2250197,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 132,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 112510
+   }
   },
   {
-   "key": "t1/ConceptNet100k",
    "name": "ConceptNet100k",
    "path": "KGs/ultra-suite-v1/ConceptNet100k",
-   "collection": "t1",
    "view": "trans",
-   "code": null,
-   "group": "trans",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "ConceptNet100k",
    "size": {
     "entities": 78088,
@@ -414,30 +256,15 @@
    "counts": {
     "entities": 78334,
     "relations": 34,
-    "relations_inference": 34,
     "inference_rows": 100000,
-    "inference_unique": 99997,
     "valid_rows": 1200,
-    "test_rows": 1200,
-    "test_unique": 1200,
-    "filter_unique": 102397,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 96,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1200
+   }
   },
   {
-   "key": "t1/DBpedia100k",
    "name": "DBpedia100k",
    "path": "KGs/ultra-suite-v1/DBpedia100k",
-   "collection": "t1",
    "view": "trans",
-   "code": null,
-   "group": "trans",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "DBpedia100k",
    "size": {
     "entities": 99604,
@@ -452,30 +279,15 @@
    "counts": {
     "entities": 99604,
     "relations": 470,
-    "relations_inference": 470,
     "inference_rows": 597572,
-    "inference_unique": 597482,
     "valid_rows": 50000,
-    "test_rows": 50000,
-    "test_unique": 50000,
-    "filter_unique": 697458,
-    "test_rows_in_inference": 10,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 50000
+   }
   },
   {
-   "key": "t1/AristoV4",
    "name": "AristoV4",
    "path": "KGs/ultra-suite-v1/AristoV4",
-   "collection": "t1",
    "view": "trans",
-   "code": null,
-   "group": "trans",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "AristoV4",
    "size": {
     "entities": 42016,
@@ -490,30 +302,15 @@
    "counts": {
     "entities": 44949,
     "relations": 1605,
-    "relations_inference": 1593,
     "inference_rows": 242567,
-    "inference_unique": 242567,
     "valid_rows": 20000,
-    "test_rows": 20000,
-    "test_unique": 20000,
-    "filter_unique": 282567,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 1579,
-    "test_relations_unseen": 7
-   },
-   "tail_only_view": false
+    "test_rows": 20000
+   }
   },
   {
-   "key": "t1/FB15k237Inductive_v1",
    "name": "FB15k237Inductive_v1",
    "path": "KGs/ultra-suite-v1/FB15k237Inductive_v1",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "FB15k237Inductive:v1",
    "size": {
     "entities": 1093,
@@ -528,30 +325,15 @@
    "counts": {
     "entities": 1093,
     "relations": 142,
-    "relations_inference": 142,
     "inference_rows": 1993,
-    "inference_unique": 1993,
     "valid_rows": 0,
-    "test_rows": 411,
-    "test_unique": 411,
-    "filter_unique": 2404,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 411
+   }
   },
   {
-   "key": "t1/FB15k237Inductive_v2",
    "name": "FB15k237Inductive_v2",
    "path": "KGs/ultra-suite-v1/FB15k237Inductive_v2",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "FB15k237Inductive:v2",
    "size": {
     "entities": 1660,
@@ -566,30 +348,15 @@
    "counts": {
     "entities": 1660,
     "relations": 172,
-    "relations_inference": 172,
     "inference_rows": 4145,
-    "inference_unique": 4145,
     "valid_rows": 0,
-    "test_rows": 947,
-    "test_unique": 947,
-    "filter_unique": 5092,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 947
+   }
   },
   {
-   "key": "t1/FB15k237Inductive_v3",
    "name": "FB15k237Inductive_v3",
    "path": "KGs/ultra-suite-v1/FB15k237Inductive_v3",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "FB15k237Inductive:v3",
    "size": {
     "entities": 2501,
@@ -604,30 +371,15 @@
    "counts": {
     "entities": 2501,
     "relations": 183,
-    "relations_inference": 183,
     "inference_rows": 7406,
-    "inference_unique": 7406,
     "valid_rows": 0,
-    "test_rows": 1731,
-    "test_unique": 1731,
-    "filter_unique": 9137,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1731
+   }
   },
   {
-   "key": "t1/FB15k237Inductive_v4",
    "name": "FB15k237Inductive_v4",
    "path": "KGs/ultra-suite-v1/FB15k237Inductive_v4",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "FB15k237Inductive:v4",
    "size": {
     "entities": 3051,
@@ -642,30 +394,15 @@
    "counts": {
     "entities": 3051,
     "relations": 200,
-    "relations_inference": 200,
     "inference_rows": 11714,
-    "inference_unique": 11714,
     "valid_rows": 0,
-    "test_rows": 2840,
-    "test_unique": 2840,
-    "filter_unique": 14554,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 2840
+   }
   },
   {
-   "key": "t1/WN18RRInductive_v1",
    "name": "WN18RRInductive_v1",
    "path": "KGs/ultra-suite-v1/WN18RRInductive_v1",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WN18RRInductive:v1",
    "size": {
     "entities": 922,
@@ -680,30 +417,15 @@
    "counts": {
     "entities": 922,
     "relations": 8,
-    "relations_inference": 8,
     "inference_rows": 1618,
-    "inference_unique": 1618,
     "valid_rows": 0,
-    "test_rows": 373,
-    "test_unique": 373,
-    "filter_unique": 1991,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 373
+   }
   },
   {
-   "key": "t1/WN18RRInductive_v2",
    "name": "WN18RRInductive_v2",
    "path": "KGs/ultra-suite-v1/WN18RRInductive_v2",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WN18RRInductive:v2",
    "size": {
     "entities": 2757,
@@ -718,30 +440,15 @@
    "counts": {
     "entities": 2757,
     "relations": 10,
-    "relations_inference": 10,
     "inference_rows": 4011,
-    "inference_unique": 4011,
     "valid_rows": 0,
-    "test_rows": 852,
-    "test_unique": 852,
-    "filter_unique": 4863,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 852
+   }
   },
   {
-   "key": "t1/WN18RRInductive_v3",
    "name": "WN18RRInductive_v3",
    "path": "KGs/ultra-suite-v1/WN18RRInductive_v3",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WN18RRInductive:v3",
    "size": {
     "entities": 5084,
@@ -756,30 +463,15 @@
    "counts": {
     "entities": 5084,
     "relations": 11,
-    "relations_inference": 11,
     "inference_rows": 6327,
-    "inference_unique": 6327,
     "valid_rows": 0,
-    "test_rows": 1143,
-    "test_unique": 1143,
-    "filter_unique": 7470,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1143
+   }
   },
   {
-   "key": "t1/WN18RRInductive_v4",
    "name": "WN18RRInductive_v4",
    "path": "KGs/ultra-suite-v1/WN18RRInductive_v4",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WN18RRInductive:v4",
    "size": {
     "entities": 7084,
@@ -794,30 +486,15 @@
    "counts": {
     "entities": 7084,
     "relations": 9,
-    "relations_inference": 9,
     "inference_rows": 12334,
-    "inference_unique": 12334,
     "valid_rows": 0,
-    "test_rows": 2823,
-    "test_unique": 2823,
-    "filter_unique": 15157,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 2823
+   }
   },
   {
-   "key": "t1/NELLInductive_v1",
    "name": "NELLInductive_v1",
    "path": "KGs/ultra-suite-v1/NELLInductive_v1",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "NELLInductive:v1",
    "size": {
     "entities": 225,
@@ -832,30 +509,15 @@
    "counts": {
     "entities": 225,
     "relations": 14,
-    "relations_inference": 14,
     "inference_rows": 833,
-    "inference_unique": 833,
     "valid_rows": 0,
-    "test_rows": 201,
-    "test_unique": 201,
-    "filter_unique": 1034,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 201
+   }
   },
   {
-   "key": "t1/NELLInductive_v2",
    "name": "NELLInductive_v2",
    "path": "KGs/ultra-suite-v1/NELLInductive_v2",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "NELLInductive:v2",
    "size": {
     "entities": 2086,
@@ -870,30 +532,15 @@
    "counts": {
     "entities": 2086,
     "relations": 79,
-    "relations_inference": 79,
     "inference_rows": 4586,
-    "inference_unique": 4586,
     "valid_rows": 0,
-    "test_rows": 935,
-    "test_unique": 935,
-    "filter_unique": 5521,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 935
+   }
   },
   {
-   "key": "t1/NELLInductive_v3",
    "name": "NELLInductive_v3",
    "path": "KGs/ultra-suite-v1/NELLInductive_v3",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "NELLInductive:v3",
    "size": {
     "entities": 3566,
@@ -908,30 +555,15 @@
    "counts": {
     "entities": 3566,
     "relations": 122,
-    "relations_inference": 122,
     "inference_rows": 8048,
-    "inference_unique": 8048,
     "valid_rows": 0,
-    "test_rows": 1620,
-    "test_unique": 1620,
-    "filter_unique": 9668,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1620
+   }
   },
   {
-   "key": "t1/NELLInductive_v4",
    "name": "NELLInductive_v4",
    "path": "KGs/ultra-suite-v1/NELLInductive_v4",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "NELLInductive:v4",
    "size": {
     "entities": 2795,
@@ -946,30 +578,15 @@
    "counts": {
     "entities": 2795,
     "relations": 61,
-    "relations_inference": 61,
     "inference_rows": 7073,
-    "inference_unique": 7073,
     "valid_rows": 0,
-    "test_rows": 1447,
-    "test_unique": 1447,
-    "filter_unique": 8520,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1447
+   }
   },
   {
-   "key": "t1/ILPC2022_small",
    "name": "ILPC2022_small",
    "path": "KGs/inductive/ilpc-small",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "ILPC2022:small",
    "size": {
     "entities": 6653,
@@ -984,30 +601,15 @@
    "counts": {
     "entities": 6653,
     "relations": 43,
-    "relations_inference": 43,
     "inference_rows": 20960,
-    "inference_unique": 20960,
     "valid_rows": 2908,
-    "test_rows": 2902,
-    "test_unique": 2902,
-    "filter_unique": 26770,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 2902
+   }
   },
   {
-   "key": "t1/ILPC2022_large",
    "name": "ILPC2022_large",
    "path": "KGs/inductive/ilpc-large",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "ILPC2022:large",
    "size": {
     "entities": 29246,
@@ -1022,30 +624,15 @@
    "counts": {
     "entities": 29246,
     "relations": 64,
-    "relations_inference": 63,
     "inference_rows": 77044,
-    "inference_unique": 77044,
     "valid_rows": 10179,
-    "test_rows": 10184,
-    "test_unique": 10184,
-    "filter_unique": 97407,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 10184
+   }
   },
   {
-   "key": "t1/HM_1k",
    "name": "HM_1k",
    "path": "KGs/inductive-fresh/hm-1k",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "HM:1k",
    "size": {
     "entities": 9899,
@@ -1060,30 +647,15 @@
    "counts": {
     "entities": 9899,
     "relations": 11,
-    "relations_inference": 11,
     "inference_rows": 18638,
-    "inference_unique": 18417,
     "valid_rows": 0,
-    "test_rows": 476,
-    "test_unique": 476,
-    "filter_unique": 18893,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 476
+   }
   },
   {
-   "key": "t1/HM_3k",
    "name": "HM_3k",
    "path": "KGs/inductive-fresh/hm-3k",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "HM:3k",
    "size": {
     "entities": 19218,
@@ -1098,30 +670,15 @@
    "counts": {
     "entities": 19218,
     "relations": 11,
-    "relations_inference": 11,
     "inference_rows": 38285,
-    "inference_unique": 37755,
     "valid_rows": 0,
-    "test_rows": 1349,
-    "test_unique": 1349,
-    "filter_unique": 39104,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1349
+   }
   },
   {
-   "key": "t1/HM_5k",
    "name": "HM_5k",
    "path": "KGs/inductive-fresh/hm-5k",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "HM:5k",
    "size": {
     "entities": 23792,
@@ -1136,30 +693,15 @@
    "counts": {
     "entities": 23792,
     "relations": 11,
-    "relations_inference": 11,
     "inference_rows": 48425,
-    "inference_unique": 47651,
     "valid_rows": 0,
-    "test_rows": 2124,
-    "test_unique": 2124,
-    "filter_unique": 49775,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 2124
+   }
   },
   {
-   "key": "t1/HM_indigo",
    "name": "HM_indigo",
    "path": "KGs/ultra-suite-v1/HM_indigo",
-   "collection": "t1",
    "view": "ind_e",
-   "code": null,
-   "group": "ind_e",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "HM:indigo",
    "size": {
     "entities": 14755,
@@ -1174,30 +716,15 @@
    "counts": {
     "entities": 14775,
     "relations": 229,
-    "relations_inference": 229,
     "inference_rows": 250195,
-    "inference_unique": 249266,
     "valid_rows": 0,
-    "test_rows": 14904,
-    "test_unique": 14904,
-    "filter_unique": 263511,
-    "test_rows_in_inference": 659,
-    "test_rows_unseen_entity": 37,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 14904
+   }
   },
   {
-   "key": "t1/FBIngram_25",
    "name": "FBIngram_25",
    "path": "KGs/inductive/ingram-FB-25",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "FBIngram:25",
    "size": {
     "entities": 4097,
@@ -1212,30 +739,15 @@
    "counts": {
     "entities": 4097,
     "relations": 216,
-    "relations_inference": 216,
     "inference_rows": 17147,
-    "inference_unique": 17147,
     "valid_rows": 5716,
-    "test_rows": 5716,
-    "test_unique": 5716,
-    "filter_unique": 28579,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 5716
+   }
   },
   {
-   "key": "t1/FBIngram_50",
    "name": "FBIngram_50",
    "path": "KGs/inductive/ingram-FB-50",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "FBIngram:50",
    "size": {
     "entities": 4445,
@@ -1250,30 +762,15 @@
    "counts": {
     "entities": 4445,
     "relations": 205,
-    "relations_inference": 205,
     "inference_rows": 11636,
-    "inference_unique": 11636,
     "valid_rows": 3879,
-    "test_rows": 3879,
-    "test_unique": 3879,
-    "filter_unique": 19394,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 3879
+   }
   },
   {
-   "key": "t1/FBIngram_75",
    "name": "FBIngram_75",
    "path": "KGs/inductive/ingram-FB-75",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "FBIngram:75",
    "size": {
     "entities": 2792,
@@ -1288,30 +785,15 @@
    "counts": {
     "entities": 2792,
     "relations": 186,
-    "relations_inference": 186,
     "inference_rows": 9316,
-    "inference_unique": 9316,
     "valid_rows": 3106,
-    "test_rows": 3106,
-    "test_unique": 3106,
-    "filter_unique": 15528,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 3106
+   }
   },
   {
-   "key": "t1/FBIngram_100",
    "name": "FBIngram_100",
    "path": "KGs/inductive/ingram-FB-100",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "FBIngram:100",
    "size": {
     "entities": 2624,
@@ -1326,30 +808,15 @@
    "counts": {
     "entities": 2624,
     "relations": 77,
-    "relations_inference": 77,
     "inference_rows": 6987,
-    "inference_unique": 6987,
     "valid_rows": 2329,
-    "test_rows": 2329,
-    "test_unique": 2329,
-    "filter_unique": 11645,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 2329
+   }
   },
   {
-   "key": "t1/WKIngram_25",
    "name": "WKIngram_25",
    "path": "KGs/inductive/ingram-WK-25",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WKIngram:25",
    "size": {
     "entities": 3228,
@@ -1364,30 +831,15 @@
    "counts": {
     "entities": 3228,
     "relations": 74,
-    "relations_inference": 74,
     "inference_rows": 3391,
-    "inference_unique": 3391,
     "valid_rows": 1130,
-    "test_rows": 1131,
-    "test_unique": 1131,
-    "filter_unique": 5652,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1131
+   }
   },
   {
-   "key": "t1/WKIngram_50",
    "name": "WKIngram_50",
    "path": "KGs/inductive/ingram-WK-50",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WKIngram:50",
    "size": {
     "entities": 9328,
@@ -1402,30 +854,15 @@
    "counts": {
     "entities": 9328,
     "relations": 93,
-    "relations_inference": 93,
     "inference_rows": 9672,
-    "inference_unique": 9672,
     "valid_rows": 3224,
-    "test_rows": 3225,
-    "test_unique": 3225,
-    "filter_unique": 16121,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 3225
+   }
   },
   {
-   "key": "t1/WKIngram_75",
    "name": "WKIngram_75",
    "path": "KGs/inductive/ingram-WK-75",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WKIngram:75",
    "size": {
     "entities": 2722,
@@ -1440,30 +877,15 @@
    "counts": {
     "entities": 2722,
     "relations": 65,
-    "relations_inference": 65,
     "inference_rows": 3430,
-    "inference_unique": 3430,
     "valid_rows": 1143,
-    "test_rows": 1144,
-    "test_unique": 1144,
-    "filter_unique": 5717,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1144
+   }
   },
   {
-   "key": "t1/WKIngram_100",
    "name": "WKIngram_100",
    "path": "KGs/inductive/ingram-WK-100",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WKIngram:100",
    "size": {
     "entities": 12136,
@@ -1478,30 +900,15 @@
    "counts": {
     "entities": 12136,
     "relations": 37,
-    "relations_inference": 37,
     "inference_rows": 13487,
-    "inference_unique": 13487,
     "valid_rows": 4496,
-    "test_rows": 4496,
-    "test_unique": 4496,
-    "filter_unique": 22479,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 4496
+   }
   },
   {
-   "key": "t1/NLIngram_0",
    "name": "NLIngram_0",
    "path": "KGs/inductive/ingram-NL-0",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "NLIngram:0",
    "size": {
     "entities": 2026,
@@ -1516,30 +923,15 @@
    "counts": {
     "entities": 2026,
     "relations": 112,
-    "relations_inference": 112,
     "inference_rows": 2287,
-    "inference_unique": 2287,
     "valid_rows": 763,
-    "test_rows": 763,
-    "test_unique": 763,
-    "filter_unique": 3813,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 763
+   }
   },
   {
-   "key": "t1/NLIngram_25",
    "name": "NLIngram_25",
    "path": "KGs/inductive/ingram-NL-25",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "NLIngram:25",
    "size": {
     "entities": 2146,
@@ -1554,30 +946,15 @@
    "counts": {
     "entities": 2146,
     "relations": 120,
-    "relations_inference": 120,
     "inference_rows": 2230,
-    "inference_unique": 2230,
     "valid_rows": 743,
-    "test_rows": 744,
-    "test_unique": 744,
-    "filter_unique": 3717,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 744
+   }
   },
   {
-   "key": "t1/NLIngram_50",
    "name": "NLIngram_50",
    "path": "KGs/inductive/ingram-NL-50",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "NLIngram:50",
    "size": {
     "entities": 2335,
@@ -1592,30 +969,15 @@
    "counts": {
     "entities": 2335,
     "relations": 119,
-    "relations_inference": 119,
     "inference_rows": 2576,
-    "inference_unique": 2576,
     "valid_rows": 859,
-    "test_rows": 859,
-    "test_unique": 859,
-    "filter_unique": 4294,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 859
+   }
   },
   {
-   "key": "t1/NLIngram_75",
    "name": "NLIngram_75",
    "path": "KGs/inductive/ingram-NL-75",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "NLIngram:75",
    "size": {
     "entities": 1578,
@@ -1630,30 +992,15 @@
    "counts": {
     "entities": 1578,
     "relations": 116,
-    "relations_inference": 116,
     "inference_rows": 1818,
-    "inference_unique": 1818,
     "valid_rows": 606,
-    "test_rows": 607,
-    "test_unique": 607,
-    "filter_unique": 3031,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 607
+   }
   },
   {
-   "key": "t1/NLIngram_100",
    "name": "NLIngram_100",
    "path": "KGs/inductive/ingram-NL-100",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "NLIngram:100",
    "size": {
     "entities": 1709,
@@ -1668,30 +1015,15 @@
    "counts": {
     "entities": 1709,
     "relations": 53,
-    "relations_inference": 53,
     "inference_rows": 2378,
-    "inference_unique": 2378,
     "valid_rows": 793,
-    "test_rows": 793,
-    "test_unique": 793,
-    "filter_unique": 3964,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 793
+   }
   },
   {
-   "key": "t1/WikiTopicsMT1_tax",
    "name": "WikiTopicsMT1_tax",
    "path": "KGs/inductive-fresh/wikitopics-MT1-tax",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WikiTopicsMT1:tax",
    "size": {
     "entities": 10000,
@@ -1706,30 +1038,15 @@
    "counts": {
     "entities": 10000,
     "relations": 9,
-    "relations_inference": 9,
     "inference_rows": 16526,
-    "inference_unique": 16526,
     "valid_rows": 0,
-    "test_rows": 1834,
-    "test_unique": 1834,
-    "filter_unique": 18360,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1834
+   }
   },
   {
-   "key": "t1/WikiTopicsMT1_health",
    "name": "WikiTopicsMT1_health",
    "path": "KGs/inductive-fresh/wikitopics-MT1-health",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WikiTopicsMT1:health",
    "size": {
     "entities": 10000,
@@ -1744,30 +1061,15 @@
    "counts": {
     "entities": 10000,
     "relations": 7,
-    "relations_inference": 7,
     "inference_rows": 14110,
-    "inference_unique": 14110,
     "valid_rows": 0,
-    "test_rows": 1566,
-    "test_unique": 1566,
-    "filter_unique": 15676,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1566
+   }
   },
   {
-   "key": "t1/WikiTopicsMT2_org",
    "name": "WikiTopicsMT2_org",
    "path": "KGs/inductive-fresh/wikitopics-MT2-org",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WikiTopicsMT2:org",
    "size": {
     "entities": 10000,
@@ -1782,30 +1084,15 @@
    "counts": {
     "entities": 10000,
     "relations": 11,
-    "relations_inference": 11,
     "inference_rows": 21976,
-    "inference_unique": 21976,
     "valid_rows": 0,
-    "test_rows": 2441,
-    "test_unique": 2441,
-    "filter_unique": 24417,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 2441
+   }
   },
   {
-   "key": "t1/WikiTopicsMT2_sci",
    "name": "WikiTopicsMT2_sci",
    "path": "KGs/inductive-fresh/wikitopics-MT2-sci",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WikiTopicsMT2:sci",
    "size": {
     "entities": 10000,
@@ -1820,30 +1107,15 @@
    "counts": {
     "entities": 10000,
     "relations": 16,
-    "relations_inference": 16,
     "inference_rows": 14852,
-    "inference_unique": 14852,
     "valid_rows": 0,
-    "test_rows": 1650,
-    "test_unique": 1650,
-    "filter_unique": 16502,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1650
+   }
   },
   {
-   "key": "t1/WikiTopicsMT3_art",
    "name": "WikiTopicsMT3_art",
    "path": "KGs/inductive-fresh/wikitopics-MT3-art",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WikiTopicsMT3:art",
    "size": {
     "entities": 10000,
@@ -1858,30 +1130,15 @@
    "counts": {
     "entities": 10000,
     "relations": 45,
-    "relations_inference": 45,
     "inference_rows": 28023,
-    "inference_unique": 28023,
     "valid_rows": 0,
-    "test_rows": 3113,
-    "test_unique": 3113,
-    "filter_unique": 31136,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 3113
+   }
   },
   {
-   "key": "t1/WikiTopicsMT3_infra",
    "name": "WikiTopicsMT3_infra",
    "path": "KGs/inductive-fresh/wikitopics-MT3-infra",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WikiTopicsMT3:infra",
    "size": {
     "entities": 10000,
@@ -1896,30 +1153,15 @@
    "counts": {
     "entities": 10000,
     "relations": 27,
-    "relations_inference": 27,
     "inference_rows": 21646,
-    "inference_unique": 21646,
     "valid_rows": 0,
-    "test_rows": 2405,
-    "test_unique": 2405,
-    "filter_unique": 24051,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 2405
+   }
   },
   {
-   "key": "t1/WikiTopicsMT4_sci",
    "name": "WikiTopicsMT4_sci",
    "path": "KGs/inductive-fresh/wikitopics-MT4-sci",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WikiTopicsMT4:sci",
    "size": {
     "entities": 10000,
@@ -1934,30 +1176,15 @@
    "counts": {
     "entities": 10000,
     "relations": 42,
-    "relations_inference": 42,
     "inference_rows": 12516,
-    "inference_unique": 12516,
     "valid_rows": 0,
-    "test_rows": 1388,
-    "test_unique": 1388,
-    "filter_unique": 13904,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1388
+   }
   },
   {
-   "key": "t1/WikiTopicsMT4_health",
    "name": "WikiTopicsMT4_health",
    "path": "KGs/inductive-fresh/wikitopics-MT4-health",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "WikiTopicsMT4:health",
    "size": {
     "entities": 10000,
@@ -1972,30 +1199,15 @@
    "counts": {
     "entities": 10000,
     "relations": 20,
-    "relations_inference": 20,
     "inference_rows": 15337,
-    "inference_unique": 15337,
     "valid_rows": 0,
-    "test_rows": 1703,
-    "test_unique": 1703,
-    "filter_unique": 17040,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 1703
+   }
   },
   {
-   "key": "t1/Metafam",
    "name": "Metafam",
    "path": "KGs/inductive-fresh/mtdea-Metafam",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "Metafam",
    "size": {
     "entities": 656,
@@ -2010,30 +1222,15 @@
    "counts": {
     "entities": 656,
     "relations": 28,
-    "relations_inference": 28,
     "inference_rows": 7257,
-    "inference_unique": 7257,
     "valid_rows": 0,
-    "test_rows": 184,
-    "test_unique": 184,
-    "filter_unique": 7441,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 0,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 184
+   }
   },
   {
-   "key": "t1/FBNELL",
    "name": "FBNELL",
    "path": "KGs/inductive-fresh/mtdea-FBNELL",
-   "collection": "t1",
    "view": "ind_er",
-   "code": null,
-   "group": "ind_er",
-   "verdict": null,
-   "weight": 0.0,
-   "origin_class": null,
    "suite_id": "FBNELL",
    "size": {
     "entities": 4747,
@@ -2048,18 +1245,10 @@
    "counts": {
     "entities": 4752,
     "relations": 183,
-    "relations_inference": 183,
     "inference_rows": 10685,
-    "inference_unique": 10685,
     "valid_rows": 0,
-    "test_rows": 597,
-    "test_unique": 597,
-    "filter_unique": 11282,
-    "test_rows_in_inference": 0,
-    "test_rows_unseen_entity": 5,
-    "test_relations_unseen": 0
-   },
-   "tail_only_view": false
+    "test_rows": 597
+   }
   }
  ]
 }

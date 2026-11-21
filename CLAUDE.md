@@ -146,7 +146,7 @@ ULTRA pretrained only on worlds of a synthetic prior, then evaluated zero-shot. 
 - Goldens: small fixtures in `tests/fixtures/proofpfn/` and `benchmarks/proofpfn/tests/golden/`. The large goldens stay in the proofpfn-golden folder outside the repository. Tests read it through `PROOFPFN_GOLDEN` and skip without it. Real source graphs: `PROOFPFN_REAL_SOURCES` (`dicee_pretrain_synthetic sources` builds them).
 - **Never loosen a bitwise golden test**: no tolerance, no skip of a failing comparison, no regenerated fixture. The training and GPU goldens are bitwise in the recorded environment (torch 2.5.1, AVX-512 CPU kernels, 2 threads; CUDA 11.8 on an RTX 4070 Ti SUPER for the GPU goldens) and skip elsewhere (`tests/proofpfn_fixtures.py`). G7 and the real source graphs hold under every scipy and torch version. A mismatch in the recorded environment is a port error, so fix the code.
 - Add logged floats in a plain loop, as the research code did. Python 3.12's `sum()` uses compensated summation and changes the last bits.
-- Never run a model on a blind test set: `KGs/fresh-v1` and the block-3 graphs `KGs/lockbox3` (`manifests.BLIND_FOLDERS`).
+- Never run a model on a blind test set: `KGs/fresh-v1` and the block-3 graphs `KGs/lockbox3`. No manifest of the repository names them, and the code has no guard: do not write a manifest for them.
 
 ## Build, Lint, Test
 

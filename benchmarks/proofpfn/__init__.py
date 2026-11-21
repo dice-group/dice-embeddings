@@ -1,7 +1,7 @@
-"""The ProofPFN benchmark: zero-shot link prediction on frozen graph sets, by the research protocol (``PROTOCOL.md``).
+"""The ProofPFN benchmark: zero-shot link prediction on frozen graph sets (``PROTOCOL.md``).
 
-Modules: ``manifests`` (graph sets and model pins, without PyTorch), ``data`` (loading and query structure),
-``systems`` (ProofPFN families and the native references), ``evaluate`` (one graph x systems -> one row file),
-``gate`` (the N validity gate on held-out worlds of the prior) and ``cli``.
+Modules: ``manifests`` (graph sets, without PyTorch), ``data`` (loading and query structure), ``systems`` (checkpoints
+of this package and the released reference models), ``evaluate`` (one graph x one system -> one result file, and the
+summary), ``prior`` (checkpoints on held-out worlds of the synthetic prior) and ``cli``.
 Run ``python -m benchmarks.proofpfn --help``.
 """

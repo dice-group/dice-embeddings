@@ -9,7 +9,7 @@ import gzip
 import hashlib
 import json
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 import numpy as np
 
@@ -17,6 +17,8 @@ from benchmarks.proofpfn.manifests import FORMAT, content_sha256, file_sha256
 from tests.proofpfn_fixtures import FIXTURES, golden_large, golden_root
 
 GOLDEN = Path(__file__).resolve().parent / 'golden'
+GATE = GOLDEN / 'gate.json'
+"""The manifest of the three graphs of the exact-rank golden G6."""
 SHARED = ('g6_ranks.json.gz', 'umls_research_scores.json')
 """The fixtures of ``tests/fixtures/proofpfn`` that the benchmark tests read too."""
 G6_KEYS = {'gs': ('S', 'REC10A-XLE-PCU-noA'), 'gcu': ('CU', 'REC10A-XLE-CU-noA'), 'gul': ('UL', 'REC10A-XLE-UL-noA'),
@@ -56,18 +58,17 @@ def write_graph(folder: Path, train: list[str], valid: list[str], test: list[str
     return folder
 
 
-def write_manifest(path: Path, root: Path, folders: dict[str, Path], name: str = 'tiny', blind: bool = False,
-                   sample_rule: str = 'first-1000') -> Path:
-    """A manifest of graph folders below ``root`` with their current file and content hashes."""
+def write_manifest(path: Path, root: Path, folders: dict[str, Path], name: str = 'tiny', sample_rule: str = 'first-1000',
+                   views: Optional[dict[str, str]] = None) -> Path:
+    """A manifest of graph folders below ``root`` with their current file and content hashes (``views``: graph to view)."""
     graphs = []
     for graph, folder in folders.items():
         train = [line.split() for line in (folder / 'train.txt').read_text().splitlines() if line.strip()]
-        graphs.append(dict(key=f'tiny/{graph}', name=graph, path=str(folder.relative_to(root)), collection='tiny', view='tiny',
-                           code=None, group=None, verdict=None, weight=0.0, origin_class=None, suite_id=None,
+        graphs.append(dict(name=graph, path=str(folder.relative_to(root)), view=(views or {}).get(graph, 'tiny'), suite_id=None,
                            size=dict(entities=len({e for h, _, t in train for e in (h, t)}), inference_edges=len({tuple(r) for r in train})),
                            sha256={s: file_sha256(folder / f'{s}.txt') for s in ('train', 'valid', 'test')},
-                           content_sha256={s: content_sha256(folder / f'{s}.txt') for s in ('train', 'test')}, counts=None, tail_only_view=None))
-    path.write_text(json.dumps(dict(format=FORMAT, name=name, blind=blind, sample_rule=sample_rule, graphs=graphs), indent=1))
+                           content_sha256={s: content_sha256(folder / f'{s}.txt') for s in ('train', 'test')}, counts=None))
+    path.write_text(json.dumps(dict(format=FORMAT, name=name, sample_rule=sample_rule, graphs=graphs), indent=1))
     return path
 
 

@@ -748,9 +748,9 @@ evaluation protocol, training, the corrected defects, and verification.
 
 [ProofPFN](docs/proofpfn.md) pretrains ULTRA only on knowledge graphs of a synthetic
 prior, for zero-shot link prediction on real graphs. Presets cover its seven arms, and
-the benchmark follows the evaluation protocol of the research runs. Worlds, the first
-training updates, checkpoints and ranks are tested bit for bit against golden references
-of the research code in the recorded environment.
+the benchmark ranks the test facts of the 54 graphs of the standard zero-shot suite.
+Worlds, the first training updates, checkpoints and ranks are tested bit for bit against
+golden references of the thesis runs in the recorded environment.
 
 <details>
 <summary>ProofPFN pretraining and zero-shot evaluation</summary>
@@ -759,13 +759,14 @@ of the research code in the recorded environment.
 # Pretrain arm S on the GPU, then repeat with the seeds 43 and 44
 dicee_pretrain_synthetic train --arm S --seed 42 --out runs/S/42
 
-# Rank the test facts of UMLS with the three seeds of S
-python -m benchmarks.proofpfn run --set gate --graphs UMLS --out rows \
-  --family mine=S:runs/S/{seed}/export-24000-ema.pt
+# Rank the test facts of the standard suite with the three seeds of S, then print the table
+python -m benchmarks.proofpfn run --set ultra54 --out rows \
+  --model 'S=runs/S/{seed}/export-24000-ema.pt'
+python -m benchmarks.proofpfn table --set ultra54 --rows rows
 ```
 
 The [ProofPFN guide](docs/proofpfn.md) covers the arms, resume, the checkpoint format,
-the N validity gate, the external baselines and the reproduction of the research runs.
+the evaluation on worlds of the prior and the reproduction of the thesis results.
 
 </details>
 

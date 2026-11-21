@@ -1,13 +1,11 @@
 """Command line of the ProofPFN benchmark: ``python -m benchmarks.proofpfn <command>`` (the commands: ``COMMANDS``, ``--help``).
 
-A family is ``--family [KEY=]ARM:TEMPLATE``: ARM is S, R, M, N, HT, CU or UL; TEMPLATE is the checkpoint or research
-export path with ``{seed}`` (seeds 42, 43, 44); KEY defaults to the arm's registered key, whose pins every file must
-match. References: ``--references trix,ultra3g,flockoff`` (checkpoints below ``--checkpoint-root``).
+A model is ``--model NAME=TEMPLATE``: TEMPLATE is the path of a checkpoint (``proofpfn-checkpoint-v1``). With the field
+``{seed}`` it names one checkpoint per seed of ``--seeds`` (default 42, 43, 44), labelled ``NAME.seed<S>``. References:
+``--references trix,ultra3g,flock`` (the released checkpoints below ``--checkpoint-root``).
 
-Exit codes: 0 done; 2 wrong input (graph selection, device, system, hash, pins); 3 a graph ran out of CUDA memory (the
-graph's error record is in ``.errors/`` of the row folder); 76 stopped at ``--max-minutes`` (the part file is saved);
-143 stopped by SIGTERM (with ``--parts`` or a shard, the part file is saved). An internal error ends with a traceback and
-exit code 1.
+Exit codes: 0 done; 2 wrong input (graph selection, device, system, hash); 3 a system ran out of CUDA memory on a graph
+(the other graphs and systems are done); 143 stopped by SIGTERM. An internal error ends with a traceback and exit code 1.
 """
 import argparse
 import json
@@ -17,15 +15,16 @@ import sys
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
 
-from .manifests import REPO, BlindSetError, InputError, read_manifest, read_models
+from .manifests import REPO, InputError, read_manifest
 
 logger = logging.getLogger(__name__)
-EXIT_INPUT, EXIT_OOM, EXIT_PARTIAL, EXIT_TERM = 2, 3, 76, 143
+EXIT_INPUT, EXIT_OOM, EXIT_TERM = 2, 3, 143
 COMMANDS = {
     'list': 'the graphs of a manifest view',
-    'check': "CPU only: the graphs' hash checks, counts and official Flock's setting, and the systems' files and pins; no score",
-    'run': 'rank the graphs with the systems and write one row file per graph (evaluate.evaluate_graph)',
-    'gate': 'the N validity gate of amendment A1: S and N on held-out worlds of the prior (gate.gate)',
+    'check': "CPU only: the graphs' hash checks and counts, and the systems' files; no score",
+    'run': 'rank the test facts of the graphs with the systems: one result file per graph and system (evaluate.evaluate_graph)',
+    'table': 'the mean MRR and Hits@10 of the result files of a graph set, per label and for the seeds of a name (evaluate.summarize)',
+    'prior': 'score checkpoints on held-out worlds of the synthetic prior, per world family (prior.evaluate)',
 }
 
 
@@ -33,40 +32,18 @@ class UsageError(InputError):
     """A command line option that is malformed or that does not fit the command."""
 
 
-def parse_family(spec: str, models: Any) -> tuple[str, str, str]:
-    """``(key, arm, template)`` of a ``[KEY=]ARM:TEMPLATE`` option; the key defaults to the arm's registered key.
-
-    The key is the text before the first ``=`` when that ``=`` comes before the first ``:``. The arm ends at the first
-    ``:``, and the template is the rest.
-
-    Args:
-        spec: The value of a ``--family`` option.
-        models: The model pins (``manifests.ModelPins``), which hold the registered keys.
-
-    Returns:
-        The key, the arm and the template.
-
-    Raises:
-        UsageError: For a malformed option or an arm without a registered key.
-    """
-    key, rest = spec.split('=', 1) if '=' in spec.split(':', 1)[0] else ('', spec)
-    if ':' not in rest:
-        raise UsageError(f'--family {spec!r}: expected [KEY=]ARM:TEMPLATE')
-    arm, template = rest.split(':', 1)
-    if not key:
-        if arm not in models.families:
-            raise UsageError(f'--family {spec!r}: arm {arm!r} has no registered key')
-        key = models.families[arm].key
-    return key, arm, template
-
-
 def _graph_options(sub: argparse.ArgumentParser) -> None:
     """The options that select the graphs of a manifest."""
-    sub.add_argument('--set', required=True, help='a manifest name (t1, gate) or a manifest file')
-    sub.add_argument('--view', default=None, help='a view of the manifest (t1: trans, ind_e, ind_er; default: all)')
-    sub.add_argument('--graphs', default=None, help='comma list of graph names or keys')
-    sub.add_argument('--release', default=None, help='the name of the blind test set that this run opens')
+    sub.add_argument('--set', required=True, help='a manifest name (ultra54) or a manifest file')
+    sub.add_argument('--view', default=None, help='a view of the manifest (ultra54: trans, ind_e, ind_er; default: all)')
+    sub.add_argument('--graphs', default=None, help='comma list of graph names')
     sub.add_argument('--data-root', type=Path, default=REPO, help='the folder that the manifest paths are relative to (default: the repository)')
+
+
+def _system_options(sub: argparse.ArgumentParser) -> None:
+    """The options that name the systems."""
+    sub.add_argument('--model', action='append', default=[], help='NAME=TEMPLATE, a checkpoint path, with {seed} for one per seed; repeat for more')
+    sub.add_argument('--seeds', default='42,43,44', help='comma list of the seeds of a template with {seed} (default: 42,43,44)')
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -76,39 +53,34 @@ def build_parser() -> argparse.ArgumentParser:
         The parser, with one subcommand per entry of ``COMMANDS``.
     """
     parser = argparse.ArgumentParser(prog='python -m benchmarks.proofpfn', description='Zero-shot link prediction on frozen graph sets (README.md).',
-                                     epilog='exit codes: 0 done, 1 internal error, 2 wrong input (one error line), 3 a graph failed (its record is '
-                                            'in .errors/), 76 stopped at --max-minutes, 143 stopped by SIGTERM (README.md, Quick start)')
+                                     epilog='exit codes: 0 done, 1 internal error, 2 wrong input (one error line), 3 a system ran out of CUDA '
+                                            'memory on a graph, 143 stopped by SIGTERM')
     commands = parser.add_subparsers(dest='command', required=True)
     sub = {name: commands.add_parser(name, help=text, description=text) for name, text in COMMANDS.items()}
-    for name in ('list', 'check', 'run'):
+    for name in ('list', 'check', 'run', 'table'):
         _graph_options(sub[name])
-    models = 'the model pins (default: manifests/models.json)'
     for name in ('check', 'run'):
-        sub[name].add_argument('--family', action='append', default=[], help='[KEY=]ARM:TEMPLATE with {seed}; repeat for more families')
-        sub[name].add_argument('--references', default='', help='comma list of trix, ultra3g, flockoff')
+        _system_options(sub[name])
+        sub[name].add_argument('--references', default='', help='comma list of trix, ultra3g, flock')
         sub[name].add_argument('--checkpoint-root', type=Path, default=REPO / 'checkpoints', help='the folder of the reference checkpoints (default: checkpoints/)')
-        sub[name].add_argument('--models', type=Path, default=None, help=models)
         sub[name].add_argument('--flock-passes-in-sequence', action='store_true',
                                help="run official Flock's passes of a query one after another, not as one microbatch")
-    run = sub['run']
-    run.add_argument('--out', type=Path, required=True, help='the output root of the row files')
-    run.add_argument('--device', default='cuda', help='the scoring device (default: cuda)')
-    run.add_argument('--shard', default='1/1', help='i/k: rank block i of k contiguous blocks of the query groups (default: 1/1)')
-    run.add_argument('--parts', action='store_true', help='keep a part file (and resume from it) also without shards')
-    run.add_argument('--save-minutes', type=float, default=10.0, help='minutes between two saves of a part file (default: 10)')
-    run.add_argument('--max-minutes', type=float, default=0.0, help='save and stop after this time (default: 0, no limit)')
-    gate = sub['gate']
-    gate.add_argument('--family', action='append', default=[], help='[KEY=]S:TEMPLATE and [KEY=]N:TEMPLATE, each with {seed}')
-    gate.add_argument('--families', default=None, help='comma list of held-out families (default: rec1, attr2, list1, categorical2, plain)')
-    gate.add_argument('--per-family', type=int, default=100, help='held-out worlds per family (default and maximum: 100)')
-    gate.add_argument('--device', default='cuda', help='the scoring device (default: cuda)')
-    gate.add_argument('--models', type=Path, default=None, help=models)
-    gate.add_argument('--out', type=Path, required=True, help='the result file (JSON)')
+    sub['run'].add_argument('--out', type=Path, required=True, help='the output root of the result files')
+    sub['run'].add_argument('--device', default='cuda', help='the scoring device (default: cuda)')
+    sub['table'].add_argument('--rows', type=Path, required=True, help='the output root of a run (its --out)')
+    sub['table'].add_argument('--direction', default='both', choices=('both', 'tail', 'head'), help='the queries of the metrics (default: both)')
+    sub['table'].add_argument('--json', type=Path, default=None, help='also write the summary to this file')
+    prior = sub['prior']
+    _system_options(prior)
+    prior.add_argument('--families', default=None, help='comma list of world families (default: rec1, attr2, list1, categorical2, plain)')
+    prior.add_argument('--per-family', type=int, default=100, help='held-out worlds per family (default and maximum: 100)')
+    prior.add_argument('--device', default='cuda', help='the scoring device (default: cuda)')
+    prior.add_argument('--out', type=Path, required=True, help='the result file (JSON)')
     return parser
 
 
 def _entries(args: argparse.Namespace) -> tuple[Any, list[Any]]:
-    manifest = read_manifest(args.set, release=args.release)
+    manifest = read_manifest(args.set)
     graphs = [g for g in args.graphs.split(',') if g] if args.graphs else None
     try:
         entries = manifest.select(view=args.view or (None if graphs else 'all'), graphs=graphs)
@@ -128,102 +100,137 @@ def _device(name: str) -> str:
     return name
 
 
+def _seeds(args: argparse.Namespace) -> list[int]:
+    try:
+        seeds = [int(s) for s in args.seeds.split(',') if s]
+    except ValueError:
+        raise UsageError(f'--seeds {args.seeds!r}: expected a comma list of integers') from None
+    if not seeds or len(set(seeds)) != len(seeds):
+        raise UsageError(f'--seeds {args.seeds!r}: expected distinct integers')
+    return seeds
+
+
+def _checkpoint_groups(args: argparse.Namespace) -> dict[str, list[Any]]:
+    """Name to the checkpoint systems of each ``--model`` option, in option order."""
+    from .systems import checkpoints
+    groups: dict[str, list[Any]] = {}
+    for spec in args.model:
+        members = checkpoints(spec, _seeds(args))
+        name = spec.partition('=')[0]
+        if name in groups:
+            raise UsageError(f'model name {name!r} is given twice')
+        groups[name] = members
+    return groups
+
+
 def _systems(args: argparse.Namespace) -> list[Any]:
-    from .systems import family, reference
-    models = read_models(args.models)
-    systems: list[Any] = [family(*parse_family(spec, models), models) for spec in args.family]
-    systems += [reference(key, models, args.checkpoint_root, one_microbatch=not args.flock_passes_in_sequence)
-                for key in args.references.split(',') if key]
+    from .systems import reference
+    systems: list[Any] = [system for members in _checkpoint_groups(args).values() for system in members]
+    systems += [reference(label, args.checkpoint_root, one_microbatch=not args.flock_passes_in_sequence) for label in args.references.split(',') if label]
     if not systems:
-        raise UsageError('give at least one --family or --references')
+        raise UsageError('give at least one --model or --references')
+    labels = [s.label for s in systems]
+    if len(set(labels)) != len(labels):
+        raise UsageError(f'system labels must be unique: {labels}')
     return systems
 
 
-def _check_graphs(manifest: Any, entries: Sequence[Any], root: Path, what: str, flock: Sequence[str] = ()) -> int:
-    """Hash-check, load and count every graph, with official Flock's setting for the keys ``flock``; print one line per
-    graph and return the exit code (``EXIT_INPUT`` when a graph fails)."""
-    from .data import load_graph, prepare_queries
-    from .systems import official_setting
-    failed = []
-    for entry in entries:
-        try:
-            graph = load_graph(manifest, entry, root)
-            queries = prepare_queries(graph, manifest.sample_rule)
-            setting = official_setting(entry, graph, flock) if flock else None
-        except (InputError, BlindSetError) as error:
-            failed.append(entry.key)
-            print(f'{entry.key:45s} FAILED: {error}')
-            continue
-        walks = f" flock walks {setting['walks']} passes {setting['passes']}" if setting else ''
-        print(f'{entry.key:45s} entities {graph.num_entities:7d} relations {graph.num_relations:5d} train {len(graph.train):8d} '
-              f'test rows {queries.test_rows:6d} ranked {len(queries.facts):5d} query groups {len(queries.groups):6d}{walks} ok')
-    if failed:
-        print(f'check FAILED: {len(failed)} of {len(entries)} graphs ({", ".join(failed)})')
-        return EXIT_INPUT
-    print(f'check passed ({len(entries)} graphs, {what})')
-    return 0
-
-
 def _check(args: argparse.Namespace) -> int:
-    from .systems import OfficialFlock
+    from .data import load_graph, prepare_queries
+    from .systems import OfficialFlock, official_setting
     manifest, entries = _entries(args)
     systems = _systems(args)
     for system in systems:
         system.check()
-        print(f'{system.key}: {json.dumps(system.model_sha256())}')
-    flock = [s.key for s in systems if isinstance(s, OfficialFlock)]
-    return _check_graphs(manifest, entries, args.data_root, f'systems {",".join(s.key for s in systems)}', flock)
+        print(f'{system.label}: {json.dumps(system.spec())} sha256 {system.sha256()}')
+    flock = any(isinstance(s, OfficialFlock) for s in systems)
+    failed = []
+    for entry in entries:
+        try:
+            graph = load_graph(entry, args.data_root)
+            queries = prepare_queries(graph, manifest.sample_rule)
+            setting = official_setting(entry, graph) if flock else None
+        except InputError as error:
+            failed.append(entry.name)
+            print(f'{entry.name:32s} FAILED: {error}')
+            continue
+        walks = f" flock walks {setting['walks']} passes {setting['passes']}" if setting else ''
+        print(f'{entry.name:32s} entities {graph.num_entities:7d} relations {graph.num_relations:5d} train {len(graph.train):8d} '
+              f'test rows {queries.test_rows:6d} ranked {len(queries.facts):5d} query groups {len(queries.groups):6d}{walks} ok')
+    if failed:
+        print(f'check FAILED: {len(failed)} of {len(entries)} graphs ({", ".join(failed)})')
+        return EXIT_INPUT
+    print(f'check passed ({len(entries)} graphs, systems {",".join(s.label for s in systems)})')
+    return 0
 
 
 def _run(args: argparse.Namespace) -> int:
-    import torch
-
-    from .evaluate import error_path, evaluate_graph, row_file_path, write_error
+    from .evaluate import evaluate_graph
     manifest, entries = _entries(args)
     device = _device(args.device)
     systems = _systems(args)
-    shard = tuple(int(x) for x in args.shard.split('/') if x.isdigit())
-    if len(shard) != 2 or args.shard.count('/') != 1:
-        raise UsageError(f'--shard {args.shard!r}: expected i/k')
-    keys = [s.key for s in systems]
-    statuses = {}
+    oom = False
     for entry in entries:
-        final = row_file_path(args.out, entry, keys)
-        try:
-            statuses[entry.key] = evaluate_graph(manifest, entry, systems, args.out, root=args.data_root, device=device,
-                                                 shard=(shard[0], shard[1]), parts=args.parts, save_minutes=args.save_minutes,
-                                                 max_minutes=args.max_minutes)
-        except torch.cuda.OutOfMemoryError as error:
-            write_error(final, entry, systems=keys, stage='score', error=str(error).splitlines()[0][:400])
-            torch.cuda.empty_cache()
-            statuses[entry.key] = 'oom'
-        if statuses[entry.key] == 'done':
-            error_path(final).unlink(missing_ok=True)   # the record of an earlier failure
-        print(entry.key, statuses[entry.key], flush=True)
-    if 'oom' in statuses.values():
-        return EXIT_OOM
-    return EXIT_PARTIAL if 'stopped' in statuses.values() else 0
+        statuses = evaluate_graph(manifest, entry, systems, args.out, root=args.data_root, device=device)
+        oom = oom or 'oom' in statuses.values()
+        print(entry.name, ' '.join(f'{label}:{status}' for label, status in statuses.items()), flush=True)
+    return EXIT_OOM if oom else 0
 
 
-def _gate(args: argparse.Namespace) -> int:
+def _table(args: argparse.Namespace) -> int:
     from dicee.synthetic_kg.checkpoint import atomic_write_bytes
 
-    from .gate import FAMILIES, PER_FAMILY, gate
-    from .systems import family
-    models = read_models(args.models)
-    systems = {arm: family(key, arm, template, models) for key, arm, template in (parse_family(spec, models) for spec in args.family)}
-    if len(args.family) != 2 or set(systems) != {'S', 'N'}:
-        raise UsageError('the gate needs one --family of arm S and one of arm N')
-    families = args.families.split(',') if args.families else FAMILIES
+    from .evaluate import summarize
+    manifest, entries = _entries(args)
+    summary = summarize(args.rows, manifest, entries, args.direction)
+    if not summary['labels']:
+        raise UsageError(f'no result file of {manifest.name} below {args.rows}')
+    views = [*summary['views'], 'all']
+
+    def cell(value: Optional[dict[str, Any]], key: str) -> str:
+        if value is None:
+            return '-'
+        v = value[key]
+        return f"{100 * v['mean']:.1f} ± {100 * v['sd']:.1f}" if isinstance(v, dict) else f'{100 * v:.1f}'
+
+    print(f"{manifest.name}, {len(entries)} graphs, {args.direction} directions: MRR / Hits@10 in points")
+    print('| system | graphs | ' + ' | '.join(views) + ' |')
+    print('|---|---:|' + '---:|' * len(views))
+    for name, group in summary['groups'].items():
+        print(f"| {name} (seeds {', '.join(map(str, group['seeds']))}) | {len(entries)} | "
+              + ' | '.join(f"{cell(group.get(v), 'MRR')} / {cell(group.get(v), 'H@10')}" for v in views) + ' |')
+    for label, row in summary['labels'].items():
+        print(f"| {label} | {row['found']} | " + ' | '.join(f"{cell(row.get(v), 'MRR')} / {cell(row.get(v), 'H@10')}" for v in views) + ' |')
+    if args.json is not None:
+        atomic_write_bytes(args.json, (json.dumps(summary, indent=1) + '\n').encode())
+        print(f'-> {args.json}')
+    return 0
+
+
+def _prior(args: argparse.Namespace) -> int:
+    from dicee.synthetic_kg.checkpoint import atomic_write_bytes
+
+    from .prior import FAMILIES, PER_FAMILY, evaluate
+    groups = _checkpoint_groups(args)
+    if not groups:
+        raise UsageError('give at least one --model')
+    families = args.families.split(',') if args.families else list(FAMILIES)
     if not set(families) <= set(FAMILIES) or not 1 <= args.per_family <= PER_FAMILY:
-        raise UsageError(f'the gate has 1 to {PER_FAMILY} held-out worlds (--per-family) of each of the families {FAMILIES}')
-    record = gate(systems['S'], systems['N'], families, args.per_family, _device(args.device))
+        raise UsageError(f'there are 1 to {PER_FAMILY} held-out worlds (--per-family) of each of the families {FAMILIES}')
+    device = _device(args.device)
+    for members in groups.values():
+        for system in members:
+            system.check()
+    record = evaluate(groups, families, args.per_family, device)
     atomic_write_bytes(args.out, (json.dumps(record, indent=1) + '\n').encode())
-    print('| family | worlds | MRR S | MRR N | D = S - N | SE | reading |')
-    for name, value in record['results'].items():
-        print(f"| {name} | {value['worlds']} | {value['mrr_a']:.4f} | {value['mrr_b']:.4f} | {value['D']:+.4f} | {value['se']:.4f} | {value['reading']} |")
-    if 'reading' in record:
-        print(f"n_validity: {record['reading']['n_validity']}")
+    print('| family | worlds | ' + ' | '.join(f'MRR {name}' for name in groups) + ' |')
+    for family in families:
+        print(f"| {family} | {args.per_family} | " + ' | '.join(f"{record['results'][name][family]['MRR']:.4f}" for name in groups) + ' |')
+    if 'difference' in record:
+        d = record['difference']
+        print(f"| family | D = {d['a']} - {d['b']} | SE | reading |")
+        for family, value in d['families'].items():
+            print(f"| {family} | {value['D']:+.4f} | {value['se']:.4f} | {value['reading']} |")
     print(f'-> {args.out}')
     return 0
 
@@ -231,15 +238,15 @@ def _gate(args: argparse.Namespace) -> int:
 def main(argv: Optional[Sequence[str]] = None) -> int:
     """Run a command.
 
-    While the command runs, SIGTERM exits with ``EXIT_TERM``. The commands ``run`` and ``gate`` run inside
+    While the command runs, SIGTERM exits with ``EXIT_TERM``. The commands ``run`` and ``prior`` run inside
     ``determinism.cublas_workspace``.
 
     Args:
         argv: The arguments after the program name, or ``None`` for ``sys.argv[1:]``.
 
     Returns:
-        The exit code (see the module docstring). An ``InputError`` or a ``BlindSetError`` prints one ``error:`` line
-        on stderr and gives ``EXIT_INPUT``.
+        The exit code (see the module docstring). An ``InputError`` prints one ``error:`` line on stderr and gives
+        ``EXIT_INPUT``.
 
     Raises:
         SystemExit: From ``argparse`` for ``--help`` (code 0) or a malformed command line (code 2), and at SIGTERM
@@ -252,15 +259,15 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     try:
         if args.command == 'list':
             for entry in _entries(args)[1]:
-                print(entry.key)
+                print(entry.name)
             return 0
-        commands: dict[str, Callable[[argparse.Namespace], int]] = {'check': _check, 'run': _run, 'gate': _gate}
-        if args.command in ('run', 'gate'):
+        commands: dict[str, Callable[[argparse.Namespace], int]] = {'check': _check, 'run': _run, 'table': _table, 'prior': _prior}
+        if args.command in ('run', 'prior'):
             from dicee.synthetic_kg.determinism import cublas_workspace
             with cublas_workspace():   # dicee's models score on CUDA, which needs the setting first
                 return commands[args.command](args)
         return commands[args.command](args)
-    except (InputError, BlindSetError) as error:
+    except InputError as error:
         print(f'error: {error}', file=sys.stderr)
         return EXIT_INPUT
     finally:

@@ -22,8 +22,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Reproducible UltraQuery and +H benchmarks (`python -m benchmarks.cqa`): frozen studies verified against the pinned upstream implementations, a pinned Docker runtime, paired adapter, answer-filter and inference-graph ablations
 - ProofPFN (`dicee.synthetic_kg`): ULTRA pretrained on worlds of a synthetic prior, with presets of seven arms, resumable runs and its own checkpoint format ([guide](docs/proofpfn.md))
 - `dicee_pretrain_synthetic`: the command that pretrains an arm, converts research exports into checkpoints and builds the real source graphs of arms R and M
-- ProofPFN benchmark (`python -m benchmarks.proofpfn`): frozen graph and model manifests, zero-shot ranks by the research protocol and the N validity gate
-- Golden tests against the research code: bitwise world orders, worlds, initial weights, first training updates, exports, ranks and gate values
+- ProofPFN benchmark (`python -m benchmarks.proofpfn`): the manifest of the 54 graphs of the standard zero-shot suite, zero-shot ranks of checkpoints and of the released TRIX, ULTRA and Flock, a summary table over graphs and seeds, and the evaluation on held-out worlds of the prior
+- Golden tests against the code of the thesis runs: bitwise world orders, worlds, initial weights, first training updates, exports and ranks, and the values on worlds of the prior
 
 ### Changed
 - KGFM inference accelerated (fused kernels, query reuse, Flock execution)

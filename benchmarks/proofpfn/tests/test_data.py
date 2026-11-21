@@ -1,4 +1,4 @@
-"""The research loader rules: ids, file order, the sample rule, filters, query groups, the self-loop rule, GT2 inputs."""
+"""The loader rules: ids, file order, the sample rule, filters and query groups."""
 import random
 
 import numpy as np
@@ -8,7 +8,7 @@ import torch
 from benchmarks.proofpfn import data as D
 from benchmarks.proofpfn import manifests as mf
 
-from .golden import fixture, int_digest, write_graph, write_manifest
+from .golden import GATE, fixture, int_digest, write_graph, write_manifest
 
 
 def test_ids_are_sorted_names_and_rows_keep_file_order(tmp_path):
@@ -39,20 +39,13 @@ def test_the_first_1000_sample_rule():
     assert D.ranked_positions(test, 'all') is None and D.ranked_positions(test, 'first-1000') == positions
 
 
-def test_query_groups_known_sets_and_rules():
+def test_query_groups_and_known_sets():
     test = [(0, 1, 2), (0, 1, 3), (4, 0, 2), (5, 1, 2)]
     groups = D.query_groups(test)
     assert groups == [((False, 0, 4), [2]), ((True, 0, 2), [2]), ((False, 1, 0), [0, 1]), ((True, 1, 2), [0, 3]),
                       ((True, 1, 3), [1]), ((False, 1, 5), [3])]
     known = D.known_sets(test)
     assert known[False][1, 0] == {2, 3} and known[True][1, 2] == {0, 5}
-    train = [(i, 0, i + 1) for i in range(99)] + [(7, 0, 7)] + [(1, 1, 1), (1, 1, 2)]
-    assert D.reflexive_relations(train) == {0, 1}                          # 1 of 100 and 1 of 2 facts are self-loops
-    more = train + [(200, 0, 201)]                                         # 1 of 101: below 1%
-    assert D.reflexive_relations(more) == {1}
-    gt2 = D.gt2_inputs([(0, 0, 1), (2, 0, 1), (2, 0, 3)], 5)
-    unseen, g = gt2[False, 0]                                              # tails of relation 0: 1 twice, 3 once
-    assert unseen.tolist() == [True, False, True, False, True] and g == (1 + 0.5) / (3 + 1)
     assert D.inference_stats(torch.tensor([[0, 0, 1], [0, 0, 1], [2, 1, 1]])) == (3, 2)
 
 
@@ -65,29 +58,28 @@ def test_rank_of_takes_the_mean_of_ties():
 def test_load_graph_checks_the_manifest(tmp_path):
     folder = write_graph(tmp_path / 'g', ['a\tr\tb', 'b\tr\tc'], ['c\tr\ta'], ['b\tr\ta'])
     manifest = mf.read_manifest(write_manifest(tmp_path / 'm.json', tmp_path, {'g': folder}))
-    graph = D.load_graph(manifest, manifest.entry('g'), tmp_path)
+    graph = D.load_graph(manifest.entry('g'), tmp_path)
     assert graph.num_entities == 3 and graph.hashes['train.txt'] == mf.file_sha256(folder / 'train.txt')
     (folder / 'train.txt').write_text('a\tr\tb\nb\tr\tc\nc\tr\tb\n')
     with pytest.raises(mf.ManifestError, match='train.txt'):
-        D.load_graph(manifest, manifest.entry('g'), tmp_path)
+        D.load_graph(manifest.entry('g'), tmp_path)
 
 
 @pytest.mark.parametrize('name', ['UMLS', 'NELLInductive_v1', 'grail-WN18RR_v1'])
 def test_gate_graphs_give_the_research_rows(name):
-    """Sizes, open relations and the row order of the research harness (G6 header and row identity), without a model."""
-    gate = mf.read_manifest('gate')
+    """Sizes and the row order of the research harness (G6 header and row identity), without a model."""
+    gate = mf.read_manifest(GATE)
     entry = gate.entry(name)
-    if not gate.folder(entry, mf.REPO).is_dir():
+    if not (mf.REPO / entry.path).is_dir():
         pytest.skip(f'{entry.path} is not available')
     reference = fixture('g6_ranks.json.gz')['graphs'][name]
-    graph = D.load_graph(gate, entry, mf.REPO)
+    graph = D.load_graph(entry, mf.REPO)
     queries = D.prepare_queries(graph, gate.sample_rule)
     header = reference['header']
-    assert (graph.num_entities, graph.num_relations, sorted(queries.reflexive)) == (header['entities'], header['relations'], header['reflexive'])
+    assert (graph.num_entities, graph.num_relations) == (header['entities'], header['relations'])
     order = [[queries.index(m), int(head)] for (head, _, _), members in queries.groups for m in members]
     assert len(order) == reference['rows'] and int_digest(order) == reference['rows_identity']
     assert queries.positions is None and queries.test_rows == reference['record']['test_rows']
-    assert isinstance(queries.gt2[False, 0][0], np.ndarray)
 
 
 @pytest.mark.parametrize('name', ['FB15k-237', 'YAGO3-10', 'FB15k'])
@@ -100,7 +92,7 @@ def test_sampled_graphs_give_the_research_sample(name, tmp_path):
         pytest.skip(f'KGs/{record["key"]} is not available')
     manifest = mf.read_manifest(write_manifest(tmp_path / 'sampled.json', mf.REPO, {name: folder}))
     entry = manifest.entry(name)
-    graph = D.load_graph(manifest, entry, mf.REPO)
+    graph = D.load_graph(entry, mf.REPO)
     assert {f'{s}.txt': graph.hashes[f'{s}.txt'] for s in mf.SPLITS} == record['sha256']   # the files of the golden
     positions = D.ranked_positions(D.as_triples(graph.test), manifest.sample_rule)
     assert positions is not None and (len(positions), positions[:5], positions[-5:]) == (record['ranked'], record['first'], record['last'])

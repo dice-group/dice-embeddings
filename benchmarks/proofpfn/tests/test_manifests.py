@@ -1,46 +1,48 @@
-"""The frozen manifests: graph sets, views, hash checks, the blind-set guard, the model pins, and the builders that derive
-the graph manifests from the research inputs named in their ``sources``.
+"""The frozen manifests: graph sets, views, hash checks, malformed files, and the builders that derive the manifests from
+the research inputs named in their ``sources``.
 """
 import gzip
 import json
 import subprocess
 import sys
-from typing import Any, Mapping, Optional, Sequence
+from typing import Any, Mapping, Sequence
 
 import pytest
 
 from benchmarks.proofpfn import manifests as mf
 
-from .golden import fixture, golden_root, write_graph, write_manifest
+from .golden import GATE, fixture, golden_root, write_graph, write_manifest
 
-REGISTERED_KEYS = {'S': 'rec10axlepcunoa', 'R': 'pcur', 'M': 'pcum', 'N': 'pcun', 'HT': 'pcuht', 'CU': 'rec10axlecunoa',
-                   'UL': 'rec10axleulnoa'}
-GROUP_CODE = {'E': 'E', 'L': 'L', 'B': 'B', 'S': 'S', 'O': 'O', 'R': 'R', 'T (reported apart)': 'T', 'contamination view': 'C'}
-VIEW_OF_CODE = {**dict.fromkeys('ELBSOR', 'main'), 'C': 'contamination', 'T': 'apart'}
-GATE_GRAPHS = ('UMLS', 'ultra-suite-v1/NELLInductive_v1', 'inductive/grail-WN18RR_v1')
+GATE_GRAPHS = ('UMLS', 'ultra-suite-v1/NELLInductive_v1', 'inductive/grail-WN18RR_v1')   # their keys in the graph audit
 
 
 def test_manifests_resolve_without_torch():
-    code = ('import sys; import benchmarks.proofpfn.manifests as m; [m.read_manifest(n) for n in ("t1", "gate")]; '
-            'm.read_models(); assert "torch" not in sys.modules, "torch was imported"')
+    code = 'import sys; import benchmarks.proofpfn.manifests as m; m.read_manifest("ultra54"); assert "torch" not in sys.modules, "torch was imported"'
     subprocess.run([sys.executable, '-B', '-c', code], cwd=mf.REPO, check=True)
 
 
-def test_t1_suite():
-    t1 = mf.read_manifest('t1')
-    assert {k: len(v) for k, v in t1.views.items()} == {'all': 54, 'trans': 13, 'ind_e': 18, 'ind_er': 23}
-    assert t1.sample_rule == 'all' and len({e.suite_id for e in t1.entries}) == 54
-    assert all(e.name == str(e.suite_id).replace(':', '_') and all(e.sha256.values()) and e.counts is not None for e in t1.entries)
-    assert sum(bool(e.tail_only_view) for e in t1.entries) == 5
+def test_the_standard_suite():
+    suite = mf.read_manifest('ultra54')
+    assert {k: len(v) for k, v in suite.views.items()} == {'all': 54, 'trans': 13, 'ind_e': 18, 'ind_er': 23}
+    assert suite.sample_rule == 'all' and len({e.suite_id for e in suite.entries}) == 54
+    assert all(e.name == str(e.suite_id).replace(':', '_') and all(e.sha256.values()) and e.counts is not None and tuple(e.counts) == mf.COUNTS
+               for e in suite.entries)
+    assert [e.name for e in suite.select('trans', ['FBIngram_25', 'CoDExSmall'])] == ['CoDExSmall']
+    assert [e.name for e in suite.select(graphs=['NELL995', 'CoDExSmall', 'NELL995'])] == ['NELL995', 'CoDExSmall']
+    for bad in (dict(view='nosuch'), dict(graphs=['UMLS'])):
+        with pytest.raises(KeyError):
+            suite.select(**bad)
+    with pytest.raises(ValueError):
+        suite.select()
 
 
 def test_gate_graphs_match_the_golden_record():
-    gate = mf.read_manifest('gate')
-    assert [e.key for e in gate.entries] == list(GATE_GRAPHS)
+    gate = mf.read_manifest(GATE)
+    assert [e.name for e in gate.entries] == ['UMLS', 'NELLInductive_v1', 'grail-WN18RR_v1'] and gate.sample_rule == 'first-1000'
     for name, recorded in fixture('g6_ranks.json.gz')['graphs'].items():
         entry = gate.entry(name)
         assert {f'{s}.txt': entry.sha256[s] for s in mf.SPLITS} == {k: v for k, v in recorded['record']['sha256'].items() if k != 'manifest'}
-        folder = gate.folder(entry, mf.REPO)
+        folder = mf.REPO / entry.path
         if folder.is_dir():
             problems, hashes = mf.graph_problems(entry, folder)
             assert problems == [] and hashes['train_content'] == entry.content_sha256['train']
@@ -52,60 +54,36 @@ def test_hash_checks(tmp_path):
     entry = manifest.entry('g')
     assert mf.graph_problems(entry, folder)[0] == []
     (folder / 'valid.txt').write_text('c\tr\ta\n\n')   # another file, the same facts: only the file hash differs
-    assert mf.graph_problems(entry, folder)[0] == ['tiny/g: the SHA-256 of valid.txt differs from the manifest']
+    assert mf.graph_problems(entry, folder)[0] == ['g: the SHA-256 of valid.txt differs from the manifest']
     (folder / 'test.txt').write_text('b r a\nb\tr\ta\nx y\n')   # the same content: spaces and tabs, a duplicate, a 2-field line
     assert mf.content_sha256(folder / 'test.txt') == entry.content_sha256['test']
     (folder / 'train.txt').unlink()
     assert any('missing train.txt' in p for p in mf.graph_problems(entry, folder)[0])
 
 
-def test_blind_sets_open_only_with_their_release_flag(tmp_path):
-    blind_dir = tmp_path / 'KGs' / 'lockbox3' / 'g'
-    folder = write_graph(blind_dir, ['a\tr\tb'], [], ['b\tr\ta'])
-    path = write_manifest(tmp_path / 'blind.json', tmp_path, {'g': folder}, name='blindtest', blind=True)
-    with pytest.raises(mf.BlindSetError):
-        mf.read_manifest(path)
-    with pytest.raises(mf.BlindSetError):
-        mf.read_manifest(path, release='another')
-    released = mf.read_manifest(path, release='blindtest')
-    assert released.blind and released.folder(released.entry('g'), tmp_path) == folder
-    with pytest.raises(mf.BlindSetError):   # a development manifest may not name a blind folder
-        mf.read_manifest(write_manifest(tmp_path / 'dev.json', tmp_path, {'g': folder}, name='devtest'))
-    assert mf.in_blind_folder('KGs/fresh-v1/x') and mf.in_blind_folder('KGs/lockbox3/x') and not mf.in_blind_folder('KGs/lockbox4/x')
+def test_malformed_manifests_are_refused(tmp_path):
+    folder = write_graph(tmp_path / 'g', ['a\tr\tb'], [], ['b\tr\ta'])
+    good = json.loads(write_manifest(tmp_path / 'm.json', tmp_path, {'g': folder}).read_text())
 
+    def refused(message: str, **changes: Any) -> None:
+        doc = {k: v for k, v in dict(good, **changes).items() if v is not None}
+        (tmp_path / 'bad.json').write_text(json.dumps(doc))
+        with pytest.raises(mf.ManifestError, match=message):
+            mf.read_manifest(tmp_path / 'bad.json')
 
-def test_the_blind_guard_compares_resolved_paths(tmp_path, monkeypatch):
-    shifted = write_graph(tmp_path / 'KGs' / 'fresh-v1' / 'g', ['a\tr\tb'], [], ['b\tr\ta'])
-    with pytest.raises(mf.BlindSetError):   # the data root KGs and the path fresh-v1/g
-        mf.read_manifest(write_manifest(tmp_path / 'shifted.json', tmp_path / 'KGs', {'g': shifted}, name='devtest'))
-    blind = write_graph(tmp_path / 'elsewhere' / 'lockbox3' / 'g', ['a\tr\tb'], [], ['b\tr\ta'])
-    secret = write_graph(tmp_path / 'secret' / 'g', ['a\tr\tb'], [], ['b\tr\ta'])
-    (tmp_path / 'KGs' / 'dev').symlink_to(blind.parent)    # names without a blind part that resolve into a blind folder
-    (tmp_path / 'KGs' / 'dev2').symlink_to(secret.parent)
-    folders = {'g': tmp_path / 'KGs' / 'dev' / 'g', 'h': tmp_path / 'KGs' / 'dev2' / 'g'}
-    manifest = mf.read_manifest(write_manifest(tmp_path / 'linked.json', tmp_path, folders, name='devtest'))
-    with pytest.raises(mf.BlindSetError):
-        manifest.folder(manifest.entry('g'), tmp_path)
-    assert manifest.folder(manifest.entry('h'), tmp_path) == folders['h']
-    monkeypatch.setattr(mf, 'BLIND_FOLDERS', (str(tmp_path / 'secret'),))   # a blind folder of the repository by its resolved path
-    with pytest.raises(mf.BlindSetError):
-        manifest.folder(manifest.entry('h'), tmp_path)
-
-
-def test_model_pins():
-    pins = mf.read_models()
-    assert {arm: f.key for arm, f in pins.families.items()} == REGISTERED_KEYS
-    assert all(f.export_sha256 is not None and set(f.export_sha256) == set(mf.SEEDS) for f in pins.families.values())
-    assert set(pins.references) == {'trix', 'ultra3g', 'flockoff'} and all(r.path and len(r.sha256) == 64 for r in pins.references.values())
-
-
-def test_pending_pins_are_read_as_none(tmp_path):
-    doc = json.loads((mf.MANIFESTS / 'models.json').read_text())
-    doc['families']['HT']['export_sha256'] = None
-    path = tmp_path / 'models.json'
-    path.write_text(json.dumps(doc))
-    pins = mf.read_models(path)
-    assert pins.families['HT'].export_sha256 is None and pins.families['S'].export_sha256 is not None
+    graph = good['graphs'][0]
+    refused('is not a proofpfn-graph-manifest-v2 file', format='proofpfn-graph-manifest-v1')
+    refused('unknown sample rule', sample_rule='first-10')
+    refused('graph names must be unique', graphs=[graph, graph])
+    refused('letters, digits', name='tiny set')
+    refused('malformed manifest', graphs=None)
+    refused('relative to the data root', graphs=[dict(graph, path=str(folder))])
+    refused('malformed graph entry', graphs=[{k: v for k, v in graph.items() if k != 'sha256'}])
+    refused('train and test only', graphs=[dict(graph, content_sha256=dict(valid='0' * 64))])
+    (tmp_path / 'text.json').write_text('no JSON')
+    for source, message in ((tmp_path / 'text.json', 'cannot read'), ('nosuch', 'neither a manifest')):
+        with pytest.raises(mf.ManifestError, match=message):
+            mf.read_manifest(source)
 
 
 # ---------------------------------------------------------------------------------------------- the builders
@@ -115,27 +93,9 @@ def dumps(doc: Mapping[str, Any]) -> str:
     return json.dumps(doc, indent=1) + '\n'
 
 
-def manifest(name: str, about: str, sample_rule: str, sources: Mapping[str, str], graphs: list[dict]) -> dict:
-    """A development manifest of graph entries."""
-    return dict(format=mf.FORMAT, name=name, about=about, blind=False, sample_rule=sample_rule, sources=dict(sources), graphs=graphs)
-
-
-def audit_entry(g: Mapping[str, Any], inventory: Mapping[str, Mapping[str, Any]], view: Optional[str] = None) -> dict:
-    """The entry of an audited graph: its audit fields, the content hashes of the inventory and no file hashes."""
-    code = GROUP_CODE.get(g['group']) if g['group'] is not None else None
-    if view is None:
-        assert code is not None, f"{g['key']}: the audit gives no group, so the graph has no view"
-        view = VIEW_OF_CODE[code]
-    inv = inventory[g['key']]
-    return dict(key=g['key'], name=g['name'], path=g['path'], collection=g['collection'], view=view,
-                code=code, group=g['group'], verdict=g['verdict'], weight=g['weight'], origin_class=g['origin_class'],
-                suite_id=g['suite_id'], size=dict(entities=g['size']['entities'], inference_edges=g['size']['inference_edges']),
-                sha256=dict.fromkeys(mf.SPLITS), content_sha256={s: inv[f'sha_{s}'] for s in mf.CONTENT_SPLITS}, counts=None, tail_only_view=None)
-
-
-def build_t1(suite: Mapping[str, Any], audit: Mapping[str, Any], sources: Mapping[str, str]) -> dict:
-    """``t1``: the 54 zero-shot graphs of ``p0-suite-v1/manifest.json``, named by suite id with ``:`` as ``_``; ``size`` from
-    the audit entry of the same folder."""
+def build_ultra54(suite: Mapping[str, Any], audit: Mapping[str, Any], sources: Mapping[str, str]) -> dict:
+    """``ultra54``: the 54 zero-shot graphs of ``p0-suite-v1/manifest.json``, named by suite id with ``:`` as ``_``; ``size``
+    from the audit entry of the same folder."""
     by_path = {g['path']: g for g in audit['graphs']}
     graphs = []
     for sid, g in suite['graphs'].items():
@@ -143,35 +103,34 @@ def build_t1(suite: Mapping[str, Any], audit: Mapping[str, Any], sources: Mappin
             continue
         audited = by_path[g['folder']]
         assert audited['suite_id'] == sid, f'{sid}: no audit entry with this suite id for {g["folder"]}'
-        name = sid.replace(':', '_')
-        graphs.append(dict(key=f't1/{name}', name=name, path=g['folder'], collection='t1', view=g['group'], code=None, group=g['group'],
-                           verdict=None, weight=0.0, origin_class=None, suite_id=sid,
+        graphs.append(dict(name=sid.replace(':', '_'), path=g['folder'], view=g['group'], suite_id=sid,
                            size=dict(entities=audited['size']['entities'], inference_edges=audited['size']['inference_edges']),
-                           sha256={s: g['files'][s]['sha256'] for s in mf.SPLITS}, content_sha256={}, counts=dict(g['counts']),
-                           tail_only_view=g['tail_only_view']))
+                           sha256={s: g['files'][s]['sha256'] for s in mf.SPLITS}, content_sha256={},
+                           counts={k: g['counts'][k] for k in mf.COUNTS}))
     assert len(graphs) == 54
-    about = ('T1, the standard zero-shot suite p0-suite-v1 (built under the official ULTRA conventions): 54 graphs in the groups '
-             'trans, ind_e and ind_er, every test row ranked in both directions. File SHA-256 and counts from the suite manifest; '
-             'the suite id is the key of the official Flock walk table; size from the audit entry of the same folder.')
-    return manifest('t1', about, 'all', sources, graphs)
+    about = ('The standard zero-shot suite of 54 graphs, built under the official ULTRA conventions, in the groups trans, ind_e and ind_er. '
+             'Every test row is ranked in both directions. File SHA-256 and counts from the suite manifest p0-suite-v1; the suite id is the '
+             'key of the official Flock walk table; size from the audit entry of the same folder.')
+    return dict(format=mf.FORMAT, name='ultra54', about=about, sample_rule='all', sources=dict(sources), graphs=graphs)
 
 
 def build_gate(audit: Mapping[str, Any], inventory: Sequence[Mapping[str, Any]], recorded: Mapping[str, Mapping[str, str]],
                sources: Mapping[str, str]) -> dict:
-    """``gate``: the graphs of ``GATE_GRAPHS`` with the audit fields, the content hashes and the file hashes that the golden
-    runs recorded (``recorded``: graph key to the SHA-256 per split)."""
+    """``gate``: the graphs of ``GATE_GRAPHS`` with the content hashes of the audit inventory and the file hashes that the
+    golden runs recorded (``recorded``: audit key to the SHA-256 per split)."""
     inv = {e['key']: e for e in inventory}
     by_key = {g['key']: g for g in audit['graphs']}
     graphs = []
     for key in GATE_GRAPHS:
         assert set(recorded[key]) == set(mf.SPLITS), f'{key}: no recorded file hashes'
-        entry = audit_entry(by_key[key], inv, view='gate')
-        entry['sha256'] = {s: recorded[key][s] for s in mf.SPLITS}
-        graphs.append(entry)
-    about = ('The gate graphs of the exact-rank golden G6: UMLS, NELLInductive_v1 and grail-WN18RR_v1. The audit excludes '
-             'grail-WN18RR_v1 (X2: a copy of ultra-suite-v1/WN18RRInductive_v1), so it is listed here explicitly. File '
-             'SHA-256 as the golden runs hashed the files; content hashes from the audit inventory.')
-    return manifest('gate', about, 'first-1000', sources, graphs)
+        g = by_key[key]
+        graphs.append(dict(name=g['name'], path=g['path'], view='gate', suite_id=g['suite_id'],
+                           size=dict(entities=g['size']['entities'], inference_edges=g['size']['inference_edges']),
+                           sha256={s: recorded[key][s] for s in mf.SPLITS},
+                           content_sha256={s: inv[key][f'sha_{s}'] for s in mf.CONTENT_SPLITS}, counts=None))
+    about = ('The three graphs of the exact-rank golden G6: UMLS, NELLInductive_v1 and grail-WN18RR_v1. File SHA-256 as the golden runs '
+             'hashed the files; content hashes from the audit inventory.')
+    return dict(format=mf.FORMAT, name='gate', about=about, sample_rule='first-1000', sources=dict(sources), graphs=graphs)
 
 
 def test_manifests_rebuild_from_their_inputs():
@@ -179,25 +138,16 @@ def test_manifests_rebuild_from_their_inputs():
     kiowl = root / 'inputs' / 'kiowl'
     audit, inventory, suite = (json.loads((kiowl / p).read_text()) for p in
                                ('graph-audit-v1/graphs.json', 'graph-audit-v1/stats/inventory.json', 'p0-suite-v1/manifest.json'))
-    for name in ('t1', 'gate'):
-        committed = (mf.MANIFESTS / f'{name}.json').read_text()
+    for name, path in (('ultra54', mf.MANIFESTS / 'ultra54.json'), ('gate', GATE)):
+        committed = path.read_text()
         sources = json.loads(committed)['sources']
         for source, digest in sources.items():   # 'K/<file>' (a kiowl input) or 'golden/small/<file> (what it holds)'
-            path = kiowl / source.removeprefix('K/') if source.startswith('K/') else root / source.split(' ')[0]
-            assert mf.file_sha256(path) == digest, source
-        if name == 't1':
-            doc = build_t1(suite, audit, sources)
+            file = kiowl / source.removeprefix('K/') if source.startswith('K/') else root / source.split(' ')[0]
+            assert mf.file_sha256(file) == digest, source
+        if name == 'ultra54':
+            doc = build_ultra54(suite, audit, sources)
         else:
             g6 = json.loads(gzip.decompress((root / 'golden' / 'small' / 'g6_ranks.json.gz').read_bytes()))
             recorded = {g['record']['key']: {s: g['record']['sha256'][f'{s}.txt'] for s in mf.SPLITS} for g in g6['graphs'].values()}
             doc = build_gate(audit, inventory, recorded, sources)
         assert dumps(doc) == committed, name
-    research_path = root / 'work' / 'tree' / 'Experiments' / 'synthetic-kg' / 'fresh-v1' / 'models.json'
-    ht_path = kiowl / 'fresh-v1' / 'models-pcuht.json'   # written on kiowl after HT's training, so a kiowl input
-    research = dict(json.loads(research_path.read_text())['models'], **json.loads(ht_path.read_text())['models'])
-    pins = mf.read_models()
-    for family in pins.families.values():   # the pins equal the research files
-        assert family.export_sha256 is not None and research[family.key] == {str(s): v for s, v in family.export_sha256.items()}
-    assert all(research[key] == {'model': pin.sha256} for key, pin in pins.references.items())
-    sources = json.loads((mf.MANIFESTS / 'models.json').read_text())['sources']
-    assert sources == {'K/fresh-v1/models.json': mf.file_sha256(research_path), 'K/fresh-v1/models-pcuht.json': mf.file_sha256(ht_path)}
