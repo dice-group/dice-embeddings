@@ -14,7 +14,7 @@ from benchmarks.proofpfn import manifests as mf
 from .golden import fixture, golden_root, write_graph, write_manifest
 
 REGISTERED_KEYS = {'S': 'rec10axlepcunoa', 'R': 'pcur', 'M': 'pcum', 'N': 'pcun', 'HT': 'pcuht', 'CU': 'rec10axlecunoa',
-                   'UL': 'rec10axleulnoa', 'S0': 'rec10axlenoa', 'DT': 'rec10axledtnoa', 'PV': 'rec10axlepvnoa'}
+                   'UL': 'rec10axleulnoa'}
 GROUP_CODE = {'E': 'E', 'L': 'L', 'B': 'B', 'S': 'S', 'O': 'O', 'R': 'R', 'T (reported apart)': 'T', 'contamination view': 'C'}
 VIEW_OF_CODE = {**dict.fromkeys('ELBSOR', 'main'), 'C': 'contamination', 'T': 'apart'}
 GATE_GRAPHS = ('UMLS', 'ultra-suite-v1/NELLInductive_v1', 'inductive/grail-WN18RR_v1')
@@ -109,22 +109,17 @@ def test_the_blind_guard_compares_resolved_paths(tmp_path, monkeypatch):
 def test_model_pins():
     pins = mf.read_models()
     assert {arm: f.key for arm, f in pins.families.items()} == REGISTERED_KEYS
-    assert all(f.export_sha256 is not None for f in pins.families.values())
-    assert not any(pins.families[a].loadable for a in ('S0', 'DT', 'PV'))
-    assert set(pins.references) == {'trix', 'ultra3g', 'flockoff', 'merit1024', 'merit2025', 'merit2026', 'merit4000', 'merit8000'}
-    models = pins.fv1_models()['models']
-    ht = pins.families['HT'].export_sha256
-    assert ht is not None and models['pcuht'] == {str(s): v for s, v in ht.items()}
-    assert models['trix'] == {'model': pins.references['trix'].sha256}
+    assert all(f.export_sha256 is not None and set(f.export_sha256) == set(mf.SEEDS) for f in pins.families.values())
+    assert set(pins.references) == {'trix', 'ultra3g', 'flockoff'} and all(r.path and len(r.sha256) == 64 for r in pins.references.values())
 
 
-def test_pending_pins_leave_the_fv1_models(tmp_path):
+def test_pending_pins_are_read_as_none(tmp_path):
     doc = json.loads((mf.MANIFESTS / 'models.json').read_text())
     doc['families']['HT']['export_sha256'] = None
     path = tmp_path / 'models.json'
     path.write_text(json.dumps(doc))
     pins = mf.read_models(path)
-    assert pins.families['HT'].export_sha256 is None and 'pcuht' not in pins.fv1_models()['models']
+    assert pins.families['HT'].export_sha256 is None and pins.families['S'].export_sha256 is not None
 
 
 # ---------------------------------------------------------------------------------------------- the builders
@@ -237,9 +232,10 @@ def test_manifests_rebuild_from_their_inputs():
         assert dumps(doc) == committed, name
     research_path = root / 'work' / 'tree' / 'Experiments' / 'synthetic-kg' / 'fresh-v1' / 'models.json'
     ht_path = kiowl / 'fresh-v1' / 'models-pcuht.json'   # written on kiowl after HT's training, so a kiowl input
-    research = json.loads(research_path.read_text())['models']
-    research_ht = json.loads(ht_path.read_text())['models']   # the frozen worker merges the two files the same way
+    research = dict(json.loads(research_path.read_text())['models'], **json.loads(ht_path.read_text())['models'])
     pins = mf.read_models()
-    assert pins.fv1_models() == {'models': dict(research, **research_ht)}
+    for family in pins.families.values():   # the pins equal the research files
+        assert family.export_sha256 is not None and research[family.key] == {str(s): v for s, v in family.export_sha256.items()}
+    assert all(research[key] == {'model': pin.sha256} for key, pin in pins.references.items())
     sources = json.loads((mf.MANIFESTS / 'models.json').read_text())['sources']
     assert sources == {'K/fresh-v1/models.json': mf.file_sha256(research_path), 'K/fresh-v1/models-pcuht.json': mf.file_sha256(ht_path)}

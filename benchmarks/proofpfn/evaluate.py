@@ -243,8 +243,7 @@ def row_file_path(out: PathLike, entry: GraphEntry, keys: Sequence[str]) -> Path
 
 
 def part_path(final: Path, shard: tuple[int, int]) -> Path:
-    """The part file of a shard: ``.parts/<graph>/shard-i-of-k.json`` next to the row file (a dot folder, which the
-    registered ``fv1_tables.py`` skips).
+    """The part file of a shard: ``.parts/<graph>/shard-i-of-k.json`` next to the row file (a dot folder).
 
     Args:
         final: The row file.

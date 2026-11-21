@@ -520,8 +520,6 @@ def family(key: str, arm: str, template: str, models: ModelPins) -> ProofPFNFami
     registered = models.family_of_key(key)
     if key in models.references or key in REFERENCE_KEYS:
         raise SystemCheckError(f'{key} is a reference key')
-    if registered is not None and not registered.loadable:
-        raise SystemCheckError(f'{key} is the registered key of the rows-only arm {registered.arm}, which this code does not load')
     if registered is not None and registered.arm != arm:
         raise SystemCheckError(f'{key} is the registered key of arm {registered.arm}, not of {arm}')
     if not (key[:1].isalpha() and key.isalnum() and key.isascii() and key.islower()):

@@ -21,7 +21,6 @@ SHARED = ('g6_ranks.json.gz', 'umls_research_scores.json')
 """The fixtures of ``tests/fixtures/proofpfn`` that the benchmark tests read too."""
 G6_KEYS = {'gs': ('S', 'REC10A-XLE-PCU-noA'), 'gcu': ('CU', 'REC10A-XLE-CU-noA'), 'gul': ('UL', 'REC10A-XLE-UL-noA'),
            'ght': ('HT', 'PCU-HT')}   # the test keys of G6: arm and research --arm of the G4 exports
-G6_REGISTERED = {'gs': 'rec10axlepcunoa', 'gcu': 'rec10axlecunoa', 'gul': 'rec10axleulnoa', 'ght': 'pcuht'}
 
 
 def fixture(name: str) -> Any:

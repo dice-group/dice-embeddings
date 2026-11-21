@@ -6,13 +6,10 @@ references TRIX, ULTRA-3g and official Flock, on the GPU of the golden run in de
 key's int64 digest, the row identity, the key order and the metrics must equal the research rows. The test skips without
 CUDA, on another GPU, without ``CUBLAS_WORKSPACE_CONFIG`` or without the large goldens (``PROOFPFN_GOLDEN``).
 
-The seam test feeds the clean rows and the research rows (``large/g6/ranks``), under the registered keys, to the
-registered ``fv1_tables.py``. The CPU test compares the per-seed raw ranks of S, CU and UL on UMLS with the research
-models' CPU ranks (recorded from the research models).
+The CPU test compares the per-seed raw ranks of S, CU and UL on UMLS with the research models' CPU ranks (recorded from
+the research models).
 """
 import json
-import subprocess
-import sys
 from pathlib import Path
 
 import pytest
@@ -23,10 +20,9 @@ from benchmarks.proofpfn import systems as sy
 from dicee.synthetic_kg.digests import json_sha256
 from tests.proofpfn_fixtures import GOLDEN_GPU, require_gpu_golden_environment
 
-from .golden import G6_KEYS, G6_REGISTERED, fixture, g4_export, golden_large, int_digest
+from .golden import G6_KEYS, fixture, g4_export, int_digest
 
 GRAPHS = ('UMLS', 'NELLInductive_v1', 'grail-WN18RR_v1')
-REGISTERED = mf.REPO / 'benchmarks' / 'proofpfn' / 'registered'
 
 
 def g6_systems(keys: tuple[str, ...] = tuple(G6_KEYS), references: tuple[str, ...] = ('trix', 'ultra3g', 'flockoff')) -> list:
@@ -35,8 +31,7 @@ def g6_systems(keys: tuple[str, ...] = tuple(G6_KEYS), references: tuple[str, ..
     systems: list = []
     for key in keys:
         template, arm = g4_export(key), G6_KEYS[key][0]
-        exports = mf.FamilyPins(arm=arm, key=key, export=20, weights='decay/ema', export_sha256={s: recorded[key][str(s)] for s in (42, 43, 44)},
-                                loadable=True)
+        exports = mf.FamilyPins(arm=arm, key=key, export=20, weights='decay/ema', export_sha256={s: recorded[key][str(s)] for s in (42, 43, 44)})
         systems.append(sy.ProofPFNFamily(key=key, arm=arm, checkpoints={s: Path(template.format(seed=s)) for s in (42, 43, 44)}, pins=exports))
     pins = mf.read_models()
     return systems + [sy.reference(key, pins) for key in references]
@@ -81,42 +76,6 @@ def test_every_key_equals_the_research_rows(clean_rows, name):
         assert record[key] == reference['record'][key], key
     assert {k: v for k, v in record['sha256'].items() if k.endswith('.txt')} == \
         {k: v for k, v in reference['record']['sha256'].items() if k.endswith('.txt')}
-
-
-def registered(doc: dict) -> dict:
-    """A row file with the test keys of G6 renamed to the keys of the registered systems."""
-    def rename(key: str) -> str:
-        for old, new in G6_REGISTERED.items():
-            if key == old or key.startswith((f'{old}.', f'{old}:')):
-                return new + key[len(old):]
-        return key
-    allgraph = dict(doc['allgraph'], model_sha256={rename(k): v for k, v in doc['allgraph']['model_sha256'].items()})
-    return dict(doc, rows=[{rename(k): v for k, v in r.items()} for r in doc['rows']], allgraph=allgraph)
-
-
-def tables(rows_dir: Path, out: Path, gate: mf.Manifest) -> bytes:
-    """``mrr.csv`` of the registered ``fv1_tables.py`` on a folder of row files (the gate graphs as a block-3 list)."""
-    lists = out.with_name(out.name + '-lists')
-    lists.mkdir()
-    (lists / 'manifest.json').write_text(json.dumps(dict(graphs={})))
-    block3 = {e.name: dict(cluster='gate', files={f'{s}.txt': e.sha256[s] for s in mf.SPLITS}) for e in gate.entries}
-    (lists / 'block3.json').write_text(json.dumps(dict(graphs=block3)))
-    subprocess.run([sys.executable, '-B', str(REGISTERED / 'fv1_tables.py'), '--rows', str(rows_dir), '--manifest', str(lists / 'manifest.json'),
-                    '--block3', str(lists / 'block3.json'), '--out-dir', str(out)], check=True, capture_output=True)
-    return (out / 'mrr.csv').read_bytes()
-
-
-@pytest.mark.slow
-def test_registered_tables_read_clean_and_research_rows_alike(clean_rows, tmp_path):
-    gate = mf.read_manifest('gate')
-    for kind in ('clean', 'research'):
-        for name, path in clean_rows.items():
-            source = path if kind == 'clean' else golden_large(f'g6/ranks/{path.relative_to(path.parents[2])}')
-            target = tmp_path / kind / 'rows' / f'{name}.json'
-            target.parent.mkdir(parents=True, exist_ok=True)
-            target.write_text(json.dumps(registered(json.loads(source.read_text()))))
-    clean, research = (tables(tmp_path / kind / 'rows', tmp_path / kind / 'tables', gate) for kind in ('clean', 'research'))
-    assert clean == research and clean.count(b'\n') == 1 + 3 * (4 * (3 + 3 + 1) + 3 * 2)   # per graph: 4 families, 3 references
 
 
 @pytest.mark.slow

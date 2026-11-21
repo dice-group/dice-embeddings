@@ -4,21 +4,16 @@ A family is ``--family [KEY=]ARM:TEMPLATE``: ARM is S, R, M, N, HT, CU or UL; TE
 export path with ``{seed}`` (seeds 42, 43, 44); KEY defaults to the arm's registered key, whose pins every file must
 match. References: ``--references trix,ultra3g,flockoff`` (checkpoints below ``--checkpoint-root``).
 
-An adapter takes its external code from ``--code`` or its environment variable (``$KGPFN_CODE``, ``$MERIT_HOME``,
-``$ANYBURL_HOME``); ``--check`` checks the setup, the pins and the graphs without a run.
-
-Exit codes: 0 done; 2 wrong input (graph selection, device, system, hash, pins, adapter setup); 3 a graph ran out of
-CUDA memory, or an adapter failed on a graph and went on with the next one (the graph's error record is in ``.errors/``
-of the row folder), or MERIT's child process ran past its time limit (no error record); 76 stopped at ``--max-minutes``
-(the part file is saved); 143 stopped by SIGTERM (with ``--parts`` or a shard, the part file is saved), or MERIT's child
-process stopped by a signal. An internal error ends with a traceback and exit code 1.
+Exit codes: 0 done; 2 wrong input (graph selection, device, system, hash, pins); 3 a graph ran out of CUDA memory (the
+graph's error record is in ``.errors/`` of the row folder); 76 stopped at ``--max-minutes`` (the part file is saved);
+143 stopped by SIGTERM (with ``--parts`` or a shard, the part file is saved). An internal error ends with a traceback and
+exit code 1.
 """
 import argparse
 import json
 import logging
 import signal
 import sys
-import traceback
 from pathlib import Path
 from typing import Any, Callable, Optional, Sequence
 
@@ -26,16 +21,12 @@ from .manifests import REPO, BlindSetError, InputError, read_manifest, read_mode
 
 logger = logging.getLogger(__name__)
 EXIT_INPUT, EXIT_OOM, EXIT_PARTIAL, EXIT_TERM = 2, 3, 76, 143
-EXIT_FAILED = EXIT_OOM   # an adapter failed on a graph
-ADAPTERS = ('kgpfn', 'merit', 'anyburl')
 COMMANDS = {
     'list': 'the graphs of a manifest view',
     'check': "CPU only: the graphs' hash checks, counts and official Flock's setting, and the systems' files and pins; no score",
     'run': 'rank the graphs with the systems and write one row file per graph (evaluate.evaluate_graph)',
     'cells': 'the query cells of the graphs: queries.csv and its .meta.json (cells.write_queries)',
     'gate': 'the N validity gate of amendment A1: S and N on held-out worlds of the prior (gate.gate)',
-    'fv1-models': 'the --models file of the registered fv1_tables.py, from manifests/models.json',
-    'adapter': 'an external baseline (kgpfn, merit, anyburl) on the graphs: one row file per graph (adapters)',
 }
 
 
@@ -91,7 +82,7 @@ def build_parser() -> argparse.ArgumentParser:
                                             'in .errors/), 76 stopped at --max-minutes, 143 stopped by SIGTERM (README.md, Quick start)')
     commands = parser.add_subparsers(dest='command', required=True)
     sub = {name: commands.add_parser(name, help=text, description=text) for name, text in COMMANDS.items()}
-    for name in ('list', 'check', 'run', 'cells', 'adapter'):
+    for name in ('list', 'check', 'run', 'cells'):
         _graph_options(sub[name])
     models = 'the model pins (default: manifests/models.json)'
     for name in ('check', 'run'):
@@ -116,24 +107,6 @@ def build_parser() -> argparse.ArgumentParser:
     gate.add_argument('--device', default='cuda', help='the scoring device (default: cuda)')
     gate.add_argument('--models', type=Path, default=None, help=models)
     gate.add_argument('--out', type=Path, required=True, help='the result file (JSON)')
-    sub['fv1-models'].add_argument('--models', type=Path, default=None, help=models)
-    sub['fv1-models'].add_argument('--out', type=Path, required=True, help='the models file (JSON)')
-    adapter = sub['adapter']
-    adapter.add_argument('name', choices=ADAPTERS, help='the external baseline')
-    adapter.add_argument('--out', type=Path, required=True, help='the output root of the row files')
-    adapter.add_argument('--code', type=Path, default=None, help='the external code folder (default: $KGPFN_CODE, $MERIT_HOME, $ANYBURL_HOME)')
-    adapter.add_argument('--work', type=Path, default=None, help='kgpfn, anyburl: the work root (default: <out>/.work)')
-    adapter.add_argument('--models', type=Path, default=None, help='the pins (default: manifests/models.json)')
-    adapter.add_argument('--check', action='store_true', help='check the setup, the pins and the graphs; run nothing')
-    adapter.add_argument('--python', default=None, help="kgpfn: the command that starts KGPFN's Python ($KGPFN_PYTHON); "
-                                                        "merit: the Python of MERIT's environment ($MERIT_PYTHON, default: this one)")
-    adapter.add_argument('--checkpoints', type=Path, default=None, help="kgpfn: the folder of KGPFN's two checkpoints ($KGPFN_CHECKPOINT_DIR)")
-    adapter.add_argument('--gpu-gb', type=float, default=0.0, help='kgpfn: cap of the CUDA allocator in GB (default: 0, none)')
-    adapter.add_argument('--checkpoint-root', type=Path, default=REPO / 'checkpoints', help='merit: the root of merit/ckpts/merit/ (default: checkpoints/)')
-    adapter.add_argument('--device', default='cuda', help='merit: the scoring device (default: cuda)')
-    adapter.add_argument('--worker', action='store_true', help=argparse.SUPPRESS)   # merit: this process runs in MERIT's environment
-    adapter.add_argument('--java', default='java', help='anyburl: the Java 11 executable (default: java)')
-    adapter.add_argument('--no-scope', action='store_true', help='anyburl: run Java without the systemd-run memory scope')
     return parser
 
 
@@ -244,52 +217,6 @@ def _cells(args: argparse.Namespace) -> int:
     return 0
 
 
-def _adapter(args: argparse.Namespace, argv: Sequence[str]) -> int:
-    manifest, entries = _entries(args)
-    if args.name == 'merit' and not args.worker:   # the scoring runs in a child process with MERIT's folder on its path
-        from .adapters import merit
-        code = merit.run_in_child(argv, len(entries), code=args.code, models=args.models, checkpoint_root=args.checkpoint_root, python=args.python)
-        if code is None:   # the child ran past its time limit: exit 3, without an error record
-            return EXIT_FAILED
-        return EXIT_TERM if code < 0 else code   # a child stopped by a signal
-    if args.name == 'anyburl':
-        from .adapters import anyburl
-        system: Any = anyburl.setup(args.code, args.models, java=args.java, scope=not args.no_scope)
-    elif args.name == 'kgpfn':
-        from .adapters import kgpfn
-        system = kgpfn.setup(args.code, args.checkpoints, args.python, args.models, gpu_gb=args.gpu_gb)
-    else:   # merit, in MERIT's environment (the child process of run_in_child)
-        from .adapters import merit
-        system = merit.setup(args.code, args.models, args.checkpoint_root)
-    print(f'{args.name}: {json.dumps(system.record())}')
-    if args.check:
-        return _check_graphs(manifest, entries, args.data_root, f'adapter {args.name}')
-    from .adapters import ExternalStepError
-    from .evaluate import error_path, row_file_path, write_error
-    keys = list(merit.KEYS) if args.name == 'merit' else [args.name]
-    statuses = {}
-    for entry in entries:
-        final = row_file_path(args.out, entry, keys)
-        try:
-            if args.name == 'anyburl':
-                statuses[entry.key] = anyburl.evaluate_graph(manifest, entry, args.out, system, root=args.data_root, work=args.work)
-            elif args.name == 'kgpfn':
-                statuses[entry.key] = kgpfn.evaluate_graph(manifest, entry, args.out, system, root=args.data_root, work=args.work)
-            else:
-                statuses[entry.key] = merit.evaluate_graph(manifest, entry, args.out, system, root=args.data_root, device=args.device)
-        except (InputError, BlindSetError):
-            raise
-        except Exception as error:   # the graph gets an error record, and the run goes on with the next graph
-            record = error.record if isinstance(error, ExternalStepError) else dict(
-                stage='adapter', reason=f'{type(error).__name__}: {error}', traceback=traceback.format_exc().splitlines()[-30:])
-            logger.error('%s: %s failed (%s) -> %s', entry.key, args.name, record['reason'], write_error(final, entry, adapter=args.name, **record))
-            statuses[entry.key] = 'failed'
-        if statuses[entry.key] == 'done':
-            error_path(final).unlink(missing_ok=True)   # the record of an earlier failure
-        print(entry.key, statuses[entry.key], flush=True)
-    return EXIT_FAILED if 'failed' in statuses.values() else 0
-
-
 def _gate(args: argparse.Namespace) -> int:
     from dicee.synthetic_kg.checkpoint import atomic_write_bytes
 
@@ -313,18 +240,11 @@ def _gate(args: argparse.Namespace) -> int:
     return 0
 
 
-def _fv1_models(args: argparse.Namespace) -> int:
-    from dicee.synthetic_kg.checkpoint import atomic_write_bytes
-    atomic_write_bytes(args.out, (json.dumps(read_models(args.models).fv1_models(), indent=1, sort_keys=True) + '\n').encode())
-    print(f'-> {args.out}')
-    return 0
-
-
 def main(argv: Optional[Sequence[str]] = None) -> int:
     """Run a command.
 
-    While the command runs, SIGTERM exits with ``EXIT_TERM``. The commands ``run`` and ``gate`` and the adapter
-    ``merit`` run inside ``determinism.cublas_workspace``.
+    While the command runs, SIGTERM exits with ``EXIT_TERM``. The commands ``run`` and ``gate`` run inside
+    ``determinism.cublas_workspace``.
 
     Args:
         argv: The arguments after the program name, or ``None`` for ``sys.argv[1:]``.
@@ -346,13 +266,12 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             for entry in _entries(args)[1]:
                 print(entry.key)
             return 0
-        commands: dict[str, Callable[[argparse.Namespace], int]] = {'check': _check, 'run': _run, 'cells': _cells, 'gate': _gate,
-                                                                    'fv1-models': _fv1_models, 'adapter': lambda a: _adapter(a, argv)}
-        if args.command in ('run', 'gate') or (args.command == 'adapter' and args.name == 'merit'):
+        commands: dict[str, Callable[[argparse.Namespace], int]] = {'check': _check, 'run': _run, 'cells': _cells, 'gate': _gate}
+        if args.command in ('run', 'gate'):
             from dicee.synthetic_kg.determinism import cublas_workspace
-            with cublas_workspace():   # dicee's models score on CUDA (MERIT in its child), which needs the setting first
+            with cublas_workspace():   # dicee's models score on CUDA, which needs the setting first
                 return commands[args.command](args)
-        return commands[args.command](args)   # KGPFN's worker and AnyBURL keep the caller's environment
+        return commands[args.command](args)
     except (InputError, BlindSetError) as error:
         print(f'error: {error}', file=sys.stderr)
         return EXIT_INPUT

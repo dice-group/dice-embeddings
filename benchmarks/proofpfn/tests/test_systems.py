@@ -27,9 +27,8 @@ def test_family_keys_and_pins(tmp_path):
     with pytest.raises(sy.SystemCheckError, match='pinned research export'):
         registered.check()
     assert sy.family('pcuht', 'HT', template, pins).pins == pins.families['HT']
-    for key, arm, message in (('rec10axlepcunoa', 'CU', 'registered key of arm S'), ('rec10axlenoa', 'S', 'rows-only arm S0'),
-                              ('rec10axlenoa', 'S0', 'rows-only arm S0'), ('trix', 'S', 'reference key'), ('Ts', 'S', 'lower-case'),
-                              ('42', 'S', 'starting with a letter')):
+    for key, arm, message in (('rec10axlepcunoa', 'CU', 'registered key of arm S'), ('trix', 'S', 'reference key'),
+                              ('Ts', 'S', 'lower-case'), ('42', 'S', 'starting with a letter')):
         with pytest.raises(sy.SystemCheckError, match=message):
             sy.family(key, arm, template, pins)
     doc = json.loads((mf.MANIFESTS / 'models.json').read_text())
@@ -67,7 +66,7 @@ def test_research_exports_convert_under_their_pins():
     """A G4 research export loads through the converter; its file hash is the model hash and matches given pins."""
     template = g4_export('gs')
     digests = {s: mf.file_sha256(template.format(seed=s)) for s in SEEDS}
-    pins = mf.FamilyPins(arm='S', key='gs', export=20, weights='decay/ema', export_sha256=digests, loadable=True)
+    pins = mf.FamilyPins(arm='S', key='gs', export=20, weights='decay/ema', export_sha256=digests)
     family = sy.ProofPFNFamily(key='gs', arm='S', checkpoints={s: Path(template.format(seed=s)) for s in SEEDS}, pins=pins)
     family.check()
     assert family.model_sha256() == {str(s): v for s, v in digests.items()}
@@ -86,7 +85,7 @@ def test_a_pinned_family_takes_only_the_pinned_ema_export_of_each_seed(tmp_path)
         digests[seed] = mf.file_sha256(tmp_path / f'export-{seed}.pt')
         for weights in ('raw', 'ema'):
             save_checkpoint(from_research_export(tmp_path / f'export-{seed}.pt', 'S', weights), tmp_path / f'{weights}-{seed}.pt')
-    pins = mf.FamilyPins(arm='S', key='rec10axlepcunoa', export=0, weights='decay/ema', export_sha256=digests, loadable=True)
+    pins = mf.FamilyPins(arm='S', key='rec10axlepcunoa', export=0, weights='decay/ema', export_sha256=digests)
 
     def family(weights: str, pins: mf.FamilyPins = pins, files: tuple = SEEDS) -> sy.ProofPFNFamily:
         return sy.ProofPFNFamily(key=pins.key, arm='S', checkpoints={s: tmp_path / f'{weights}-{f}.pt' for s, f in zip(SEEDS, files)}, pins=pins)

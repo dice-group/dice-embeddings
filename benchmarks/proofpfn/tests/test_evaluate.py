@@ -1,9 +1,5 @@
-"""The evaluation runner on the CPU: ranks and views, the row file, sharding and resume, and the seam with fv1_tables."""
-import csv
+"""The evaluation runner on the CPU: ranks and views, the row file, sharding and resume."""
 import json
-import math
-import subprocess
-import sys
 from pathlib import Path
 
 import numpy as np
@@ -17,8 +13,6 @@ from dicee.evaluation._filtering import FilteredRanker
 from tests.proofpfn_fixtures import clean_checkpoints
 
 from .golden import tiny_graph, write_graph, write_manifest
-
-REGISTERED = mf.REPO / 'benchmarks' / 'proofpfn' / 'registered'
 
 
 def research_rank(v: torch.Tensor, target: int, mask: torch.Tensor) -> int:
@@ -151,32 +145,3 @@ def test_global_settings_are_restored(tiny):
     run(root, manifest, systems[:1], root / 'settings')
     assert (torch.get_num_threads(), torch.are_deterministic_algorithms_enabled()) == (threads, deterministic)
     assert torch.equal(torch.get_rng_state(), rng)
-
-
-def test_registered_tables_read_the_rows(tiny, tmp_path):
-    """The seam: the frozen fv1_tables.py reads a clean row file (keys of the registered systems, a block-3 list)."""
-    root, manifest, systems, path = tiny
-    entry = manifest.entry('g')
-    doc = json.loads(path.read_text())
-    lists = tmp_path / 'lists'
-    lists.mkdir()
-    (lists / 'manifest.json').write_text(json.dumps(dict(graphs={})))
-    (lists / 'block3.json').write_text(json.dumps(dict(graphs={'g': dict(cluster='tiny', files={f'{s}.txt': entry.sha256[s] for s in mf.SPLITS})})))
-    (lists / 'models.json').write_text(json.dumps(dict(models=doc['allgraph']['model_sha256'])))
-    subprocess.run([sys.executable, '-B', str(REGISTERED / 'fv1_tables.py'), '--rows', str(root / 'whole'), '--manifest',
-                    str(lists / 'manifest.json'), '--block3', str(lists / 'block3.json'), '--models', str(lists / 'models.json'),
-                    '--out-dir', str(tmp_path / 'tables')], check=True, capture_output=True)
-    with (tmp_path / 'tables' / 'mrr.csv').open() as handle:
-        table = {(r['system'], int(r['seed'])): r['mrr'] for r in csv.DictReader(handle)}
-    rows = doc['rows']
-
-    def mrr(key: str) -> str:
-        return repr(math.fsum(1.0 / r[key] for r in rows) / len(rows))
-    for seed in (42, 43, 44):
-        assert table['rec10axlepcunoa', seed] == mrr(f'rec10axlepcunoa.seed{seed}:raw')
-        assert table['rec10axlepcunoa+rule', seed] == mrr(f'rec10axlepcunoa.seed{seed}')
-    assert table['rec10axlepcunoa+ens', 0] == mrr('rec10axlepcunoa:raw')
-    for reference in [s for s in systems if not isinstance(s, sy.ProofPFNFamily)]:
-        assert table[reference.key, 0] == mrr(f'{reference.key}:raw') and table[f'{reference.key}+rule', 0] == mrr(reference.key)
-    meta = json.loads((tmp_path / 'tables' / 'tables.meta.json').read_text())
-    assert meta['models_checked'] == sorted(s.key for s in systems if s.key != 'tu') and meta['counts']['row_files'] == 1   # tu is no registered system

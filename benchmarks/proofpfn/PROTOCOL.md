@@ -78,27 +78,6 @@ three file names, `model_sha256`, `ranked_facts`) and the others (`collection`, 
 `code_sha256`; the gate entry of grail-WN18RR_v1 keeps the audit's group (null), where the golden run's stand-in audit
 gave it the contamination view.
 
-## External baselines
-
-The adapters (`adapters/`, README section External baselines) rank the same test facts in both directions with the same
-filter and the same self-loop rule. The three adapters reproduce their research runners on their goldens: the KGPFN
-probe ranks, the AnyBURL rank rebuild and the MERIT check ranks. The MERIT check ranks hold on an H100 NVL in MERIT's
-environment (torch 2.5.1+cu124, torch-scatter 2.1.2, torch-geometric 2.4.0, easydict, jinja2 and PyYAML), where
-`test_check_graph_ranks_equal_the_research_ranks` passed.
-
-| Adapter | Scores | Ranks | Research |
-|---|---|---|---|
-| `merit` | the five MERIT checkpoints as references of `evaluate.evaluate_graph`: the views, ranks and GT2 ranks above | as above | `ag_merit.py` over `ag_eval.py`, with the model of `merit_ref.py` |
-| `kgpfn` | KGPFN's scores of every candidate (`_score_all_candidate_tails`), the answer-blind context of seed 0, a head query as KGPFN's inverse query | pessimistic over the allowed candidates on the float64 scores. On small graphs the host checks them against `FilteredRanker` on the `log_softmax` of the dumped scores. A run with a non-finite score is refused (as the frozen `validate_kg`). `kgpfn` with the rule, `kgpfn:raw` without | `kgpfn_eval.py` (all-graph mode), `kgpfn_ag.py` (prepare, finalize, verify) |
-| `anyburl` | AnyBURL's printed confidence per listed candidate, `-inf` for a candidate it does not list | `FilteredRanker(tie_policy='pessimistic')`. A target that is not listed, or that ties with the last entry of a full list, gets the number of allowed candidates. `anyburl` with the rule, `anyburl:raw` without | `anyburl_run.py` (`rebuild`) |
-
-KGPFN numbers entities by first appearance in train, valid and test (its `TransductiveDataset`). A rank does not depend
-on the numbering. Its worker parses a line at tabs if it has one, else at whitespace, and the host refuses a run whose
-parse differs from the benchmark's. The rows of KGPFN and AnyBURL hold no GT2 keys (as the research rows), and their
-`allgraph.model_sha256` is empty: the registered tables compare no model hash of them. AnyBURL's input files name
-entity `i` and relation `j` of the benchmark's ids `e<i>` and `r<j>`. Its `valid.txt` also holds the test rows that are
-not ranked, so that its filter is the benchmark's.
-
 ## N validity gate
 
 The gate (`gate.py`, the command `gate`) is the manipulation check of arm N in amendment A1 of the registration (section

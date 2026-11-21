@@ -1,5 +1,5 @@
 """The command line: family options, list, check, run and cells on a tiny graph set, the refusals of wrong input with
-one error line, the traceback of an internal error, and fv1-models."""
+one error line, and the traceback of an internal error."""
 import argparse
 import json
 import os
@@ -102,8 +102,3 @@ def test_internal_errors_keep_their_traceback(tmp_path, monkeypatch):
     monkeypatch.setattr(evaluate, 'evaluate_graph', broken)
     with pytest.raises(ValueError, match='an internal error'):
         cli.main(['run', '--set', 'gate', '--graphs', 'UMLS', '--references', 'trix', '--device', 'cpu', '--out', str(tmp_path)])
-
-
-def test_fv1_models(tmp_path):
-    assert cli.main(['fv1-models', '--out', str(tmp_path / 'models.json')]) == 0
-    assert json.loads((tmp_path / 'models.json').read_text()) == mf.read_models().fv1_models()

@@ -404,12 +404,11 @@ class FamilyPins:
     """The research exports of one ProofPFN family.
 
     Attributes:
-        arm: The arm (``S``, ``R``, ``M``, ``N``, ``HT``, ``CU``, ``UL``; ``S0``, ``DT``, ``PV`` for rows-only arms).
+        arm: The arm (``S``, ``R``, ``M``, ``N``, ``HT``, ``CU``, ``UL``).
         key: The registered system key (the row key prefix).
         export: The update of the evaluated export.
         weights: The weights inside the export (``decay/ema``).
         export_sha256: Seed to the SHA-256 of the export file, or ``None`` while the pins are pending.
-        loadable: False for the rows-only arms, whose exports the clean code cannot load.
     """
 
     arm: str
@@ -417,7 +416,6 @@ class FamilyPins:
     export: int
     weights: str
     export_sha256: Optional[Mapping[int, str]]
-    loadable: bool
 
 
 @dataclass(frozen=True)
@@ -426,12 +424,12 @@ class ReferencePin:
 
     Attributes:
         key: The system key.
-        path: The file, relative to the checkpoint root, or ``None`` for an external adapter that finds its own files.
+        path: The file, relative to the checkpoint root.
         sha256: The file SHA-256.
     """
 
     key: str
-    path: Optional[str]
+    path: str
     sha256: str
 
 
@@ -440,14 +438,12 @@ class ModelPins:
     """The pins of ``models.json``.
 
     Attributes:
-        families: Arm to family pins (ported and rows-only arms).
+        families: Arm to family pins.
         references: System key to reference pin.
-        external: Adapter name to the pins of its external files (``kgpfn``, ``merit``, ``anyburl``).
     """
 
     families: Mapping[str, FamilyPins]
     references: Mapping[str, ReferencePin]
-    external: Mapping[str, Mapping[str, Any]]
 
     def family_of_key(self, key: str) -> Optional[FamilyPins]:
         """The family registered under a system key, or ``None``.
@@ -460,26 +456,6 @@ class ModelPins:
         """
         return next((f for f in self.families.values() if f.key == key), None)
 
-    def fv1_models(self) -> dict[str, dict[str, dict[str, str]]]:
-        """The ``--models`` input of the registered ``fv1_tables.py``:
-        ``{"models": {hash key: {seed or "model": sha256}}}``.
-
-        Families with pending pins are left out (as in the research file); references enter by their file hash.
-
-        Returns:
-            The object, with its hash keys sorted. A family enters under its system key and maps each seed of
-            ``SEEDS``, as a string, to the SHA-256 of its export. A reference enters under its key and maps ``"model"``
-            to the SHA-256 of its file.
-        """
-        models: dict[str, dict[str, str]] = {}
-        for family in self.families.values():
-            if family.export_sha256 is not None:
-                models[family.key] = {str(s): family.export_sha256[s] for s in SEEDS}
-        for ref in self.references.values():
-            models[ref.key] = {'model': ref.sha256}
-        return {'models': dict(sorted(models.items()))}
-
-
 def read_models(path: Optional[PathLike] = None) -> ModelPins:
     """The model pins (``manifests/models.json`` by default).
 
@@ -487,8 +463,7 @@ def read_models(path: Optional[PathLike] = None) -> ModelPins:
         path: The models file, or ``None`` for ``manifests/models.json``.
 
     Returns:
-        The pins of the sections ``families`` and ``rows_only`` (by arm), ``references`` (by system key) and
-        ``external`` (by adapter), as read-only mappings.
+        The pins of the sections ``families`` (by arm) and ``references`` (by system key), as read-only mappings.
 
     Raises:
         ManifestError: For a missing or malformed file.
@@ -497,15 +472,13 @@ def read_models(path: Optional[PathLike] = None) -> ModelPins:
     doc, _ = _read_json(path, MODELS_FORMAT)
     families = {}
     try:
-        for loadable, section in ((True, 'families'), (False, 'rows_only')):
-            for arm, item in doc[section].items():
-                pins = item['export_sha256']
-                if pins is not None and set(pins) != {str(s) for s in SEEDS}:
-                    raise ManifestError(f'{path}: {arm} needs pins for the seeds {SEEDS}')
-                families[arm] = FamilyPins(arm=arm, key=item['key'], export=int(item['export']), weights=item['weights'], loadable=loadable,
-                                           export_sha256=None if pins is None else MappingProxyType({int(s): v for s, v in pins.items()}))
-        references = {key: ReferencePin(key=key, path=item.get('path'), sha256=item['sha256']) for key, item in doc['references'].items()}
-        external = {name: MappingProxyType(dict(item)) for name, item in doc.get('external', {}).items()}
+        for arm, item in doc['families'].items():
+            pins = item['export_sha256']
+            if pins is not None and set(pins) != {str(s) for s in SEEDS}:
+                raise ManifestError(f'{path}: {arm} needs pins for the seeds {SEEDS}')
+            families[arm] = FamilyPins(arm=arm, key=item['key'], export=int(item['export']), weights=item['weights'],
+                                       export_sha256=None if pins is None else MappingProxyType({int(s): v for s, v in pins.items()}))
+        references = {key: ReferencePin(key=key, path=item['path'], sha256=item['sha256']) for key, item in doc['references'].items()}
     except ManifestError:
         raise
     except (KeyError, TypeError, AttributeError, ValueError) as error:
@@ -513,4 +486,4 @@ def read_models(path: Optional[PathLike] = None) -> ModelPins:
     keys = [f.key for f in families.values()] + list(references)
     if len(set(keys)) != len(keys):
         raise ManifestError(f'{path}: system keys must be unique')
-    return ModelPins(families=MappingProxyType(families), references=MappingProxyType(references), external=MappingProxyType(external))
+    return ModelPins(families=MappingProxyType(families), references=MappingProxyType(references))
