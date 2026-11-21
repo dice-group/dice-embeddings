@@ -747,7 +747,7 @@ evaluation protocol, training, the corrected defects, and verification.
 </details>
 
 [ProofPFN](docs/proofpfn.md) pretrains ULTRA only on knowledge graphs of a synthetic
-prior, for zero-shot link prediction on real graphs. Presets cover its seven arms, and
+prior, for zero-shot link prediction on real graphs. Presets cover its eleven arms, and
 the benchmark ranks the test facts of the 54 graphs of the standard zero-shot suite.
 Worlds, the first training updates, checkpoints and ranks are tested bit for bit against
 golden references of the thesis runs in the recorded environment.

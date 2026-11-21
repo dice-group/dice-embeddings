@@ -79,7 +79,7 @@ class PretrainConfig:
     """A pretraining run.
 
     Attributes:
-        arm: The arm name (``'S'``, ``'R'``, ``'M'``, ``'N'``, ``'HT'``, ``'CU'``, ``'UL'``).
+        arm: The arm name (a key of ``arms.ARMS``).
         seed: The run seed.
         stop_after: Stop after this update with ``last.pt`` (rerun to resume); ``None`` runs to ``TOTAL_UPDATES``.
         exports: The export updates; ``None``: ``EXPORTS``. ``TOTAL_UPDATES`` is always exported.
@@ -89,7 +89,7 @@ class PretrainConfig:
         worker_threads: Torch threads of a worker.
         device: The training device.
         threads: Torch threads of the training process (CPU results depend on it).
-        real_sources: The folder of the real source graphs (arms R and M); ``None`` reads ``PROOFPFN_REAL_SOURCES``.
+        real_sources: The folder of the real source graphs (the arms with real worlds); ``None`` reads ``PROOFPFN_REAL_SOURCES``.
         allow_code_change: Resume although the sources that the run binds, the torch version or the GPU changed since the
             run started (the result then can differ from the uninterrupted run).
     """

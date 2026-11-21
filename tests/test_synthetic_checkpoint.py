@@ -1,7 +1,8 @@
 """The checkpoint format, its loader and the converter of research exports.
 
-G5 (g5_cpu.json.gz, g5_gpu.json.gz): the clean raw and EMA states of 41 research exports of all seven arms; an export
-in the research layout, built in the test, checks the converter without them. G3
+G5 (g5_cpu.json.gz, g5_gpu.json.gz): the clean raw and EMA states of 41 research exports of the seven arms S, R, M, N,
+HT, CU and UL; an export in the research layout, built in the test, checks the converter without them, also for the arms
+CU-R, CU-M, UL-R and UL-M. G3
 (g3_init.json.gz): the initial adapter tensors, which the exports' frozen adapters must still equal. Scores
 (umls_research_scores.json, recorded from the research models): converted exports of S, CU and UL on UMLS score like
 the research models; the benchmark tests compare their ranks (G6). The export files are large goldens (PROOFPFN_GOLDEN).
@@ -114,8 +115,8 @@ def research_exports() -> list[tuple[str, dict, str]]:
 EXPORTS = research_exports()
 
 
-def test_exports_cover_every_arm():
-    assert len(EXPORTS) == 41 and {arm for _, _, arm in EXPORTS} == set(ARMS)
+def test_exports_cover_the_seven_recorded_arms():
+    assert len(EXPORTS) == 41 and {arm for _, _, arm in EXPORTS} == {'S', 'R', 'M', 'N', 'HT', 'CU', 'UL'}
 
 
 @pytest.mark.parametrize('relative, record, arm', EXPORTS, ids=[e[0].split('/', 2)[2] for e in EXPORTS])
@@ -276,3 +277,19 @@ def test_converted_exports_score_umls_like_the_research_models(device, tmp_path)
                 scores, identity = scores_of(model, device)
             assert identity == reference['rows_identity'] == g6['rows_identity']
             assert scores == expected['scores_sha256'], (key, seed)
+
+
+@pytest.mark.parametrize('arm', ['CU-R', 'CU-M', 'UL-R', 'UL-M'])
+def test_built_exports_of_the_models_on_the_real_and_mixed_priors_convert(arm, tmp_path):
+    """CountULTRA and plain ULTRA on R's and M's priors: an export converts for its own arm only."""
+    torch.save(built_export(arm), tmp_path / 'export.pt')
+    for weights in WEIGHTS:
+        checkpoint = from_research_export(tmp_path / 'export.pt', arm, weights)
+        assert tensor_digest(checkpoint['model']) == tensor_digest(initial_model(arm, 42).state_dict())
+        assert (checkpoint['arm'], checkpoint['order_sha256']) == (arm, ARMS[arm].pinned_order(42))
+        assert checkpoint['provenance']['research_arm'] == ARMS[arm].research_arm == arm
+    model, prior = arm.split('-')
+    for other, message in ((model, 'mix'), (prior, 'pair_channels' if model == 'CU' else 'model_kind')):
+        with pytest.raises(CheckpointError, match=message):
+            from_research_export(tmp_path / 'export.pt', other)
+    assert load_model(save_checkpoint(checkpoint, tmp_path / 'converted.pt')).pair_channels == 'off'

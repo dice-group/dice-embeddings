@@ -1,8 +1,9 @@
 """The arm presets and their initial weights against the research runs.
 
-G1 (g1_orders.json.gz): each preset's mixture, order name, hooks and options equal the research run options of its arm,
-and its pinned order digests equal the research orders. G3 (g3_init.json.gz): the initial weights of S (= HT, N, R, M),
-CU and UL for seeds 42, 43 and 44, as digests over ULTRA's 82 keys (6-row relation tables with pair channels).
+G1 (g1_orders.json.gz, and g1_orders_arch.json.gz for CU-R, CU-M, UL-R and UL-M): each preset's mixture, order name,
+hooks and options equal the research run options of its arm, and its pinned order digests equal the research orders.
+G3 (g3_init.json.gz): the initial weights of S (= HT, N, R, M), CU (= CU-R, CU-M) and UL (= UL-R, UL-M) for seeds 42,
+43 and 44, as digests over ULTRA's 82 keys (6-row relation tables with pair channels).
 """
 import pytest
 import torch
@@ -13,9 +14,10 @@ from dicee.synthetic_kg.digests import tensor_digest
 from dicee.synthetic_kg.priors import build_order, order_sha256
 from tests.proofpfn_fixtures import fixture, per_key_digests, research_prior
 
-G1 = fixture('g1_orders.json.gz')
+G1 = {'arms': {**fixture('g1_orders.json.gz')['arms'], **fixture('g1_orders_arch.json.gz')['arms']}}
 G3 = fixture('g3_init.json.gz')
-INIT_OF = {'S': 'S', 'R': 'S', 'M': 'S', 'N': 'S', 'HT': 'S', 'CU': 'CU', 'UL': 'UL'}   # the research initialization of each arm
+# The research initialization of each arm: it depends on the seed and the two model options only.
+INIT_OF = {'S': 'S', 'R': 'S', 'M': 'S', 'N': 'S', 'HT': 'S', 'CU': 'CU', 'CU-R': 'CU', 'CU-M': 'CU', 'UL': 'UL', 'UL-R': 'UL', 'UL-M': 'UL'}
 
 
 @pytest.fixture(autouse=True)
@@ -50,7 +52,12 @@ def test_model_options():
     assert {name: (p.relation_weighting, p.pair_channels, p.target) for name, p in ARMS.items()} == {
         'S': ('normalized', 'on', 'rbw'), 'R': ('normalized', 'on', 'rbw'), 'M': ('normalized', 'on', 'rbw'),
         'N': ('normalized', 'on', 'rbw'), 'HT': ('normalized', 'on', 'hard'), 'CU': ('normalized', 'off', 'rbw'),
-        'UL': ('binary', 'off', 'rbw')}
+        'CU-R': ('normalized', 'off', 'rbw'), 'CU-M': ('normalized', 'off', 'rbw'), 'UL': ('binary', 'off', 'rbw'),
+        'UL-R': ('binary', 'off', 'rbw'), 'UL-M': ('binary', 'off', 'rbw')}
+    for model, real, mixed in (('CU', 'CU-R', 'CU-M'), ('UL', 'UL-R', 'UL-M')):   # the model of the first on the prior of R and of M
+        assert ARMS[real].model_config() == ARMS[mixed].model_config() == ARMS[model].model_config()
+        assert (ARMS[real].prior, ARMS[real].order_sha256) == (ARMS['R'].prior, ARMS['R'].order_sha256)
+        assert (ARMS[mixed].prior, ARMS[mixed].order_sha256) == (ARMS['M'].prior, ARMS['M'].order_sha256)
     assert arm_preset('CU') is ARMS['CU'] and arm_preset(ARMS['CU']) is ARMS['CU']
     with pytest.raises(KeyError, match='unknown arm'):
         arm_preset('S0')

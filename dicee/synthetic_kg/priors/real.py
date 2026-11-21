@@ -1,4 +1,4 @@
-"""The real subgraph worlds of arms R and M (``pt_real.sample`` = ``rw_prior.real_world`` with ``RW_MAXN`` 20,000).
+"""The real subgraph worlds of the real and the mixed prior (``pt_real.sample`` = ``rw_prior.real_world`` with ``RW_MAXN`` 20,000).
 
 A world draws one of the train splits of FB15k-237, WN18RR and CoDEx-M uniformly, then a connected entity set by
 breadth-first expansion from a random entity with at most 50 random neighbours per expanded entity, until

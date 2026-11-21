@@ -2,8 +2,8 @@
 
 Small fixtures of the golden references that the ProofPFN port is tested against, recorded from the research code. Most
 are byte-for-byte copies of `golden/small/` in the proofpfn-golden folder (its `golden/README.md` documents inputs,
-commands and environment). Two files were recorded later from the research code by the drivers named below, which ran
-on a private copy of the research work tree (`scratch-3a/tree` in the proofpfn-golden folder).
+commands and environment). Three files were recorded later from the research code by the drivers named below, which ran
+on a private copy of the research work tree (`scratch-3a/tree` and `work/tree` in the proofpfn-golden folder).
 
 Large goldens (research exports, tensor files) stay outside the repository. Tests that need them read the environment
 variable `PROOFPFN_GOLDEN` (the proofpfn-golden folder) and skip when it is unset or the file is missing
@@ -19,7 +19,8 @@ initial weights, conversions and CPU scores and ranks do not depend on the CPU k
 
 | File | Bytes | SHA-256 | Source | Used by |
 |---|---:|---|---|---|
-| `g1_orders.json.gz` | 13,352 | `a0b6a1670904a88024083093e767ce23a52f67a6a8b916832bfd8aa797fc210c` | `golden/small` (G1: world orders) | `test_synthetic_priors.py` |
+| `g1_orders.json.gz` | 13,352 | `a0b6a1670904a88024083093e767ce23a52f67a6a8b916832bfd8aa797fc210c` | `golden/small` (G1: world orders) | `test_synthetic_priors.py`, `test_synthetic_arms.py` |
+| `g1_orders_arch.json.gz` | 3,360 | `db4e68bbf7d3f60df9bd4501af013cd0ac37c1933df17118d42175f3e269f602` | `tools/g1_orders_arch.py` (G1 for the arms CU-R, CU-M, UL-R and UL-M: the research trainer on the option files of the architecture grid; the order digests equal the digests that its launcher recorded before the training) | `test_synthetic_arms.py` |
 | `g2_worlds.json.gz` | 211,690 | `175a414a9309d5609b4fab3b307baf4a7dbfa46b3a63078fb736e1c96e3f9b8e` | `golden/small` (G2: worlds) | `test_synthetic_priors.py`, and through `tests/synthetic_worlds.py` the world-generator tests `test_synthetic_{legacy,stage2,records,real,null}.py` |
 | `recipe_research.json.gz` | 5,096 | `20093fb707acf525d49af5cc954c565edfb1cf7cec201f693f1c90d99760ee5d` | `scratch-3a/tools/dump_recipe.py` (the 12 levels of the research configuration chain, the record families' parameters and the prior constants, with the SHA-256 of the research files it read) | `test_synthetic_priors.py` |
 | `g3_init.json.gz` | 27,886 | `8d7424c02e36111685a5087c23d397ea7daa1d57817f929080f6333d8e3c39c6` | `golden/small` (G3: initial weights) | `test_synthetic_arms.py` |

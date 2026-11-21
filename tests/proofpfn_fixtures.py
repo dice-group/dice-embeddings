@@ -118,20 +118,24 @@ def typed(value: Any) -> Any:
 
 
 def built_export(arm: str, seed: int = 42) -> dict:
-    """A research-format export of an arm's initial weights (``pt_train.export`` layout), with the inert research parts:
-    zero adapter output layers, the three markers and, for CountULTRA, zero pair rows of the relation tables."""
+    """A research-format export of an arm's initial weights (``pt_train.export`` layout). An export of PCUltra or
+    CountULTRA has the inert research parts: zero adapter output layers, the three markers and, for CountULTRA, zero pair
+    rows of the relation tables. An export of plain ULTRA has ULTRA's tensors and its two size options only."""
     preset = ARMS[arm]
     state = initial_model(arm, seed).state_dict()
-    state = {k: torch.cat((v, v.new_zeros(2, v.shape[1]))) if k.endswith('.relation.weight') and len(v) == 4 else v for k, v in state.items()}
-    adapters = {k: torch.zeros(3, 2) if k in ADAPTER_OUTPUTS else torch.ones(3, 2) for k in RESEARCH_ADAPTERS}
-    markers = {'_count_model_mode': torch.tensor([1, 1]), '_pair_model_mode': torch.tensor([1, int(preset.pair_channels == 'on')]),
-               '_context_mode': torch.tensor(CONTEXT_MARKER)}
-    weights = {name: {k: v.clone() for k, v in {**state, **adapters, **markers}.items()} for name in WEIGHTS}
+    if preset.relation_weighting == 'binary':
+        kind, config = 'ULTRA', dict(ultra_dim=preset.model_config()['ultra_dim'], ultra_num_layers=preset.model_config()['ultra_num_layers'])
+    else:
+        kind, config = 'RoleFreqModel', dict(preset.model_config(), context_mode='joint', context_injection_layer=2)
+        state = {k: torch.cat((v, v.new_zeros(2, v.shape[1]))) if k.endswith('.relation.weight') and len(v) == 4 else v for k, v in state.items()}
+        state.update({k: torch.zeros(3, 2) if k in ADAPTER_OUTPUTS else torch.ones(3, 2) for k in RESEARCH_ADAPTERS})
+        state.update({'_count_model_mode': torch.tensor([1, 1]), '_pair_model_mode': torch.tensor([1, int(preset.pair_channels == 'on')]),
+                      '_context_mode': torch.tensor(CONTEXT_MARKER)})
+    weights = {name: {k: v.clone() for k, v in state.items()} for name in WEIGHTS}
     run = dict(research_record(preset), format=RESEARCH_FORMAT, seed=seed, start='random', n1=CONSTANT_UPDATES, n2=DECAY_UPDATES,
                loss='rbw-ce-full', lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY, ema_decay=EMA_DECAY, microbatch=MICROBATCH,
-               nondeterministic=False, model_kind='RoleFreqModel', order_sha256=preset.pinned_order(seed), arm=preset.research_arm)
-    config = dict(preset.model_config(), context_mode='joint', context_injection_layer=2)
-    return dict(seed=seed, updates=0, real_training_updates=0, model_config=config, model_kind='RoleFreqModel',
+               nondeterministic=False, model_kind=kind, order_sha256=preset.pinned_order(seed), arm=preset.research_arm)
+    return dict(seed=seed, updates=0, real_training_updates=0, model_config=config, model_kind=kind,
                 arms={RESEARCH_ARM: weights}, run=run)
 
 

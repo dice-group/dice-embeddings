@@ -1,4 +1,4 @@
-"""The seven ported ProofPFN arms as presets, and their initial weights.
+"""The eleven ProofPFN arms as presets, and their initial weights.
 
 An arm is a prior, two ULTRA options and a training target. Every arm trains ULTRA (dimension 64, 6 relation and 6
 entity layers) from the initial weights of the stream ``capacity-prior-v1:<seed>:initial:d64``:
@@ -14,11 +14,17 @@ M     S's families at half their shares and real at 0.5,       normalized      o
 N     S's, the four record families with the structural null   normalized      on             rbw
 HT    S's                                                      normalized      on             hard
 CU    S's                                                      normalized      off            rbw
+CU-R  R's                                                      normalized      off            rbw
+CU-M  M's                                                      normalized      off            rbw
 UL    S's                                                      binary          off            rbw
+UL-R  R's                                                      binary          off            rbw
+UL-M  M's                                                      binary          off            rbw
 ====  =======================================================  ==============  =============  ======
 
-The mixture strings are the research ``--mix`` values, verbatim. S, N, HT, CU and UL have the same world order per
-seed; R's order is the same for every seed. The presets pin the research order digests of seeds 42, 43 and 44.
+S, R and M are PCUltra, the CU arms are CountULTRA and the UL arms are ULTRA, each on the synthetic, the real and the
+mixed prior. The mixture strings are the research ``--mix`` values, verbatim. The arms of one prior have the same
+world order per seed (S, N, HT, CU and UL; R, CU-R and UL-R; M, CU-M and UL-M); the order of the real prior is the same
+for every seed. The presets pin the research order digests of seeds 42, 43 and 44.
 """
 from dataclasses import dataclass
 from types import MappingProxyType
@@ -42,7 +48,7 @@ class ArmPreset:
     """One arm: what it trains on, which model options it uses and what its target is.
 
     Attributes:
-        name: The arm label (``'S'``, ``'R'``, ``'M'``, ``'N'``, ``'HT'``, ``'CU'`` or ``'UL'``).
+        name: The arm label (a key of ``ARMS``, for example ``'S'`` or ``'CU-R'``).
         research_arm: The ``--arm`` name of the research runs (the ``arm`` field of their run records).
         prior: The prior.
         relation_weighting: ULTRA's ``ultra_relation_weighting``.
@@ -117,9 +123,13 @@ ARMS: Mapping[str, ArmPreset] = MappingProxyType({preset.name: preset for preset
     ArmPreset('N', 'PCU-N', SYNTHETIC_NULL, 'normalized', 'on', 'rbw', SYNTHETIC_ORDERS),
     ArmPreset('HT', 'PCU-HT', SYNTHETIC, 'normalized', 'on', 'hard', SYNTHETIC_ORDERS),
     ArmPreset('CU', 'REC10A-XLE-CU-noA', SYNTHETIC, 'normalized', 'off', 'rbw', SYNTHETIC_ORDERS),
+    ArmPreset('CU-R', 'CU-R', REAL_ONLY, 'normalized', 'off', 'rbw', REAL_ORDERS),
+    ArmPreset('CU-M', 'CU-M', MIXED, 'normalized', 'off', 'rbw', MIXED_ORDERS),
     ArmPreset('UL', 'REC10A-XLE-UL-noA', SYNTHETIC, 'binary', 'off', 'rbw', SYNTHETIC_ORDERS),
+    ArmPreset('UL-R', 'UL-R', REAL_ONLY, 'binary', 'off', 'rbw', REAL_ORDERS),
+    ArmPreset('UL-M', 'UL-M', MIXED, 'binary', 'off', 'rbw', MIXED_ORDERS),
 )})
-"""The seven arms by name."""
+"""The eleven arms by name."""
 
 
 def arm_preset(arm: Union[str, ArmPreset]) -> ArmPreset:

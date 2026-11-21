@@ -5,7 +5,7 @@ Commands:
              ``last.pt`` resumes its run
     convert  convert a research ``export-<N>.pt`` into a ``proofpfn-checkpoint-v1`` file after its inertness checks
              (``dicee.synthetic_kg.checkpoint.from_research_export``)
-    sources  build the real source graphs of arms R and M from their split files (``priors.real.build_source``)
+    sources  build the real source graphs of the real and the mixed prior from their split files (``priors.real.build_source``)
 
 Examples::
 
@@ -70,7 +70,7 @@ def build_parser() -> argparse.ArgumentParser:
                        help='worker processes that prepare the worlds ahead; 0 prepares them in this process (default: %(default)s)')
     train.add_argument('--device', default=DEFAULTS['device'], help='the training device: cpu, cuda or cuda:<index> (default: %(default)s)')
     train.add_argument('--real_sources', default=None,
-                       help='the folder of the real source graphs of arms R and M (<name>/data.pt; default: $PROOFPFN_REAL_SOURCES)')
+                       help='the folder of the real source graphs of the real and the mixed prior (<name>/data.pt; default: $PROOFPFN_REAL_SOURCES)')
     train.add_argument('--threads', type=int, default=DEFAULTS['threads'],
                        help='torch threads of the training process; CPU results depend on them (default: %(default)s)')
     train.add_argument('--save_every', type=int, default=DEFAULTS['save_every'], help='updates between two writes of last.pt (default: %(default)s)')
@@ -85,7 +85,7 @@ def build_parser() -> argparse.ArgumentParser:
     convert.add_argument('--arm', required=True, choices=tuple(ARMS), help='the arm of the export')
     convert.add_argument('--out', required=True, help='the checkpoint file')
     convert.add_argument('--weights', choices=('ema', 'raw'), default='ema', help='the weights to convert (default: %(default)s)')
-    sources = commands.add_parser('sources', help='build the real source graphs of arms R and M from their split files')
+    sources = commands.add_parser('sources', help='build the real source graphs of the real and the mixed prior from their split files')
     sources.add_argument('--graphs', default='KGs', help='the folder with train.txt, valid.txt and test.txt of each graph in <name>/ (default: %(default)s)')
     sources.add_argument('--out', required=True, help='the real-source folder; each graph goes to <name>/data.pt')
     sources.add_argument('--names', default=','.join(NAMES), help='comma list of the graphs to build (default: %(default)s)')

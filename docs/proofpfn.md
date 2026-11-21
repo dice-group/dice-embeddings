@@ -10,7 +10,7 @@ facts of real graphs without fine-tuning (zero-shot).
 The main model, PCUltra, is ULTRA with two relation-graph options: count weighting and pair channels. It is also a
 model of its own, `--model PCUltra` ([PCUltra](#pcultra)). This guide covers three parts:
 
-- `dicee/synthetic_kg/`: the prior, the seven arms, the pretraining loop and the checkpoint format.
+- `dicee/synthetic_kg/`: the prior, the eleven arms, the pretraining loop and the checkpoint format.
 - `dicee_pretrain_synthetic`: the command for pretraining, for the conversion of research exports and for the real
   source graphs.
 - `benchmarks/proofpfn/`: the zero-shot benchmark and the evaluation on worlds of the prior.
@@ -105,12 +105,18 @@ arm trains ULTRA with dimension 64 and 6 layers, with the seeds 42, 43 and 44.
 | N | S's prior, with the structural null in the four record families (categorical2, rec1, attr2, list1) | on | on | RB-W |
 | HT | S's prior | on | on | hard: one answer per query, drawn from the RB-W target |
 | CU | S's prior | on | off | RB-W |
+| CU-R | R's prior | on | off | RB-W |
+| CU-M | M's prior | on | off | RB-W |
 | UL | S's prior | off | off | RB-W |
+| UL-R | R's prior | off | off | RB-W |
+| UL-M | M's prior | off | off | RB-W |
 
-- S, R, M, N and HT are PCUltra. CU (CountULTRA) has the count weighting only. UL is plain ULTRA.
+- S, R, M, N and HT are PCUltra. The CU arms (CountULTRA) have the count weighting only. The UL arms are plain ULTRA.
+- The thesis compares the three models on the three priors: S, R and M, CU, CU-R and CU-M, UL, UL-R and UL-M.
 - S, HT, CU and UL train on the same worlds in the same order for each seed.
 - N has the same world order as S. Its record worlds carry the structural null.
-- R has the same world order for every seed.
+- R, CU-R and UL-R have one world order, which is the same for every seed.
+- M, CU-M and UL-M have the same world order for each seed.
 - The structural null swaps the tails of fact pairs within each relation of a record world, before the observation
   (swap budget 3). It keeps each relation's fact count and each entity's in-degree and out-degree per relation.
 - The world families and their shares are the research `--mix` strings, verbatim (`arms.SYNTHETIC_MIX`,
@@ -128,7 +134,7 @@ arm trains ULTRA with dimension 64 and 6 layers, with the seeds 42, 43 and 44.
 # Arm S, seed 42, on the GPU: 24,000 updates
 dicee_pretrain_synthetic train --arm S --seed 42 --out runs/S/42
 
-# Arms R and M also read the real source graphs
+# The arms with real worlds (R, M and the CU and UL arms on their priors) also read the real source graphs
 dicee_pretrain_synthetic train --arm R --seed 42 --out runs/R/42 --real_sources data/real-sources
 
 # A smoke run: 2 updates on the CPU, a checkpoint after each
@@ -139,13 +145,13 @@ A model family of the benchmark needs the seeds 42, 43 and 44 of one arm. Train 
 
 | Option | Default | Meaning |
 |---|---|---|
-| `--arm` | required | S, R, M, N, HT, CU or UL |
+| `--arm` | required | S, R, M, N, HT, CU, CU-R, CU-M, UL, UL-R or UL-M |
 | `--seed` | required | the run seed |
 | `--out` | required | the run folder |
 | `--device` | `cuda` | the training device |
 | `--workers` | 4 | worker processes that generate and prepare the worlds ahead (0: the training process prepares them) |
 | `--threads` | 2 | torch threads of the training process |
-| `--real_sources` | `$PROOFPFN_REAL_SOURCES` | the folder of the real source graphs (arms R and M) |
+| `--real_sources` | `$PROOFPFN_REAL_SOURCES` | the folder of the real source graphs (the arms with real worlds) |
 | `--save_every` | 250 | updates between two writes of `last.pt` |
 | `--allow_code_change` | off | resume although the sources of the run, the torch version or the GPU changed |
 | `--stop_after` | none | test option: stop after this update and write `last.pt` |
@@ -178,7 +184,7 @@ of update 24,000.
 
 ### Real source graphs
 
-Arms R and M build their real worlds from the train splits of FB15k-237, WN18RR and CoDEx-M. The command `sources` builds
+The arms on R's and M's priors build their real worlds from the train splits of FB15k-237, WN18RR and CoDEx-M. The command `sources` builds
 the source files from the split files of the three graphs:
 
 ```bash
@@ -371,7 +377,7 @@ Golden references (goldens) record what the research code computes at small size
   sources and SHA-256 of the files.
 - Large goldens (research exports, full row files, world tensors) stay outside the repository. Tests read them from
   the folder in `PROOFPFN_GOLDEN` and skip without it.
-- `PROOFPFN_REAL_SOURCES` names the real source folder for the tests of the real worlds and of arms R and M.
+- `PROOFPFN_REAL_SOURCES` names the real source folder for the tests of the real worlds and of the arms that train on them.
 - G6, G10 and the CUDA scores of converted exports come from an NVIDIA GeForce RTX 4070 Ti SUPER. On other GPUs these
   tests skip. They also skip without `CUBLAS_WORKSPACE_CONFIG`.
 - pytest runs the tests marked `slow` by default, as in the rest of the repository. `-m "not slow"` deselects them.
@@ -388,5 +394,5 @@ Golden references (goldens) record what the research code computes at small size
 - CUDA results can differ between GPU types. The GPU goldens hold for the RTX 4070 Ti SUPER only.
 - The graph files of the benchmark are not in the repository. The manifest of the held-out collection of the thesis is
   not in the repository yet.
-- The real source graphs of arms R and M are not in the repository. The command `sources` builds them from their split
+- The real source graphs of the arms with real worlds are not in the repository. The command `sources` builds them from their split
   files.
