@@ -31,6 +31,7 @@ from .models.flock import Flock, FlockRelation
 from .models.fsdp_models import FSDPShardedEntityModel, create_fsdp_sharded_model_class
 from .models.graph_model import GraphKGE
 from .models.kgicl import KGICL
+from .models.pcultra import PCUltra
 from .models.pykeen_models import PykeenKGE
 from .models.transformers import BytE
 from .models.trix import TRIX, TRIXRelation
@@ -41,6 +42,7 @@ logger = logging.getLogger(__name__)
 # Model registry mapping model names to their classes and labelling types
 MODEL_REGISTRY: Dict[str, Tuple[Type, str]] = {
     'ULTRA': (ULTRA, 'EntityPrediction'),
+    'PCUltra': (PCUltra, 'EntityPrediction'),
     'Flock': (Flock, 'EntityPrediction'),
     'FlockRelation': (FlockRelation, 'RelationPrediction'),
     'KGICL': (KGICL, 'EntityPrediction'),

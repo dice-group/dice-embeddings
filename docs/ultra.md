@@ -70,6 +70,10 @@ The options are not part of the state dictionary. A checkpoint that records them
 model with the same options. For example, a PCUltra checkpoint of [ProofPFN](proofpfn.md) loads with
 `--ultra_checkpoint export-24000-ema.pt --ultra_relation_weighting normalized --ultra_pair_channels on`.
 
+`--model PCUltra` is ULTRA with both options on, as a model of its own. It takes the same checkpoint with
+`--ultra_checkpoint` alone, and it computes the relation graph and the inference of the relation model with sparse
+products ([PCUltra](proofpfn.md#pcultra)).
+
 For direct model use, import `ULTRA` from `dicee.models`, load weights with
 `load_pretrained(path)`, and attach indexed training triples with `set_graph(...)`.
 Triples follow DICE's `(head, relation, tail)` order.

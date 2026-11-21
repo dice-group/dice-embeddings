@@ -47,6 +47,7 @@ class MyModel(BaseKGE):
 | `dicee/models/clifford.py` | Keci, CKeci, DeCaL, KeciTransformer |
 | `dicee/models/function_space.py` | FMult, GFMult, FMult2, LFMult1, LFMult |
 | `dicee/models/dualE.py` | DualE |
+| `dicee/models/pcultra.py` | PCUltra (ULTRA with count weighting and pair channels; sparse relation graph and inference) |
 | `dicee/models/pykeen_models.py` | PykeenKGE (wraps any PyKEEN model) |
 | `dicee/models/transformers.py` | BytE (**not** exported from `models/__init__.py`; import directly) |
 

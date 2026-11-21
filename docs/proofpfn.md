@@ -7,8 +7,8 @@ context as its graph and scores every entity for each query. The target of a que
 that the generator knows and the context does not show (the RB-W target). After pretraining, the model ranks the test
 facts of real graphs without fine-tuning (zero-shot).
 
-The main model, PCUltra, is ULTRA with two relation-graph options: count weighting and pair channels. This guide
-covers three parts:
+The main model, PCUltra, is ULTRA with two relation-graph options: count weighting and pair channels. It is also a
+model of its own, `--model PCUltra` ([PCUltra](#pcultra)). This guide covers three parts:
 
 - `dicee/synthetic_kg/`: the prior, the seven arms, the pretraining loop and the checkpoint format.
 - `dicee_pretrain_synthetic`: the command for pretraining, for the conversion of research exports and for the real
@@ -50,6 +50,40 @@ Two options of `ULTRA` (`dicee/models/ultra.py`, fields of `dicee.config.Namespa
 The defaults give official ULTRA, so the official checkpoints and every existing use of ULTRA stay unchanged.
 `dicee/models/_relation_weights.py` computes the weights on the CPU in float64. Pretraining and inference share this
 code.
+
+### PCUltra
+
+`PCUltra` (`dicee/models/pcultra.py`) is `ULTRA` with both options fixed: `ultra_relation_weighting='normalized'` and
+`ultra_pair_channels='on'`. It has the same parameters and the same state dictionary, so a checkpoint of the arms S, R,
+M, N and HT loads into it. Use it for inference with a pretrained checkpoint on a graph of your own:
+
+```bash
+python -m dicee --model PCUltra --dataset_dir KGs/UMLS \
+  --ultra_checkpoint runs/S/42/export-24000-ema.pt --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique NegSample \
+  --batch_size 8 --eval_model test \
+  --path_to_store_single_run Experiments/pcultra-zero-shot
+```
+
+```python
+from dicee import KGE
+
+kge = KGE(path="Experiments/pcultra-zero-shot")
+tail_scores = kge.predict_missing_tail_entity("entity_a", "relation_r")
+```
+
+PCUltra computes in another way than the option form of `ULTRA`, with the same result up to float32 rounding:
+
+- It builds the relation graph and its weights from sparse products. The edges, their order and their float64 weights
+  equal those of `ultra.relation_graph`, and the memory grows with the number of relation-graph edges.
+- At inference, each layer of the relation model computes its weighted message sum as one sparse matrix product. It
+  stores no message for each edge. On AristoV4, whose relation graph has 7.1 million edges, one query takes about
+  22 ms and 0.5 GiB of GPU memory with PCUltra, and about 161 ms and 5.5 GiB with the option form (RTX 4070 Ti SUPER,
+  query batch 1, 60 queries).
+- Training, and inference with `--graph_inference_backend torch`, use the weighted layer of the option form. Then the
+  scores are bitwise equal.
+- Scores differ by float32 rounding, so a rank can differ where two candidates have nearly equal scores. The benchmark
+  and pretraining use the option form, which the golden tests check against the thesis runs.
 
 `GraphKGE` (`dicee/models/graph_model.py`) has three methods for pretraining:
 

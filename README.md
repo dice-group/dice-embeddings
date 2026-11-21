@@ -763,6 +763,13 @@ dicee_pretrain_synthetic train --arm S --seed 42 --out runs/S/42
 python -m benchmarks.proofpfn run --set ultra54 --out rows \
   --model 'S=runs/S/{seed}/export-24000-ema.pt'
 python -m benchmarks.proofpfn table --set ultra54 --rows rows
+
+# Use a pretrained checkpoint on a graph of your own
+python -m dicee --model PCUltra --dataset_dir KGs/UMLS \
+  --ultra_checkpoint runs/S/42/export-24000-ema.pt --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique NegSample \
+  --batch_size 8 --eval_model test \
+  --path_to_store_single_run Experiments/pcultra-zero-shot
 ```
 
 The [ProofPFN guide](docs/proofpfn.md) covers the arms, resume, the checkpoint format,

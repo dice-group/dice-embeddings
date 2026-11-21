@@ -9,6 +9,7 @@ from .function_space import * # noqa
 from .dualE import DualE # noqa
 
 from .ultra import ULTRA # noqa
+from .pcultra import PCUltra # noqa
 from .trix import TRIX, TRIXRelation # noqa
 
 from .flock import Flock, FlockRelation # noqa
