@@ -140,10 +140,10 @@ A KGE model model can also be trained in multi-node multi-gpu DDP setting.
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
 torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "torchDDP" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_torchDDP"
 ```
-Multi-node training is also possible with the `PL` trainer 
+Multi-node training is also possible with the `PL` trainer. Set `num_nodes` to the number of nodes through `--pl_trainer_kwargs`; without it `PL` assumes a single node and every node trains on its own instead of in one distributed job.
 ```bash
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
-torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL"
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 0 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL" --pl_trainer_kwargs '{"num_nodes": 2, "strategy": "ddp"}'
+torchrun --nnodes 2 --nproc_per_node=gpu  --node_rank 1 --rdzv_id 455 --rdzv_backend c10d --rdzv_endpoint=nebula  dicee --trainer "PL" --dataset_dir "KGs/YAGO3-10" --path_to_store_single_run "YAGO3_PL" --pl_trainer_kwargs '{"num_nodes": 2, "strategy": "ddp"}'
 ```
 </details>
 

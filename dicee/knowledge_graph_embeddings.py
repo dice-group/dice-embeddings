@@ -751,7 +751,10 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
 
         All entity-prediction models use one evaluator, including ULTRA, TRIX,
         and Flock. Scores default to sigmoid memberships; ``use_logits=True``
-        explicitly requests legacy raw-score algebra (without an adapter).
+        explicitly requests legacy raw-score algebra (without an adapter). The
+        T-norms and negation norms are defined on memberships in [0, 1], so with
+        raw logits the product T-norm and the negation norms give meaningless
+        rankings for negative scores, and such calls log a warning.
         ``k`` limits returned answers; ``beam_size`` controls existential search
         independently and defaults to max(1, k). ``only_scores`` returns all
         entity scores in numeric ID order. Ties use entity ID order.
@@ -768,6 +771,9 @@ class KGE(BaseInteractiveKGE, InteractiveQueryDecomposition, BaseInteractiveTrai
             raise ValueError("Provide exactly one of 'query' or 'queries'")
         if type(k) is not int or k < 0:
             raise ValueError('k must be a nonnegative integer')
+        if use_logits and (tnorm == "prod" or (query_type is not None and "n" in query_type)):
+            logger.warning("use_logits=True with tnorm='prod' or a negation query combines unbounded scores; "
+                           "use_logits=False (sigmoid probabilities) or tnorm='min' for meaningful rankings.")
         key = (id(self.model), id(context), id(adapter), observed_mix, row_batch_size, seed, samples)
         if key != getattr(self, '_query_engine_key', None):
             self._query_engine = QueryAnswerer(self.model, context=context, adapter=adapter, observed_mix=observed_mix,

@@ -1,0 +1,36 @@
+# Two simulated nodes (one rank each) sharing one GPU. Run from this directory (tools/multinode_sim/).
+# Knobs (env): TRAINER=torchDDP|PL  SCRIPT=<entry script>  EVAL=<eval_model>  EXTRA=<extra dicee flags, default --adaptive_swa>
+x-node: &node
+  image: dicee-multinode-sim
+  shm_size: 2g
+  networks: [sim]
+  volumes: ["../..:/dicee"]
+  environment: &env
+    NCCL_DEBUG: WARN
+    NCCL_P2P_DISABLE: "1"
+    NCCL_SHM_DISABLE: "1"
+    NCCL_IB_DISABLE: "1"
+    NCCL_SOCKET_IFNAME: eth0
+    OMP_NUM_THREADS: "1"
+  deploy:
+    resources:
+      reservations:
+        devices: [{driver: nvidia, count: all, capabilities: [gpu]}]
+services:
+  node0:
+    <<: *node
+    build: {context: ../.., dockerfile: tools/multinode_sim/Dockerfile}
+    hostname: node0
+    command: >
+      torchrun --nnodes=2 --nproc_per_node=1 --node_rank=0 --rdzv_backend=c10d --rdzv_endpoint=node0:29400 --rdzv_id=aswa
+      ${SCRIPT:-dicee/scripts/run.py} --dataset_dir KGs/UMLS --model Keci --trainer ${TRAINER:-torchDDP} --scoring_technique KvsAll
+      --num_epochs 6 --eval_model ${EVAL:-train_val_test} ${EXTRA:---adaptive_swa} --path_to_store_single_run /dicee/tools/multinode_sim/out/shared
+  node1:
+    <<: *node
+    hostname: node1
+    command: >
+      torchrun --nnodes=2 --nproc_per_node=1 --node_rank=1 --rdzv_backend=c10d --rdzv_endpoint=node0:29400 --rdzv_id=aswa
+      ${SCRIPT:-dicee/scripts/run.py} --dataset_dir KGs/UMLS --model Keci --trainer ${TRAINER:-torchDDP} --scoring_technique KvsAll
+      --num_epochs 6 --eval_model ${EVAL:-train_val_test} ${EXTRA:---adaptive_swa} --path_to_store_single_run /dicee/tools/multinode_sim/out/shared
+networks:
+  sim: {}
