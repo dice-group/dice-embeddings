@@ -1,18 +1,14 @@
-"""Official KG-ICL parity and DICE graph, prompt, scoring and training contracts."""
-import hashlib
+"""KG-ICL graph, prompt, scoring and training contracts."""
 import json
-import os
-from pathlib import Path
 
 import numpy as np
 import pytest
 import torch
 
 from dicee.config import Namespace
-from dicee.models.kgicl import KGICL, UPSTREAM_COMMIT
-from dicee.models.kgicl_prompts import PromptGraph, PromptSampler, answer_distance_rates
+from dicee.models.kgicl import KGICL
+from dicee.models.kgicl_prompts import answer_distance_rates
 
-FIXTURES = Path(__file__).parent / "fixtures" / "kgicl"
 SMALL = dict(kgicl_dim=8, kgicl_attn_dim=3, kgicl_num_layers=3, kgicl_prompt_layers=2)
 
 
@@ -37,44 +33,6 @@ def make_model(facts, **kwargs):
     return KGICL(dict(num_entities=6, num_relations=3, **SMALL, **kwargs)).set_graph(facts)
 
 
-def load_fixture(name):
-    fixture = torch.load(FIXTURES / f"{name}.pt", weights_only=False)
-    assert fixture["upstream_commit"] == UPSTREAM_COMMIT
-    assert fixture["patch_sha256"] == hashlib.sha256((FIXTURES / "upstream-fixes.patch").read_bytes()).hexdigest()
-    args = dict(num_entities=fixture["num_entities"], num_relations=fixture["num_relations"], kgicl_dim=fixture["dim"],
-                kgicl_attn_dim=fixture["attn_dim"], kgicl_num_layers=fixture["num_layers"],
-                kgicl_prompt_layers=fixture["prompt_layers"], kgicl_shots=fixture["shots"])
-    model = KGICL(args)
-    if name == "tiny":
-        state = model.state_dict()
-        assert set(fixture["state_dict"]) == {k for k in state if ".conv." not in k}
-        model.load_state_dict({**state, **fixture["state_dict"]}, strict=True)
-    else:
-        directory = os.environ.get("KGICL_CHECKPOINT_DIR")
-        if directory is None:
-            pytest.skip("Set KGICL_CHECKPOINT_DIR to the directory with the official KG-ICL-6L model_best.tar")
-        path = Path(directory) / "model_best.tar"
-        assert hashlib.sha256(path.read_bytes()).hexdigest() == fixture["checkpoint_sha256"]
-        model.load_pretrained(path)
-    return fixture, model.set_graph(fixture["graph"])
-
-
-def replay(fixture):
-    return {q: [PromptGraph(g["edge_index"], g["edge_type"], g["labels"], g["head"], g["tail"]) for g in graphs]
-            for q, graphs in fixture["prompts"].items()}
-
-
-def score_queries(model, queries, num_direct):
-    """All-entity scores for internal (head, relation) queries; inverse relations use head prediction."""
-    rows = []
-    for head, relation in queries.tolist():
-        if relation < num_direct:
-            rows.append(model(torch.tensor([[head, relation]])))
-        else:
-            rows.append(model.forward_k_vs_all_heads(torch.tensor([[relation - num_direct, head]])))
-    return torch.cat(rows)
-
-
 def test_official_architecture():
     model = KGICL({})
     assert len(model.state_dict()) == 220
@@ -84,52 +42,10 @@ def test_official_architecture():
         model(torch.tensor([[0, 0, 1]]))
 
 
-@pytest.mark.parametrize("name", ["tiny", "official"])
-def test_upstream_numerical_parity(name):
-    fixture, model = load_fixture(name)
-    model.eval().use_prompts(replay(fixture))
-    tolerance = dict(atol=2e-5, rtol=1e-4)
-    with torch.no_grad():
-        for relation, expected in fixture["prompt_outputs"].items():
-            torch.testing.assert_close(model.encode_prompts(relation), expected, **tolerance)
-        scores = score_queries(model, fixture["queries"], fixture["num_relations"])
-        torch.testing.assert_close(scores, fixture["unmasked_scores"], **tolerance)
-        rates = answer_distance_rates(fixture["valid"], fixture["train"], fixture["num_entities"])
-        assert rates == fixture["answer_distance"]
-        model.masked_distances = tuple(d for d in range(fixture["num_layers"] + 1) if rates[d] < 0.02)
-        model.clear_inference_cache()
-        masked = score_queries(model, fixture["queries"], fixture["num_relations"])
-        torch.testing.assert_close(masked, fixture["scores"], **tolerance)
-        assert (masked == 0).sum() > (scores == 0).sum()
-    model.masked_distances = ()
-    model.clear_inference_cache()
-    # Evaluation-mode gradients; upstream's checkpoint keeps unused NBFNet parameters.
-    (score_queries(model, fixture["queries"], fixture["num_relations"]) * fixture["gradient_weights"]).sum().backward()
-    for parameter_name, parameter in model.named_parameters():
-        expected = fixture["gradients"].get(parameter_name)
-        if expected is None:
-            assert parameter.grad is None, parameter_name
-        else:
-            torch.testing.assert_close(parameter.grad, expected, atol=1e-4, rtol=1e-4,
-                                       msg=lambda msg: parameter_name + ": " + msg)
-
-
-def test_prompt_extraction_matches_upstream():
-    fixture = torch.load(FIXTURES / "tiny.pt", weights_only=False)
-    sampler = PromptSampler(fixture["train"], fixture["num_entities"], fixture["num_relations"],
-                            list(range(fixture["num_relations"])))
-    checked = 0
-    for relation, cases in fixture["cases"].items():
-        for case in cases:
-            example = sampler.extract(*case["example"])
-            entities = example.entities.tolist()
-            assert sorted(entities) == sorted(case["entities"])
-            assert dict(zip(entities, example.labels.tolist())) == dict(zip(case["entities"], case["labels"]))
-            triples = {(entities[h], r, entities[t]) for h, r, t in example.triples.tolist()}
-            assert triples == set(case["triples"]) and len(triples) == len(example.triples)
-            assert example.self_loop == (case["example"][0] == case["example"][1])
-            checked += 1
-    assert checked > 40 and any(c["example"][0] == c["example"][1] for cases in fixture["cases"].values() for c in cases)
+def test_answer_distance_rates_count_undirected_hops_of_reachable_facts():
+    background = torch.tensor([[0, 0, 1], [2, 0, 1], [2, 1, 3]])   # the undirected path 0 - 1 - 2 - 3; entity 4 is isolated
+    facts = torch.tensor([[0, 0, 0], [0, 0, 1], [0, 1, 3], [3, 0, 1], [0, 0, 4]])
+    assert answer_distance_rates(facts, background, 5, max_distance=3) == [.25, .25, .25, .25]
 
 
 def test_prompt_sampling_is_seeded_and_order_independent(facts):

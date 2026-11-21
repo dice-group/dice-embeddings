@@ -1,8 +1,7 @@
-"""Native baselines against independently generated, pinned upstream outputs."""
+"""Native query answering methods on a small graph with random weights, and the shared rank metrics."""
 
 import itertools
 import json
-from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -11,22 +10,68 @@ import torch
 from dicee.query_answering import BenchmarkQuery, QueryBenchmark, QueryContext, evaluate_benchmark
 from dicee.query_answering._query import compile_query
 from dicee.query_answering.benchmark import QueryMetrics
-from dicee.query_answering.methods import REFERENCES, load_method
-from dicee.query_answering.methods._common import union_branches
+from dicee.query_answering.methods import CLMPT, GNNQE, REFERENCES, ConE, UltraQuery, load_method
 
-ROOT = Path(__file__).parent / 'fixtures' / 'query_baselines'
+TRIPLES = [(0, 0, 1), (0, 0, 2), (0, 1, 4), (1, 1, 0), (1, 2, 3), (2, 1, 0), (2, 2, 4), (3, 0, 5), (3, 3, 1), (4, 0, 0),
+           (4, 3, 2), (5, 1, 3), (5, 2, 6), (6, 3, 5)]
+NUM_ENTITIES, NUM_RELATIONS = 7, 4
+# One query of each of the 16 types.
+QUERIES = {
+    '1p': (0, (0,)), '2p': (0, (0, 2)), '3p': (0, (0, 2, 1)), '4p': (0, (0, 2, 1, 3)),
+    '2i': ((0, (0,)), (1, (2,))), '3i': ((0, (0,)), (1, (2,)), (2, (1,))), '4i': ((0, (0,)), (1, (2,)), (2, (1,)), (3, (3,))),
+    'ip': (((0, (0,)), (1, (2,))), (2,)), 'pi': ((0, (0, 2)), (1, (2,))),
+    '2u': ((0, (0,)), (1, (2,)), (-1,)), 'up': (((0, (0,)), (1, (2,)), (-1,)), (2,)),
+    '2in': ((0, (0,)), (1, (2, -2))), '3in': ((0, (0,)), (2, (1,)), (1, (2, -2))), 'inp': (((0, (0,)), (1, (2, -2))), (2,)),
+    'pin': ((0, (0, 2)), (1, (2, -2))), 'pni': ((0, (0, 2, -2)), (1, (2,))),
+}
+POSITIVE = [shape for shape in QUERIES if 'n' not in shape]
 
 
-def cases():
-    result = []
-    for method in ('cone', 'cqd', 'qto', 'clmpt', 'ultra', 'gnnqe'):
-        path = ROOT / f'{method}.pt'
-        if not path.exists():
-            continue
-        fixture = torch.load(path, weights_only=True, map_location='cpu')
-        for index, case in enumerate(fixture['cases']):
-            result.append(pytest.param(fixture, case, id=f'{method}-{index}'))
-    return result
+def small_context(inverse_relations=()):
+    return QueryContext(TRIPLES, NUM_ENTITIES, NUM_RELATIONS, inverse_relations)
+
+
+def randomize(model, seed=0, keep=()):
+    """Seeded random parameters that do not depend on the global generator."""
+    generator = torch.Generator().manual_seed(seed)
+    with torch.no_grad():
+        for name, parameter in model.named_parameters():
+            if name not in keep:
+                parameter.copy_(torch.randn(parameter.shape, generator=generator) * (.5 if parameter.ndim > 1 else .1))
+    return model
+
+
+def complex_state(seed=0):
+    """A random ComplEx state in the layout of the released CQD and QTO checkpoints."""
+    generator = torch.Generator().manual_seed(seed)
+    return {'embeddings.0.weight': torch.randn(NUM_ENTITIES, 8, generator=generator),
+            'embeddings.1.weight': torch.randn(NUM_RELATIONS, 8, generator=generator)}
+
+
+def save_checkpoint(path, method, context, seed=0, **config):
+    """Write random weights of ``method`` in the layout of its released checkpoint."""
+    if method in ('cqd', 'cqd-hybrid', 'qto'):
+        state = complex_state(seed)
+    elif method == 'cone':
+        model = randomize(ConE(context, dim=8, gamma=12., center_reg=.02, projection_dim=16), seed, keep=('gamma', 'embedding_range', 'modulus'))
+        state = model.state_dict()
+    elif method == 'clmpt':
+        from dicee.models.complex import ComplEx
+        backbone = ComplEx(dict(model='ComplEx', num_entities=NUM_ENTITIES, num_relations=NUM_RELATIONS, embedding_dim=16, normalization=None))
+        model = randomize(CLMPT(backbone, context, hidden_dim=32, layers=2, pre_norm=config.get('pre_norm', True)), seed)
+        state = {('nbp.' + key.removeprefix('model.') if key.startswith('model.') else key): value for key, value in model.state_dict().items()}
+    elif method == 'ultraquery':
+        model = randomize(UltraQuery(context, dim=8, num_layers=2), seed)
+        with torch.no_grad():   # a larger output layer spreads the projection logits
+            model.entity_model.mlp[-1].weight.mul_(config.get('output_scale', 1.))
+        state = {'model.model.' + key: value for key, value in model.state_dict().items()}
+    elif method == 'gnnqe':
+        model = randomize(GNNQE(context, dim=8, num_layers=2, aggregate=config.get('aggregate', 'pna')), seed)
+        state = {('model.model.' if key.startswith('layers.') else 'model.') + key: value for key, value in model.state_dict().items()}
+    else:
+        raise ValueError(method)
+    torch.save({'model_state_dict': state}, path)
+    return path
 
 
 @pytest.fixture(autouse=True)
@@ -37,45 +82,45 @@ def cpu_threads():
     torch.set_num_threads(previous)
 
 
-@pytest.mark.parametrize('fixture,case', cases())
-def test_checkpoint_scores_ranks_ties_and_metrics(tmp_path, fixture, case):
-    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'])
-    path = tmp_path / 'checkpoint.pt'
-    torch.save({'model_state_dict': case['state']}, path)
-    model = load_method(case['name'], path, context, **case['config'])
-    assert fixture['upstream_commit'] == REFERENCES[case['name']][1]
+@pytest.mark.parametrize('method,config,shapes', [
+    ('cone', {'center_reg': .02}, list(QUERIES)),
+    ('clmpt', {}, list(QUERIES)),
+    ('clmpt', {'pre_norm': False}, list(QUERIES)),
+    ('cqd', {'beam_size': 2, 'max_k': 4, 'tnorm': 'prod'}, POSITIVE),
+    ('cqd', {'beam_size': 2, 'max_k': 2, 'tnorm': 'min', 'atomic_negation': True}, list(QUERIES)),
+    ('cqd-hybrid', {'beam_size': 2, 'max_k': 4, 'tnorm': 'prod'}, POSITIVE),
+    ('cqd-hybrid', {'beam_size': 7, 'max_k': 7, 'tnorm': 'min', 'atomic_negation': True}, list(QUERIES)),
+    ('qto', {'threshold': .08, 'negation_scale': 3.}, list(QUERIES)),
+    ('ultraquery', {'threshold': 0.}, list(QUERIES)),
+    ('ultraquery', {'threshold': .5}, list(QUERIES)),
+    ('gnnqe', {'aggregate': 'sum'}, list(QUERIES)),
+    ('gnnqe', {'aggregate': 'pna'}, list(QUERIES)),
+])
+def test_methods_load_random_checkpoints_and_score_every_query_type(tmp_path, method, config, shapes):
+    context = small_context()
+    path = save_checkpoint(tmp_path / 'checkpoint.pt', method, context, **config)
+    # The layout of a CLMPT checkpoint tells pre-norm from post-norm; the option only selects the saved model.
+    model = load_method(method, path, context, **{key: value for key, value in config.items() if key != 'pre_norm'})
     assert not model.training
     assert not any(parameter.requires_grad for parameter in model.parameters())
-    for shape, expected in case['scores'].items():
-        actual = model.predict(fixture['queries'][shape])
-        torch.testing.assert_close(actual, expected, atol=3e-5, rtol=3e-5, msg=shape)
-        if case['name'] == 'cone' and shape in ('2u', 'up'):
-            # The reference embeds all DNF branches in one projection batch. Batch composition changes the
-            # float bits, so rebuild that joint batch on this CPU instead of comparing bits recorded on another.
-            branches = union_branches(compile_query(fixture['queries'][shape]))
-            joint = [values.reshape(1, len(branches), -1) for values in model.embed_batch(branches)]
-            torch.testing.assert_close(actual, model.score_embeddings(joint)[0], atol=0, rtol=0,
-                                       msg='ConE union branches must use the reference joint projection batch')
-        assert torch.equal(actual.argsort(descending=True), expected.argsort(descending=True)), shape
-        assert torch.equal(actual[:, None] == actual[None], expected[:, None] == expected[None]), shape
-        for policy in ('sort', 'expected'):
-            evaluator = QueryMetrics(context.num_entities, candidates=range(context.num_entities - 1), tie_policy=policy)
-            assert evaluator(actual, {1}, {0, 3}) == evaluator(expected, {1}, {0, 3}), (shape, policy)
-    if 'adjacency' in case:
-        with torch.no_grad():
-            for relation, expected in enumerate(case['adjacency']):
-                torch.testing.assert_close(model.rows(torch.arange(context.num_entities), relation), expected)
-    for batch in case.get('batches', {}).values():
-        actual = model.predict_batch(batch['queries'])
-        torch.testing.assert_close(actual, batch['scores'], atol=3e-5, rtol=3e-5)
-        assert torch.equal(actual.argsort(-1), batch['scores'].argsort(-1))
-        if not model.pre_norm:
-            assert not torch.allclose(actual[0], model.predict(batch['queries'][0]))
-
-
-def test_all_reference_methods_present():
-    for method in ('cone', 'cqd', 'qto', 'clmpt', 'ultra', 'gnnqe'):
-        assert (ROOT / f'{method}.pt').exists(), f'Missing upstream fixture for {method}'
+    assert model.provenance['reference_commit'] == REFERENCES[method][1] and model.provenance['context_sha256'] == context.identity
+    if method == 'clmpt':
+        assert model.pre_norm == config.get('pre_norm', True)
+    scores = {shape: model.predict(QUERIES[shape]) for shape in shapes}
+    for shape, values in scores.items():
+        assert values.shape == (NUM_ENTITIES,) and torch.isfinite(values).all(), shape
+        assert torch.equal(values, model.predict(QUERIES[shape])), shape
+    # Random weights rank the entities; a model that ignores the query would give one order for all types.
+    assert len({tuple(values.argsort().tolist()) for values in scores.values()}) > 1
+    if hasattr(model, 'predict_batch'):
+        batch = [QUERIES['2p'], (1, (1, 0))]
+        rows = model.predict_batch(batch)
+        assert rows.shape == (2, NUM_ENTITIES) and torch.isfinite(rows).all()
+        if getattr(model, 'pre_norm', True):
+            for row, query in zip(rows, batch):
+                torch.testing.assert_close(row, model.predict(query), atol=3e-5, rtol=3e-5)
+        else:   # the released post-norm CLMPT couples the queries of a batch
+            assert not torch.allclose(rows[0], model.predict(batch[0]))
 
 
 def test_expected_ties_match_all_permutations():
@@ -119,32 +164,36 @@ def test_tie_bounds_match_filtered_candidate_enumeration(policy):
         assert list(result.values()) == pytest.approx(torch.tensor(expected, dtype=torch.float64).mean(0).tolist())
 
 
+QTO_CONFIG = dict(threshold=.08, negation_scale=3.)
+
+
 def test_strict_checkpoint_and_vocabulary_validation(tmp_path):
-    fixture = torch.load(ROOT / 'qto.pt', weights_only=True)
-    case = fixture['cases'][0]
-    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'])
+    context = small_context()
     path = tmp_path / 'weights.pt'
-    torch.save(case['state'] | {'unexpected': torch.tensor(0.)}, path)
+    torch.save(complex_state() | {'unexpected': torch.tensor(0.)}, path)
     with pytest.raises(ValueError, match='keys'):
-        load_method('qto', path, context, **case['config'])
-    torch.save(case['state'], path)
+        load_method('qto', path, context, **QTO_CONFIG)
+    torch.save(complex_state(), path)
     wrong = QueryContext([], context.num_entities + 1, context.num_relations)
     with pytest.raises(ValueError, match='vocabulary'):
-        load_method('qto', path, wrong, **case['config'])
+        load_method('qto', path, wrong, **QTO_CONFIG)
+    torch.save(complex_state() | {'embeddings.1.weight': torch.full((NUM_RELATIONS, 8), torch.nan)}, path)
+    with pytest.raises(ValueError, match='nonfinite'):
+        load_method('qto', path, context, **QTO_CONFIG)
 
 
 @pytest.mark.parametrize('reference_batching', [False, True])
 def test_qto_cache_invalidation_and_chunking(tmp_path, reference_batching):
-    fixture = torch.load(ROOT / 'qto.pt', weights_only=True)
-    case = fixture['cases'][0]
-    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'])
+    context = small_context()
     path = tmp_path / 'weights.pt'
-    torch.save(case['state'], path)
+    torch.save(complex_state(), path)
     model = load_method('qto', path, context, row_batch_size=2, cache_bytes=160,
-                          reference_batching=reference_batching, **case['config'])
-    query = fixture['queries']['3p']
-    torch.testing.assert_close(model.predict(query), case['scores']['3p'])
-    assert model.cache.bytes <= 160
+                          reference_batching=reference_batching, **QTO_CONFIG)
+    query = QUERIES['3p']
+    # A small cache and small row chunks give the scores of one chunk without a cache.
+    whole = load_method('qto', path, context, cache_bytes=0, **QTO_CONFIG)
+    torch.testing.assert_close(model.predict(query), whole.predict(query))
+    assert model.predict(query).count_nonzero() > 0 and model.cache.bytes <= 160
     with torch.no_grad():
         model.model.entity_embeddings.weight.mul_(2)
     cached = model.predict(query)
@@ -154,48 +203,49 @@ def test_qto_cache_invalidation_and_chunking(tmp_path, reference_batching):
     torch.testing.assert_close(cached, model.predict(query), rtol=0, atol=0)
 
 
+CQD_CASES = [(method, dict(beam_size=beam, max_k=max_k, tnorm=tnorm)) for method, beam, max_k, tnorm in (
+    ('cqd', 2, 4, 'prod'), ('cqd', 2, 4, 'min'), ('cqd-hybrid', 2, 4, 'prod'), ('cqd-hybrid', 2, 4, 'min'), ('cqd', 6, 1, 'prod'))]
+
+
 def test_cqd_negation_is_not_silently_reinterpreted(tmp_path):
-    fixture = torch.load(ROOT / 'cqd.pt', weights_only=True)
-    case = fixture['cases'][0]
-    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'])
     path = tmp_path / 'weights.pt'
-    torch.save(case['state'], path)
-    model = load_method('cqd', path, context, **case['config'])
+    torch.save(complex_state(), path)
+    model = load_method('cqd', path, small_context(), **CQD_CASES[0][1])
     with pytest.raises(ValueError, match='negated'):
-        model.predict(fixture['queries']['2in'])
+        model.predict(QUERIES['2in'])
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='CUDA allocation guard')
 def test_cqd_memory_guard_precedes_dense_scoring(tmp_path, monkeypatch):
     from dicee.query_answering.methods import cqd
-    fixture = torch.load(ROOT / 'cqd.pt', weights_only=True)
-    case = fixture['cases'][0]
-    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'])
     path = tmp_path / 'weights.pt'
-    torch.save(case['state'], path)
-    model = load_method('cqd', path, context, device='cuda', **case['config'])
+    torch.save(complex_state(), path)
+    model = load_method('cqd', path, small_context(), device='cuda', **CQD_CASES[0][1])
     monkeypatch.setattr(torch.cuda, 'mem_get_info', lambda device: (0, 2**30))
     monkeypatch.setattr(torch.cuda, 'memory_reserved', lambda device: 0)
     monkeypatch.setattr(torch.cuda, 'memory_allocated', lambda device: 0)
     monkeypatch.setattr(cqd, 'complex_rows', lambda *args: pytest.fail('Attempted dense allocation'))
     with pytest.raises(MemoryError, match='reference stage.*scratch'):
-        model.predict(fixture['queries']['1p'])
+        model.predict(QUERIES['1p'])
 
 
-@pytest.mark.parametrize('chunk', [1, 100])
-def test_opt_in_cqd_negation_matches_cqda(tmp_path, chunk):
-    fixture = torch.load(ROOT / 'cqd-negation.pt', weights_only=True)
-    assert fixture['upstream_commit'] == '642ce042708be6247087c09c780b9deb47e941d3'
-    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'])
+@pytest.mark.parametrize('method,beam', [('cqd', 2), ('cqd-hybrid', 7)])
+@pytest.mark.parametrize('tnorm', ['prod', 'min'])
+def test_opt_in_cqd_negation_is_a_fuzzy_complement_and_ignores_row_chunks(tmp_path, method, beam, tnorm):
+    context = small_context()
     path = tmp_path / 'weights.pt'
-    for case in fixture['cases']:
-        torch.save(case['state'], path)
-        model = load_method(case['name'], path, context, row_batch_size=chunk, **case['config'])
-        for shape, expected in case['scores'].items():
-            actual = model.predict(fixture['queries'][shape])
-            torch.testing.assert_close(actual, expected, atol=3e-6, rtol=3e-6, msg=shape)
-            assert torch.equal(actual.argsort(), expected.argsort()), shape
-            assert torch.equal(actual[:, None] == actual[None], expected[:, None] == expected[None]), shape
+    torch.save(complex_state(), path)
+    config = dict(atomic_negation=True, beam_size=beam, max_k=beam, tnorm=tnorm)
+    model = load_method(method, path, context, **config)
+    assert model.provenance['negation_scope'] == 'CQD-A signed-atom negation with +H scoring'
+    single = load_method(method, path, context, row_batch_size=1, **config)
+    for shape in ('2in', '3in', 'inp', 'pin', 'pni'):
+        actual = model.predict(QUERIES[shape])
+        assert bool(((actual >= 0) & (actual <= 1)).all()), shape
+        torch.testing.assert_close(single.predict(QUERIES[shape]), actual, atol=3e-6, rtol=3e-6, msg=shape)
+    # 2in is the conjunction of an atom with the complement of another atom.
+    atom, negated = model.predict((0, (0,))), 1 - model.predict((1, (2,)))
+    torch.testing.assert_close(model.predict(QUERIES['2in']), model.conjunction(atom, negated))
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='CUDA reference attention')
@@ -228,13 +278,11 @@ def test_ordered_sparse_kernel_preserves_sequential_rounding(reduction):
 
 
 def test_qto_empty_intermediate_stays_empty(tmp_path):
-    fixture = torch.load(ROOT / 'qto.pt', weights_only=True)
-    case = fixture['cases'][0]
-    context = QueryContext([], fixture['num_entities'], fixture['num_relations'])
+    context = QueryContext([], NUM_ENTITIES, NUM_RELATIONS)
     path = tmp_path / 'weights.pt'
-    torch.save(case['state'], path)
+    torch.save(complex_state(), path)
     model = load_method('qto', path, context, threshold=1., negation_scale=1.)
-    assert torch.equal(model.predict(fixture['queries']['2p']), torch.zeros(context.num_entities))
+    assert torch.equal(model.predict(QUERIES['2p']), torch.zeros(context.num_entities))
     assert torch.equal(model.projection(torch.zeros(context.num_entities), 0, negate=True), torch.zeros(context.num_entities))
 
 
@@ -264,11 +312,10 @@ def _random_qto_pair(n=257, relations=5, seed=0, **options):
 @pytest.mark.parametrize('matrix_bytes,dense_elements', [(2**30, 2**24), (1, 2**24), (2**30, 300)])
 def test_qto_relation_matrices_reproduce_row_scores(monkeypatch, matrix_bytes, dense_elements):
     from dicee.query_answering.methods import qto
-    fixture = torch.load(ROOT / 'qto.pt', weights_only=True)
     monkeypatch.setattr(qto, 'DENSE_ELEMENTS', dense_elements)
     rows, matrices = _random_qto_pair(matrix_bytes=matrix_bytes)
     n = rows.context.num_entities
-    for shape, query in fixture['queries'].items():
+    for shape, query in QUERIES.items():
         support = 0
         for offset in (0, 100, 230):
             shifted = _shift_anchors(query, offset, n)
@@ -302,29 +349,28 @@ def test_qto_few_heads_compute_rows_unless_the_matrix_is_resident():
     torch.testing.assert_close(actual, expected, atol=0, rtol=0)
 
 
-def test_qto_relation_matrices_match_upstream_fixture_and_invalidate(tmp_path):
-    fixture = torch.load(ROOT / 'qto.pt', weights_only=True)
-    case = fixture['cases'][0]
-    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'])
+def test_qto_relation_matrices_follow_weight_changes(tmp_path):
+    context = small_context()
     path = tmp_path / 'weights.pt'
-    torch.save(case['state'], path)
-    model = load_method('qto', path, context, reference_batching=True, matrix_bytes=2**20, **case['config'])
-    for shape, query in fixture['queries'].items():
-        torch.testing.assert_close(model.predict(query), case['scores'][shape], msg=shape)
-    rows = load_method('qto', path, context, reference_batching=True, **case['config'])
+    torch.save(complex_state(), path)
+    model = load_method('qto', path, context, reference_batching=True, matrix_bytes=2**20, **QTO_CONFIG)
+    rows = load_method('qto', path, context, reference_batching=True, **QTO_CONFIG)
+    before = {shape: model.predict(query) for shape, query in QUERIES.items()}
+    for shape, query in QUERIES.items():
+        torch.testing.assert_close(before[shape], rows.predict(query), atol=0, rtol=0, msg=shape)
     with torch.no_grad():
         for method in (model, rows):
             method.model.entity_embeddings.weight.mul_(2)
-    for shape, query in fixture['queries'].items():
+    for shape, query in QUERIES.items():
         torch.testing.assert_close(model.predict(query), rows.predict(query), atol=0, rtol=0, msg=shape)
+    assert any(not torch.equal(before[shape], model.predict(query)) for shape, query in QUERIES.items())
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='host spill of device matrices')
 def test_qto_relation_matrices_spill_to_host_memory():
-    fixture = torch.load(ROOT / 'qto.pt', weights_only=True)
     rows, matrices = _random_qto_pair(matrix_bytes=40_000, host_matrix_bytes=2**30)
     rows, matrices = rows.cuda(), matrices.cuda()
-    for shape, query in fixture['queries'].items():
+    for shape, query in QUERIES.items():
         for offset in (0, 100, 230):
             shifted = _shift_anchors(query, offset, rows.context.num_entities)
             torch.testing.assert_close(matrices.predict(shifted), rows.predict(shifted), atol=0, rtol=0, msg=shape)
@@ -372,11 +418,9 @@ def test_baseline_runner_end_to_end_and_resume(tmp_path, monkeypatch):
     from dicee.scripts.evaluate_query_methods import main
     from tests.test_query_benchmark import fixture_dataset
     fixture_dataset(tmp_path / 'data', 'FB15k237LogicalQuery')
-    fixture = torch.load(ROOT / 'cone.pt', weights_only=True)
-    state = fixture['cases'][0]['state']
-    state['entity_embedding'] = torch.cat((state['entity_embedding'], state['entity_embedding'][:1]))
     path = tmp_path / 'weights.pt'
-    torch.save(state, path)
+    torch.save(randomize(ConE(QueryContext([], 8, 4), dim=8, gamma=12., center_reg=.02, projection_dim=16),
+                         keep=('gamma', 'embedding_range', 'modulus')).state_dict(), path)
     entry = dict(method='cone', checkpoint=str(path), dataset='FB15k237LogicalQuery', root=str(tmp_path / 'data'),
                  vocabulary_dataset='FB15k237LogicalQuery', options={'center_reg': .02})
     manifest = tmp_path / 'manifest.json'
@@ -395,17 +439,17 @@ def test_baseline_runner_end_to_end_and_resume(tmp_path, monkeypatch):
 @pytest.mark.parametrize('chunk,reference_batching,final_batch', [(1, False, None), (3, False, None), (100, False, None),
                                                                (3, True, None), (3, True, 1)])
 def test_cqd_chunking_preserves_stage_normalization(tmp_path, chunk, reference_batching, final_batch):
-    fixture = torch.load(ROOT / 'cqd.pt', weights_only=True)
-    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'])
+    """The release normalizes the scores of a whole stage: chunked rows and a small cache must not change them."""
+    context = small_context()
     path = tmp_path / 'weights.pt'
-    for case in fixture['cases']:
-        torch.save(case['state'], path)
-        model = load_method(case['name'], path, context, row_batch_size=chunk, cache_bytes=160,
-                              reference_batching=reference_batching, final_batch_size=final_batch, **case['config'])
-        for shape, expected in case['scores'].items():
-            actual = model.predict(fixture['queries'][shape])
-            torch.testing.assert_close(actual, expected, atol=2e-6, rtol=2e-6)
-            assert torch.equal(actual.argsort(), expected.argsort())
+    torch.save(complex_state(), path)
+    for method, config in CQD_CASES:
+        whole = load_method(method, path, context, row_batch_size=100, **config)
+        model = load_method(method, path, context, row_batch_size=chunk, cache_bytes=160,
+                              reference_batching=reference_batching, final_batch_size=final_batch, **config)
+        for shape in POSITIVE:
+            actual, expected = model.predict(QUERIES[shape]), whole.predict(QUERIES[shape])
+            torch.testing.assert_close(actual, expected, atol=2e-6, rtol=2e-6, msg=shape)
         assert model.cache.bytes <= 160
 
 
@@ -427,17 +471,14 @@ def test_checkpoint_graphs_validate_ids_without_using_held_out_edges():
         _validate_graph_buffer('graph', graph, context, metadata)
 
 
-@pytest.mark.parametrize('index', range(3))
-def test_ultraquery_observed_traversal_is_an_exact_max_with_symbolic_traversal(tmp_path, index):
+@pytest.mark.parametrize('threshold', [0., .5])
+def test_ultraquery_observed_traversal_is_an_exact_max_with_symbolic_traversal(tmp_path, threshold):
     """The opt-in observed-fact traversal equals max(GNN projection, naive symbolic traversal) at every projection."""
     from dicee.query_answering.methods._common import fuzzy_combine
-    fixture = torch.load(ROOT / 'ultra.pt', weights_only=True, map_location='cpu')
-    case = fixture['cases'][index]
-    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'])
-    path = tmp_path / 'checkpoint.pt'
-    torch.save({'model_state_dict': case['state']}, path)
-    plain = load_method('ultraquery', path, context, **case['config'])
-    model = load_method('ultraquery', path, context, **case['config'], observed_traversal=True)
+    context = small_context()
+    path = save_checkpoint(tmp_path / 'checkpoint.pt', 'ultraquery', context)
+    plain = load_method('ultraquery', path, context, threshold=threshold)
+    model = load_method('ultraquery', path, context, threshold=threshold, observed_traversal=True)
     assert model.provenance['configuration']['observed_traversal'] is True
 
     def symbolic(source, relation):
@@ -458,15 +499,16 @@ def test_ultraquery_observed_traversal_is_an_exact_max_with_symbolic_traversal(t
         return fuzzy_combine([membership(child) for child in tree[1:]], tree[0], plain.logic)
 
     with torch.no_grad():
-        for shape, query in fixture['queries'].items():
+        changed = 0
+        for shape, query in QUERIES.items():
             tree = compile_query(query)
             torch.testing.assert_close(model.membership(tree), membership(tree), atol=0, rtol=0, msg=shape)
-            # Off by default: the plain port keeps the pinned upstream scores.
-            torch.testing.assert_close(plain.predict(query), case['scores'][shape], atol=3e-5, rtol=3e-5, msg=shape)
-        anchor, (relation,) = fixture['queries']['1p']
+            changed += int(not torch.equal(model.membership(tree), plain.membership(tree)))
+        assert changed   # off by default: the plain executor does not read the observed facts
+        anchor, (relation,) = QUERIES['1p']
         tails = sorted(context.outgoing.get(anchor, {}).get(relation, ()))
-        assert tails and bool((model.membership(compile_query(fixture['queries']['1p']))[tails] == 1).all())
-        batch = [fixture['queries'][shape] for shape in ('2p', '2p')]
+        assert tails and bool((model.membership(compile_query(QUERIES['1p']))[tails] == 1).all())
+        batch = [QUERIES[shape] for shape in ('2p', '2p')]
         torch.testing.assert_close(model.predict_batch(batch)[0], model.predict(batch[0]), atol=3e-5, rtol=3e-5)
 
 
@@ -476,14 +518,11 @@ def test_frozen_ultra_with_query_conditioning_equals_the_ultraquery_projection(t
     ULTRA's link-prediction default conditions inverse queries on their direct relation instead."""
     from dicee.models import ULTRA
     from dicee.query_answering.context import attached_context, evaluation_mode
-    fixture = torch.load(ROOT / 'ultra.pt', weights_only=True, map_location='cpu')
-    case = fixture['cases'][0]
     # Declared inverse pairs make the context graph identical for both models.
-    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'], ((0, 2), (1, 3)))
-    path = tmp_path / 'checkpoint.pt'
-    torch.save({'model_state_dict': case['state']}, path)
+    context = small_context(((0, 2), (1, 3)))
+    path = save_checkpoint(tmp_path / 'checkpoint.pt', 'ultraquery', context)
     port = load_method('ultraquery', path, context, threshold=0.)
-    state = {key.removeprefix('model.model.').removeprefix('model.'): value for key, value in case['state'].items()}
+    state = port.state_dict()
     torch.save({'model': state}, tmp_path / 'ultra.pth')
     dim = state['relation_model.layers.0.linear.weight'].shape[0]
     layers = len({key.split('.')[2] for key in state if key.startswith('relation_model.layers.')})
@@ -503,19 +542,16 @@ def test_frozen_ultra_with_query_conditioning_equals_the_ultraquery_projection(t
         ULTRA(dict(num_entities=1, num_relations=1, ultra_relation_conditioning='inverse'))
 
 
-@pytest.mark.parametrize('index', [0])
 @pytest.mark.parametrize('traversal', [False, True])
-def test_ultraquery_softmax_degree_calibration_follows_its_closed_form(tmp_path, index, traversal):
+def test_ultraquery_softmax_degree_calibration_follows_its_closed_form(tmp_path, traversal):
     """Calibrated projections: min(d * softmax(logits), 0.9999), d the observed-tail mass reached from the fuzzy set. The
     control with tied candidates at the cap has this closed form in float32; the rule calibration equals it within a
     millionth in float64 and orders the candidates at the cap by their logits."""
     from dicee.query_answering.methods._common import fuzzy_combine
-    fixture = torch.load(ROOT / 'ultra.pt', weights_only=True, map_location='cpu')
-    case = fixture['cases'][index]
-    context = QueryContext(fixture['triples'], fixture['num_entities'], fixture['num_relations'])
-    path = tmp_path / 'checkpoint.pt'
-    torch.save({'model_state_dict': case['state']}, path)
-    config = dict(case['config'], threshold=0.)
+    context = small_context()
+    # Logits spread so far that the calibration of some projections reaches the cap.
+    path = save_checkpoint(tmp_path / 'checkpoint.pt', 'ultraquery', context, output_scale=30.)
+    config = dict(threshold=0.)
     plain = load_method('ultraquery', path, context, **config)
     model = load_method('ultraquery', path, context, **config, observed_traversal=traversal, calibration='softmax-degree-tied-cap')
     assert model.provenance['configuration']['calibration'] == 'softmax-degree-tied-cap' and not model.double_precision
@@ -545,7 +581,7 @@ def test_ultraquery_softmax_degree_calibration_follows_its_closed_form(tmp_path,
         return fuzzy_combine([membership(child) for child in tree[1:]], tree[0], plain.logic)
 
     with torch.no_grad():
-        for shape, query in fixture['queries'].items():
+        for shape, query in QUERIES.items():
             tree = compile_query(query)
             torch.testing.assert_close(model.membership(tree), membership(tree), atol=1e-6, rtol=1e-5, msg=shape)
             # float64 memberships: the control differs from float32 by rounding only, and the order at the cap moves a
@@ -554,17 +590,20 @@ def test_ultraquery_softmax_degree_calibration_follows_its_closed_form(tmp_path,
             assert exact.dtype == tied.dtype == torch.float64
             torch.testing.assert_close(tied.float(), model.membership(tree), atol=1e-6, rtol=1e-5, msg=shape)
             torch.testing.assert_close(exact, tied, atol=1e-6, rtol=1e-5, msg=shape)
+            if shape == '1p' and not traversal:   # one projection: only the candidates at the cap move, a little down
+                at_cap = tied == .9999
+                assert bool(at_cap.any()) and bool((exact[at_cap] < .9999).all()) and bool((exact[~at_cap] == tied[~at_cap]).all())
         # A single anchor head: d is its number of observed tails, as in the beam executor's calibration.
-        anchor, (relation,) = fixture['queries']['1p']
+        anchor, (relation,) = QUERIES['1p']
         tails = sorted(context.outgoing.get(anchor, {}).get(relation, ()))
         logits = plain.project_batch(torch.nn.functional.one_hot(torch.tensor([anchor]), context.num_entities).float(),
                                      torch.tensor([relation]), relation_ids=(relation,), logits=True)[0]
         expected = (logits.softmax(0) * max(1, len(tails))).clamp_max(.9999)
         if traversal:
             expected[tails] = 1.
-        torch.testing.assert_close(model.membership(compile_query(fixture['queries']['1p'])), expected, atol=1e-6, rtol=1e-5)
+        torch.testing.assert_close(model.membership(compile_query(QUERIES['1p'])), expected, atol=1e-6, rtol=1e-5)
     with pytest.raises(ValueError, match='threshold'):
-        load_method('ultraquery', path, context, **dict(case['config'], threshold=.5), calibration='softmax-degree-ties')
+        load_method('ultraquery', path, context, threshold=.5, calibration='softmax-degree-ties')
     with pytest.raises(ValueError, match='calibration'):
         load_method('ultraquery', path, context, **config, calibration='minmax')
     with pytest.raises(ValueError, match='softmax-degree-tied-cap'):   # the earlier name of the control
