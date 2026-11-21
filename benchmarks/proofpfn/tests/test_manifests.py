@@ -1,7 +1,7 @@
 """The frozen manifests: graph sets, views, hash checks, malformed files, and the builders that derive the manifests from
 the input files named in their ``sources``.
 
-The builders run when ``PROOFPFN_MANIFEST_INPUTS`` names a folder that holds the input files (``inputs/kiowl/...`` for
+The builders run when ``PROOFPFN_MANIFEST_INPUTS`` names a folder that holds the input files (``inputs/research/...`` for
 ``ultra54`` and ``inputs/fresh-v1/MANIFEST.json`` for ``heldout44``); without it the rebuild test skips.
 """
 import json
@@ -149,15 +149,15 @@ def test_manifests_rebuild_from_their_inputs():
     if not os.environ.get(INPUTS_ENV) or not Path(os.environ[INPUTS_ENV]).is_dir():
         pytest.skip(f'set {INPUTS_ENV} to the folder with the input files of the manifests')
     root = Path(os.environ[INPUTS_ENV])
-    kiowl = root / 'inputs' / 'kiowl'
+    research = root / 'inputs' / 'research'
     for name in ('ultra54', 'heldout44'):
         committed = (mf.MANIFESTS / f'{name}.json').read_text()
         sources = json.loads(committed)['sources']
-        for source, digest in sources.items():   # 'K/<file>' (below inputs/kiowl) or '<path below the folder> (what it holds)'
-            file = kiowl / source.removeprefix('K/') if source.startswith('K/') else root / source.split(' ')[0]
+        for source, digest in sources.items():   # 'K/<file>' (below inputs/research) or '<path below the folder> (what it holds)'
+            file = research / source.removeprefix('K/') if source.startswith('K/') else root / source.split(' ')[0]
             assert mf.file_sha256(file) == digest, source
         if name == 'ultra54':
-            audit, suite = (json.loads((kiowl / p).read_text()) for p in ('graph-audit-v1/graphs.json', 'p0-suite-v1/manifest.json'))
+            audit, suite = (json.loads((research / p).read_text()) for p in ('graph-audit-v1/graphs.json', 'p0-suite-v1/manifest.json'))
             doc = build_ultra54(suite, audit, sources)
         else:   # the counts need the graph files; load_graph checks them when a graph loads
             collection = json.loads((root / 'inputs' / 'fresh-v1' / 'MANIFEST.json').read_text())
