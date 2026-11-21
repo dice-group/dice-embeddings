@@ -47,6 +47,7 @@ class MyModel(BaseKGE):
 | `dicee/models/clifford.py` | Keci, CKeci, DeCaL, KeciTransformer |
 | `dicee/models/function_space.py` | FMult, GFMult, FMult2, LFMult1, LFMult |
 | `dicee/models/dualE.py` | DualE |
+| `dicee/models/pcultra.py` | PCUltra (ULTRA with count weighting and pair channels; sparse relation graph and inference) |
 | `dicee/models/pykeen_models.py` | PykeenKGE (wraps any PyKEEN model) |
 | `dicee/models/transformers.py` | BytE (**not** exported from `models/__init__.py`; import directly) |
 
@@ -132,6 +133,21 @@ Experiments/<timestamp>/            # storage_path or path_to_store_single_run
 ├── model.pt
 └── eval_report.json                # MRR, MR, HITS@k per split
 ```
+
+## ProofPFN (`dicee/synthetic_kg/`, `benchmarks/proofpfn/`)
+
+ULTRA pretrained only on worlds of a synthetic prior, then evaluated zero-shot. User guide: `docs/proofpfn.md`.
+
+- `dicee/synthetic_kg/`: `recipe` (fixed prior and schedule values), `streams` (seeded SHA-256 streams), `batch` (world batch), `digests` (digest rules), `determinism`.
+- `dicee/synthetic_kg/priors/`: `PriorConfig`, `build_order` and `world`, with the generators `legacy`, `factorial`, `stage2`, `records`, `real` and `null`.
+- `variants` (eleven presets, for example `PCUltra-S`, `CountULTRA-R`, `ULTRA-M`), `prepare` (worker preparation), `pretraining` (`PretrainConfig`, `pretrain`), `checkpoint` (`proofpfn-checkpoint-v1`, `load_model`, `model_from_checkpoint`).
+- The version strings of `streams` and the code names of the world families fix every world order, world and initial weight. Never change them.
+- Command `dicee_pretrain_synthetic` (`dicee/scripts/pretrain_synthetic.py`). Model side: the ULTRA options `ultra_relation_weighting` and `ultra_pair_channels` (`dicee/models/ultra.py`, `_relation_weights.py`) and `GraphKGE.internal_graph`, `attach_graph`, `forward_query_facts`.
+- `benchmarks/proofpfn/`: `python -m benchmarks.proofpfn`, documented in its `README.md` and `PROTOCOL.md`.
+- Regression pins: `tests/fixtures/proofpfn/pins.json` (worlds, world orders, initial weights, first training updates; `tests/proofpfn_fixtures.py`). Fixtures of the benchmark tests: `benchmarks/proofpfn/tests/fixtures/`. Real source graphs: `PROOFPFN_REAL_SOURCES` (`dicee_pretrain_synthetic sources` builds them).
+- **Never loosen a pin test**: no tolerance, no skip of a failing comparison. Write the pins again (`python -m tests.proofpfn_fixtures --write-pins`) only for an intended change of the worlds. The pinned training updates are bitwise in the recorded environment (torch 2.5.1, AVX-512 CPU kernels, 2 threads) and skip elsewhere. A mismatch means that the worlds of the thesis runs changed, so fix the code.
+- Add logged floats in a plain loop, as the research code did. Python 3.12's `sum()` uses compensated summation and changes the last bits.
+- The graphs of the manifest `heldout44` are the held-out collection of the thesis. Use them to reproduce reported results. Do not select a model or a setting on them.
 
 ## Build, Lint, Test
 

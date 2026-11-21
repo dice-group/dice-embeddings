@@ -690,6 +690,9 @@ GNN-QE, QTO, UltraQuery, and `load_method()` for their released checkpoints.
 ULTRA/TRIX adapters through the same filtered ranking and checkpoint machinery.
 It accepts a recipe with `method`, `checkpoint`, `dataset`, and `root`; KGFM recipes
 also specify `adapters`, per-type `operators`, and `selection_protocol`.
+The method `pcultra-adapter` takes a [ProofPFN](../proofpfn.md#query-answering) checkpoint as its
+backbone. The recipe option `score_input` (`raw` or `log_softmax`) selects the input of the
+sigmoid calibrations.
 
 The CLI evaluates a JSON recipe, or a list of recipes with unique `id` fields:
 

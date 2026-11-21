@@ -745,6 +745,36 @@ evaluation protocol, training and the corrected defects.
 
 </details>
 
+[ProofPFN](docs/proofpfn.md) pretrains ULTRA only on knowledge graphs of a synthetic
+prior, for zero-shot link prediction on real graphs. Presets cover its eleven model variants, and
+the benchmark ranks the test facts of the 54 graphs of the standard zero-shot suite.
+Regression pins keep the worlds, the world orders and the initial weights of the thesis
+runs fixed.
+
+<details>
+<summary>ProofPFN pretraining and zero-shot evaluation</summary>
+
+```bash
+# Pretrain PCUltra-S on the GPU, then repeat with the seeds 43 and 44
+dicee_pretrain_synthetic train --variant PCUltra-S --seed 42 --out runs/PCUltra-S/42
+
+# Rank the test facts of the standard suite with the three seeds
+python -m benchmarks.proofpfn run --set ultra54 --out rows \
+  --model 'PCUltra-S=runs/PCUltra-S/{seed}/export-24000-ema.pt'
+
+# Use a pretrained checkpoint on a graph of your own
+python -m dicee --model PCUltra --dataset_dir KGs/UMLS \
+  --ultra_checkpoint runs/PCUltra-S/42/export-24000-ema.pt --num_epochs 0 \
+  --trainer torchCPUTrainer --scoring_technique NegSample \
+  --batch_size 8 --eval_model test \
+  --path_to_store_single_run Experiments/pcultra-zero-shot
+```
+
+The [ProofPFN guide](docs/proofpfn.md) covers the model variants, resume, the checkpoint format,
+the evaluation on worlds of the prior and the reproduction of the thesis results.
+
+</details>
+
 ## KGFM Link Prediction
 
 Test-set entity prediction with released checkpoints and no fine-tuning, using

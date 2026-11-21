@@ -38,6 +38,14 @@ class Namespace(argparse.Namespace):
         self.ultra_dim: int = 64
         self.ultra_num_layers: int = 6
         self.ultra_query_batch_size: int = 8
+        self.ultra_relation_weighting: str = 'binary'
+        """ULTRA's relation-graph messages: 'binary' (official ULTRA) or 'normalized' (scaled by the normalized
+        incidence count of their edge)."""
+
+        self.ultra_pair_channels: str = 'off'
+        """'on' adds two entity-pair edge types to ULTRA's relation graph (6-row relation tables); needs
+        ultra_relation_weighting='normalized'."""
+
         self.trix_checkpoint: Optional[str] = None
         self.trix_dim: int = 32
         self.trix_query_batch_size: int = 8

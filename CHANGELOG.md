@@ -21,6 +21,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Complex query answering (`dicee.query_answering`): CQD beam search over KGEs and KGFMs with learned score adapters, negated query types, native UltraQuery, GNN-QE, QTO, CQD, CQD-Hybrid, ConE and CLMPT, and resumable filtered evaluation with exact expected ranks under ties
 - Rule calibration for query answering (`QueryScoreAdapter.rule`): the training-free calibrations of QTO and FIT with the candidates at the cap in the order of their scores, for the beam executor and for UltraQuery's executor (float64 memberships); the forms with tied candidates at the cap stay as controls
 - UltraQuery and +H benchmarks (`python -m benchmarks.cqa`): public recipes for every method, input setup, resumable evaluation of any subset, a pinned Docker runtime, and paired adapter, answer-filter and inference-graph ablations
+- ProofPFN (`dicee.synthetic_kg`): ULTRA pretrained on worlds of a synthetic prior, with presets of eleven model variants (PCUltra, CountULTRA and ULTRA on the synthetic, the real and the mixed prior), resumable runs and its own checkpoint format ([guide](docs/proofpfn.md))
+- `PCUltra` (`--model PCUltra`): ULTRA with count-weighted relation-graph edges and two pair edge types as a model of its own, with the relation graph and the inference of the relation model from sparse products; it loads the checkpoints of ProofPFN
+- `dicee_pretrain_synthetic`: the command that pretrains a model variant and builds the real source graphs of the real and the mixed prior
+- Query answering with PCUltra: the method `pcultra-adapter` reads a ProofPFN checkpoint as a frozen backbone, and the option `score_input='log_softmax'` (adapters, recipes and `python -m dicee.query_answering fit --score-input`) gives the sigmoid calibrations each row's log-softmax over all entities instead of the raw logits
+- ProofPFN benchmark (`python -m benchmarks.proofpfn`): the manifests of the 54 graphs of the standard zero-shot suite and of the 44 graphs of the held-out collection, zero-shot ranks of checkpoints and of the released TRIX, ULTRA and Flock, and the evaluation on held-out worlds of the prior
+- Regression pins of the ProofPFN worlds, world orders, initial weights and first training updates
 
 ### Changed
 - KGFM inference accelerated (fused kernels, query reuse, Flock execution)
@@ -29,6 +35,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Regression bounds updated for the new embedding initialization (AConEx, CoKE)
 - DeCaL initialization delegates embedding setup to dedicated methods (part of #427)
 - CI ratchets the mypy error count instead of `continue-on-error`
+- ULTRA options `ultra_relation_weighting` (`binary`, `normalized`) and `ultra_pair_channels` (`off`, `on`), also flags of the `dicee` command line: count-weighted relation-graph messages and two entity-pair edge types. The defaults keep official ULTRA. `load_pretrained` refuses a checkpoint whose `model_config` records other options, and `attach_graph` a relation graph built for other options
+- `GraphKGE`: `internal_graph` builds the inference graph without a model, and `attach_graph` attaches a prepared graph. `set_graph` and `load_graph` attach through `attach_graph`. `forward_query_facts` scores query facts on the whole attached graph. `load_checkpoint` loads the weights of a checkpoint dictionary; `load_pretrained` reads its file once and delegates to it
 - `KGE.answer_multi_hop_query` now defaults to `use_logits=False` and combines sigmoid probabilities. The T-norms and negation norms are defined on [0, 1]; with raw logits the product T-norm misranked answers (UMLS `2i` MRR 0.009 vs ~0.63). Pass `use_logits=True` for the old behaviour.
 
 ### Fixed

@@ -15,6 +15,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from ._deferred import require
+from .catalog import SCORE_INPUTS
 from .context import checkpoint_state, state_fingerprint, state_token
 
 FEATURE_COUNTS = {'global': 1, 'context': 4, 'context_scores': 8}
@@ -47,6 +48,14 @@ CAP_TIE_EPSILON = 1e-6
 # membership, instead of exactly one: still one for every practical purpose, but a beam over more known tails than it
 # holds keeps those the backbone scores highest instead of those with the lowest entity IDs.
 OBSERVED_TIE_EPSILON = 1e-9
+# The score z that the sigmoid calibrations (the learned adapter, the global scale and shift, the identity control)
+# read: the backbone's raw row ('raw', the default of every artifact without this field), or the row's log-softmax over
+# all entities, z - logsumexp(z) in float64 ('log_softmax'). A softmax-trained backbone such as ProofPFN's PCUltra leaves
+# the level of a row unidentified, so its raw logits can sit far from zero; its log-softmax is its predictive
+# distribution. Fixed calibrations always read the raw row. The values are ``catalog.SCORE_INPUTS``.
+# Adapter artifacts with a score input other than 'raw' are version 4, which earlier readers refuse instead of
+# silently scoring raw logits; all other artifacts keep version 3 and their bytes.
+SCORE_INPUT_VERSION = 4
 
 
 def canonical_feature_mode(mode):
@@ -98,13 +107,20 @@ class QueryScoreAdapter(nn.Module):
     their raw scores; ``rule`` builds it. ``softmax-mass-ties`` is FIT's form of it: the softmax times the number of
     observed tails over their softmax mass. ``minmax`` is CQD-Hybrid's 0.9 times the min-max normalized row. They take
     no weights.
+    ``score_input='log_softmax'`` makes the sigmoid calibration read each row's log-softmax over all entities instead of
+    the raw row (``scores``), before the score features and before sigmoid(alpha z + beta); fixed calibrations take the
+    raw row only.
     """
 
     def __init__(self, feature_mode='context_scores', observed_mix=0., *, weights=None, metadata=None,
                  bias_bound=4., scale_bound=2., normalization='none', hidden_dim=0, hidden_weights=None, seed=0,
-                 membership_threshold=0., fixed_calibration=None, mask_known_logits=False):
+                 membership_threshold=0., fixed_calibration=None, mask_known_logits=False, score_input='raw'):
         super().__init__()
         feature_mode = canonical_feature_mode(feature_mode)
+        if score_input not in SCORE_INPUTS:
+            raise ValueError(f'score_input must be one of {", ".join(SCORE_INPUTS)}')
+        if fixed_calibration and score_input != 'raw':
+            raise ValueError('Fixed calibrations read the raw scores; score_input applies to the sigmoid calibration only')
         if not math.isfinite(observed_mix) or not 0 <= observed_mix <= 1:
             raise ValueError('observed_mix must be in [0, 1]')
         if not math.isfinite(bias_bound) or bias_bound <= 0:
@@ -135,6 +151,7 @@ class QueryScoreAdapter(nn.Module):
         self.membership_threshold = float(membership_threshold)
         self.fixed_calibration = fixed_calibration
         self.mask_known_logits = bool(mask_known_logits)
+        self.score_input = score_input
         self.observed_tie_break = False  # an evaluation option of the recipe, not part of the adapter artifact
         features = FEATURE_COUNTS[feature_mode]
         size = (2, hidden_dim or features)
@@ -165,6 +182,9 @@ class QueryScoreAdapter(nn.Module):
             configuration['fixed_calibration'] = self.fixed_calibration
         if self.mask_known_logits:
             configuration['mask_known_logits'] = True
+        if self.score_input != 'raw':
+            # Absent for raw input, so every earlier configuration, artifact and cache key stays unchanged.
+            configuration['score_input'] = self.score_input
         return configuration
 
     @property
@@ -172,9 +192,26 @@ class QueryScoreAdapter(nn.Module):
         """Whether rows need the observed facts of a context graph (features, overrides or observed degrees)."""
         return self.feature_mode != 'global' or bool(self.observed_mix) or self.fixed_calibration in SOFTMAX_CALIBRATIONS
 
+    def scores(self, raw):
+        """The adapter's input rows: the raw rows in float64, or with ``score_input='log_softmax'`` their log-softmax.
+
+        Args:
+            raw: ``[rows, entities]`` backbone scores, each row over every entity of the inference graph.
+
+        Returns:
+            Float64 ``[rows, entities]``: ``raw`` itself (converted), or ``z - logsumexp(z)`` per row, computed by
+            ``torch.log_softmax`` in float64, the operation of ProofPFN's link-prediction harness.
+        """
+        raw = raw.to(dtype=torch.float64)
+        if self.score_input == 'log_softmax':
+            if raw.ndim != 2:
+                raise ValueError('Adapter requires [rows, entities] logits')
+            raw = raw.log_softmax(1)
+        return raw
+
     def prepare(self, raw, observed=None, base=None):
         """Prepare parameter-independent inputs once for frozen training banks."""
-        raw = raw.to(dtype=torch.float64)
+        raw = self.scores(raw)
         if raw.ndim != 2:
             raise ValueError('Adapter requires [rows, entities] logits')
         if observed is None or base is None:
@@ -296,7 +333,8 @@ class QueryScoreAdapter(nn.Module):
         return cls('global', observed_mix, fixed_calibration=calibration, mask_known_logits=mask_known_logits, metadata=metadata)
 
     def to_dict(self):
-        return dict(self.metadata, version=3, **self.configuration, weights=self.weights.detach().cpu().tolist(),
+        version = 3 if self.score_input == 'raw' else SCORE_INPUT_VERSION
+        return dict(self.metadata, version=version, **self.configuration, weights=self.weights.detach().cpu().tolist(),
                     hidden_weights=None if self.hidden_weights is None else self.hidden_weights.detach().cpu().tolist())
 
     def save(self, path: str | Path) -> None:
@@ -328,10 +366,13 @@ class QueryScoreAdapter(nn.Module):
             payload = payload[key]
         if 'weights' not in payload:
             raise ValueError('Select a catalog entry with key=...')
-        if payload.get('version', 1) not in (1, 2, 3):
+        if payload.get('version', 1) not in (1, 2, 3, SCORE_INPUT_VERSION):
             raise ValueError('Unsupported adapter artifact version')
+        score_input = payload.get('score_input', 'raw')
+        if (payload.get('version', 1) == SCORE_INPUT_VERSION) != (score_input != 'raw'):
+            raise ValueError(f'Artifact version {SCORE_INPUT_VERSION} marks exactly the adapters whose score input is not raw')
         fields = ('weights', 'feature_mode', 'observed_mix', 'version', 'bias_bound', 'scale_bound', 'normalization', 'hidden_dim',
-                  'hidden_weights', 'membership_threshold', 'fixed_calibration', 'mask_known_logits')
+                  'hidden_weights', 'membership_threshold', 'fixed_calibration', 'mask_known_logits', 'score_input')
         metadata = {k: v for k, v in payload.items() if k not in fields}
         if 'backbone_state_sha256' not in metadata:
             if checkpoint is None or 'backbone_checkpoint_sha256' not in metadata:
@@ -347,6 +388,7 @@ class QueryScoreAdapter(nn.Module):
                       scale_bound=payload.get('scale_bound', 2.),
                       normalization=payload.get('normalization', 'none'), hidden_dim=payload.get('hidden_dim', 0),
                       hidden_weights=payload.get('hidden_weights'), membership_threshold=payload.get('membership_threshold', 0.),
-                      fixed_calibration=payload.get('fixed_calibration'), mask_known_logits=payload.get('mask_known_logits', False))
+                      fixed_calibration=payload.get('fixed_calibration'), mask_known_logits=payload.get('mask_known_logits', False),
+                      score_input=score_input)
         adapter.verify_model(model)
         return adapter

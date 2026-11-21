@@ -75,7 +75,9 @@ class TrainingRows:
             target = torch.device('cuda', torch.cuda.current_device())
         if target.type != 'cpu' and target != self.device:
             raise ValueError('Prepared rows require CPU or the configured cache device')
-        mode = json.dumps((self.feature_code, adapter.feature_mode, adapter.normalization))
+        # Features and prepared rows depend on the adapter's input scores; raw input keeps the earlier key.
+        mode = json.dumps((self.feature_code, adapter.feature_mode, adapter.normalization,
+                           *((adapter.score_input,) if adapter.score_input != 'raw' else ())))
         ready, pending = {}, []
         for pair in dict.fromkeys(conditions):
             key = (mode, pair)
@@ -153,6 +155,8 @@ class TrainingRows:
             raise ValueError('Invalid training score row')
         stored = raw.clone() if raw._base is not None else raw
         raw = raw.to(torch.float64)
+        # The adapter's input row (``QueryScoreAdapter.scores``): the raw row itself, or its log-softmax.
+        scores = raw if adapter.score_input == 'raw' else adapter.scores(raw[None])[0]
         key = (mode, pair)
         fixed = self.feature_cache.get(key)
         if fixed is None and saved is not None:
@@ -165,8 +169,8 @@ class TrainingRows:
             _, _, features = adapter.prepare(raw[None], observed, base)
             mean, std = raw.new_zeros(1), raw.new_ones(1)
             if adapter.normalization == 'standard':
-                mean = raw[None].mean(1)
-                std = raw[None].std(1, correction=0).clamp_min(1e-6)
+                mean = scores[None].mean(1)
+                std = scores[None].std(1, correction=0).clamp_min(1e-6)
             fixed = torch.cat((features[0], mean, std)).detach()
             value = fixed.numpy().tobytes()
             self.connection.execute('INSERT OR REPLACE INTO features VALUES (?, ?, ?, ?, ?)',
@@ -179,7 +183,9 @@ class TrainingRows:
         observed = torch.zeros(self.context.num_entities, dtype=torch.bool)
         observed[sorted(self.context.outgoing.get(pair[0], {}).get(pair[1], set()))] = True
         if adapter.normalization == 'standard':
-            raw = (raw - fixed[-2]) / fixed[-1]
+            raw = (scores - fixed[-2]) / fixed[-1]
+        elif adapter.score_input != 'raw':
+            raw = scores
         else:
             raw = stored
         values = raw, observed, fixed[:-2]

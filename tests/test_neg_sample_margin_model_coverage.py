@@ -22,7 +22,7 @@ from dicee.config import Namespace
 from dicee.executer import Execute
 from dicee.static_funcs import MODEL_REGISTRY
 
-EXCLUDED_MODELS = {"Shallom", "Pyke", "ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation", "KGICL"}
+EXCLUDED_MODELS = {"Shallom", "Pyke", "ULTRA", "PCUltra", "TRIX", "TRIXRelation", "Flock", "FlockRelation", "KGICL"}
 
 NATIVE_MODELS = sorted(set(MODEL_REGISTRY) - EXCLUDED_MODELS - {"BytE"})
 

@@ -1,5 +1,6 @@
 import re
-from setuptools import setup, find_packages
+
+from setuptools import find_packages, setup
 
 # Installation options:
 # - Default install (CPU-only recommended): pip install dicee --extra-index-url https://download.pytorch.org/whl/cpu
@@ -105,7 +106,8 @@ setup(
     python_requires='>=3.11',
     entry_points={"console_scripts":
                       ["dicee=dicee.scripts.run:main",
-                       "dicee_vector_db=dicee.scripts.index_serve:main"]},
+                       "dicee_vector_db=dicee.scripts.index_serve:main",
+                       "dicee_pretrain_synthetic=dicee.scripts.pretrain_synthetic:main"]},
     long_description=long_description,
     long_description_content_type="text/markdown",
 )

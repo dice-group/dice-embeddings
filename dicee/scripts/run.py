@@ -3,6 +3,7 @@ import json
 
 from dicee.evaluation._filtering import TIE_POLICIES
 from dicee.executer import ContinuousExecute, Execute
+from dicee.models.ultra import PAIR_CHANNELS, RELATION_WEIGHTINGS
 
 
 def get_default_arguments(description=None):
@@ -39,6 +40,10 @@ def get_default_arguments(description=None):
     parser.add_argument("--ultra_dim", type=int, default=64)
     parser.add_argument("--ultra_num_layers", type=int, default=6)
     parser.add_argument("--ultra_query_batch_size", type=int, default=8)
+    parser.add_argument("--ultra_relation_weighting", choices=RELATION_WEIGHTINGS, default="binary",
+                        help="ULTRA's relation-graph messages: binary (official ULTRA) or scaled by normalized incidence counts")
+    parser.add_argument("--ultra_pair_channels", choices=PAIR_CHANNELS, default="off",
+                        help="'on' adds two entity-pair edge types to ULTRA's relation graph; needs --ultra_relation_weighting normalized")
     parser.add_argument("--trix_checkpoint", default=None, help="Official TRIX entity/relation checkpoint path")
     parser.add_argument("--trix_dim", type=int, default=32)
     parser.add_argument("--trix_query_batch_size", type=int, default=8)
@@ -78,7 +83,7 @@ def get_default_arguments(description=None):
     # Model related arguments
     parser.add_argument("--model", type=str,
                         default="Keci",
-                        choices=["ULTRA", "TRIX", "TRIXRelation", "Flock", "FlockRelation", "KGICL", "ComplEx", "Keci", "KeciTransformer", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
+                        choices=["ULTRA", "PCUltra", "TRIX", "TRIXRelation", "Flock", "FlockRelation", "KGICL", "ComplEx", "Keci", "KeciTransformer", "CKeci", "ConEx", "AConEx", "ConvQ", "AConvQ", "ConvO", "AConvO", "QMult",
                                  "OMult", "Shallom", "DistMult", "TransE", "MuRE", "TransH", "RotatE", "DualE",
                                  "BytE", "CoKE",
                                  "Pykeen_MuRE", "Pykeen_QuatE", "Pykeen_DistMult", "Pykeen_BoxE", "Pykeen_CP",

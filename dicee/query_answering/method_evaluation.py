@@ -12,7 +12,7 @@ import torch
 from ._checkpoint import checksum, write_json
 from ._query import QUERY_SHAPES, compile_query
 from .benchmark import _accumulate_inference_statistics, _query_plan, evaluate_benchmark
-from .catalog import GRAPH_INDEPENDENT_METHODS, METHODS, check_recipe, query_types_for_dataset  # noqa: F401
+from .catalog import GRAPH_INDEPENDENT_METHODS, METHODS, SCORE_INPUTS, check_recipe, query_types_for_dataset  # noqa: F401
 from .context import attached_context, evaluation_mode, fingerprint
 from .datasets import QueryBenchmark, load_benchmark, source_query_groups
 from .engine import AtomicBatchCache, QueryAnswerer
@@ -150,6 +150,9 @@ def evaluate_method(entry: Mapping[str, Any], *, output: str | Path, device: str
         manifest=entry, checkpoint_sha256=checksum(entry['checkpoint']),
         adapters={name: checksum(path) for name, path in entry['adapters'].items()},
         device=str(device), torch=str(torch.__version__), threads=torch.get_num_threads(), seed=seed)
+    if provenance is None and entry['method'] == 'pcultra-adapter':
+        # The variant, seed and source of the checkpoint (its file hash is the checkpoint_sha256 above).
+        identity['backbone'] = pcultra_record(entry['checkpoint'])
     report: dict[str, Any] = _evaluate_kgfm(
         dict(entry, options=options), data, query_plan, batch_ends, output, device, identity, on_prediction, reference_batches,
         on_control_prediction, limit=limit, seed=seed, query_order=query_order, rank_trace_path=rank_trace_path,
@@ -258,15 +261,92 @@ def deterministic_kgfm():
         torch.use_deterministic_algorithms(previous, warn_only=warn_only)
 
 
+KGFM_MODELS = ('ultra', 'trix', 'kgicl', 'flock', 'pcultra')
+"""Backbones of the KGFM adapter methods (``<backbone>-adapter``)."""
+
+
+def pcultra_record(checkpoint: Mapping[str, Any] | str | Path) -> dict[str, Any]:
+    """The identity of a PCUltra checkpoint: variant, seed, update, weights and where the weights come from.
+
+    Args:
+        checkpoint: A ``proofpfn-checkpoint-v1`` dictionary, or its file (read and checked).
+
+    Returns:
+        ``format``, ``variant``, ``seed``, ``updates``, ``weights``, ``real_training_updates``, ``order_sha256``,
+        ``model_config`` and, from the provenance, ``source`` and ``export_sha256`` (the SHA-256 of the training export
+        behind a released checkpoint; ``None`` when the provenance has none).
+    """
+    if not isinstance(checkpoint, Mapping):
+        from ..synthetic_kg.checkpoint import read_checkpoint
+        checkpoint = read_checkpoint(checkpoint)
+    provenance = checkpoint['provenance']
+    return dict(format=checkpoint['format'], variant=checkpoint['variant'], seed=checkpoint['seed'], updates=checkpoint['updates'],
+                weights=checkpoint['weights'], real_training_updates=checkpoint['real_training_updates'],
+                order_sha256=checkpoint['order_sha256'], model_config=dict(checkpoint['model_config']),
+                source=provenance.get('source'), export_sha256=provenance.get('export_sha256'))
+
+
+def load_kgfm_backbone(backbone: str, checkpoint: str | Path, *, device: str | torch.device = 'cpu',
+                       options: Mapping[str, Any] | None = None) -> tuple[torch.nn.Module, dict[str, Any] | None]:
+    """The frozen backbone of a KGFM adapter recipe, built and loaded as its evaluation builds it.
+
+    Released backbones are built from the recipe options with one entity and relation (the evaluation attaches each
+    benchmark's graph) and load their checkpoint with ``load_pretrained``. ``pcultra`` builds dicee's ULTRA from the
+    ``model_config`` of a ``proofpfn-checkpoint-v1`` file (count-weighted relation graph and pair channels), after the
+    file's format checks, with the global random state unchanged; its microbatch is ``ultra_query_batch_size``. This is
+    the option form of ULTRA, which the checkpoint of every ProofPFN variant loads into. ``models.PCUltra`` has the same
+    state dictionary, so an adapter that was fitted on either form verifies against the other.
+
+    Args:
+        backbone: One of ``KGFM_MODELS``.
+        checkpoint: The checkpoint file.
+        device: The scoring device.
+        options: The recipe's execution options; read are ``backend_batch_size`` (default 1), ``relation_cache_mb`` and
+            ``projection_cache_mb`` (default 64), ``prompt_seed`` (KG-ICL), ``relation_conditioning`` (ULTRA),
+            ``test_samples`` and ``walk_num`` (Flock).
+
+    Returns:
+        ``(model, record)``: the model on ``device`` in evaluation mode without gradients and without a graph, and
+        ``pcultra_record`` of the checkpoint for ``pcultra`` (``None`` for the released backbones).
+
+    Raises:
+        ValueError: For an unknown backbone, or a checkpoint that does not fit the backbone.
+    """
+    from ..models import KGICL, TRIX, ULTRA
+    from ..models.flock import Flock
+    if backbone not in KGFM_MODELS:
+        raise ValueError(f'Choose a KGFM backbone: {", ".join(KGFM_MODELS)}')
+    options = dict(options or {})
+    runtime = dict(num_entities=1, num_relations=1, graph_inference_backend='auto',
+                   graph_relation_cache_mb=options.get('relation_cache_mb', 64),
+                   graph_projection_cache_mb=options.get('projection_cache_mb', 64))
+    if backbone == 'pcultra':
+        from ..synthetic_kg.checkpoint import read_checkpoint
+        stored = read_checkpoint(checkpoint)
+        with torch.random.fork_rng(devices=[]):
+            model = ULTRA(dict(stored['model_config'], **runtime, ultra_query_batch_size=options.get('backend_batch_size', 1)))
+        model.load_checkpoint(stored)
+        return model.to(device).eval().requires_grad_(False), pcultra_record(stored)
+    # KG-ICL samples prompt graphs from the attached context with a fixed seed (default 0);
+    # options without a default here keep each backbone's construction unchanged.
+    extra = {'kgicl_prompt_seed': options['prompt_seed']} if 'prompt_seed' in options else {}
+    if 'relation_conditioning' in options:
+        extra['ultra_relation_conditioning'] = options['relation_conditioning']
+    if backbone == 'flock':
+        # Flock samples walks; each atom row has its own seed (AtomicScorer), so scores do not depend on batching.
+        extra.update(flock_test_samples=options.get('test_samples', 1), flock_walk_num=options.get('walk_num', 128))
+    model = {'ultra': ULTRA, 'trix': TRIX, 'kgicl': KGICL, 'flock': Flock}[backbone](dict(
+        runtime, **{f'{backbone}_query_batch_size': options.get('backend_batch_size', 1)}, **extra)).load_pretrained(checkpoint)
+    return model.to(device).eval().requires_grad_(False), None
+
+
 def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_prediction=None, reference_batches=None,
                    on_control_prediction=None, *, limit=None, seed=0, query_order='relation', rank_trace_path=None,
                    filter_corrections=None):
-    from ..models import KGICL, TRIX, ULTRA
-    from ..models.flock import Flock
     backbone = entry['method'].split('-')[0]
     options = entry['options']
     allowed = {'beam_size', 'row_batch_size', 'backend_batch_size', 'cache_bytes', 'raw_cache_bytes', 'observed_facts', 'observed_ties',
-               'raw_cache_device', 'raw_cache_granularity', 'relation_cache_mb', 'projection_cache_mb', 'negation'}
+               'raw_cache_device', 'raw_cache_granularity', 'relation_cache_mb', 'projection_cache_mb', 'negation', 'score_input'}
     if backbone == 'kgicl':
         allowed |= {'prompt_seed'}
     if backbone == 'ultra':
@@ -280,25 +360,20 @@ def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_predict
     granularity = options.get('raw_cache_granularity', 'batch')
     if granularity not in ('batch', 'row'):
         raise ValueError('Atomic cache granularity must be batch or row')
-    # KG-ICL samples prompt graphs from the attached context with a fixed seed (default 0);
-    # options without a default here keep each backbone's construction unchanged.
-    extra = {'kgicl_prompt_seed': options['prompt_seed']} if 'prompt_seed' in options else {}
-    if 'relation_conditioning' in options:
-        extra['ultra_relation_conditioning'] = options['relation_conditioning']
-    if backbone == 'flock':
-        # Flock samples walks; each atom row has its own seed (AtomicScorer), so scores do not depend on batching.
-        extra.update(flock_test_samples=options.get('test_samples', 1), flock_walk_num=options.get('walk_num', 128))
-    model = {'ultra': ULTRA, 'trix': TRIX, 'kgicl': KGICL, 'flock': Flock}[backbone](dict(
-        num_entities=1, num_relations=1, graph_inference_backend='auto',
-        graph_relation_cache_mb=options.get('relation_cache_mb', 64),
-        graph_projection_cache_mb=options.get('projection_cache_mb', 64),
-        **{f'{backbone}_query_batch_size': options.get('backend_batch_size', 1)}, **extra)).load_pretrained(
-            entry['checkpoint']).to(device).eval().requires_grad_(False)
+    # The input of the sigmoid calibrations: the learned adapters must have been fitted on it, and the identity
+    # control reads it. Fixed calibrations read the raw logits whatever the recipe says.
+    score_input = options.get('score_input', 'raw')
+    if score_input not in SCORE_INPUTS:
+        raise ValueError(f'score_input must be one of {", ".join(SCORE_INPUTS)}')
+    model, backbone_record = load_kgfm_backbone(backbone, entry['checkpoint'], device=device, options=options)
     adapters = {name: QueryScoreAdapter.load(path, model=model) for name, path in entry['adapters'].items()}
     for operator, adapter in adapters.items():
         expected = 'prod' if operator.partition(':')[0] == 'product' else 'min'
         if adapter.metadata.get('training', {}).get('tnorm', 'prod') != expected:
             raise ValueError('Operator must use an adapter fitted with the matching t-norm')
+        if adapter.fixed_calibration is None and adapter.score_input != score_input:
+            raise ValueError(f'Adapter {operator!r} takes {adapter.score_input} scores, but the recipe declares '
+                             f'score_input={score_input}')
     observed_facts = options.get('observed_facts')
     if observed_facts is not None:
         for adapter in adapters.values():
@@ -327,7 +402,8 @@ def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_predict
         recipes = {'learned': adapters}
         if paired:
             recipes['without-adapter'] = {name: QueryScoreAdapter('global', adapter.observed_mix,
-                normalization=adapter.normalization, metadata={'calibration': 'identity'}) for name, adapter in adapters.items()}
+                normalization=adapter.normalization, metadata={'calibration': 'identity'}, score_input=score_input)
+                for name, adapter in adapters.items()}
             for control in recipes['without-adapter'].values():
                 control.observed_tie_break = ties == 'model'
         engines = {variant: {name: QueryAnswerer(model, context=data.context, adapter=adapter,
@@ -389,4 +465,6 @@ def _evaluate_kgfm(entry, data, plan, ends, output, device, identity, on_predict
                                        atomic_mix={name: adapter.observed_mix for name, adapter in adapters.items()},
                                        restore_answers=restore_observed),
                                    runtime_scope='paired adapter evaluation' if paired else 'single configuration')
+        if backbone_record is not None:
+            result['inference']['backbone'] = backbone_record
     return report
