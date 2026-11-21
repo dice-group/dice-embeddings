@@ -5,7 +5,7 @@ from the task's graph and queries alone, so that a worker process can do it whil
 
 - the graph: ``GraphKGE.internal_graph`` of the task's context (sorted unique triples with technical inverses, the
   relation id map; every relation of a world is direct);
-- the relation graph of the arm's ULTRA options (``ultra.relation_graph``): edge types 0 to 3, then 4 and 5 with pair
+- the relation graph of the variant's ULTRA options (``ultra.relation_graph``): edge types 0 to 3, then 4 and 5 with pair
   channels, with float64 weights for count weighting;
 - the query facts (row 0 of each query group) and the head/tail pattern;
 - ``soft``: per query the RB-W target, uniform over the anchor's true answers in the query direction that are not in

@@ -11,12 +11,12 @@ Everything runs from the repository root:
 
 ```bash
 python -m benchmarks.proofpfn list --set ultra54 --view trans
-python -m benchmarks.proofpfn check --set ultra54 --model 'S=runs/S/{seed}/export-24000-ema.pt' --references trix,ultra3g,flock
+python -m benchmarks.proofpfn check --set ultra54 --model 'PCUltra-S=runs/PCUltra-S/{seed}/export-24000-ema.pt' --references trix,ultra3g,flock
 python -m benchmarks.proofpfn run --set ultra54 --out rows \
-  --model 'S=runs/S/{seed}/export-24000-ema.pt' --references trix,ultra3g,flock
+  --model 'PCUltra-S=runs/PCUltra-S/{seed}/export-24000-ema.pt' --references trix,ultra3g,flock
 python -m benchmarks.proofpfn table --set ultra54 --rows rows
-python -m benchmarks.proofpfn prior --model 'S=runs/S/{seed}/export-24000-ema.pt' \
-  --model 'N=runs/N/{seed}/export-24000-ema.pt' --out prior.json
+python -m benchmarks.proofpfn prior --model 'PCUltra-S=runs/PCUltra-S/{seed}/export-24000-ema.pt' \
+  --model 'PCUltra-N=runs/PCUltra-N/{seed}/export-24000-ema.pt' --out prior.json
 ```
 
 | Command | Purpose |
@@ -82,18 +82,19 @@ without every graph of the selection shows `-` for the views that it does not co
 (`--per-family`) of each of the families `rec1`, `attr2`, `list1`, `categorical2` and `plain` (`--families`). It prints
 the MRR per family and model name and writes the record to `--out`, with the values per world. With exactly two
 `--model` options it also gives their difference per family, D with its standard error
-([PROTOCOL.md](PROTOCOL.md), section Worlds of the prior). The thesis uses it for the structural null: the model of arm S
-against the model of arm N.
+([PROTOCOL.md](PROTOCOL.md), section Worlds of the prior). The thesis uses it for the structural null: PCUltra-S against
+PCUltra-N.
 
-## Tests and goldens
+## Tests
 
-`python -m pytest benchmarks/proofpfn` runs the tests: about a minute on the CPU without the tests marked `slow`.
-Goldens (`tests/golden/README.md`) record what the code of the thesis runs computed:
+`python -m pytest benchmarks/proofpfn` runs the tests: about a minute on the CPU. Fixtures are in `tests/fixtures/`
+(its README lists them), and the pins of the gate graphs and of the evaluation on worlds of the prior are in
+`tests/fixtures/proofpfn/pins.json` of the repository root.
 
-| Golden | Test | Needs |
+| Test | Content | Needs |
 |---|---|---|
-| G6, ranks | the ranks of S, CU, UL and HT (exports at update 20) and of the three references on three graphs equal the recorded rows, on the GPU of the golden run; the ranks of S, CU and UL on UMLS on the CPU | the three graphs; `PROOFPFN_GOLDEN` (the exports) |
-| G9, prior worlds | the per-world MRRs, D and SE on the exports of S and N at update 20 | `PROOFPFN_GOLDEN` (the exports) |
+| gate | sizes and row order of UMLS, NELLInductive_v1 and grail-WN18RR_v1 | the three graphs |
 | sample | the `first-1000` sample of FB15k-237, YAGO3-10 and FB15k | the three graphs |
+| manifests | `ultra54` and `heldout44` rebuilt from their input files | `PROOFPFN_MANIFEST_INPUTS` (the folder with the input files) |
 
-`PROOFPFN_GOLDEN` names the folder with the large goldens. Tests that need them skip without it.
+Tests whose graphs or input files are missing skip.

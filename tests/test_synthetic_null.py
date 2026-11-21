@@ -1,34 +1,34 @@
-"""The structural null of arm N (``priors.null`` through ``FamilySpec.null_swap_budget``) against golden G2."""
+"""The structural null of PCUltra-N (``priors.null`` through ``FamilySpec.null_swap_budget``) against its pinned worlds."""
 import numpy as np
 import pytest
 
-from dicee.synthetic_kg.arms import ARMS
 from dicee.synthetic_kg.priors import FamilySpec, null
 from dicee.synthetic_kg.streams import null_stream, sha256_int
-from tests.synthetic_worlds import WORLDS, check_world, golden_names
+from tests.proofpfn_fixtures import PRIORS
+from tests.synthetic_worlds import WORLDS, check_world, pinned_names
 
-FAST = ('42/N/categorical2/0', '42/N/attr2/3', '42/N/list1/4', '44/N/rec1/0')
+FAST = ('42/null/categorical2/0', '42/null/attr2/3', '42/null/list1/4', '44/null/rec1/0')
 
 
 @pytest.mark.parametrize('name', FAST)
-def test_null_world_equals_the_research_world(name):
+def test_null_world_equals_its_pin(name):
     check_world(name)
 
 
 @pytest.mark.slow
-def test_every_golden_null_world():
-    names = golden_names({'categorical2', 'attr2', 'rec1', 'list1'}, {'N'})
+def test_every_pinned_null_world():
+    names = pinned_names({'categorical2', 'attr2', 'rec1', 'list1'}, {'null'})
     assert len(names) == 36
     for name in names:
         check_world(name)
 
 
-def test_the_group_tests_cover_every_golden_world():
-    groups = [golden_names({'plain'}), golden_names({'structured', 'statistical'}), golden_names({'categorical2', 'attr2', 'rec1', 'list1'}, {'S'}),
-              golden_names({'real'}), golden_names({'categorical2', 'attr2', 'rec1', 'list1'}, {'N'})]
+def test_the_group_tests_cover_every_pinned_world():
+    groups = [pinned_names({'plain'}), pinned_names({'structured', 'statistical'}), pinned_names({'categorical2', 'attr2', 'rec1', 'list1'}, {'synthetic'}),
+              pinned_names({'real'}), pinned_names({'categorical2', 'attr2', 'rec1', 'list1'}, {'null'})]
     assert sorted(name for names in groups for name in names) == sorted(WORLDS) and len(WORLDS) == 123
-    assert {(w['arm'], w['family']) for w in WORLDS.values()} == {('S', f) for f in ARMS['S'].prior.shares} | \
-        {('N', s.name) for s in ARMS['N'].prior.families} | {('R', 'real')}
+    assert {tuple(name.split('/')[1:3]) for name in WORLDS} == {('synthetic', f) for f in PRIORS['synthetic'].shares} | \
+        {('null', s.name) for s in PRIORS['null'].families} | {('real', 'real')}
 
 
 def test_null_streams_and_spec():

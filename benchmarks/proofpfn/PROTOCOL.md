@@ -1,7 +1,6 @@
 # Evaluation protocol
 
-This document states how the [ProofPFN benchmark](README.md) ranks a graph. The thesis runs used these rules, and the
-golden tests compare the ranks with the rows that those runs recorded.
+This document states how the [ProofPFN benchmark](README.md) ranks a graph. The thesis runs used these rules.
 
 ## Graph
 
@@ -44,7 +43,7 @@ law, other walks). `check` prints the setting of each graph, and a result file r
 
 | Step | Rule | Code |
 |---|---|---|
-| worlds | intact worlds of arm S's prior, seed 42, at held-out indices: the hook indices from rec1 8,810,000, attr2 7,810,000, list1 11,810,000 and categorical2 7,700,000; plain: the stage-2 indices from 120,000 that are plain worlds | `prior.heldout_slots` |
+| worlds | intact worlds of the synthetic prior (PCUltra-S), seed 42, at held-out indices: the hook indices from rec1 8,810,000, attr2 7,810,000, list1 11,810,000 and categorical2 7,700,000; plain: the stage-2 indices from 120,000 that are plain worlds | `prior.heldout_slots` |
 | scores | every model scores every query of a world (tasks sorted by name, tail then head queries, in chunks of 2) over all entities, through the training-mode path of pretraining | `prior.reciprocal_ranks` |
 | rank | among all entities, with the query's other true answers in the world's truth and the anchor removed, ties at their mean rank | `data.rank_of` |
 | metric | per world the mean reciprocal rank; per model name and family the mean over the seeds of the mean over the worlds | `prior.evaluate` |

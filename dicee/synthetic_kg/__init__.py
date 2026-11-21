@@ -2,14 +2,14 @@
 
 Modules:
     recipe: fixed values of the prior and its pretraining (schedule, stream layout, world sizes, family parameters).
-    streams: the seeded SHA-256 streams with their research version strings.
+    streams: the seeded SHA-256 streams with their version strings.
     batch: the world batch of an update and its checks.
-    digests: the digest rules of the golden references.
+    digests: the digest rules of tensors and files.
     priors: the prior configuration, the world order of a run and the world of an order slot.
-    arms: the eleven arm presets and their initial weights.
+    variants: the eleven model variants as presets, and their initial weights.
     prepare: the worker preparation of a world for an update (graph, relation graph, targets, context masks).
     pretraining: the pretraining loop, its update, exports, training states and resume.
-    checkpoint: the checkpoint format, its loader and the converter of research exports.
+    checkpoint: the checkpoint format and its loader.
     determinism: deterministic execution for pretraining and evaluation.
 
 The package imports no submodule here. A submodule import still imports the package ``dicee`` first, with all its

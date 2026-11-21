@@ -12,7 +12,7 @@ from benchmarks.proofpfn import systems as sy
 from dicee.evaluation._filtering import FilteredRanker
 from tests.proofpfn_fixtures import clean_checkpoints
 
-from .golden import tiny_graph, write_graph, write_manifest
+from .helpers import tiny_graph, write_graph, write_manifest
 
 
 def research_rank(v: torch.Tensor, target: int, mask: torch.Tensor) -> int:
@@ -44,7 +44,7 @@ def test_metrics():
 
 @pytest.fixture(scope='module')
 def tiny(tmp_path_factory):
-    """A set of two tiny graphs in two views, the checkpoints of two arms, the systems and one run of all of them.
+    """A set of two tiny graphs in two views, the checkpoints of two variants, the systems and one run of all of them.
 
     TRIX and ULTRA-3g join when their checkpoints are available. Official Flock takes 1.5 s per query group on the CPU,
     so it has its own test on a smaller graph.
@@ -52,7 +52,7 @@ def tiny(tmp_path_factory):
     root = tmp_path_factory.mktemp('tiny')
     folders = {'g': tiny_graph(root / 'KGs' / 'g'), 'h': tiny_graph(root / 'KGs' / 'h', seed=1)}
     manifest = mf.read_manifest(write_manifest(root / 'tiny.json', root, folders, views={'g': 'a', 'h': 'b'}))
-    systems: list = sy.checkpoints(f"ts={clean_checkpoints(root, 'S')}") + sy.checkpoints(f"tu={clean_checkpoints(root, 'UL').format(seed=42)}")
+    systems: list = sy.checkpoints(f"ts={clean_checkpoints(root, 'PCUltra-S')}") + sy.checkpoints(f"tu={clean_checkpoints(root, 'ULTRA-S').format(seed=42)}")
     for label in ('trix', 'ultra3g'):
         reference = sy.reference(label)
         if reference.path.is_file():
@@ -83,7 +83,7 @@ def test_a_new_system_runs_beside_stored_results(tiny, tmp_path):
     root, manifest, systems = tiny
     shutil.copytree(root / 'out', tmp_path / 'out')
     entry = manifest.entry('g')
-    other = sy.checkpoints(f"tc={root / 'S-43.pt'}")   # the same file under another label
+    other = sy.checkpoints(f"tc={root / 'PCUltra-S-43.pt'}")   # the same file under another label
     assert ev.evaluate_graph(manifest, entry, [systems[0], *other], tmp_path / 'out', root=root, device='cpu') == {'ts.seed42': 'exists', 'tc': 'done'}
     a, b = (ev.read_result(ev.result_path(tmp_path / 'out', manifest, label, entry)) for label in ('tc', 'ts.seed43'))
     assert a['rank'] == b['rank'] and a['model_sha256'] == b['model_sha256']

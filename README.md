@@ -747,32 +747,32 @@ evaluation protocol, training, the corrected defects, and verification.
 </details>
 
 [ProofPFN](docs/proofpfn.md) pretrains ULTRA only on knowledge graphs of a synthetic
-prior, for zero-shot link prediction on real graphs. Presets cover its eleven arms, and
+prior, for zero-shot link prediction on real graphs. Presets cover its eleven model variants, and
 the benchmark ranks the test facts of the 54 graphs of the standard zero-shot suite.
-Worlds, the first training updates, checkpoints and ranks are tested bit for bit against
-golden references of the thesis runs in the recorded environment.
+Regression pins keep the worlds, the world orders and the initial weights of the thesis
+runs fixed.
 
 <details>
 <summary>ProofPFN pretraining and zero-shot evaluation</summary>
 
 ```bash
-# Pretrain arm S on the GPU, then repeat with the seeds 43 and 44
-dicee_pretrain_synthetic train --arm S --seed 42 --out runs/S/42
+# Pretrain PCUltra-S on the GPU, then repeat with the seeds 43 and 44
+dicee_pretrain_synthetic train --variant PCUltra-S --seed 42 --out runs/PCUltra-S/42
 
-# Rank the test facts of the standard suite with the three seeds of S, then print the table
+# Rank the test facts of the standard suite with the three seeds, then print the table
 python -m benchmarks.proofpfn run --set ultra54 --out rows \
-  --model 'S=runs/S/{seed}/export-24000-ema.pt'
+  --model 'PCUltra-S=runs/PCUltra-S/{seed}/export-24000-ema.pt'
 python -m benchmarks.proofpfn table --set ultra54 --rows rows
 
 # Use a pretrained checkpoint on a graph of your own
 python -m dicee --model PCUltra --dataset_dir KGs/UMLS \
-  --ultra_checkpoint runs/S/42/export-24000-ema.pt --num_epochs 0 \
+  --ultra_checkpoint runs/PCUltra-S/42/export-24000-ema.pt --num_epochs 0 \
   --trainer torchCPUTrainer --scoring_technique NegSample \
   --batch_size 8 --eval_model test \
   --path_to_store_single_run Experiments/pcultra-zero-shot
 ```
 
-The [ProofPFN guide](docs/proofpfn.md) covers the arms, resume, the checkpoint format,
+The [ProofPFN guide](docs/proofpfn.md) covers the model variants, resume, the checkpoint format,
 the evaluation on worlds of the prior and the reproduction of the thesis results.
 
 </details>

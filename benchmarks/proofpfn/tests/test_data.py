@@ -8,7 +8,7 @@ import torch
 from benchmarks.proofpfn import data as D
 from benchmarks.proofpfn import manifests as mf
 
-from .golden import GATE, fixture, int_digest, write_graph, write_manifest
+from .helpers import GATE, fixture, int_digest, pins, write_graph, write_manifest
 
 
 def test_ids_are_sorted_names_and_rows_keep_file_order(tmp_path):
@@ -66,26 +66,25 @@ def test_load_graph_checks_the_manifest(tmp_path):
 
 
 @pytest.mark.parametrize('name', ['UMLS', 'NELLInductive_v1', 'grail-WN18RR_v1'])
-def test_gate_graphs_give_the_research_rows(name):
-    """Sizes and the row order of the research harness (G6 header and row identity), without a model."""
+def test_gate_graphs_give_their_pinned_rows(name):
+    """Sizes and the row order of the three gate graphs, without a model."""
     gate = mf.read_manifest(GATE)
     entry = gate.entry(name)
     if not (mf.REPO / entry.path).is_dir():
         pytest.skip(f'{entry.path} is not available')
-    reference = fixture('g6_ranks.json.gz')['graphs'][name]
+    pinned = pins()['gate'][name]
     graph = D.load_graph(entry, mf.REPO)
     queries = D.prepare_queries(graph, gate.sample_rule)
-    header = reference['header']
-    assert (graph.num_entities, graph.num_relations) == (header['entities'], header['relations'])
+    assert (graph.num_entities, graph.num_relations) == (pinned['entities'], pinned['relations'])
     order = [[queries.index(m), int(head)] for (head, _, _), members in queries.groups for m in members]
-    assert len(order) == reference['rows'] and int_digest(order) == reference['rows_identity']
-    assert queries.positions is None and queries.test_rows == reference['record']['test_rows']
+    assert len(order) == pinned['rows'] and int_digest(order) == pinned['rows_identity']
+    assert queries.positions is None and queries.test_rows == pinned['test_rows']
 
 
 @pytest.mark.parametrize('name', ['FB15k-237', 'YAGO3-10', 'FB15k'])
-def test_sampled_graphs_give_the_research_sample(name, tmp_path):
-    """The first-1000 rule on the test split of a sampled development graph equals the research ``ag_eval.sample_positions``
-    on the research loader's test split (golden ``sample_positions.json``)."""
+def test_sampled_graphs_give_the_recorded_sample(name, tmp_path):
+    """The first-1000 rule on the test split of three public graphs gives the recorded sample of the thesis evaluation
+    (``fixtures/sample_positions.json``)."""
     record = fixture('sample_positions.json')['graphs'][name]
     folder = mf.REPO / 'KGs' / record['key']
     if not (folder / 'test.txt').is_file():
@@ -93,7 +92,7 @@ def test_sampled_graphs_give_the_research_sample(name, tmp_path):
     manifest = mf.read_manifest(write_manifest(tmp_path / 'sampled.json', mf.REPO, {name: folder}))
     entry = manifest.entry(name)
     graph = D.load_graph(entry, mf.REPO)
-    assert {f'{s}.txt': graph.hashes[f'{s}.txt'] for s in mf.SPLITS} == record['sha256']   # the files of the golden
+    assert {f'{s}.txt': graph.hashes[f'{s}.txt'] for s in mf.SPLITS} == record['sha256']   # the files of the record
     positions = D.ranked_positions(D.as_triples(graph.test), manifest.sample_rule)
     assert positions is not None and (len(positions), positions[:5], positions[-5:]) == (record['ranked'], record['first'], record['last'])
     assert int_digest(positions) == record['positions_sha256'] and (graph.num_entities, graph.num_relations) == (record['entities'], record['relations'])

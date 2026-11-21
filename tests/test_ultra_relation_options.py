@@ -1,22 +1,17 @@
 """ULTRA's relation-graph options: ultra_relation_weighting and ultra_pair_channels.
 
-The defaults must stay official ULTRA. The weights are checked by hand on a small graph and, when the ProofPFN golden
-folder is available (environment variable PROOFPFN_GOLDEN), bit for bit against the relation graphs that the research
-worker prepared for 24 task graphs (golden G2, golden/large/g2_worlds_k0_seed42.pt.gz).
+The defaults must stay official ULTRA. The weights are checked by hand on a small graph. The pinned worlds of
+``tests/test_synthetic_prepare.py`` check the relation graphs of generated worlds.
 """
-import gzip
-import io
-
 import pytest
 import torch
 from torch import nn
 
 from dicee.config import Namespace
 from dicee.models._relation_weights import incidence_counts, pair_channel_weights, pair_counts, relation_count_weights
-from dicee.models.ultra import ULTRA, build_relation_graph, relation_graph
+from dicee.models.ultra import ULTRA, build_relation_graph
 from dicee.scripts.run import get_default_arguments
 from dicee.synthetic_kg.determinism import THREADS, torch_threads
-from tests.proofpfn_fixtures import golden_large
 
 # Direct triples of 3 entities and 2 relations; (0, 1) carries both relations.
 DIRECT = torch.tensor([[0, 0, 1], [0, 1, 1], [0, 1, 2], [1, 1, 2]])
@@ -24,7 +19,7 @@ FACTS = torch.tensor([[0, 0, 1], [0, 0, 2], [1, 1, 2], [2, 0, 3], [3, 1, 0], [3,
 
 
 @pytest.fixture(autouse=True)
-def research_threads():
+def two_threads():
     with torch_threads(THREADS):
         yield
 
@@ -179,29 +174,6 @@ def test_checkpoint_options_must_match(tmp_path):
     small(ultra_relation_weighting='normalized').load_pretrained(tmp_path / 'count.pt')
     torch.save(small().state_dict(), tmp_path / 'official.pt')   # no model_config: the official layout
     small().load_pretrained(tmp_path / 'official.pt')
-
-
-def test_relation_graphs_equal_the_research_worker():
-    """G2: the research worker's relation graph (types 0-3, then pair types 4 and 5) and float64 weights, per task."""
-    raw = gzip.decompress(golden_large('g2_worlds_k0_seed42.pt.gz').read_bytes())
-    worlds = torch.load(io.BytesIO(raw), map_location='cpu', weights_only=True)
-    checked = 0
-    for name, world in worlds.items():
-        prepared, content = world['prepared'], world['content']
-        for task in sorted({k.split('/')[0] for k in content}):
-            graph = {k.split('/', 2)[2]: v for k, v in prepared.items() if k.startswith(f'{task}/graph/')}
-            n, nr = int(content[f'{task}/num_entities']), int(content[f'{task}/num_relations'])
-            assert int(graph['num_direct']) == nr
-            index, types, weight, _ = relation_graph(graph['graph_triples'], n, nr, 'normalized', 'on')
-            assert torch.equal(index, graph['rel_edge_index']), (name, task)
-            assert torch.equal(types, graph['rel_edge_type']), (name, task)
-            assert weight is not None and weight.dtype == torch.float64 and torch.equal(weight, graph['edge_weight']), (name, task)
-            model = ULTRA(dict(ultra_dim=8, ultra_num_layers=1, ultra_relation_weighting='normalized', ultra_pair_channels='on'))
-            model.set_graph(content[f'{task}/context'], n, nr)
-            assert torch.equal(model.graph_triples, graph['graph_triples']) and torch.equal(model.relation_id_map, graph['relation_id_map'])
-            assert model.rel_edge_weight is not None and torch.equal(model.rel_edge_index, index) and torch.equal(model.rel_edge_weight, weight.float())
-            checked += 1
-    assert checked == 24
 
 
 @pytest.mark.skipif(not torch.cuda.is_available(), reason='needs CUDA')

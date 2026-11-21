@@ -1,19 +1,23 @@
 """The frozen manifests: graph sets, views, hash checks, malformed files, and the builders that derive the manifests from
-the research inputs named in their ``sources``.
+the input files named in their ``sources``.
+
+The builders run when ``PROOFPFN_MANIFEST_INPUTS`` names a folder that holds the input files (``inputs/kiowl/...`` for
+``ultra54`` and ``inputs/fresh-v1/MANIFEST.json`` for ``heldout44``); without it the rebuild test skips.
 """
-import gzip
 import json
+import os
 import subprocess
 import sys
-from typing import Any, Mapping, Sequence
+from pathlib import Path
+from typing import Any, Mapping
 
 import pytest
 
 from benchmarks.proofpfn import manifests as mf
 
-from .golden import GATE, fixture, golden_root, write_graph, write_manifest
+from .helpers import GATE, pins, write_graph, write_manifest
 
-GATE_GRAPHS = ('UMLS', 'ultra-suite-v1/NELLInductive_v1', 'inductive/grail-WN18RR_v1')   # their keys in the graph audit
+INPUTS_ENV = 'PROOFPFN_MANIFEST_INPUTS'
 
 
 def test_manifests_resolve_without_torch():
@@ -44,12 +48,12 @@ def test_the_held_out_collection():
     assert not {e.name for e in held.entries} & {e.name for e in mf.read_manifest('ultra54').entries}
 
 
-def test_gate_graphs_match_the_golden_record():
+def test_gate_graphs_have_hashes_and_pins():
     gate = mf.read_manifest(GATE)
     assert [e.name for e in gate.entries] == ['UMLS', 'NELLInductive_v1', 'grail-WN18RR_v1'] and gate.sample_rule == 'first-1000'
-    for name, recorded in fixture('g6_ranks.json.gz')['graphs'].items():
-        entry = gate.entry(name)
-        assert {f'{s}.txt': entry.sha256[s] for s in mf.SPLITS} == {k: v for k, v in recorded['record']['sha256'].items() if k != 'manifest'}
+    assert set(pins()['gate']) == {e.name for e in gate.entries}
+    for entry in gate.entries:
+        assert all(entry.sha256.values()) and set(entry.content_sha256) == set(mf.CONTENT_SPLITS)
         folder = mf.REPO / entry.path
         if folder.is_dir():
             problems, hashes = mf.graph_problems(entry, folder)
@@ -141,43 +145,21 @@ def build_heldout44(collection: Mapping[str, Any], counts: Mapping[str, Mapping[
     return dict(format=mf.FORMAT, name='heldout44', about=about, sample_rule='first-1000', sources=dict(sources), graphs=graphs)
 
 
-def build_gate(audit: Mapping[str, Any], inventory: Sequence[Mapping[str, Any]], recorded: Mapping[str, Mapping[str, str]],
-               sources: Mapping[str, str]) -> dict:
-    """``gate``: the graphs of ``GATE_GRAPHS`` with the content hashes of the audit inventory and the file hashes that the
-    golden runs recorded (``recorded``: audit key to the SHA-256 per split)."""
-    inv = {e['key']: e for e in inventory}
-    by_key = {g['key']: g for g in audit['graphs']}
-    graphs = []
-    for key in GATE_GRAPHS:
-        assert set(recorded[key]) == set(mf.SPLITS), f'{key}: no recorded file hashes'
-        g = by_key[key]
-        graphs.append(dict(name=g['name'], path=g['path'], view='gate', suite_id=g['suite_id'],
-                           size=dict(entities=g['size']['entities'], inference_edges=g['size']['inference_edges']),
-                           sha256={s: recorded[key][s] for s in mf.SPLITS},
-                           content_sha256={s: inv[key][f'sha_{s}'] for s in mf.CONTENT_SPLITS}, counts=None))
-    about = ('The three graphs of the exact-rank golden G6: UMLS, NELLInductive_v1 and grail-WN18RR_v1. File SHA-256 as the golden runs '
-             'hashed the files; content hashes from the audit inventory.')
-    return dict(format=mf.FORMAT, name='gate', about=about, sample_rule='first-1000', sources=dict(sources), graphs=graphs)
-
-
 def test_manifests_rebuild_from_their_inputs():
-    root = golden_root()
+    if not os.environ.get(INPUTS_ENV) or not Path(os.environ[INPUTS_ENV]).is_dir():
+        pytest.skip(f'set {INPUTS_ENV} to the folder with the input files of the manifests')
+    root = Path(os.environ[INPUTS_ENV])
     kiowl = root / 'inputs' / 'kiowl'
-    audit, inventory, suite = (json.loads((kiowl / p).read_text()) for p in
-                               ('graph-audit-v1/graphs.json', 'graph-audit-v1/stats/inventory.json', 'p0-suite-v1/manifest.json'))
-    for name, path in (('ultra54', mf.MANIFESTS / 'ultra54.json'), ('heldout44', mf.MANIFESTS / 'heldout44.json'), ('gate', GATE)):
-        committed = path.read_text()
+    for name in ('ultra54', 'heldout44'):
+        committed = (mf.MANIFESTS / f'{name}.json').read_text()
         sources = json.loads(committed)['sources']
-        for source, digest in sources.items():   # 'K/<file>' (a kiowl input) or 'golden/small/<file> (what it holds)'
+        for source, digest in sources.items():   # 'K/<file>' (below inputs/kiowl) or '<path below the folder> (what it holds)'
             file = kiowl / source.removeprefix('K/') if source.startswith('K/') else root / source.split(' ')[0]
             assert mf.file_sha256(file) == digest, source
         if name == 'ultra54':
+            audit, suite = (json.loads((kiowl / p).read_text()) for p in ('graph-audit-v1/graphs.json', 'p0-suite-v1/manifest.json'))
             doc = build_ultra54(suite, audit, sources)
-        elif name == 'heldout44':   # the counts need the graph files; test_data.py checks them when the graphs are there
+        else:   # the counts need the graph files; load_graph checks them when a graph loads
             collection = json.loads((root / 'inputs' / 'fresh-v1' / 'MANIFEST.json').read_text())
             doc = build_heldout44(collection, {g['name']: g['counts'] for g in json.loads(committed)['graphs']}, sources)
-        else:
-            g6 = json.loads(gzip.decompress((root / 'golden' / 'small' / 'g6_ranks.json.gz').read_bytes()))
-            recorded = {g['record']['key']: {s: g['record']['sha256'][f'{s}.txt'] for s in mf.SPLITS} for g in g6['graphs'].values()}
-            doc = build_gate(audit, inventory, recorded, sources)
         assert dumps(doc) == committed, name

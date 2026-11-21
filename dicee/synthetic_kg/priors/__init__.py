@@ -31,6 +31,11 @@ BUILTIN_FAMILIES = ('plain', 'structured', 'statistical')
 GENERATORS = tuple(GENERATOR_PARAMS)
 """Generators of hook families: the record families and the real subgraph worlds."""
 
+FAMILY_TITLES = {'plain': 'Rule', 'structured': 'Structured', 'statistical': 'Statistical', 'categorical2': 'Categorical',
+                 'attr2': 'Attribute-dependency', 'rec1': 'Record', 'list1': 'List', 'real': 'Real subgraph'}
+"""The title of each world family by its code name. The code names are part of the stream keys and of the world orders,
+so they stay fixed; the titles are the names of the families in text."""
+
 RESERVED_STAGE2 = ((90_000, 90_048), (120_000, 160_000))
 """Stage-2 index ranges that no family stream takes (held-out and fitting worlds; ``pt_common.RESERVED_S2``)."""
 
@@ -56,7 +61,7 @@ class FamilySpec:
         first: The first index of the family's stream.
         params: Overrides of the generator's parameters as ``(key, value)`` pairs (``recipe.record_params``; the real
             worlds take ``max_entities``).
-        null_swap_budget: The structural null of arm N: the swap budget of each world's truth, or ``None`` for intact
+        null_swap_budget: The structural null of PCUltra-N: the swap budget of each world's truth, or ``None`` for intact
             worlds.
     """
 

@@ -1,4 +1,4 @@
-"""The structural null of arm N: degree-preserving edge swaps of a record world's complete truth (``s5_swap``, v2).
+"""The structural null of PCUltra-N: degree-preserving edge swaps of a record world's complete truth (``s5_swap``, v2).
 
 The swaps act between the latent world and its observation (``FamilySpec.null_swap_budget``); the observation, query
 and negative draws keep their own streams, so a null world has the intact world's observed share and hidden count.

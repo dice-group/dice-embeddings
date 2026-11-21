@@ -1,6 +1,6 @@
-"""The legacy plain generator (``priors.legacy`` with ``priors.factorial``) against golden G2, and its parts.
+"""The legacy plain generator (``priors.legacy`` with ``priors.factorial``) against its pinned worlds, and its parts.
 
-G2's plain worlds (``tests/synthetic_worlds.py``) are rule worlds, rule worlds with new rule programs, with pair-affinity
+The pinned plain worlds (``tests/synthetic_worlds.py``) are rule worlds, rule worlds with new rule programs, with pair-affinity
 rewiring, and control worlds; the templates of the other families add more of each kind.
 """
 import hashlib
@@ -10,26 +10,26 @@ import numpy as np
 import pytest
 import torch
 
-from dicee.synthetic_kg.arms import ARMS
 from dicee.synthetic_kg.priors import Slot, factorial, legacy, world
 from dicee.synthetic_kg.streams import blake2b_int, joint_world_stream, pair_affinity_stream, rule_program_stream, sha256_int, world_first_stream
-from tests.synthetic_worlds import check_world, golden_names
+from tests.proofpfn_fixtures import PRIORS
+from tests.synthetic_worlds import check_world, pinned_names
 
-FAST = ('42/S/plain/0',    # a rule world
-        '42/S/plain/1',    # with new rule programs
-        '42/S/plain/4',    # with pair-affinity rewiring and new rule programs
-        '42/S/plain/2',    # a control world: family current, core topology
-        '42/S/plain/50')   # a control world: split composition, attached topology
+FAST = ('42/synthetic/plain/0',    # a rule world
+        '42/synthetic/plain/1',    # with new rule programs
+        '42/synthetic/plain/4',    # with pair-affinity rewiring and new rule programs
+        '42/synthetic/plain/2',    # a control world: family current, core topology
+        '42/synthetic/plain/50')   # a control world: split composition, attached topology
 
 
 @pytest.mark.parametrize('name', FAST)
-def test_plain_world_equals_the_research_world(name):
+def test_plain_world_equals_its_pin(name):
     check_world(name)
 
 
 @pytest.mark.slow
-def test_every_golden_plain_world():
-    names = golden_names({'plain'})
+def test_every_pinned_plain_world():
+    names = pinned_names({'plain'})
     assert len(names) == 11
     for name in names:
         check_world(name)
@@ -37,14 +37,14 @@ def test_every_golden_plain_world():
 
 def test_world_leaves_global_random_state_unchanged():
     python, numpy, generator = random.getstate(), np.random.get_state(legacy=False), torch.get_rng_state()
-    check_world('42/S/plain/50')
+    check_world('42/synthetic/plain/50')
     after = np.random.get_state(legacy=False)
     assert np.array_equal(after['state'].pop('key'), numpy['state'].pop('key')) and after == numpy   # the MT19937 key, then the rest
     assert random.getstate() == python and torch.equal(torch.get_rng_state(), generator)
 
 
 def test_slots_outside_their_streams_are_refused():
-    prior = ARMS['S'].prior
+    prior = PRIORS['synthetic']
     for slot in (Slot('plain', 's1', 20_000), Slot('plain', 's2', 19_999), Slot('structured', 's2', 7), Slot('rec1', 's1', 0)):
         with pytest.raises(ValueError, match='does not belong'):
             world(42, slot, prior)

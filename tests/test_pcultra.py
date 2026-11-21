@@ -149,20 +149,20 @@ def test_a_new_graph_replaces_the_matrix():
 
 
 def test_checkpoints_of_the_synthetic_prior(tmp_path):
-    from dicee.synthetic_kg.arms import ARMS, initial_model
     from dicee.synthetic_kg.checkpoint import load_model, make_checkpoint, save_checkpoint
+    from dicee.synthetic_kg.variants import VARIANTS, initial_model
     triples, n, r = random_graph(9)
     paths = {}
-    for arm in ('S', 'CU'):
-        checkpoint = make_checkpoint(initial_model(arm, 42).state_dict(), arm=arm, seed=42, updates=0, weights='raw',
-                                     order_sha256=ARMS[arm].pinned_order(42), provenance={'source': 'test'})
-        paths[arm] = save_checkpoint(checkpoint, tmp_path / f'{arm}.pt')
-    model = frozen(PCUltra({}).load_pretrained(paths['S']).set_graph(triples, n, r))
-    reference = load_model(paths['S']).set_graph(triples, n, r)
+    for variant in ('PCUltra-S', 'CountULTRA-S'):
+        checkpoint = make_checkpoint(initial_model(variant, 42).state_dict(), variant=variant, seed=42, updates=0, weights='raw',
+                                     order_sha256=VARIANTS[variant].pinned_order(42), provenance={'source': 'test'})
+        paths[variant] = save_checkpoint(checkpoint, tmp_path / f'{variant}.pt')
+    model = frozen(PCUltra({}).load_pretrained(paths['PCUltra-S']).set_graph(triples, n, r))
+    reference = load_model(paths['PCUltra-S']).set_graph(triples, n, r)
     with torch.no_grad():
         torch.testing.assert_close(model.forward_k_vs_all(triples[:8, :2]), reference.forward_k_vs_all(triples[:8, :2]), rtol=1e-5, atol=1e-5)
     with pytest.raises(ValueError, match="saved with {'ultra_pair_channels': 'off'}"):   # CountULTRA has no pair channels
-        PCUltra({}).load_pretrained(paths['CU'])
+        PCUltra({}).load_pretrained(paths['CountULTRA-S'])
 
 
 def test_saved_graph_restores_the_matrix(tmp_path):
@@ -200,15 +200,16 @@ def test_zero_shot_run_and_reload(tmp_path):
     from dicee.config import Namespace
     from dicee.executer import Execute
     from dicee.knowledge_graph_embeddings import KGE
-    from dicee.synthetic_kg.arms import ARMS, initial_model
     from dicee.synthetic_kg.checkpoint import make_checkpoint, save_checkpoint
+    from dicee.synthetic_kg.variants import VARIANTS, initial_model
     dataset = tmp_path / 'data'
     dataset.mkdir()
     (dataset / 'train.txt').write_text('a r b\na r c\nb s c\nc r d\nd s a\na s c\n')
     (dataset / 'valid.txt').write_text('b r d\n')
     (dataset / 'test.txt').write_text('d r b\nc s a\n')
-    checkpoint = save_checkpoint(make_checkpoint(initial_model('S', 42).state_dict(), arm='S', seed=42, updates=0, weights='raw',
-                                                 order_sha256=ARMS['S'].pinned_order(42), provenance={'source': 'test'}), tmp_path / 'S.pt')
+    checkpoint = save_checkpoint(make_checkpoint(initial_model('PCUltra-S', 42).state_dict(), variant='PCUltra-S', seed=42, updates=0,
+                                                 weights='raw', order_sha256=VARIANTS['PCUltra-S'].pinned_order(42),
+                                                 provenance={'source': 'test'}), tmp_path / 'S.pt')
     reports = {}
     for name, options in (('PCUltra', {'graph_inference_backend': 'torch'}), ('ULTRA', OPTIONS)):   # 'torch': the same operations
         args = Namespace()

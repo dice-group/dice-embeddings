@@ -1,14 +1,10 @@
-"""The prior's streams, recipe, world batch and world order, against the research code's golden references.
+"""The prior's streams, recipe, world batch and world order.
 
-G1 (tests/fixtures/proofpfn/g1_orders.json.gz): the 24,000-slot world orders of the arms S, CU, UL, HT, N, R and M for
-seeds 42, 43 and 44 (21 order digests, all equal to the research pins) and the first 400 slots of each distinct order.
-The priors are built here from the research run options (the hook records of the opts files), independently of the
-arm presets. The research configuration chain: tests/fixtures/proofpfn/recipe_research.json.gz.
+The pins (``tests/proofpfn_fixtures.py``) hold the shares and cumulative bounds of the three mixtures and the digest
+of the first 400 slots of each world order; the presets pin the digests of the full orders.
 """
 import dataclasses
-import gzip
 import hashlib
-import io
 
 import pytest
 import torch
@@ -16,53 +12,35 @@ import torch
 from dicee.synthetic_kg import recipe, streams
 from dicee.synthetic_kg.batch import WorldBatch, check_batch, world_sizes
 from dicee.synthetic_kg.priors import RESERVED_HOOK, RESERVED_STAGE2, FamilySpec, PriorConfig, Slot, build_order, hook_indices, mixture_bounds, order_sha256, parse_mix, stage2_indices, world
-from tests.proofpfn_fixtures import fixture, golden_large, typed
-from tests.proofpfn_fixtures import research_prior as prior_of_entry
-from tests.synthetic_worlds import content_sha256, content_tensors
+from dicee.synthetic_kg.variants import SEEDS
+from tests.proofpfn_fixtures import PRIORS, content_sha256, content_tensors, pins
 
-G1 = fixture('g1_orders.json.gz')
-RECIPE = fixture('recipe_research.json.gz')
-SEEDS = (42, 43, 44)
+LABELS = ('synthetic', 'real', 'mixed')
 
 
-def research_prior(arm: str) -> PriorConfig:
-    """The prior of a research arm of G1, from its --mix string, order name and hook records."""
-    return prior_of_entry(G1['arms'][arm])
+@pytest.mark.parametrize('label', LABELS)
+def test_mixture_shares_and_bounds(label):
+    pinned, prior = pins()['mixtures'][label], PRIORS[label]
+    assert {k: repr(v) for k, v in prior.shares.items()} == pinned['shares'] and list(prior.shares) == sorted(pinned['shares'])
+    assert [[name, repr(bound)] for name, bound in mixture_bounds(prior)] == pinned['bounds']
 
 
-@pytest.mark.parametrize('arm', sorted(G1['arms']))
-def test_mixture_shares_and_bounds(arm):
-    entry = G1['arms'][arm]
-    prior = research_prior(arm)
-    assert {k: repr(v) for k, v in prior.shares.items()} == entry['shares_repr']
-    assert list(prior.shares) == sorted(entry['shares_repr'])
-    assert [[name, repr(bound)] for name, bound in mixture_bounds(prior)] == entry['cumulative_bounds_repr']
-
-
-@pytest.mark.parametrize('arm', sorted(G1['arms']))
+@pytest.mark.parametrize('label', LABELS)
 @pytest.mark.parametrize('seed', SEEDS)
-def test_orders_equal_the_research_orders(arm, seed):
-    golden = G1['arms'][arm]['seeds'][str(seed)]
-    assert golden['equal_to_pins']
-    order = build_order(seed, research_prior(arm))
+def test_orders_equal_their_pins(label, seed):
+    order = build_order(seed, PRIORS[label])
     assert len(order) == recipe.TOTAL_UPDATES and all(isinstance(slot, Slot) for slot in order)
-    assert order_sha256(order) == golden['order_sha256']
-    assert order_sha256(order[:400]) == golden['first400_sha256']
-    assert [list(slot) for slot in order[:400]] == G1['distinct_orders'][golden['order_sha256']]['first400']
-
-
-def test_orders_cover_the_21_research_digests():
-    digests = {(arm, int(seed)): v['order_sha256'] for arm, e in G1['arms'].items() for seed, v in e['seeds'].items()}
-    assert len(digests) == 21 and len(set(digests.values())) == len(G1['distinct_orders']) == 7
+    assert order_sha256(order[:400]) == pins()['orders'][label][str(seed)]
+    if label == 'synthetic':   # the structural null keeps the order
+        assert order == build_order(seed, PRIORS['null'])
 
 
 def test_order_is_prefix_stable_and_skips_reserved_indices():
-    prior = research_prior('M')
+    prior = PRIORS['mixed']
     assert build_order(43, prior, 2000)[:700] == build_order(43, prior, 700)
     assert stage2_indices(42, 'structured', 3) == [i for i in range(20_000, 20_100) if streams.stage2_family(42, i) == 'structured'][:3]
     assert hook_indices(129_998, 4) == [129_998, 129_999, 160_000, 160_001]
-    assert RESERVED_STAGE2 == tuple(map(tuple, RECIPE['constants']['pt_common']['RESERVED_S2']))
-    assert RESERVED_HOOK == tuple(map(tuple, RECIPE['constants']['pt_common']['RESERVED_HOOK']))
+    assert RESERVED_STAGE2 == ((90_000, 90_048), (120_000, 160_000)) and RESERVED_HOOK == ((130_000, 160_000), (500_000, 501_000))
     statistical = stage2_indices(42, 'statistical', 25_000)
     assert statistical[-1] > 90_048 and not any(90_000 <= i < 90_048 for i in statistical)
     assert any(90_000 <= i < 90_048 for i in range(89_000, 91_000) if streams.is_statistical(42, i))
@@ -73,36 +51,22 @@ def test_streams():
     assert streams.sha256_int('abc', 'little') == int.from_bytes(bytes.fromhex('ba7816bf8f01cfea'), 'little')
     assert streams.mixture_draw(42, 'REC10A-XLE', 0) == streams.sha256_int('prior-fix-v1:mix:42:REC10A-XLE:0') / 2 ** 64
     assert streams.initial_seed(42) == streams.sha256_int('capacity-prior-v1:42:initial:d64') % (2 ** 63 - 1)
-    assert streams.hard_target_seed(43, 7) == int.from_bytes(hashlib.sha256(b'pt_hard:43:7').digest()[:8], 'little')   # pt_hard.generator
-    versions = RECIPE['constants']
-    assert streams.MIXTURE_VERSION == versions['pt_common']['VERSION'] and streams.CAPACITY_VERSION == versions['cp_prior_VERSION']
-    assert streams.STATISTICAL_VERSION == versions['st_prior_VERSION'] and streams.STRUCTURED_VERSION == versions['sw_prior_VERSION']
-    first = G1['distinct_orders'][G1['arms']['S']['seeds']['42']['order_sha256']]['first400']
-    for family, source, index in first:
+    assert streams.hard_target_seed(43, 7) == int.from_bytes(hashlib.sha256(b'pt_hard:43:7').digest()[:8], 'little')
+    for family, source, index in build_order(42, PRIORS['synthetic'], 400):
         if source == 's2':
             assert streams.stage2_family(42, index) == family
 
 
-def test_recipe_equals_the_research_chain():
-    """The values of the research recipe that the generators read: the seed, the world sizes, the queries and negatives."""
-    world = dataclasses.asdict(recipe.WORLD)
-
-    def read(config: dict) -> dict:
-        return dict(world={k: config['world'][k] for k in world}, batch_size=config['batch_size'], num_negative=config['num_negative'])
-
-    expected = dict(world=world, batch_size=recipe.QUERIES, num_negative=recipe.NEGATIVES)
-    for seed in SEEDS:
-        final = RECIPE['final'][str(seed)]
-        assert read(final) == typed(expected) and final['seed'] == typed(seed)
-    assert len(RECIPE['levels']) == 12 and all(read(level['config']) == expected for level in RECIPE['levels'].values())
-    for name, params in recipe.RECORD_PARAMS.items():
-        assert typed(dict(params)) == RECIPE['params'][name] and list(params) == RECIPE['params_key_order'][name]
-    c = RECIPE['constants']
-    assert recipe.NEGATIVES == c['pf_prior_NEG'] == c['st_prior_NEG'] == c['sw_prior_NEG'] == c['pf_rec1_NEG'] == c['pf_list1_NEG']
-    assert (recipe.STATISTICAL_SHARE, recipe.STRUCTURED_SHARE) == (c['st_prior_P_STAT'], c['sw_prior_V2_SHARE'])
-    assert (recipe.STAGE1_WORLDS, recipe.STAGE2_OFFSET, recipe.LEGACY_OFFSET) == (c['pt_common']['N1'], c['op_common']['S2_OFFSET'], c['cp_prior_OFFSET'])
-    assert (recipe.CONSTANT_UPDATES, recipe.DECAY_UPDATES, recipe.TOTAL_UPDATES) == (c['op_common']['N1'], c['op_common']['N2'], c['pt_common']['TOTAL'])
-    assert 2 * recipe.HEAD_QUERIES == recipe.QUERIES
+def test_recipe_values():
+    """The values of the recipe that the generators and the schedule read."""
+    assert dataclasses.asdict(recipe.WORLD) == dict(min_core_entities=96, max_core_entities=192, min_relations=5, max_relations=10,
+                                                    min_density=0.001, max_density=0.003, min_observed=0.4, max_observed=0.9,
+                                                    blocks_per_rule=6, grid_size=3, max_copies=2)
+    assert (recipe.QUERIES, recipe.HEAD_QUERIES, recipe.NEGATIVES) == (30, 15, 512)
+    assert (recipe.STATISTICAL_SHARE, recipe.STRUCTURED_SHARE) == (0.35, 0.5)
+    assert (recipe.STAGE1_WORLDS, recipe.STAGE2_OFFSET, recipe.LEGACY_OFFSET) == (20_000, 20_000, 300_000)
+    assert (recipe.CONSTANT_UPDATES, recipe.DECAY_UPDATES, recipe.TOTAL_UPDATES) == (20_000, 4_000, 24_000)
+    assert list(recipe.RECORD_PARAMS) == ['categorical2', 'attr2', 'rec1', 'list1']
 
 
 def test_record_params_overrides():
@@ -132,7 +96,7 @@ def test_prior_validation():
 
 
 def test_world_refuses_slots_of_other_streams():
-    prior = research_prior('M')
+    prior = PRIORS['mixed']
     with pytest.raises(ValueError, match='does not belong'):
         world(42, Slot('rec1', 's2', 20_000), prior)
     with pytest.raises(ValueError, match='does not belong'):
@@ -173,22 +137,3 @@ def test_check_batch():
     content = content_tensors(world_batch)
     assert sorted(content)[:6] == ['base/context', 'base/groups', 'base/head_prediction', 'base/num_entities', 'base/num_relations', 'base/truth']
     assert content_sha256(world_batch) == content_sha256(dict(reversed(list(world_batch.items()))))   # the task order does not enter
-
-
-def test_content_digest_of_research_worlds():
-    """G2: the research worlds of seed 42, position 0 (12 worlds) pass the batch check and give the golden digest."""
-    raw = gzip.decompress(golden_large('g2_worlds_k0_seed42.pt.gz').read_bytes())
-    worlds = torch.load(io.BytesIO(raw), map_location='cpu', weights_only=True)
-    golden = {f"{w['arm']}/{w['family']}/{w['source']}/{w['index']}": w for w in fixture('g2_worlds.json.gz')['worlds']
-              if w['seed'] == 42 and w['k'] == 0}
-    assert set(worlds) == set(golden) and len(worlds) == 12
-    for name, value in worlds.items():
-        content = value['content']
-        world_batch = {task: WorldBatch(content[f'{task}/groups'], content[f'{task}/head_prediction'],
-                                        frozenset(map(tuple, content[f'{task}/context'].tolist())),
-                                        frozenset(map(tuple, content[f'{task}/truth'].tolist())),
-                                        int(content[f'{task}/num_entities']), int(content[f'{task}/num_relations']))
-                       for task in golden[name]['research_fingerprint']}
-        check_batch(world_batch)
-        assert content_sha256(world_batch) == golden[name]['content_sha256'], name
-        assert world_sizes(world_batch) == {k: golden[name]['meta'][k] for k in ('n_entities', 'n_context')}

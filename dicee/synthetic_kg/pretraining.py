@@ -1,6 +1,6 @@
-"""ProofPFN pretraining: ULTRA trained on one generated world per update, from an arm's initial weights.
+"""ProofPFN pretraining: ULTRA trained on one generated world per update, from a variant's initial weights.
 
-A run is an arm (``arms.ARMS``) and a seed. Update ``i`` trains on the world of slot ``i`` of the arm's world order
+A run is a variant (``variants.VARIANTS``) and a seed. Update ``i`` trains on the world of slot ``i`` of the variant's world order
 (``priors.build_order``, 24,000 slots), prepared by worker processes (``prepare.prepare_slot``). One update:
 
 - per task of the world (in the world's order): attach the task's prepared graph to the model; the tail queries, then
@@ -23,9 +23,7 @@ state, EMA, history; every ``save_every`` updates and at the end), ``progress.js
 exclusively while it trains. A run whose folder holds a ``last.pt`` resumes from it; the result equals the uninterrupted
 run on the same torch version and device.
 
-This is the research trainer (``prior-fix-v1-runtime/pt_train.py`` with ``pt_ladder``, ``pt_ultra``, ``pt_hard`` and
-``statworlds-scale-v1-runtime/fast_pipeline``) for the ported arms, without its adapters, screens, restarts and skips.
-dicee's trainers are not used: an update trains on its own generated graph, which their datasets do not express.
+This is the training loop of the thesis runs. dicee's trainers are not used: an update trains on its own generated graph, which their datasets do not express.
 """
 import json
 import logging
@@ -50,7 +48,6 @@ from .. import __version__ as DICEE_VERSION
 from ..models import _inference, _relation_weights, graph_model, ultra
 from ..models._inference import to_device
 from ..models.ultra import ULTRA
-from .arms import ArmPreset, arm_preset, initial_model
 from .checkpoint import atomic_save, atomic_write_bytes, make_checkpoint, save_checkpoint
 from .determinism import THREADS, deterministic_execution, device_problem, torch_threads
 from .digests import file_sha256
@@ -58,6 +55,7 @@ from .prepare import PreparedWorld, prepare_slot
 from .priors import PriorConfig, Slot, build_order, order_sha256, real
 from .recipe import CONSTANT_UPDATES, DECAY_UPDATES, EMA_DECAY, LEARNING_RATE, MICROBATCH, TOTAL_UPDATES, WEIGHT_DECAY
 from .streams import hard_target_seed
+from .variants import Variant, initial_model, variant_of
 
 logger = logging.getLogger(__name__)
 
@@ -79,7 +77,7 @@ class PretrainConfig:
     """A pretraining run.
 
     Attributes:
-        arm: The arm name (a key of ``arms.ARMS``).
+        variant: The variant name (a key of ``variants.VARIANTS``).
         seed: The run seed.
         stop_after: Stop after this update with ``last.pt`` (rerun to resume); ``None`` runs to ``TOTAL_UPDATES``.
         exports: The export updates; ``None``: ``EXPORTS``. ``TOTAL_UPDATES`` is always exported.
@@ -89,12 +87,12 @@ class PretrainConfig:
         worker_threads: Torch threads of a worker.
         device: The training device.
         threads: Torch threads of the training process (CPU results depend on it).
-        real_sources: The folder of the real source graphs (the arms with real worlds); ``None`` reads ``PROOFPFN_REAL_SOURCES``.
+        real_sources: The folder of the real source graphs (the variants with real worlds); ``None`` reads ``PROOFPFN_REAL_SOURCES``.
         allow_code_change: Resume although the sources that the run binds, the torch version or the GPU changed since the
             run started (the result then can differ from the uninterrupted run).
     """
 
-    arm: str
+    variant: str
     seed: int
     stop_after: Optional[int] = None
     exports: Optional[tuple[int, ...]] = None
@@ -108,7 +106,7 @@ class PretrainConfig:
     allow_code_change: bool = False
 
     def __post_init__(self) -> None:
-        arm_preset(self.arm)
+        variant_of(self.variant)
         if self.stop_after is not None and not 1 <= self.stop_after <= TOTAL_UPDATES:
             raise RunInputError(f'stop_after must lie in 1..{TOTAL_UPDATES}')
         if self.exports is not None and not all(1 <= e <= TOTAL_UPDATES for e in self.exports):
@@ -287,13 +285,13 @@ def _real_sources(prior: PriorConfig, folder: Union[str, Path, None]) -> dict[st
     return {name: file_sha256(root / name / 'data.pt') for name in real.NAMES}
 
 
-def run_record(config: PretrainConfig, preset: ArmPreset, digest: str) -> dict[str, Any]:
+def run_record(config: PretrainConfig, preset: Variant, digest: str) -> dict[str, Any]:
     """What determines the updates of a run (a resumed run must have the same record).
 
     Args:
         config: The run configuration.
-        preset: Its arm.
-        digest: The digest of the arm's world order.
+        preset: Its variant.
+        digest: The digest of the variant's world order.
 
     Returns:
         A JSON-safe dictionary.
@@ -301,19 +299,19 @@ def run_record(config: PretrainConfig, preset: ArmPreset, digest: str) -> dict[s
     prior = preset.prior
     families = [dict(name=s.name, generator=s.generator, first=s.first, params={k: list(v) if isinstance(v, tuple) else v for k, v in s.params},
                      null_swap_budget=s.null_swap_budget) for s in prior.families]
-    return dict(format=RUN_FORMAT, arm=preset.name, research_arm=preset.research_arm, seed=config.seed, order_sha256=digest,
+    return dict(format=RUN_FORMAT, variant=preset.name, seed=config.seed, order_sha256=digest,
                 order_slots=TOTAL_UPDATES, prior=dict(mix=prior.mix, order_name=prior.order_name, families=families),
                 model_config=preset.model_config(), target=preset.target, constant_updates=CONSTANT_UPDATES, decay_updates=DECAY_UPDATES,
                 learning_rate=LEARNING_RATE, weight_decay=WEIGHT_DECAY, ema_decay=EMA_DECAY, microbatch=MICROBATCH,
                 device=torch.device(config.device).type, threads=config.threads, deterministic=True)
 
 
-def provenance(config: PretrainConfig, preset: ArmPreset) -> dict[str, Any]:
+def provenance(config: PretrainConfig, preset: Variant) -> dict[str, Any]:
     """Where the run's results come from: versions, device, the source and data hashes.
 
     Args:
         config: The run configuration.
-        preset: Its arm.
+        preset: Its variant.
 
     Returns:
         A JSON-safe dictionary.
@@ -421,7 +419,7 @@ def _check_start(folder: Path, record: Mapping[str, Any], origin: Mapping[str, A
 
 
 def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[Callable[[], bool]] = None) -> PretrainResult:
-    """Train an arm on its world order, or resume its run from ``last.pt``.
+    """Train a variant on its world order, or resume its run from ``last.pt``.
 
     Args:
         config: The run.
@@ -433,11 +431,11 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
 
     Raises:
         RunInputError: For a folder of another run, with changed sources, torch version or GPU, or in use by another
-            process, a world order that differs from the arm's pin, a foreign ``last.pt``, or real source graphs that are
+            process, a world order that differs from the variant's pin, a foreign ``last.pt``, or real source graphs that are
             missing or hold other content than the research files, or a device that this machine lacks or that runs CUDA
             without a deterministic cuBLAS workspace setting.
     """
-    preset = arm_preset(config.arm)
+    preset = variant_of(config.variant)
     folder = Path(out_dir)
     problem = device_problem(config.device)
     if problem:
@@ -447,7 +445,7 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
     digest = order_sha256(order)
     pinned = preset.pinned_order(config.seed)
     if pinned is not None and digest != pinned:
-        raise RunInputError(f'the world order of arm {preset.name}, seed {config.seed} has digest {digest}, its pin is {pinned}')
+        raise RunInputError(f'the world order of {preset.name}, seed {config.seed} has digest {digest}, its pin is {pinned}')
     record = run_record(config, preset, digest)
     origin = provenance(config, preset)
     folder.mkdir(parents=True, exist_ok=True)
@@ -501,7 +499,7 @@ def pretrain(config: PretrainConfig, out_dir: Union[str, Path], stop: Optional[C
                 del prepared
                 if done in exports:
                     for weights, values in (('raw', model.state_dict()), ('ema', ema)):
-                        save_checkpoint(make_checkpoint(values, arm=preset, seed=config.seed, updates=done, weights=weights, order_sha256=digest,
+                        save_checkpoint(make_checkpoint(values, variant=preset, seed=config.seed, updates=done, weights=weights, order_sha256=digest,
                                                         provenance=checkpoint_provenance), folder / f'export-{done}-{weights}.pt')
                 stopping = stop is not None and done < end and stop()
                 if done % config.save_every == 0 or done == end or stopping:

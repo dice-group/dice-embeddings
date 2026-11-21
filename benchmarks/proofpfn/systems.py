@@ -26,8 +26,8 @@ from dicee.models.flock import Flock
 from dicee.models.graph_model import GraphKGE
 from dicee.models.trix import TRIX
 from dicee.models.ultra import ULTRA
-from dicee.synthetic_kg.arms import SEEDS
 from dicee.synthetic_kg.checkpoint import CheckpointError, model_from_checkpoint, read_checkpoint
+from dicee.synthetic_kg.variants import SEEDS
 
 from .data import GraphData, inference_stats
 from .manifests import REPO, GraphEntry, InputError, file_sha256
@@ -254,13 +254,13 @@ class Checkpoint:
         """The system's record: the file and what the checkpoint says about itself.
 
         Returns:
-            ``kind`` (``'checkpoint'``), ``checkpoint`` (the file), ``model_config``, ``arm``, ``seed``, ``updates`` and
+            ``kind`` (``'checkpoint'``), ``checkpoint`` (the file), ``model_config``, ``variant``, ``seed``, ``updates`` and
             ``weights`` of the checkpoint.
         """
         self.check()
         c = self._checkpoint
         assert c is not None
-        return dict(kind='checkpoint', checkpoint=str(self.path), model_config=dict(c['model_config']), arm=c['arm'], seed=c['seed'],
+        return dict(kind='checkpoint', checkpoint=str(self.path), model_config=dict(c['model_config']), variant=c['variant'], seed=c['seed'],
                     updates=c['updates'], weights=c['weights'])
 
     def sha256(self) -> str:

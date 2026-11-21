@@ -1,13 +1,8 @@
 {
  "format": "proofpfn-graph-manifest-v2",
  "name": "gate",
- "about": "The three graphs of the exact-rank golden G6: UMLS, NELLInductive_v1 and grail-WN18RR_v1. File SHA-256 as the golden runs hashed the files; content hashes from the audit inventory.",
+ "about": "Three small graphs of the benchmark tests: UMLS, NELLInductive_v1 and grail-WN18RR_v1, with the SHA-256 of their files and of their content.",
  "sample_rule": "first-1000",
- "sources": {
-  "K/graph-audit-v1/graphs.json": "2b813453f3c1188f10beb5781bc5222b6feac2d01201f6926dad63f0f4d6c098",
-  "K/graph-audit-v1/stats/inventory.json": "5a07b9d84f2e485e6ec612ea027f973622591966e5ce631e6bf15743ed90af4b",
-  "golden/small/g6_ranks.json.gz (allgraph.sha256 of the research rows)": "8d137562cab30fdbe648122b9cc3f1f76565ad9be9d36ef8feac290a4382f8e7"
- },
  "graphs": [
   {
    "name": "UMLS",

@@ -21,9 +21,9 @@ from tests.proofpfn_fixtures import clean_checkpoints
 
 @pytest.fixture(scope='module')
 def checkpoints(tmp_path_factory):
-    """Checkpoints of arm S's initial weights for seeds 42, 43 and 44 (the format of the pretraining exports)."""
+    """Checkpoints of the initial weights of PCUltra-S for seeds 42, 43 and 44 (the format of the pretraining exports)."""
     folder = tmp_path_factory.mktemp('pcultra')
-    return clean_checkpoints(folder, 'S')
+    return clean_checkpoints(folder, 'PCUltra-S')
 
 
 def test_every_kgfm_adapter_has_one_backbone_source_and_recipes_check_the_score_input():
@@ -45,8 +45,8 @@ def test_the_pcultra_backbone_loads_as_its_checkpoint_says(checkpoints, tmp_path
     assert (model.name, model.relation_weighting, model.pair_channels) == ('ULTRA', 'normalized', 'on')
     assert model.query_batch_size == 3 and model.relation_cache_mb == 1 and not model.training
     assert state_fingerprint(model) == state_fingerprint(model_from_checkpoint(read_checkpoint(path)))
-    assert (record['arm'], record['seed'], record['weights'], record['source']) == ('S', 42, 'raw', 'test')
-    assert record['research_export_sha256'] is None and record['model_config']['ultra_pair_channels'] == 'on'
+    assert (record['variant'], record['seed'], record['weights'], record['source']) == ('PCUltra-S', 42, 'raw', 'test')
+    assert record['export_sha256'] is None and record['model_config']['ultra_pair_channels'] == 'on'
     # The global random state is not consumed by building the model.
     state = torch.random.get_rng_state()
     load_kgfm_backbone('pcultra', path)
@@ -108,7 +108,7 @@ def test_paired_pcultra_study_verifies_and_runs_with_log_softmax_input(checkpoin
     for report in (result, control):
         assert report['inference']['options']['score_input'] == 'log_softmax'
         backbone = report['inference']['backbone']
-        assert (backbone['arm'], backbone['seed'], backbone['format']) == ('S', 42, 'proofpfn-checkpoint-v1')
+        assert (backbone['variant'], backbone['seed'], backbone['format']) == ('PCUltra-S', 42, 'proofpfn-checkpoint-v1')
     rows = export_reports(tmp_path / 'test', suite_directory('plus_h') / 'published_results.json', tmp_path / 'reports',
                           bootstrap_samples=10)
     assert len(rows) == 2 and all(row['complete_test'] for row in rows)

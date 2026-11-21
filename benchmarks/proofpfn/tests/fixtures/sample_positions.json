@@ -1,9 +1,5 @@
 {
- "about": "The first-1000 sample of the research harness on sampled development graphs: allgraph-v1/ag_eval.sample_positions on the test split of the research loader inductive-benchmark-v1-runtime/ib_eval.load_dataset, unchanged, from the snapshot work tree. positions_sha256: SHA-256 of the positions as int64 little-endian, in order.",
- "research_sha256": {
-  "allgraph-v1/ag_eval.py": "8a414148ba0a271e0d88ad8eb47a3fc109409408d776e3bb3eaae617e49cef70",
-  "inductive-benchmark-v1-runtime/ib_eval.py": "57e5518d5ec696c1e2a25208bada56c23efdfa587b8efb5f35906cf52befef8d"
- },
+ "about": "The first-1000 sample on the test split of three public graphs, as the evaluation of the thesis ranked them. positions_sha256: SHA-256 of the sampled positions as int64 little-endian, in order.",
  "graphs": {
   "FB15k-237": {
    "manifest": "dev121",

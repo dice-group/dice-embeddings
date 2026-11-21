@@ -150,7 +150,7 @@ def evaluate_method(entry: Mapping[str, Any], *, output: str | Path, device: str
         adapters={name: checksum(path) for name, path in entry['adapters'].items()},
         device=str(device), torch=str(torch.__version__), threads=torch.get_num_threads(), seed=seed)
     if provenance is None and entry['method'] == 'pcultra-adapter':
-        # The arm, seed and research export of the converted checkpoint (its file hash is the checkpoint_sha256 above).
+        # The variant, seed and source of the checkpoint (its file hash is the checkpoint_sha256 above).
         identity['backbone'] = pcultra_record(entry['checkpoint'])
     report: dict[str, Any] = _evaluate_kgfm(
         dict(entry, options=options), data, query_plan, batch_ends, output, device, identity, on_prediction, reference_batches,
@@ -265,25 +265,24 @@ KGFM_MODELS = ('ultra', 'trix', 'kgicl', 'flock', 'pcultra')
 
 
 def pcultra_record(checkpoint: Mapping[str, Any] | str | Path) -> dict[str, Any]:
-    """The identity of a PCUltra checkpoint: arm, seed, update, weights and the research export it was converted from.
+    """The identity of a PCUltra checkpoint: variant, seed, update, weights and where the weights come from.
 
     Args:
         checkpoint: A ``proofpfn-checkpoint-v1`` dictionary, or its file (read and checked).
 
     Returns:
-        ``format``, ``arm``, ``seed``, ``updates``, ``weights``, ``real_training_updates``, ``order_sha256``,
-        ``model_config`` and, from the provenance, ``source``, ``research_export`` and ``research_export_sha256``
-        (``None`` for a checkpoint that was not converted from a research export).
+        ``format``, ``variant``, ``seed``, ``updates``, ``weights``, ``real_training_updates``, ``order_sha256``,
+        ``model_config`` and, from the provenance, ``source`` and ``export_sha256`` (the SHA-256 of the training export
+        behind a released checkpoint; ``None`` when the provenance has none).
     """
     if not isinstance(checkpoint, Mapping):
         from ..synthetic_kg.checkpoint import read_checkpoint
         checkpoint = read_checkpoint(checkpoint)
     provenance = checkpoint['provenance']
-    return dict(format=checkpoint['format'], arm=checkpoint['arm'], seed=checkpoint['seed'], updates=checkpoint['updates'],
+    return dict(format=checkpoint['format'], variant=checkpoint['variant'], seed=checkpoint['seed'], updates=checkpoint['updates'],
                 weights=checkpoint['weights'], real_training_updates=checkpoint['real_training_updates'],
                 order_sha256=checkpoint['order_sha256'], model_config=dict(checkpoint['model_config']),
-                source=provenance.get('source'), research_export=provenance.get('research_export'),
-                research_export_sha256=provenance.get('research_export_sha256'))
+                source=provenance.get('source'), export_sha256=provenance.get('export_sha256'))
 
 
 def load_kgfm_backbone(backbone: str, checkpoint: str | Path, *, device: str | torch.device = 'cpu',
@@ -294,7 +293,7 @@ def load_kgfm_backbone(backbone: str, checkpoint: str | Path, *, device: str | t
     benchmark's graph) and load their checkpoint with ``load_pretrained``. ``pcultra`` builds dicee's ULTRA from the
     ``model_config`` of a ``proofpfn-checkpoint-v1`` file (count-weighted relation graph and pair channels), after the
     file's format checks, with the global random state unchanged; its microbatch is ``ultra_query_batch_size``. This is
-    the option form of ULTRA, which the checkpoint of every ProofPFN arm loads into. ``models.PCUltra`` has the same
+    the option form of ULTRA, which the checkpoint of every ProofPFN variant loads into. ``models.PCUltra`` has the same
     state dictionary, so an adapter that was fitted on either form verifies against the other.
 
     Args:

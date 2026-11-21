@@ -10,7 +10,7 @@ from benchmarks.proofpfn import cli, evaluate
 from benchmarks.proofpfn import manifests as mf
 from tests.proofpfn_fixtures import clean_checkpoints
 
-from .golden import GATE, tiny_graph, write_manifest
+from .helpers import GATE, tiny_graph, write_manifest
 
 
 def test_every_command_and_option_has_a_help_text(capsys):
@@ -35,7 +35,7 @@ def test_list(capsys):
 def test_check_run_and_table(tmp_path, capsys):
     folders = {'g': tiny_graph(tmp_path / 'KGs' / 'g'), 'h': tiny_graph(tmp_path / 'KGs' / 'h', seed=1)}
     manifest = write_manifest(tmp_path / 'tiny.json', tmp_path, folders)
-    common = ['--set', str(manifest), '--data-root', str(tmp_path), '--model', f"ts={clean_checkpoints(tmp_path, 'S')}"]
+    common = ['--set', str(manifest), '--data-root', str(tmp_path), '--model', f"ts={clean_checkpoints(tmp_path, 'PCUltra-S')}"]
     workspace = os.environ.get('CUBLAS_WORKSPACE_CONFIG')
     assert cli.main(['check', *common]) == 0 and 'check passed (2 graphs, systems ts.seed42,ts.seed43,ts.seed44)' in capsys.readouterr().out
     assert cli.main(['run', *common, '--device', 'cpu', '--out', str(tmp_path / 'out')]) == 0
@@ -57,7 +57,7 @@ def test_check_reports_every_failing_graph(tmp_path, capsys):
     manifest = write_manifest(tmp_path / 'tiny.json', tmp_path, folders)
     (folders['f'] / 'test.txt').write_text('x\tr0\ty\n')   # another file
     (folders['g'] / 'valid.txt').unlink()                   # a missing file
-    common = ['--set', str(manifest), '--data-root', str(tmp_path), '--model', f"ts={clean_checkpoints(tmp_path, 'S')}"]
+    common = ['--set', str(manifest), '--data-root', str(tmp_path), '--model', f"ts={clean_checkpoints(tmp_path, 'PCUltra-S')}"]
     assert cli.main(['check', *common]) == cli.EXIT_INPUT
     lines = capsys.readouterr().out.splitlines()
     assert [line.split()[0] for line in lines[-4:-1]] == ['f', 'g', 'h'] and lines[-2].endswith(' ok')
@@ -65,7 +65,7 @@ def test_check_reports_every_failing_graph(tmp_path, capsys):
 
 
 def test_refusals(tmp_path, capsys):
-    template, gate = clean_checkpoints(tmp_path, 'S'), str(GATE)
+    template, gate = clean_checkpoints(tmp_path, 'PCUltra-S'), str(GATE)
     for command in (['list', '--set', 'nosuch'], ['list', '--set', gate, '--graphs', 'FB15k-237'],
                     ['list', '--set', gate, '--view', 'nosuch', '--graphs', 'UMLS'],
                     ['list', '--set', 'ultra54', '--view', 'trans', '--graphs', 'FBIngram_25'],
@@ -91,5 +91,5 @@ def test_internal_errors_keep_their_traceback(tmp_path, monkeypatch):
         raise ValueError('an internal error')
     monkeypatch.setattr(evaluate, 'evaluate_graph', broken)
     with pytest.raises(ValueError, match='an internal error'):
-        cli.main(['run', '--set', str(GATE), '--graphs', 'UMLS', '--model', f"ts={clean_checkpoints(tmp_path, 'S')}", '--device', 'cpu',
+        cli.main(['run', '--set', str(GATE), '--graphs', 'UMLS', '--model', f"ts={clean_checkpoints(tmp_path, 'PCUltra-S')}", '--device', 'cpu',
                   '--out', str(tmp_path / 'out')])

@@ -1,53 +1,25 @@
-"""Golden fixtures and test inputs of the ProofPFN benchmark tests.
+"""Fixtures and test inputs of the ProofPFN benchmark tests.
 
-Small fixtures are copies in ``golden/`` (see its README); the G6 ranks and the UMLS scores, which the dicee tests use
-too, are read from ``tests/fixtures/proofpfn``. Large golden files (research exports, full row files) stay outside the
-repository: ``golden_large`` and ``golden_root`` (``tests/proofpfn_fixtures.py``) skip the test unless
-``PROOFPFN_GOLDEN`` names the proofpfn-golden folder.
+Small fixtures are in ``fixtures/`` (see its README). The regression pins of the gate graphs and of the evaluation on
+worlds of the prior are in ``tests/fixtures/proofpfn/pins.json`` (``tests.proofpfn_fixtures.pins``).
 """
-import gzip
-import hashlib
 import json
 from pathlib import Path
 from typing import Any, Optional
 
-import numpy as np
-
 from benchmarks.proofpfn.manifests import FORMAT, content_sha256, file_sha256
-from tests.proofpfn_fixtures import FIXTURES, golden_large, golden_root
+from tests.proofpfn_fixtures import int_digest, pins
 
-GOLDEN = Path(__file__).resolve().parent / 'golden'
-GATE = GOLDEN / 'gate.json'
-"""The manifest of the three graphs of the exact-rank golden G6."""
-SHARED = ('g6_ranks.json.gz', 'umls_research_scores.json')
-"""The fixtures of ``tests/fixtures/proofpfn`` that the benchmark tests read too."""
-G6_KEYS = {'gs': ('S', 'REC10A-XLE-PCU-noA'), 'gcu': ('CU', 'REC10A-XLE-CU-noA'), 'gul': ('UL', 'REC10A-XLE-UL-noA'),
-           'ght': ('HT', 'PCU-HT')}   # the test keys of G6: arm and research --arm of the G4 exports
+__all__ = ['FIXTURES', 'GATE', 'fixture', 'int_digest', 'pins', 'tiny_graph', 'write_graph', 'write_manifest']
+
+FIXTURES = Path(__file__).resolve().parent / 'fixtures'
+GATE = FIXTURES / 'gate.json'
+"""The manifest of three small graphs with pinned sizes and row orders: UMLS, NELLInductive_v1 and grail-WN18RR_v1."""
 
 
 def fixture(name: str) -> Any:
-    """A JSON fixture of ``golden/`` (of ``tests/fixtures/proofpfn`` for ``SHARED``), gzip-compressed when the name ends
-    with ``.gz``."""
-    data = ((FIXTURES if name in SHARED else GOLDEN) / name).read_bytes()
-    return json.loads(gzip.decompress(data) if name.endswith('.gz') else data)
-
-
-def fixture_bytes(name: str) -> bytes:
-    """The bytes of a fixture of ``golden/``, decompressed when the name ends with ``.gz``."""
-    data = (GOLDEN / name).read_bytes()
-    return gzip.decompress(data) if name.endswith('.gz') else data
-
-
-def g4_export(arm_key: str) -> str:
-    """The template with ``{seed}`` of a G4 export at update 20 (skips without the large goldens)."""
-    _, run = G6_KEYS[arm_key]
-    golden_large(f'g4/golden-runs/{run}/training/42/export-20.pt')
-    return str(golden_root() / 'golden' / 'large' / 'g4' / 'golden-runs' / run / 'training' / '{seed}' / 'export-20.pt')
-
-
-def int_digest(values: Any) -> str:
-    """The rank digest of the goldens: SHA-256 of int64 little-endian values."""
-    return hashlib.sha256(np.asarray(values, dtype='<i8').tobytes()).hexdigest()
+    """A JSON fixture of ``fixtures/``."""
+    return json.loads((FIXTURES / name).read_text())
 
 
 def write_graph(folder: Path, train: list[str], valid: list[str], test: list[str]) -> Path:

@@ -1,8 +1,8 @@
 """Evaluation on fresh worlds of the synthetic prior: how well pretrained models answer the queries of worlds that no
 training order reaches.
 
-The thesis uses it for the structural null: the model trained on the intact prior (arm S) against the model trained
-with four families rewired (arm N), on intact worlds of each family.
+The thesis uses it for the structural null: the model trained on the intact prior (PCUltra-S) against the model
+trained with four families rewired (PCUltra-N), on intact worlds of each family.
 
 - Worlds: intact worlds of S's prior, seed 42, at held-out indices: the hook indices from rec1 8,810,000 (S's
   parameters), attr2 7,810,000, list1 11,810,000 and categorical2 7,700,000; plain: the stage-2 indices from 120,000
@@ -27,12 +27,12 @@ import numpy as np
 import torch
 
 from dicee.models.ultra import ULTRA
-from dicee.synthetic_kg.arms import ARMS
 from dicee.synthetic_kg.batch import World
 from dicee.synthetic_kg.determinism import THREADS, deterministic_execution, require_cublas_workspace, torch_threads
 from dicee.synthetic_kg.prepare import PreparedWorld, answers_by_anchor, prepare_world
 from dicee.synthetic_kg.priors import Slot, world
 from dicee.synthetic_kg.streams import stage2_family
+from dicee.synthetic_kg.variants import VARIANTS
 
 from .data import rank_of
 from .systems import Checkpoint
@@ -117,7 +117,7 @@ def score(models: Mapping[str, Mapping[str, ULTRA]], families: Sequence[str] = F
     with torch_threads(THREADS), deterministic_execution():
         for family in families:
             for slot in heldout_slots(family, per_family):
-                generated = world(WORLD_SEED, slot, ARMS['S'].prior)
+                generated = world(WORLD_SEED, slot, VARIANTS['PCUltra-S'].prior)
                 prepared = {option: prepare_world(generated, slot, *option) for option in options}
                 for group, members in models.items():
                     for label, model in members.items():

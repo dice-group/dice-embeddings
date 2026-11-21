@@ -83,7 +83,7 @@ def capacity_stream(seed: int, name: str) -> int:
 
 
 HARD_TARGET_VERSION = 'pt_hard'
-"""``pt_hard``: the answer that the hard target of arm HT draws for each query of an update."""
+"""``pt_hard``: the answer that the hard target of PCUltra-HT draws for each query of an update."""
 
 
 def hard_target_seed(seed: int, update: int) -> int:
@@ -101,7 +101,7 @@ def hard_target_seed(seed: int, update: int) -> int:
 
 def initial_seed(seed: int) -> int:
     """The ``torch.manual_seed`` value of a run's initial weights (``cp_common.create`` with the width tag ``d64`` of
-    every ported arm).
+    every variant).
 
     Args:
         seed: The run seed.
