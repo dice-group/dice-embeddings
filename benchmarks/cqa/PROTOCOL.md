@@ -1,9 +1,9 @@
 # Evaluation protocol
 
-This document fixes how the [benchmark suites](README.md) score methods, what
-verification establishes, and where this reproduction knowingly differs from a
-publication. Where the evidence for a published number is uncertain, the
-difference is recorded rather than resolved by tuning.
+This document states how the [benchmark suites](README.md) score methods and
+where this evaluation knowingly differs from a publication. Where the evidence
+for a published number is uncertain, the difference is recorded rather than
+resolved by tuning.
 
 ## Metrics
 
@@ -12,16 +12,17 @@ answers, which need at least one missing link. MRR and Hits@k rank every hard
 answer against all candidate entities after filtering every other easy and hard
 answer. Scores average hard answers per query, queries per query type, and
 query types equally within a dataset group; suite means weight datasets
-equally. Reports state whether a run covers the full split and every query
-type of its dataset, and partial runs are never presented as full-suite scores.
+equally. Each result states whether it covers the full split and every query
+type of its dataset.
 
 Ties are scored twice from the same predictions: `sort` follows PyTorch's
 default descending argsort, as the reference evaluator does. That sort is not
 guaranteed stable, so exactly tied scores can order differently on another
 device or library version. `expected` is the exact expectation of each rank
 under uniformly random ordering within a tied block, which removes that
-dependence. `expected` is not the midpoint rank. Rank traces store every hard answer's ranks under both policies,
-so later analyses never rerun inference.
+dependence. `expected` is not the midpoint rank. Rank traces store the sort
+rank and the tie block of every hard answer, so both policies can be recomputed
+without inference.
 
 Each suite keeps its released candidates and inference graphs. UltraQuery
 evaluates its 14 query types on the published inference graphs: the training
@@ -53,12 +54,12 @@ negated types and ICEWS18+H agree with full-graph truth. The pinned authors'
 
 The **corrected** filter, the +H default, takes the easy answers of `2in` and
 `pni` on FB15k-237+H and NELL995+H from the authors' `2in/all` and `pni/all`
-files and keeps every root hard answer. Preparation checks those files against
-the complete graph and pins them in the study. Every prediction is also scored
+files and keeps every root hard answer. An evaluation of the test split first
+checks those files against the complete graph. Every prediction is also scored
 with the **released** filters as a control. Test facts are used only for this
-offline audit. On all FB15k-237+H `2in` queries, a CPU QTO diagnostic with
-train+valid facts scores 16.11 MRR with released and 10.59 with corrected
-filters, against the published 10.6; with training facts only, 13.16 and 9.62.
+check. On all FB15k-237+H `2in` queries, a CPU QTO diagnostic with train+valid
+facts scores 16.11 MRR with released and 10.59 with corrected filters, against
+the published 10.6; with training facts only, 13.16 and 9.62.
 
 ## +H inference graphs
 
@@ -69,7 +70,8 @@ training facts. The released GNN-QE, UltraQuery and QTO loaders use training
 facts for these transductive graphs, and the +H CQD-Hybrid loader uses
 train+valid for FB15k-237+H and NELL995+H but skips observed filters for
 ICEWS18+H. Both graph conditions can be compared directly (see the README's
-ablations); reference metadata records each upstream loader's own setting.
+ablations); the `reference` field of each recipe records the setting of the
+released loader.
 
 ## Operators
 
@@ -83,32 +85,22 @@ the original command. The substitution does not explain `up`: product gives
 the published 10.6 and 12.0, so `up` keeps the documented minimum and remains
 unreproduced.
 
-## Verification
+## Query batches
 
-Every published method is a native port. Verification runs the frozen
-validation batches through the pinned upstream code and the port with identical
-inputs, and requires scores within tolerance (absolute and relative 3e-5) and
-identical candidate order and ties for every query type. Reference graph hashes
-must match both validation and test graphs. Upstream batch composition is
-preserved: methods whose released code batches queries (ConE, CLMPT, GNN-QE,
-UltraQuery) receive the same reference batches.
+The scores of ConE, CLMPT, GNN-QE and UltraQuery can depend on the queries that
+share a batch. Their recipes keep the batch sizes and the query order of the
+released code (`query_order: upstream-pickle`), and a sampled query is scored
+within its complete batch.
 
-Verification establishes the port under the declared inputs. It does not
-establish the unpublished command behind every paper score; small remaining
-differences, such as NELL995+H CLMPT, are not attributed to the authors without
-evidence. For ULTRA and TRIX, an independent implementation recomputes context
-features, calibration, pruning, composition and identity controls from captured
-backbone logits; backbone checkpoint parity is tested separately.
+The bounded CQD profile scores each stage in smaller batches. Its scores can
+differ in rounding from the dense batches of the released code.
 
-The bounded CQD profile is verified against an equally bounded reference and
-can differ numerically from dense upstream execution.
+## Opt-in variants
 
-Two opt-in variants are not upstream
-methods. UltraQuery with `observed_traversal` also takes, at every projection,
-the maximum with an exact traversal of the observed facts from the same fuzzy
-set; its oracles come from the pinned upstream code with that maximum added
-through upstream's own `SymbolicTraversal`. UltraQuery's released weights used
-as a frozen ULTRA backbone (`relation_conditioning: query`) condition relation
+Two variants are not published methods. UltraQuery with `observed_traversal`
+also takes, at every projection, the maximum with an exact traversal of the
+observed facts from the same fuzzy set. UltraQuery's released weights used as a
+frozen ULTRA backbone (`relation_conditioning: query`) condition relation
 reasoning on the queried relation, as UltraQuery's projection does; ULTRA's link
 prediction conditions an inverse tail query on its direct relation instead.
 With that setting the frozen backbone equals UltraQuery's single-source
@@ -119,32 +111,17 @@ projection for every relation (tests/test_query_baselines.py).
 Inference is float32 with IEEE matrix products, no autocast and deterministic
 algorithms. Message passing in ULTRA, TRIX, UltraQuery and GNN-QE reduces each
 node's edges in a fixed order, so scores do not depend on thread scheduling.
-Studies pin the input files, query batches, source code, runtime image and GPU
-model, and refuse to run when any of them changes. Resuming a study requires
-the same identity; completed entries are never recomputed.
+The progress of a run is bound to its recipe, checkpoint, dataset, query order
+and the query answering source code. A resumed run must match all of them;
+completed entries are never recomputed.
 
 Matrix products in the backbones are not batch-invariant: the same query can
 receive different last bits in a different atomic batch. The KGFM adapters
 reuse backbone rows through caches, so cache budgets, batch sizes and the
 point at which an interrupted run resumes with empty caches can change the
-last bits of later scores. Batch and cache settings are therefore frozen with
-each study, verified with exact tie checks, and changed only in a new study.
-A batch-invariant backbone would remove this dependence.
-
-## Answer-level difficulty
-
-`difficulty-report` assigns each +H hard answer its minimum number of missing
-positive links over full-graph witnesses, relative to train+valid facts for
-every method. Intersections add costs, unions take the cheapest branch, and
-negated branches restrict truth without adding cost, following the paper's
-positive reasoning trees; negative-edge difficulty is not measured. Scores
-average answers within participating queries, then queries within the parent
-type; no average mixes parent types.
-
-The authors' released reductions are relative to train+valid, as their pinned
-[generator](https://github.com/april-tools/is-cqa-complex/blob/d1ce74164936a7c09d9147e83190da047cb39429/create_queries.py)
-shows. They are reported separately, and their union reductions are not
-translated into link counts.
+last bits of later scores. Batch and cache settings are therefore part of a
+recipe and recorded with each result. A batch-invariant backbone would remove
+this dependence.
 
 ## Upstream evaluation edge case
 
@@ -153,4 +130,4 @@ still count them ahead of a hard answer whose score is also `-inf`: with six
 `-inf` scores, candidates `[0, 2, 4]` and hard answer 2, it returns rank 3
 where the candidate-only rank is 2. The shared evaluator ranks candidates only.
 Native UltraQuery returns finite logits, so this does not affect its published
-results, and finite-score parity remains required.
+results.

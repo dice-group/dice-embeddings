@@ -35,7 +35,6 @@ def build(image, *, cache=None, network='default', training_base=None):
         return subprocess.check_output(['git', '-C', str(REPO), *arguments], text=True)
 
     commit = git('rev-parse', 'HEAD').strip()
-    dirty = bool(git('status', '--porcelain', '--untracked-files=no', '--', *SOURCES).strip())
     cache = Path(cache or Path.home() / '.cache' / 'dicee' / 'cqa').resolve()
     wheels, pip_cache = cache / 'wheels', Path.home() / '.cache' / 'pip'
     wheels.mkdir(parents=True, exist_ok=True)
@@ -57,8 +56,7 @@ def build(image, *, cache=None, network='default', training_base=None):
                 target.parent.mkdir(parents=True, exist_ok=True)
                 shutil.copy2(source, target)
         subprocess.run(['docker', 'build', '--network', network, '-t', image, '-f', 'benchmarks/cqa/Dockerfile',
-                        '--build-arg', f'SOURCE_COMMIT={commit}', '--build-arg', f'SOURCE_DIRTY={str(dirty).lower()}',
-                        directory], check=True)
+                        '--build-arg', f'SOURCE_COMMIT={commit}', directory], check=True)
 
 
 def run(image, arguments, *, inputs, results, gpu='runtime', dry_run=False):
@@ -82,7 +80,7 @@ def run(image, arguments, *, inputs, results, gpu='runtime', dry_run=False):
     identity = inspect(image)
     pin = results / 'container-image.json'
     if pin.exists() and json.loads(pin.read_text())['image_id'] != identity['Id']:
-        raise ValueError('Image differs from this study; use the original image ID or a new output directory')
+        raise ValueError('Image differs from the one this output directory was started with; use that image or a new directory')
     (results / 'cache').mkdir(parents=True, exist_ok=True)
     if not pin.exists():
         pin.write_text(json.dumps(dict(image_id=identity['Id'], repo_digests=identity.get('RepoDigests', [])), indent=2) + '\n')

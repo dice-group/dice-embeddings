@@ -2,7 +2,6 @@
 
 import hashlib
 import io
-import json
 import stat
 import subprocess
 import sys
@@ -34,14 +33,11 @@ def test_setup_plan_downloads_only_selected_methods_and_datasets():
         recipes('plus_h', methods=['misspelled'])
 
 
-def test_plus_h_plan_includes_every_released_report_category_and_corrected_filter():
-    from benchmarks.cqa.difficulty import REDUCTIONS
+def test_plus_h_plan_includes_the_files_of_the_corrected_filter():
     required = inputs.plus_h_files()
-    for shape, labels in REDUCTIONS.items():
-        for label in labels:
-            assert f'test-query-reduction/{shape}/{label}/test-hard-answers.pkl' in required
-    assert 'test-query-reduction/2in/all/test-easy-answers.pkl' in required
-    assert 'test-query-reduction/pni/all/test-hard-answers.pkl' in required
+    assert {name for name in required if name.startswith('test-query-reduction/')} == {
+        f'test-query-reduction/{shape}/all/test-{kind}.pkl' for shape in ('2in', 'pni')
+        for kind in ('queries', 'easy-answers', 'hard-answers')}
     icews = inputs.plus_h_files(True)
     assert 'KG_splits/test.txt' in icews and 'test.txt' not in icews
     assert not any(name.startswith('test-query-reduction') for name in icews)
@@ -146,25 +142,6 @@ def test_host_commands_need_only_the_standard_library(tmp_path, suite, method):
     assert list(root.iterdir()) == []
 
 
-def test_run_sets_up_the_frozen_bundle_inputs_not_the_current_recipes(tmp_path, monkeypatch):
-    manifest = recipes('plus_h', methods=['cqd'], datasets=['ICEWS18+H'])
-    study = tmp_path / 'study'
-    (study / 'bundle').mkdir(parents=True)
-    (study / 'bundle/bundle.json').write_text(json.dumps({'manifest': manifest, 'files': {'pinned': 'digest'}}))
-    before = (study / 'bundle/bundle.json').read_bytes()
-    seen = []
-
-    def setup(manifest, root, **kwargs):
-        seen.append(manifest)
-        raise RuntimeError('stop after setup')
-
-    monkeypatch.setattr(inputs, 'ensure_inputs', setup)
-    with pytest.raises(RuntimeError, match='stop after setup'):
-        cli.main(['plus_h', 'run', '--phase', 'pilot', '--input-root', str(tmp_path), '--output', str(study)])
-    assert seen == [manifest]
-    assert (study / 'bundle/bundle.json').read_bytes() == before
-
-
 @pytest.mark.parametrize('suite', SUITES)
 def test_evaluate_sets_up_selected_inputs_before_evaluation(tmp_path, monkeypatch, suite):
     from benchmarks.cqa import evaluate
@@ -181,10 +158,13 @@ def test_evaluate_sets_up_selected_inputs_before_evaluation(tmp_path, monkeypatc
     cli.main(args)
     assert [call[0] for call in calls] == ['setup', 'evaluate']
     assert [entry['dataset'] for entry in calls[0][1]['entries']] == [DATASET[suite]]
-    assert calls[0][2]['suite'] == suite and calls[0][2].get('download_missing', True)
+    assert calls[0][2]['suite'] == suite and calls[0][2]['download_missing'] and calls[0][2]['test_labels']
     calls.clear()
     cli.main([*args, '--no-setup'])
     assert calls[0][2]['download_missing'] is False
+    calls.clear()
+    cli.main([suite, 'evaluate', '--split', 'valid', *args[4:]])
+    assert calls[0][2]['test_labels'] is False
 
 
 @pytest.mark.parametrize('suite', SUITES)

@@ -1,4 +1,4 @@
-"""Evaluate selected entries of a portable study manifest directly, without a frozen bundle."""
+"""Evaluate the entries of a resolved recipe manifest."""
 
 import json
 from pathlib import Path
@@ -17,8 +17,8 @@ def evaluate_manifest(manifest, *, input_root, output, device='cpu', split='test
     for entry in manifest['entries']:
         entry = dict(entry)
         name, query_order = entry['id'], entry.pop('query_order', 'relation')
-        record, _ = validate_training(entry, input_root, manifest['data_root'])
-        for key in ('reference', 'finalized', 'blockers', 'verification', 'graph_ablation'):
+        record = validate_training(entry, input_root, manifest['data_root'])
+        for key in ('reference', 'graph_ablation'):
             entry.pop(key, None)
         entry['root'] = str(input_path(input_root, manifest['data_root']))
         entry['checkpoint'] = str(input_path(input_root, entry['checkpoint']))

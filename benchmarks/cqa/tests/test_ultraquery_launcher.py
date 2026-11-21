@@ -1,24 +1,18 @@
-"""Shared launch interface, independent input reading, and final-run parity gates."""
+"""UltraQuery suite: public recipes, launch interface and the three released dataset layouts."""
 
 import json
-import os
 import pickle
-import subprocess
-import sys
 
 import pytest
 import torch
 
 from benchmarks.cqa import cli, docker
+from benchmarks.cqa.evaluate import evaluate_manifest
 from benchmarks.cqa.manifests import REPO, SUITES, prepare_manifest, read_manifest, suite_directory, validate_entry
-from benchmarks.cqa.oracles import verify_predictions
-from benchmarks.cqa.study import dataset_key, entry_inputs_identity, freeze, run_job
-from benchmarks.cqa.verification import export_reference as exporter
 from dicee.query_answering import BENCHMARK_DATASETS, QueryContext, load_benchmark
 from dicee.query_answering._query import QUERY_SHAPES, ULTRAQUERY_SHAPES
-from dicee.query_answering.context import fingerprint
 from dicee.query_answering.datasets import dataset_spec
-from dicee.query_answering.methods import REFERENCES, UltraQuery
+from dicee.query_answering.methods import UltraQuery
 
 PUBLIC = suite_directory('ultraquery')
 
@@ -82,7 +76,7 @@ def fixture(root, name):
     torch.save({'model': {'model.model.' + k: v for k, v in model.state_dict().items()}}, root / 'model.pt')
     entry = dict(id='ultraquery-fixture', method='ultraquery', dataset=name, checkpoint='model.pt',
                  options={'threshold': 0., 'logic': 'product'}, query_types=list(ULTRAQUERY_SHAPES),
-                 query_batch_size=32, query_order='upstream-pickle', reference={'status': 'test fixture'}, blockers=[])
+                 query_batch_size=32, query_order='upstream-pickle', reference={'status': 'test fixture'})
     return dict(version=1, data_root='data', entries=[entry], seed=0, threads=2, archives={}, answer_filter='released')
 
 
@@ -120,27 +114,13 @@ def test_cli_subset_and_suite_policies_fail_before_opening_inputs(tmp_path, caps
             cli.main(['ultraquery', 'evaluate', '--split', 'test', '--output', str(tmp_path / 'results'), '--dry-run', *selection])
 
 
-@pytest.mark.parametrize('action', ['prepare', 'evaluate', 'run', 'report'])
-def test_docker_actions_use_the_shared_runtime_and_correct_suite(tmp_path, capsys, action):
-    args = ['ultraquery', action, '--image', 'dicee/cqa:test', '--input-root', str(tmp_path), '--output', str(tmp_path / 'results'),
-            '--gpu', 'none', '--dry-run']
-    if action in ('evaluate', 'run'):
-        args += ['--device', 'cpu']
-    if action == 'evaluate':
-        args += ['--split', 'test']
-    if action == 'report':
-        args += ['--results', str(tmp_path / 'results/test')]
-    else:
-        args += ['--methods', 'ultraquery', '--datasets', 'WikiTopicsQuery:art']
-    if action in ('evaluate', 'prepare'):
-        args += ['--query-types', 'negation']
-    cli.main(args)
+def test_docker_evaluation_uses_the_shared_runtime_and_correct_suite(tmp_path, capsys):
+    cli.main(['ultraquery', 'evaluate', '--image', 'dicee/cqa:test', '--input-root', str(tmp_path), '--output', str(tmp_path / 'results'),
+              '--gpu', 'none', '--dry-run', '--device', 'cpu', '--split', 'test', '--methods', 'ultraquery',
+              '--datasets', 'WikiTopicsQuery:art', '--query-types', 'negation'])
     output = capsys.readouterr().out
-    assert f'dicee/cqa:test ultraquery {action} --input-root /inputs --output /results' in output
-    assert '--gpus' not in output and '--published' not in output
-    if action == 'run':
-        with pytest.raises(SystemExit):
-            cli.main([*args, '--query-types', '1p'])
+    assert 'dicee/cqa:test ultraquery evaluate --input-root /inputs --output /results' in output
+    assert '--gpus' not in output
     assert not (tmp_path / 'results').exists()
 
 
@@ -150,7 +130,8 @@ def test_docker_custom_manifests_are_mapped_and_confined_to_inputs(tmp_path, cap
     manifests = [inputs / name for name in ('native.json', 'adapters.json')]
     for path in manifests:
         path.write_text('{}')
-    args = ['ultraquery', 'prepare', '--image', 'dicee/cqa:test', '--input-root', str(inputs), '--output', str(inputs / 'results'), '--dry-run']
+    args = ['ultraquery', 'evaluate', '--split', 'test', '--image', 'dicee/cqa:test', '--input-root', str(inputs),
+            '--output', str(inputs / 'results'), '--dry-run']
     cli.main([*args, '--manifests', str(manifests[0]), '--manifests', str(manifests[1])])
     assert '--manifests /inputs/native.json /inputs/adapters.json' in capsys.readouterr().out
     outside = tmp_path / 'outside.json'
@@ -175,68 +156,14 @@ def test_container_runs_the_cli_entrypoint_with_a_pinned_image(tmp_path, monkeyp
 
 
 @pytest.mark.parametrize('name', ['FB15k237LogicalQuery', 'InductiveFB15k237Query:106', 'WikiTopicsQuery:art'])
-def test_independent_exporter_reads_all_three_published_layouts(tmp_path, name):
+@pytest.mark.parametrize('split', ['valid', 'test'])
+def test_native_ultraquery_evaluates_all_three_published_layouts(tmp_path, name, split):
     manifest = fixture(tmp_path, name)
-    bundle = freeze(manifest, tmp_path / 'bundle', tmp_path)
-    prefix, structured, easy, hard, graph, graphs = exporter.reference_dataset(bundle, manifest['entries'][0], tmp_path)
-    assert set(graph['triples']) == set(load_benchmark(tmp_path / 'data', name, split='valid').context.triples)
-    assert {q for qs in structured.values() for q in qs} == set(easy) == set(hard)
-    assert graphs == {split: bundle['datasets'][dataset_key(manifest['entries'][0], split)]['context'] for split in ('valid', 'test')}
-    assert prefix.endswith(dataset_spec(name)[1] + '/')
-
-
-def test_final_runs_require_matching_parity_and_preserve_14_type_coverage(tmp_path):
-    manifest = fixture(tmp_path, 'WikiTopicsQuery:art')
-    bundle = freeze(manifest, tmp_path / 'bundle', tmp_path)
-    with pytest.raises(ValueError, match='requires pinned reference'):
-        run_job(tmp_path / 'bundle', 'ultraquery-fixture', tmp_path, tmp_path / 'test', phase='test')
-    scores = {}
-    pilot = run_job(tmp_path / 'bundle', 'ultraquery-fixture', tmp_path, tmp_path / 'pilot',
-                    on_prediction=lambda q, values: scores.update({q.identity: values.clone()}))
-    entry = manifest['entries'][0]
-    oracle = dict(version=1, entry_sha256=fingerprint(entry), inputs_sha256=entry_inputs_identity(bundle, entry),
-                  validation_plan_sha256=bundle['plans']['ultraquery-fixture/valid']['sha256'],
-                  reference_commit=REFERENCES['ultraquery'][1], pilot_queries=2, scores=scores,
-                  orders={k: v.argsort(descending=True) for k, v in scores.items()},
-                  environment=pilot['benchmark_run']['environment'],
-                  graphs={split: bundle['datasets'][dataset_key(entry, split)]['context'] for split in ('valid', 'test')})
-    reference = tmp_path / 'reference.pt'
-    torch.save(oracle, reference)
-    evidence = verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, reference, tmp_path / 'evidence.json')
-    assert evidence['passed'] and len(evidence['queries']) == 14
-    missing_graphs = dict(oracle, graphs={})
-    torch.save(missing_graphs, reference)
-    with pytest.raises(ValueError, match='inference graphs'):
-        verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, reference, tmp_path / 'bad.json')
-    oracle['scores'][next(iter(scores))] = torch.zeros_like(next(iter(scores.values())))
-    oracle['orders'] = {k: v.argsort(descending=True) for k, v in oracle['scores'].items()}
-    torch.save(oracle, reference)
-    assert not verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, reference, tmp_path / 'failed.json')['passed']
-    entry['verification'] = 'evidence.json'
-    freeze(manifest, tmp_path / 'verified', tmp_path)
-    report = run_job(tmp_path / 'verified', entry['id'], tmp_path, tmp_path / 'test', phase='test')
-    assert report['protocol']['full_split'] and report['coverage']['complete_benchmark_types']
-    assert not report['coverage']['complete_16_types']
+    evaluate_manifest(manifest, input_root=tmp_path, output=tmp_path / 'results', split=split)
+    report = json.loads((tmp_path / 'results/ultraquery-fixture/result.json').read_text())
+    assert report['split'] == split and report['queries'] == 14
+    assert report['protocol']['full_split'] and report['protocol']['all_benchmark_shapes']
     assert set(report['per_shape']) == set(ULTRAQUERY_SHAPES)
     assert set(report['additional_tie_metrics']) == {'expected'}
-    cli.main(['ultraquery', 'report', '--results', str(tmp_path / 'test'), '--output', str(tmp_path / 'reports'), '--bootstrap-samples', '0'])
-    rows = json.loads((tmp_path / 'reports/comparison.json').read_text())['rows']
-    assert rows[0]['complete_test'] and rows[0]['types'] == 14 and rows[0]['published_mrr'] is None
-
-
-@pytest.mark.integration
-@pytest.mark.skipif(not os.environ.get('DICEE_ULTRAQUERY_REFERENCE_ROOT'), reason='Set the pinned upstream root and dependencies')
-@pytest.mark.parametrize('name', ['FB15k237LogicalQuery', 'InductiveFB15k237Query:106', 'WikiTopicsQuery:art'])
-def test_independent_ultraquery_export_parity_and_full_run(tmp_path, name):
-    manifest = fixture(tmp_path, name)
-    freeze(manifest, tmp_path / 'bundle', tmp_path)
-    reference = tmp_path / 'reference.pt'
-    subprocess.run([sys.executable, str(REPO / 'benchmarks/cqa/verification/export_reference.py'), '--bundle', str(tmp_path / 'bundle'),
-                    '--input-root', str(tmp_path), '--entry', 'ultraquery-fixture', '--upstream',
-                    os.environ['DICEE_ULTRAQUERY_REFERENCE_ROOT'], '--output', str(reference)], check=True)
-    evidence = verify_predictions(tmp_path / 'bundle', 'ultraquery-fixture', tmp_path, reference, tmp_path / 'evidence.json')
-    assert evidence['passed'] and len(evidence['queries']) == 14
-    manifest['entries'][0]['verification'] = 'evidence.json'
-    freeze(manifest, tmp_path / 'verified', tmp_path)
-    report = run_job(tmp_path / 'verified', 'ultraquery-fixture', tmp_path, tmp_path / 'test', phase='test')
-    assert report['protocol']['full_split'] and report['coverage']['complete_benchmark_types']
+    # Each split is answered over its released inference graph.
+    assert report['context_sha256'] == load_benchmark(tmp_path / 'data', name, split=split).context.identity

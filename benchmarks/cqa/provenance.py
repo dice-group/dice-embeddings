@@ -14,18 +14,16 @@ REQUIRED_INPUTS = {
 }
 
 
-def validate_training(entry, input_root, data_root, *, final=False, file_hashes=None):
-    """Return the validated record and dataset pins; allow smoke only outside final runs."""
+def validate_training(entry, input_root, data_root):
+    """Return the training record of a locally trained checkpoint after checking it against the checkpoint and dataset."""
     path = entry.get('training')
     if not path:
         if (entry['method'] == 'inductive-gnnqe'
                 or (entry['method'] == 'qto' and entry['dataset'] == 'FB15kLogicalQuery')):
             raise ValueError('Training provenance is required for this locally trained baseline')
-        return None, {}
+        return None
 
     def digest(relative):
-        if file_hashes is not None and str(relative) in file_hashes:
-            return file_hashes[str(relative)]
         return checksum(input_path(input_root, relative))
 
     record = read(input_path(input_root, path))
@@ -38,14 +36,11 @@ def validate_training(entry, input_root, data_root, *, final=False, file_hashes=
     releases = {'qto': ('BetaE', 'fixture'), 'inductive-gnnqe': ('InductiveQE v2.0', 'fixture')}
     if record.get('dataset_release') not in releases.get(entry['method'], ()):
         raise ValueError('Training provenance requires the supported dataset release')
-    if final and (record['profile'] in ('smoke', 'fixture') or record.get('dataset_release') == 'fixture'):
-        raise ValueError('Entry is not ready for final testing: smoke/fixture training checkpoint')
     inputs = record.get('inputs')
     required = REQUIRED_INPUTS.get(entry['method'])
     if not required or not isinstance(inputs, dict) or required - inputs.keys():
         raise ValueError('Training provenance is missing required dataset input bindings')
     prefix = Path(data_root) / dataset_spec(entry['dataset'])[1]
-    pins = {}
     for name, expected in inputs.items():
         if not isinstance(name, str) or Path(name).name != name or name in ('', '.', '..'):
             raise ValueError('Training inputs must name files within the dataset folder')
@@ -56,5 +51,4 @@ def validate_training(entry, input_root, data_root, *, final=False, file_hashes=
             raise ValueError(f'Training input is missing: {relative}') from error
         if actual != expected:
             raise ValueError(f'Training input differs from the evaluation dataset: {relative}')
-        pins[relative] = actual
-    return record, pins
+    return record

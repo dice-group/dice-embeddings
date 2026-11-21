@@ -1,29 +1,22 @@
-"""Paper protocol integrity, batch replay, and inference-free tie analysis."""
+"""Evaluation protocol: ties, resumable progress, rank traces, inference graphs and answer filters."""
 
 import itertools
-import os
+import json
 import pickle
 import shutil
 import sqlite3
-import subprocess
-import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
 import torch
 
-from benchmarks.cqa.oracles import verify_predictions
-from benchmarks.cqa.reports import export_reports, summarize_trace, trace_queries
-from benchmarks.cqa.study import SOURCE_ROOT, code_identity, freeze, read, run_job, verify_bundle
 from dicee.query_answering import BenchmarkQuery, QueryBenchmark, QueryContext
 from dicee.query_answering._checkpoint import BenchmarkCheckpoint, write_json
 from dicee.query_answering._query import PLUS_H_SHAPES, QUERY_SHAPES
 from dicee.query_answering.benchmark import QueryMetrics, evaluate_benchmark
-from dicee.query_answering.context import state_fingerprint
 from dicee.query_answering.datasets import dataset_spec
 from dicee.query_answering.methods import ConE
-from dicee.query_answering.score_adapter import QueryScoreAdapter
 
 
 def plus_h_fixture(root, name):
@@ -63,18 +56,20 @@ def threads():
     torch.set_num_threads(previous)
 
 
+def read(path):
+    return json.loads(Path(path).read_text())
+
+
+def trace_rows(path):
+    """(query ID, query type, [entity, rank, greater, tie size] per hard answer) of a rank trace, in query order."""
+    with sqlite3.connect(path) as connection:
+        return [(query_id, shape, json.loads(answers)) for query_id, shape, answers in
+                connection.execute('SELECT query_id, shape, answers FROM queries ORDER BY position')]
+
+
 def small_data():
     queries = tuple(BenchmarkQuery('1p', (i, (0,)), frozenset({0}), frozenset({1, 2})) for i in range(6))
     return QueryBenchmark('test', 'transductive', 'valid', QueryContext([(0, 0, 1)], 6, 1), queries, tuple(range(6)))
-
-
-def test_source_identity_is_the_same_through_a_symlinked_checkout(tmp_path):
-    """A checkout imported through a symlink (for example a mounted home) keeps its source identity."""
-    link = tmp_path / 'checkout'
-    link.symlink_to(SOURCE_ROOT, target_is_directory=True)
-    linked = subprocess.run([sys.executable, '-c', 'from benchmarks.cqa.study import code_identity; print(code_identity())'],
-                            cwd=tmp_path, env=dict(os.environ, PYTHONPATH=str(link)), capture_output=True, text=True, check=True)
-    assert linked.stdout.strip() == code_identity()
 
 
 def test_resume_preserves_completed_cache_report_and_resets_live_cache(tmp_path):
@@ -194,14 +189,15 @@ def test_trace_resume_replays_whole_batch_and_truncates_uncheckpointed_rows(tmp_
     resumed = evaluate_benchmark(data, lambda query: prepared[query], **options)
     assert [len(batch) for batch in seen] == [3, 3, 3]
     assert seen[1] == seen[2]
-    rows = list(trace_queries(tmp_path / 'ranks.sqlite3'))
-    assert len(rows) == 6 and len({row['query_id'] for row in rows}) == 6
-    summary = summarize_trace(tmp_path / 'ranks.sqlite3', bootstrap_samples=20)
-    assert summary['averages']['sort']['all']['mrr'] == resumed['averages']['all']['mrr']
-    assert summary['averages']['expected']['all']['mrr'] == resumed['additional_tie_metrics']['expected']['averages']['all']['mrr']
+    rows = trace_rows(tmp_path / 'ranks.sqlite3')
+    assert len(rows) == 6 and len({query_id for query_id, _, _ in rows}) == 6
+    # The trace holds the sort rank of every hard answer: it reproduces the reported metric.
+    traced = np.mean([np.mean([1 / rank for _, rank, _, _ in answers]) for _, _, answers in rows])
+    assert traced == pytest.approx(resumed['per_shape']['1p']['mrr'])
 
 
-def paper_fixture(tmp_path):
+def fixture_manifest(tmp_path):
+    """A one-entry +H manifest below ``tmp_path``: a random ConE checkpoint on a tiny FB15k237+H."""
     data_root = tmp_path / 'data'
     plus_h_fixture(data_root, 'FB15k237+H')
     context = QueryContext([(0, 0, 1)], 8, 4)
@@ -209,9 +205,8 @@ def paper_fixture(tmp_path):
     torch.save(model.state_dict(), tmp_path / 'cone.pt')
     entry = dict(id='cone-fixture', method='cone', dataset='FB15k237+H', checkpoint='cone.pt',
                  options={'center_reg': .02}, query_types=list(PLUS_H_SHAPES), query_batch_size=1,
-                 query_order='upstream-pickle', reference={'status': 'test fixture'}, blockers=[])
-    manifest = dict(version=1, data_root='data', seed=0, threads=2, archives={}, entries=[entry])
-    return manifest
+                 query_order='upstream-pickle', reference={'status': 'test fixture'})
+    return dict(version=1, data_root='data', seed=0, threads=2, archives={}, entries=[entry])
 
 
 @pytest.mark.parametrize('name', ('FB15k237+H', 'NELL995+H', 'ICEWS18+H'))
@@ -235,38 +230,10 @@ def test_graph_conditions_keep_labels_fixed_and_never_read_test_edges(tmp_path, 
     assert load_benchmark(tmp_path, name, split='valid').context == train.context
 
 
-def test_graph_conditions_pin_distinct_contexts_and_identical_query_plans(tmp_path):
-    from benchmarks.cqa.study import dataset_key
-    manifest = paper_fixture(tmp_path)
-    entry = manifest['entries'][0]
-    entry.update(inference_graph='train', graph_ablation='paired')
-    manifest['entries'].append(dict(entry, id='extended', inference_graph='train+valid'))
-    bundle = freeze(manifest, tmp_path / 'bundle', tmp_path)
-    other = manifest['entries'][1]
-    assert bundle['datasets'][dataset_key(entry, 'test')]['context'] != bundle['datasets'][dataset_key(other, 'test')]['context']
-    assert dataset_key(entry, 'valid') == dataset_key(other, 'valid')
-    for split in ('valid', 'test'):
-        assert bundle['plans'][f'{entry["id"]}/{split}'] == bundle['plans'][f'{other["id"]}/{split}']
-    assert len(bundle['datasets']) == 3
-
-
-def test_implicit_test_graph_matches_explicit_train_valid_bundle(tmp_path):
-    from benchmarks.cqa.study import dataset_key
-    manifest = paper_fixture(tmp_path)
-    entry = manifest['entries'][0]
-    explicit = dict(entry, id='explicit', inference_graph='train+valid')
-    manifest['entries'].append(explicit)
-    bundle = freeze(manifest, tmp_path / 'bundle', tmp_path)
-    assert dataset_key(entry, 'test') == dataset_key(explicit, 'test') == 'FB15k237+H/test/train+valid'
-    assert len(bundle['datasets']) == 2
-    assert bundle['datasets'][dataset_key(entry, 'test')]['metadata']['inference_graph'] == 'train+valid'
-    assert bundle['plans'][f'{entry["id"]}/test'] == bundle['plans'][f'{explicit["id"]}/test']
-
-
 def test_direct_evaluation_rejects_supplied_wrong_graph(tmp_path):
     from dicee.query_answering.datasets import load_benchmark
     from dicee.query_answering.method_evaluation import evaluate_method
-    paper_fixture(tmp_path)
+    fixture_manifest(tmp_path)
     data = load_benchmark(tmp_path / 'data', 'FB15k237+H', inference_graph='train+valid')
     with pytest.raises(ValueError, match='requested inference graph'):
         evaluate_method(dict(method='cone', dataset='FB15k237+H', inference_graph='train'),
@@ -276,7 +243,7 @@ def test_direct_evaluation_rejects_supplied_wrong_graph(tmp_path):
 def test_baseline_filter_control_keeps_inference_and_graph_metadata(tmp_path):
     from dicee.query_answering.datasets import load_benchmark
     from dicee.query_answering.method_evaluation import evaluate_method
-    manifest = paper_fixture(tmp_path)
+    manifest = fixture_manifest(tmp_path)
     data = load_benchmark(tmp_path / 'data', 'FB15k237+H', query_types=['2in'], inference_graph='train')
     entry = manifest['entries'][0]
     recipe = dict(method='cone', dataset=entry['dataset'], vocabulary_dataset=entry['dataset'],
@@ -319,19 +286,6 @@ def test_filter_audit_preserves_targets_and_keeps_test_facts_out_of_context(tmp_
         audit_plus_h_filters(tmp_path, data)
 
 
-def test_frozen_filter_corrections_reject_tampering(tmp_path, monkeypatch):
-    import dicee.query_answering.datasets as datasets
-    manifest = paper_fixture(tmp_path)
-    manifest['answer_filter'] = 'corrected'
-    monkeypatch.setattr(datasets, 'audit_plus_h_filters', lambda *args: dict(changes={}, per_shape={}, source_files={}))
-    bundle = freeze(manifest, tmp_path / 'bundle', tmp_path)
-    verify_bundle(tmp_path / 'bundle', tmp_path)
-    correction = bundle['filter_corrections']['FB15k237+H']
-    (tmp_path / 'bundle' / correction['path']).write_text('{}')
-    with pytest.raises(ValueError, match='Answer-filter correction checksum'):
-        verify_bundle(tmp_path / 'bundle', tmp_path)
-
-
 def use_ultraquery_fixture(manifest, root):
     from dicee.query_answering._query import ULTRAQUERY_SHAPES
     data = root / manifest['data_root']
@@ -346,30 +300,17 @@ def use_ultraquery_fixture(manifest, root):
         entry.update(dataset='FB15k237LogicalQuery', query_types=list(ULTRAQUERY_SHAPES))
 
 
-def test_shared_study_and_reports_use_dataset_coverage(tmp_path):
+def test_ultraquery_recipes_cover_their_14_types_directly_and_through_the_cli(tmp_path):
     from benchmarks.cqa.cli import main
     from dicee.query_answering.method_evaluation import evaluate_method
-    manifest = paper_fixture(tmp_path)
+    manifest = fixture_manifest(tmp_path)
     use_ultraquery_fixture(manifest, tmp_path)
-    frozen = freeze(manifest, tmp_path / 'bundle', tmp_path)
-    assert len(frozen['plans']) == 2
     entry = manifest['entries'][0]
-    root = str(tmp_path / manifest['data_root'])
-    recipe = dict(method='cone', dataset=entry['dataset'], vocabulary_dataset=entry['dataset'], root=root,
+    recipe = dict(method='cone', dataset=entry['dataset'], vocabulary_dataset=entry['dataset'], root=str(tmp_path / manifest['data_root']),
                   checkpoint=str(tmp_path / entry['checkpoint']), options=entry['options'], query_types=entry['query_types'])
-    # A direct evaluation can be reported without requiring a +H recipe.
     result = evaluate_method(recipe, output=tmp_path / 'direct', split='test')
     assert result['queries'] == 14 and result['protocol']['all_benchmark_shapes']
-    pilot = run_job(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'pilot')
-    assert pilot['queries'] == 14 and pilot['coverage']['complete_benchmark_types']
-    assert not pilot['coverage']['complete_16_types']
-    assert frozen['datasets']['FB15k237LogicalQuery/valid']['context'] == frozen['datasets']['FB15k237LogicalQuery/test']['context']
     assert result['benchmark_run']['mode'] == 'direct'
-    published = tmp_path / 'published.json'
-    write_json(published, {'source': 'fixture', 'datasets': {entry['dataset']: {'cone': dict.fromkeys(entry['query_types'], 10.)}}})
-    rows = export_reports(tmp_path / 'direct', published, tmp_path / 'reports', bootstrap_samples=0)
-    assert rows[0]['complete_test'] and not rows[0]['complete_16_type_test']
-    assert rows[0]['types'] == 14 and rows[0]['published_mrr'] == 10.
     write_json(tmp_path / 'manifest.json', manifest)
     main(['ultraquery', 'evaluate', '--split', 'test', '--manifests', str(tmp_path / 'manifest.json'), '--input-root', str(tmp_path),
           '--output', str(tmp_path / 'cli'), '--entries', entry['id'], '--device', 'cpu'])
@@ -381,7 +322,7 @@ def test_shared_study_and_reports_use_dataset_coverage(tmp_path):
 @pytest.mark.parametrize('query_order', ('canonical', 'relation', 'upstream-pickle'))
 def test_corrected_filter_cli_preserves_query_type_selection(tmp_path, query_order):
     from benchmarks.cqa.cli import main
-    manifest = paper_fixture(tmp_path)
+    manifest = fixture_manifest(tmp_path)
     manifest['answer_filter'] = 'corrected'
     entry = manifest['entries'][0]
     entry.update(query_types=['1p'], query_order=query_order)
@@ -398,46 +339,10 @@ def test_corrected_filter_cli_preserves_query_type_selection(tmp_path, query_ord
     assert control['protocol']['answer_filter'] == 'released'
 
 
-def test_frozen_inputs_pipeline_pilot_and_offline_report(tmp_path):
-    manifest = paper_fixture(tmp_path)
-    bundle = tmp_path / 'bundle'
-    frozen = freeze(manifest, bundle, tmp_path)
-    assert len(frozen['datasets']) == 2
-    assert len(verify_bundle(bundle, tmp_path)['files']) == 11
-    output = tmp_path / 'results' / 'cone-fixture'
-    report = run_job(bundle, 'cone-fixture', tmp_path, output)
-    assert report['queries'] == 16 and report['split'] == 'valid'
-    assert report['protocol']['all_benchmark_shapes']
-    assert run_job(bundle, 'cone-fixture', tmp_path, output) == report
-    published = tmp_path / 'published.json'
-    write_json(published, dict(source='fixture', datasets={'FB15k237+H': {'cone': dict.fromkeys(PLUS_H_SHAPES, 10.)}}))
-    rows = export_reports(tmp_path / 'results', published, tmp_path / 'tables', bootstrap_samples=10)
-    assert rows[0]['published_mrr'] is None
-    assert not rows[0]['complete_16_type_test']
-    with pytest.raises(ValueError, match='parity evidence'):
-        run_job(bundle, 'cone-fixture', tmp_path, tmp_path / 'test', phase='test')
-    (tmp_path / 'cone.pt').write_bytes(b'changed')
-    with pytest.raises(ValueError, match='checksum mismatch'):
-        verify_bundle(bundle, tmp_path)
-
-
-def test_plan_tampering_and_no_overwrite(tmp_path):
-    manifest = paper_fixture(tmp_path)
-    bundle = tmp_path / 'bundle'
-    frozen = freeze(manifest, bundle, tmp_path)
-    with pytest.raises(FileExistsError, match='new bundle'):
-        freeze(manifest, bundle, tmp_path)
-    plan = bundle / frozen['plans']['cone-fixture/test']['path']
-    value = read(plan)
-    value['queries'].reverse()
-    write_json(plan, value)
-    with pytest.raises(ValueError, match='plan checksum'):
-        verify_bundle(bundle, tmp_path)
-
-
-def test_probe_selection_preserves_full_encoding_batches(tmp_path, monkeypatch):
-    manifest = paper_fixture(tmp_path)
-    manifest['entries'][0]['query_batch_size'] = 4
+def test_sampled_queries_keep_their_complete_encoding_batches(tmp_path, monkeypatch):
+    """A method whose scores depend on the batch scores a sampled query as in the full run."""
+    from dicee.query_answering.method_evaluation import evaluate_method
+    manifest = fixture_manifest(tmp_path)
     path = next((tmp_path / 'data').rglob('valid-queries.pkl')).parent
     query = (4, (0,))
     for filename, update in (
@@ -457,33 +362,20 @@ def test_probe_selection_preserves_full_encoding_batches(tmp_path, monkeypatch):
         return [branch + branch.mean(0, keepdim=True) for branch in original(self, trees)]
 
     monkeypatch.setattr(ConE, 'encode_trees', coupled)
-    bundle = tmp_path / 'bundle'
-    freeze(manifest, bundle, tmp_path)
-    full, probes = {}, {}
-    run_job(bundle, 'cone-fixture', tmp_path, tmp_path / 'full-pilot', pilot_queries=1,
-            on_prediction=lambda query, scores: full.update({query.query: scores.clone()}))
+    entry = manifest['entries'][0]
+    recipe = dict(method='cone', checkpoint=str(tmp_path / entry['checkpoint']), root=str(tmp_path / 'data'), dataset=entry['dataset'],
+                  vocabulary_dataset=entry['dataset'], options=entry['options'], query_types=entry['query_types'], query_batch_size=4)
+    full, sampled = {}, {}
+    evaluate_method(recipe, output=tmp_path / 'full', split='valid', query_order='upstream-pickle',
+                    on_prediction=lambda query, scores: full.update({query: scores.clone()}))
     full_calls = calls.copy()
     calls.clear()
-    report = run_job(bundle, 'cone-fixture', tmp_path, tmp_path / 'probe', pilot_queries=1, probe_only=True,
-                     on_prediction=lambda query, scores: probes.update({query.query: scores.clone()}))
-    assert len(full) == 17 and len(probes) == report['queries'] == 16
-    assert calls == full_calls
-    assert max(map(len, calls)) == 2
-    assert all(torch.equal(score, full[query]) for query, score in probes.items())
-    from dicee.query_answering.method_evaluation import evaluate_method
-    calls.clear()
-    direct = {}
-    entry = manifest['entries'][0]
-    recipe = dict(method='cone', checkpoint=str(tmp_path / entry['checkpoint']),
-                  root=str(tmp_path / 'data'), dataset=entry['dataset'], vocabulary_dataset=entry['dataset'],
-                  options=entry['options'], query_types=entry['query_types'], query_batch_size=4)
-    report = evaluate_method(recipe, output=tmp_path / 'direct', split='valid', limit=1,
-                             query_order='upstream-pickle',
-                             on_prediction=lambda query, scores: direct.update({query: scores.clone()}))
-    assert calls == full_calls and len(direct) == report['queries'] == 16
-    assert all(torch.equal(score, full[query]) for query, score in direct.items())
-    with pytest.raises(ValueError, match='validation pilots'):
-        run_job(bundle, 'cone-fixture', tmp_path, tmp_path / 'test', phase='test', probe_only=True)
+    report = evaluate_method(recipe, output=tmp_path / 'sampled', split='valid', limit=1, query_order='upstream-pickle',
+                             on_prediction=lambda query, scores: sampled.update({query: scores.clone()}))
+    assert len(full) == 17 and len(sampled) == report['queries'] == 16
+    # The two 1p queries share an encoding batch in both runs, although only one of them is sampled.
+    assert calls == full_calls and max(map(len, calls)) == 2
+    assert all(torch.equal(scores, full[query]) for query, scores in sampled.items())
 
 
 def test_checked_in_protocol_settings():
@@ -508,8 +400,6 @@ def test_checked_in_protocol_settings():
             entry = by_id[f'{method}-{dataset}']
             assert len(entry['query_types']) == 16
             assert entry['options']['atomic_negation']
-    published = read(root / 'published_results.json')
-    assert sum(published['datasets']['FB15k237+H']['ultraquery'].values()) / 16 == pytest.approx(9.6)
 
 
 def test_rank_trace_rejects_missing_committed_answers(tmp_path):
@@ -527,203 +417,3 @@ def test_invalid_batch_boundaries(tmp_path):
     for ends in ([2, 4], [3, 3, 6], [0, 6], [6, 3]):
         with pytest.raises(ValueError, match='batch boundaries'):
             evaluate_benchmark(data, lambda query: torch.zeros(6), query_plan=data.queries, batch_ends=ends)
-
-
-@pytest.mark.integration
-@pytest.mark.skipif(not os.environ.get('DICEE_CONE_REFERENCE'), reason='Set DICEE_CONE_REFERENCE to the pinned upstream checkout')
-def test_independent_exporter_parity_and_full_run(tmp_path):
-    manifest = paper_fixture(tmp_path)
-    bundle = tmp_path / 'bundle'
-    freeze(manifest, bundle, tmp_path)
-    reference = tmp_path / 'reference.pt'
-    subprocess.run([sys.executable, str(Path(__file__).parents[1] / 'verification' / 'export_reference.py'),
-                    '--bundle', str(bundle), '--input-root', str(tmp_path), '--entry', 'cone-fixture',
-                    '--upstream', os.environ['DICEE_CONE_REFERENCE'], '--output', str(reference)], check=True)
-    evidence = verify_predictions(bundle, 'cone-fixture', tmp_path, reference, tmp_path / 'parity.json')
-    assert evidence['passed'] and len(evidence['queries']) == 16
-    manifest['entries'][0]['verification'] = 'parity.json'
-    freeze(manifest, tmp_path / 'verified-bundle', tmp_path)
-    report = run_job(tmp_path / 'verified-bundle', 'cone-fixture', tmp_path, tmp_path / 'full', phase='test')
-    assert report['protocol']['full_split'] and report['coverage']['complete_16_types']
-    assert report['split'] == 'test'
-
-
-@pytest.mark.parametrize('backbone', ['ultra', 'trix', 'kgicl'])
-def test_provisional_kgfm_pipeline_and_finalization_guard(tmp_path, backbone):
-    from dicee.models import KGICL, TRIX, ULTRA
-    manifest = paper_fixture(tmp_path)
-    model = {'ultra': ULTRA, 'trix': TRIX, 'kgicl': KGICL}[backbone](dict(num_entities=1, num_relations=1))
-    # KG-ICL checkpoints keep their weights under 'state_dict'.
-    torch.save({'state_dict' if backbone == 'kgicl' else 'model': model.state_dict()}, tmp_path / 'kgfm.pt')
-    for operator in ('product', 'min'):
-        adapter = QueryScoreAdapter('global', observed_mix=1, metadata=dict(
-            backbone_state_sha256=state_fingerprint(model), training={} if operator == 'product' else {'tnorm': 'min'}))
-        adapter.save(tmp_path / f'{operator}.json')
-    entry = manifest['entries'][0]
-    entry.update(id=f'{backbone}-fixture', method=f'{backbone}-adapter', checkpoint='kgfm.pt', options={'beam_size': 2, 'cache_bytes': 4096},
-                 adapters={operator: f'{operator}.json' for operator in ('product', 'min')},
-                 operators={shape: 'min' if 'n' in shape else 'product' for shape in PLUS_H_SHAPES},
-                 selection_protocol='source-validation', finalized=False, query_batch_size=4, query_order='relation')
-    freeze(manifest, tmp_path / 'bundle', tmp_path)
-    result = run_job(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'pilot')
-    assert result['queries'] == 16
-    assert result['inference']['selection_protocol'] == 'source-validation'
-    assert len(list(trace_queries(tmp_path / 'pilot' / 'ranks.sqlite3'))) == 16
-    with pytest.raises(ValueError, match='not ready'):
-        run_job(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'test', phase='test')
-
-
-def test_comparison_does_not_relax_reference_verification(tmp_path, monkeypatch):
-    import benchmarks.cqa.oracles as verification
-    from benchmarks.cqa.study import entry_inputs_identity
-    from dicee.query_answering.context import fingerprint
-    from dicee.query_answering.datasets import load_benchmark
-    from dicee.query_answering.methods import REFERENCES
-    manifest = paper_fixture(tmp_path)
-    entry = manifest['entries'][0]
-    entry['query_types'] = ['1p']
-    entry['inference_graph'] = 'train'
-    bundle = freeze(manifest, tmp_path / 'bundle', tmp_path)
-    query = next(q for q in load_benchmark(tmp_path / 'data', 'FB15k237+H', split='valid').queries if q.shape == '1p')
-    key = query.identity
-    scores = torch.arange(8).float()
-    oracle = dict(version=1, entry_sha256=fingerprint(entry), inputs_sha256=entry_inputs_identity(bundle, entry),
-                  validation_plan_sha256=bundle['plans'][entry['id'] + '/valid']['sha256'],
-                  reference_commit=REFERENCES['cone'][1], environment=dict.fromkeys(
-                      ('python', 'torch', 'cuda', 'gpu', 'driver', 'precision', 'threads'), 'fixture'),
-                  graphs={split: bundle['datasets'][f'{entry["dataset"]}/{split}']['context'] for split in ('valid', 'test')},
-                  pilot_queries=1, probe_only=True, scores={key: scores}, orders={key: scores.argsort(descending=True)})
-    torch.save(oracle, tmp_path / 'declared.pt')
-    previous = scores.clone()
-    previous[3] = 20
-    control = dict(oracle, scores={key: previous}, orders={key: previous.argsort(descending=True)})
-    torch.save(control, tmp_path / 'dense.pt')
-
-    def run(*args, on_prediction, **kwargs):
-        on_prediction(query, scores)
-        return {'benchmark_run': {'environment': oracle['environment']}}
-
-    monkeypatch.setattr(verification, 'run_job', run)
-    result = verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'declared.pt',
-                                tmp_path / 'parity.json', comparison_reference=tmp_path / 'dense.pt')
-    assert result['passed']
-    comparison = result['upstream_comparison']
-    assert not comparison['queries'][key]['ranks_match']
-    assert comparison['delta_macro']['sort']['mrr'] != 0
-    assert comparison['delta_macro']['expected']['mrr'] != 0
-    scores = previous
-    failed = verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'declared.pt',
-                                tmp_path / 'failed.json', comparison_reference=tmp_path / 'dense.pt')
-    assert not failed['passed']
-    control['inputs_sha256'] = 'different inputs'
-    torch.save(control, tmp_path / 'dense.pt')
-    with pytest.raises(ValueError, match='Comparison reference uses different'):
-        verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'declared.pt',
-                           tmp_path / 'invalid.json', comparison_reference=tmp_path / 'dense.pt')
-    oracle['graphs']['test'] = 'wrong graph'
-    torch.save(oracle, tmp_path / 'wrong-graph.pt')
-    with pytest.raises(ValueError, match='Reference inference graphs differ'):
-        verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'wrong-graph.pt',
-                           tmp_path / 'wrong-graph.json')
-
-
-def test_suite_effects_average_seeds_per_query_and_pair_the_shared_control(tmp_path):
-    from collections import namedtuple
-
-    from benchmarks.cqa.reports import suite_effects
-    from dicee.query_answering._rank_trace import RankTrace
-    from dicee.query_answering.catalog import PLUS_H_DATASETS
-    Query = namedtuple('Query', 'identity shape')
-    records = []
-    runs = (('ultra-r-{}', 'ultra-adapter', 1, {}), ('ultra-r-seed1-{}', 'ultra-adapter', 2, {}),
-            ('ultra-r-{}-without-adapter', 'ultra-adapter', 4, dict(paired_with='ultra-r-{}', calibration='without-adapter')),
-            ('ultraquery-{}', 'ultraquery', 2, {}))
-    for dataset in PLUS_H_DATASETS:
-        for template, method, rank, extra in runs:
-            entry = template.format(dataset)
-            path = tmp_path / entry / 'ranks.sqlite3'
-            with RankTrace(path, {'entry': entry}, 0) as trace:
-                for position, shape in enumerate(['1p'] * 4 + ['2in'] * 4):
-                    trace.add(position, Query(f'{dataset}-{position}', shape), [[7, rank, rank - 1, 1]])
-                trace.commit()
-            records.append(dict(id=entry, dataset=dataset, method=method, complete=True, answer_filter='corrected', trace=path,
-                                paired_with=extra.get('paired_with', '').format(dataset) or None,
-                                calibration=extra.get('calibration', 'learned')))
-    effects = {e['comparison']: e for e in suite_effects(records, bootstrap_samples=20)}
-    assert set(effects) == {'adapter-minus-identity', 'adapter-minus-ultraquery', 'identity-minus-ultraquery'}
-    # Seed tags 0 and 1 rank the answer first and second: a per-query seed mean of 0.75 MRR.
-    for comparison, delta in (('adapter-minus-identity', 50), ('adapter-minus-ultraquery', 25), ('identity-minus-ultraquery', -25)):
-        effect = effects[comparison]
-        assert effect['complete_suite'] and effect['datasets'] == 3
-        for group in ('all', 'epfo', 'negation'):
-            assert effect['macro']['sort'][group]['delta'] == pytest.approx(delta)
-            assert effect['macro']['sort'][group]['ci95'] == pytest.approx([delta, delta])
-    assert [s['sort']['all'] for s in effects['adapter-minus-identity']['per_seed']] == pytest.approx([75, 25])
-    assert effects['adapter-minus-identity']['seed_tags'] == [0, 1]
-    # Only seeds covering every dataset enter the seed mean; a missing baseline run makes the suite incomplete.
-    records[0]['complete'] = False
-    effects = {e['comparison']: e for e in suite_effects(records, bootstrap_samples=0)}
-    assert effects['adapter-minus-identity']['seed_tags'] == [1] and effects['adapter-minus-identity']['complete_suite']
-    next(r for r in records if r['method'] == 'ultraquery')['complete'] = False
-    effects = {e['comparison']: e for e in suite_effects(records, bootstrap_samples=0)}
-    assert effects['adapter-minus-ultraquery']['datasets'] == 2 and not effects['adapter-minus-ultraquery']['complete_suite']
-
-
-def test_reference_exemptions_are_exactly_the_negated_types_of_cqd_with_cqda_negation():
-    import importlib.util
-
-    import benchmarks.cqa.oracles as verification
-    spec = importlib.util.spec_from_file_location('export_reference', Path(__file__).parents[1] / 'verification/export_reference.py')
-    exporter = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(exporter)
-    negated = ['2in', '3in', 'inp', 'pin', 'pni']
-    cases = [(dict(method='cqd', options={'atomic_negation': True}, query_types=list(PLUS_H_SHAPES)), negated),
-             (dict(method='cqd-hybrid', options={'atomic_negation': True}, query_types=['1p', '2in', 'pni']), ['2in', 'pni']),
-             (dict(method='cqd', options={}, query_types=list(PLUS_H_SHAPES)), []),
-             (dict(method='qto', options={'atomic_negation': True}, query_types=list(PLUS_H_SHAPES)), [])]
-    for entry, expected in cases:
-        assert verification.upstream_exempt_types(entry) == exporter.exempt_types(entry) == expected
-    assert exporter.EXEMPTION_REASON == verification.EXEMPTION_REASON
-
-
-def test_exempt_types_are_evaluated_but_not_compared_and_must_be_declared(tmp_path, monkeypatch):
-    import benchmarks.cqa.oracles as verification
-    from benchmarks.cqa.study import entry_inputs_identity
-    from dicee.query_answering.context import fingerprint
-    from dicee.query_answering.datasets import load_benchmark
-    from dicee.query_answering.methods import REFERENCES
-    manifest = paper_fixture(tmp_path)
-    entry = manifest['entries'][0]
-    entry['query_types'] = ['1p', '2in']
-    entry['inference_graph'] = 'train'
-    bundle = freeze(manifest, tmp_path / 'bundle', tmp_path)
-    queries = load_benchmark(tmp_path / 'data', 'FB15k237+H', split='valid').queries
-    checked, exempt = (next(q for q in queries if q.shape == shape) for shape in ('1p', '2in'))
-    scores = torch.arange(8).float()
-    oracle = dict(version=1, entry_sha256=fingerprint(entry), inputs_sha256=entry_inputs_identity(bundle, entry),
-                  validation_plan_sha256=bundle['plans'][entry['id'] + '/valid']['sha256'],
-                  reference_commit=REFERENCES['cone'][1], environment=dict.fromkeys(
-                      ('python', 'torch', 'cuda', 'gpu', 'driver', 'precision', 'threads'), 'fixture'),
-                  graphs={split: bundle['datasets'][f'{entry["dataset"]}/{split}']['context'] for split in ('valid', 'test')},
-                  pilot_queries=1, probe_only=True, scores={checked.identity: scores},
-                  orders={checked.identity: scores.argsort(descending=True)},
-                  exempt_types=dict(types=['2in'], reason=verification.EXEMPTION_REASON))
-    torch.save(oracle, tmp_path / 'oracle.pt')
-
-    def run(*args, on_prediction, **kwargs):
-        on_prediction(checked, scores)
-        on_prediction(exempt, torch.zeros(8))
-        return {'benchmark_run': {'environment': oracle['environment']}}
-
-    monkeypatch.setattr(verification, 'run_job', run)
-    monkeypatch.setattr(verification, 'upstream_exempt_types', lambda entry: ['2in'])
-    result = verification.verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'oracle.pt', tmp_path / 'parity.json')
-    assert result['passed'] and set(result['queries']) == {checked.identity}
-    assert result['exempt_types']['types'] == ['2in'] and result['exempt_types']['evaluated_queries'] == {'2in': 1}
-    # An oracle has to declare exactly the exemptions the rule allows.
-    torch.save({key: value for key, value in oracle.items() if key != 'exempt_types'}, tmp_path / 'undeclared.pt')
-    with pytest.raises(ValueError, match='Reference exemptions differ'):
-        verification.verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'undeclared.pt', tmp_path / 'x.json')
-    monkeypatch.setattr(verification, 'upstream_exempt_types', lambda entry: [])
-    with pytest.raises(ValueError, match='Reference exemptions differ'):
-        verification.verify_predictions(tmp_path / 'bundle', entry['id'], tmp_path, tmp_path / 'oracle.pt', tmp_path / 'y.json')

@@ -1,4 +1,4 @@
-"""Missing baseline integration, resume-safe heuristic and author training parity."""
+"""UltraQuery comparison baselines: recipes, the untrained heuristic and locally trained checkpoints."""
 
 import copy
 import json
@@ -14,16 +14,12 @@ import torch
 from benchmarks.cqa import cli
 from benchmarks.cqa.evaluate import evaluate_manifest
 from benchmarks.cqa.manifests import REPO, prepare_manifest, read_manifest, validate_entry
-from benchmarks.cqa.oracles import verify_predictions
-from benchmarks.cqa.study import freeze, run_job
 from benchmarks.cqa.tests.test_ultraquery_launcher import PUBLIC, fixture
 from benchmarks.cqa.train import verify_v2
 from dicee.query_answering import QueryContext, load_benchmark
 from dicee.query_answering._checkpoint import checksum
 from dicee.query_answering.methods import load_method
 from dicee.query_answering.methods.heuristic import IncomingRelationHeuristic
-
-EXPORTER = REPO / 'benchmarks/cqa/verification/export_reference.py'
 
 
 def test_comparison_recipes_cover_published_families():
@@ -105,21 +101,8 @@ def trained_fixture(root):
     return manifest,record,folder
 
 
-@pytest.mark.parametrize('profile,release',[('smoke','fixture'),('fixture','fixture'),('custom','fixture')])
-def test_shipped_manifest_cannot_promote_smoke_or_fixture_weights(tmp_path,profile,release):
-    manifest,record,_=trained_fixture(tmp_path)
-    record.update(profile=profile,dataset_release=release)
-    (tmp_path/'training.json').write_text(json.dumps(record))
-    assert manifest['entries'][0]['blockers']==[]
-    freeze(manifest,tmp_path/'bundle',tmp_path)
-    with pytest.raises(ValueError,match='smoke/fixture training checkpoint'):
-        run_job(tmp_path/'bundle',manifest['entries'][0]['id'],tmp_path,tmp_path/'final',phase='test')
-    pilot=run_job(tmp_path/'bundle',manifest['entries'][0]['id'],tmp_path,tmp_path/'pilot',phase='pilot')
-    assert pilot['queries']==14
-
-
 @pytest.mark.parametrize('changed_file',['id2ent.pkl','id2rel.pkl','train.txt','valid.txt','test.txt','test-hard-answers.pkl'])
-def test_training_input_changes_rejected_by_freeze_and_direct_evaluation(tmp_path,changed_file):
+def test_training_input_changes_are_rejected_before_evaluation(tmp_path,changed_file):
     manifest,_,folder=trained_fixture(tmp_path)
     path=folder/changed_file
     if changed_file.startswith('id2'):
@@ -128,8 +111,6 @@ def test_training_input_changes_rejected_by_freeze_and_direct_evaluation(tmp_pat
         path.write_bytes(pickle.dumps(mapping))
     else:
         path.write_bytes(path.read_bytes()+b'\n')
-    with pytest.raises(ValueError,match='Training input differs'):
-        freeze(manifest,tmp_path/'bundle',tmp_path)
     with pytest.raises(ValueError,match='Training input differs'):
         evaluate_manifest(manifest,input_root=tmp_path,output=tmp_path/'direct')
     assert not (tmp_path/'direct').exists()
@@ -146,104 +127,69 @@ def test_required_training_bindings_cannot_be_omitted(tmp_path,missing):
         del record['profile']
     (tmp_path/'training.json').write_text(json.dumps(record))
     with pytest.raises(ValueError,match='Training provenance'):
-        freeze(manifest,tmp_path/'bundle',tmp_path)
-    with pytest.raises(ValueError,match='Training provenance'):
         evaluate_manifest(manifest,input_root=tmp_path,output=tmp_path/'direct')
 
 
+def test_trained_checkpoint_results_record_their_training_profile(tmp_path):
+    manifest,record,_=trained_fixture(tmp_path)
+    evaluate_manifest(manifest,input_root=tmp_path,output=tmp_path/'direct',split='valid')
+    result=json.loads((tmp_path/'direct'/manifest['entries'][0]['id']/'result.json').read_text())
+    assert result['queries']==14
+    assert result['inference']['paper_protocol']['training']==record
+
+
 @pytest.mark.integration
-@pytest.mark.skipif(not os.environ.get('DICEE_INDUCTIVE_REFERENCE_ROOT'), reason='Author dependencies and clean checkout required')
-@pytest.mark.parametrize('method', ['incoming-relation', 'inductive-gnnqe', 'ultraquery-lp', 'qto'])
-def test_author_training_export_parity_and_verified_execution(tmp_path, method):
-    name = ('WikiTopicsQuery:art' if method=='incoming-relation' else 'InductiveFB15k237Query:106'
-            if method=='inductive-gnnqe' else 'FB15kLogicalQuery')
-    manifest = fixture(tmp_path, name)
-    e = manifest['entries'][0]
-    e['method'], e['id'] = method, method+'-fixture'
-    if method=='incoming-relation':
-        (tmp_path / 'heuristic.json').write_bytes((PUBLIC / 'heuristic.json').read_bytes())
-        e.update(checkpoint='heuristic.json', options={})
-    elif method=='ultraquery-lp':
-        # The actual released LP weights, rather than a synthetic query checkpoint.
-        (tmp_path/'lp.pt').write_bytes((REPO / 'Experiments/query-baselines/upstream/ultra/ckpts/ultra_3g.pth').read_bytes())
-        e['checkpoint']='lp.pt'
-        e['options']['threshold']=.8
+@pytest.mark.skipif(not os.environ.get('DICEE_INDUCTIVE_REFERENCE_ROOT'), reason='Author dependencies and clean checkouts required')
+@pytest.mark.parametrize('method', ['inductive-gnnqe', 'qto'])
+def test_author_training_writes_a_checkpoint_that_evaluates(tmp_path, method):
+    """One training update with the pinned author code, then direct evaluation of the written manifest."""
+    name = 'InductiveFB15k237Query:106' if method=='inductive-gnnqe' else 'FB15kLogicalQuery'
+    fixture(tmp_path, name)
+    folder = tmp_path / 'data' / ('106' if method=='inductive-gnnqe' else 'FB15k-betae')
+    if method=='inductive-gnnqe':
+        queries=pickle.loads((folder/'valid_queries.pkl').read_bytes())
+        (folder/'train_queries.pkl').write_bytes(pickle.dumps(queries))
+        answers={s:{q:{1} for q in group} for s,group in queries.items()}
+        (folder/'train_answers_hard.pkl').write_bytes(pickle.dumps(answers))
     else:
-        e.update(copy.deepcopy(next(row for row in read_manifest(PUBLIC/'trained_baselines.json')['entries']
-                                    if row['method']==method and row['dataset']==name)))
-        folder = tmp_path / 'data' / ('106' if method=='inductive-gnnqe' else 'FB15k-betae')
-        if method=='inductive-gnnqe':
-            queries=pickle.loads((folder/'valid_queries.pkl').read_bytes())
-            (folder/'train_queries.pkl').write_bytes(pickle.dumps(queries))
-            answers={s:{q:{1} for q in group} for s,group in queries.items()}
-            (folder/'train_answers_hard.pkl').write_bytes(pickle.dumps(answers))
-        else:
-            (folder/'valid.txt').write_text('0\t0\t3\n')
-            (folder/'test.txt').write_text('1\t2\t3\n')
-        source = Path(os.environ['DICEE_INDUCTIVE_REFERENCE_ROOT']) if method=='inductive-gnnqe' else REPO/'Experiments/query-baselines/upstream/qto'
-        checkout = tmp_path/'Experiments/query-baselines/upstream'/('inductiveqe' if method=='inductive-gnnqe' else 'qto')
-        checkout.parent.mkdir(parents=True)
-        checkout.symlink_to(source, target_is_directory=True)
-        subprocess.run([sys.executable,'-m','benchmarks.cqa','ultraquery','train','--methods',method,
-                        '--datasets',name,'--input-root',str(tmp_path),'--data-root','data',
-                        '--output',str(tmp_path/'trained'),'--smoke'],check=True)
-        training=tmp_path/'trained'/f'{method}-{name}'
-        e['checkpoint']=str(training/'checkpoint.pt')
-        metadata=json.loads((training/'training.json').read_text())
-        assert metadata['status']=='complete' and metadata['profile']=='smoke' and metadata['updates']==1
-        assert metadata['checkpoint_selection']=='validation MRR only'
-        generated=json.loads((training/'manifest.json').read_text())
-        assert generated['data_root']=='data' and generated['threads']==2
-        assert generated['entries'][0]['blockers']
-        assert (tmp_path/generated['entries'][0]['checkpoint']).is_file()
-        assert (tmp_path/generated['entries'][0]['training']).is_file()
-        e['training']=generated['entries'][0]['training']
-        freeze(generated,tmp_path/'smoke-bundle',tmp_path)
-        with pytest.raises(ValueError,match='not ready for final testing'):
-            run_job(tmp_path/'smoke-bundle',generated['entries'][0]['id'],tmp_path,tmp_path/'blocked',phase='test')
-        changed=dict(metadata,checkpoint_sha256='0'*64)
-        (training/'training.json').write_text(json.dumps(changed))
-        with pytest.raises(ValueError,match='Training provenance'):
-            freeze(generated,tmp_path/'invalid-training',tmp_path)
-        (training/'training.json').write_text(json.dumps(metadata))
-        evaluate_manifest(generated,input_root=tmp_path,output=tmp_path/'direct',split='valid',limit=1)
-        result=json.loads((tmp_path/'direct'/generated['entries'][0]['id']/'result.json').read_text())
-        assert result['inference']['paper_protocol']['training']['profile']=='smoke'
-        e['options']={'logic':'product'} if method=='inductive-gnnqe' else {
-            'threshold':.001,'negation_scale':6,'cache_bytes':2**20,'row_batch_size':100}
+        (folder/'valid.txt').write_text('0\t0\t3\n')
+        (folder/'test.txt').write_text('1\t2\t3\n')
+    source = Path(os.environ['DICEE_INDUCTIVE_REFERENCE_ROOT']) if method=='inductive-gnnqe' else REPO/'Experiments/query-baselines/upstream/qto'
+    checkout = tmp_path/'Experiments/query-baselines/upstream'/('inductiveqe' if method=='inductive-gnnqe' else 'qto')
+    checkout.parent.mkdir(parents=True)
+    checkout.symlink_to(source, target_is_directory=True)
+    subprocess.run([sys.executable,'-m','benchmarks.cqa','ultraquery','train','--methods',method,
+                    '--datasets',name,'--input-root',str(tmp_path),'--data-root','data',
+                    '--output',str(tmp_path/'trained'),'--smoke'],check=True)
+    training=tmp_path/'trained'/f'{method}-{name}'
+    metadata=json.loads((training/'training.json').read_text())
+    assert metadata['status']=='complete' and metadata['profile']=='smoke' and metadata['updates']==1
+    assert metadata['checkpoint_selection']=='validation MRR only'
+    generated=json.loads((training/'manifest.json').read_text())
+    assert generated['data_root']=='data' and generated['threads']==2
+    assert (tmp_path/generated['entries'][0]['checkpoint']).is_file()
+    assert (tmp_path/generated['entries'][0]['training']).is_file()
+    evaluate_manifest(generated,input_root=tmp_path,output=tmp_path/'direct',split='valid',limit=1)
+    result=json.loads((tmp_path/'direct'/generated['entries'][0]['id']/'result.json').read_text())
+    assert result['inference']['paper_protocol']['training']['profile']=='smoke'
+    changed=dict(metadata,checkpoint_sha256='0'*64)
+    (training/'training.json').write_text(json.dumps(changed))
+    with pytest.raises(ValueError,match='Training provenance'):
+        evaluate_manifest(generated,input_root=tmp_path,output=tmp_path/'changed',split='valid',limit=1)
+    if method=='inductive-gnnqe':
         context=load_benchmark(tmp_path/'data',name,split='valid').context
-        native=load_method(method,e['checkpoint'],context,**e['options'])
-        if method=='inductive-gnnqe':
-            assert native.provenance['checkpoint_graph_buffers']['train_graph']['training_facts_verified']
-            from benchmarks.cqa.train import compatibility
-            compatibility()
-            from torchdrug.data import Graph
-            with torch.serialization.safe_globals([Graph]):
-                state=torch.load(e['checkpoint'],weights_only=True)
-            del state['model']['train_graph']
-            torch.save(state,tmp_path/'incomplete.pt')
-            with pytest.raises(ValueError,match='Missing inductive checkpoint graph'):
-                load_method(method,tmp_path/'incomplete.pt',context,**e['options'])
-    freeze(manifest,tmp_path/'bundle',tmp_path)
-    source = (Path(os.environ['DICEE_INDUCTIVE_REFERENCE_ROOT']) if method in ('incoming-relation','inductive-gnnqe')
-              else REPO/'Experiments/query-baselines/upstream'/('qto' if method=='qto' else 'ultra'))
-    subprocess.run([sys.executable,str(EXPORTER),'--bundle',str(tmp_path/'bundle'),
-                    '--input-root',str(tmp_path),'--entry',e['id'],'--upstream',str(source),
-                    '--device','cpu','--output',str(tmp_path/'reference.pt')],check=True)
-    evidence=verify_predictions(tmp_path/'bundle',e['id'],tmp_path,tmp_path/'reference.pt',tmp_path/'evidence.json')
-    assert evidence['passed'] and len(evidence['queries'])==14, json.dumps(evidence)
-    e['verification']='evidence.json'
-    freeze(manifest,tmp_path/'verified',tmp_path)
-    if method in ('qto','inductive-gnnqe'):
-        # Even successful independent parity cannot promote genuine one-update
-        # smoke weights through the shipped manifest's empty blocker list.
-        assert e['blockers']==[]
-        with pytest.raises(ValueError,match='smoke/fixture training checkpoint'):
-            run_job(tmp_path/'verified',e['id'],tmp_path,tmp_path/'test',phase='test')
-        report=run_job(tmp_path/'verified',e['id'],tmp_path,tmp_path/'pilot',phase='pilot')
-    else:
-        report=run_job(tmp_path/'verified',e['id'],tmp_path,tmp_path/'test',phase='test')
-    assert report['coverage']['complete_benchmark_types']
+        checkpoint=tmp_path/generated['entries'][0]['checkpoint']
+        native=load_method(method,checkpoint,context,logic='product')
+        assert native.provenance['checkpoint_graph_buffers']['train_graph']['training_facts_verified']
+        from benchmarks.cqa.train import compatibility
+        compatibility()
+        from torchdrug.data import Graph
+        with torch.serialization.safe_globals([Graph]):
+            state=torch.load(checkpoint,weights_only=True)
+        del state['model']['train_graph']
+        torch.save(state,tmp_path/'incomplete.pt')
+        with pytest.raises(ValueError,match='Missing inductive checkpoint graph'):
+            load_method(method,tmp_path/'incomplete.pt',context,logic='product')
 
 
 @pytest.mark.integration
@@ -264,16 +210,3 @@ def test_qto_training_consumes_exact_epochs(tmp_path):
     assert record['updates']==6  # Six triples, three batches per epoch, two epochs.
     assert record['best_epoch']==1  # Retain the authors' e % valid == 0 schedule.
     assert record['profile']=='custom' and record['status']=='complete'
-    manifest=json.loads((tmp_path/'trained/qto-FB15kLogicalQuery/manifest.json').read_text())
-    entry=manifest['entries'][0]
-    freeze(manifest,tmp_path/'bundle',tmp_path)
-    subprocess.run([sys.executable,str(EXPORTER),'--bundle',str(tmp_path/'bundle'),
-                    '--input-root',str(tmp_path),'--entry',entry['id'],
-                    '--upstream',str(REPO/'Experiments/query-baselines/upstream/qto'),
-                    '--device','cpu','--output',str(tmp_path/'reference.pt')],check=True)
-    evidence=verify_predictions(tmp_path/'bundle',entry['id'],tmp_path,tmp_path/'reference.pt',tmp_path/'evidence.json')
-    assert evidence['passed']
-    entry['verification']='evidence.json'
-    freeze(manifest,tmp_path/'verified',tmp_path)
-    report=run_job(tmp_path/'verified',entry['id'],tmp_path,tmp_path/'test',phase='test')
-    assert report['protocol']['full_split']
