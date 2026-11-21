@@ -13,7 +13,9 @@ class ReferenceKGFM:
                 or not 0 <= adapter.get('membership_threshold', 0.) < 1
                 or adapter.get('fixed_calibration') not in (None, 'minmax', 'softmax-degree', 'softmax', 'softmax-degree-ties', 'softmax-mass')
                 or (adapter.get('fixed_calibration')
-                    and (adapter['feature_mode'] != 'global' or any(w for row in adapter['weights'] for w in row)))):
+                    and (adapter['feature_mode'] != 'global' or any(w for row in adapter['weights'] for w in row)))
+                or adapter.get('score_input', 'raw') not in ('raw', 'log_softmax')
+                or (adapter.get('fixed_calibration') and adapter.get('score_input', 'raw') != 'raw')):
             raise ValueError('This reference covers the frozen linear observed-fact recipe')
         self.n, self.nr, self.adapter = n, nr, adapter
         self.k, self.device = beam_size, device
@@ -32,6 +34,14 @@ class ReferenceKGFM:
     def capture(self, conditions, raw):
         """Calibrate fresh logits without calling the production feature/adapter code."""
         raw = raw.double()
+        if self.adapter.get('score_input', 'raw') == 'log_softmax':
+            # Sigmoid calibrations with log-softmax input read each row's log-softmax over all entities, before the
+            # features and the scale and shift; fixed calibrations always read the raw row. The log-softmax counts as
+            # part of the shared backbone output, so the reference uses the production operation (torch.log_softmax in
+            # float64). An own z - logsumexp(z) rounds differently: sums of rows that tie exactly in one path then
+            # differ by one unit in the last place in the other, and the exact-tie parity fails although the scores
+            # agree within 1e-12 (PCUltra integration checks, 2 November 2026).
+            raw = raw.log_softmax(1)
         observed = torch.zeros_like(raw, dtype=torch.bool)
         features = []
         for i, (h, r) in enumerate(conditions):
@@ -75,11 +85,16 @@ class ReferenceKGFM:
                                                       raw.new_zeros(()))
         elif calibration == 'softmax-mass':
             # FIT: softmax times the observed tail count over the softmax mass on the observed tails (no factor for a row
-            # without observed tails), capped at 0.9999 below one.
-            share = torch.softmax(raw, 1)
-            mass = (share * observed).sum(1)
-            factor = torch.where(count > 0, count.double() / mass, raw.new_ones(()))
-            calibrated = torch.minimum((share * factor[:, None]).log(), raw.new_tensor(math.log(0.9999)))
+            # without observed tails), capped at 0.9999 below one. In log space, with the operations and their order of
+            # production: log_softmax, logsumexp over the observed tails, log count minus that mass, one addition. The
+            # probability-space form softmax * count / mass rounds differently by about 1e-14, which moves sums of
+            # rows into or out of exact ties, so the tie parity failed although the scores agreed within 1e-12 (bracket
+            # integration checks on kiowl, 4 November 2026).
+            level = torch.log_softmax(raw, 1)
+            mass = level.masked_fill(~observed, -math.inf).logsumexp(1, keepdim=True)
+            counts = count[:, None]
+            level = level + torch.where(counts > 0, counts.clamp_min(1).to(raw.dtype).log() - mass, 0.)
+            calibrated = torch.minimum(level, raw.new_tensor(math.log(0.9999)))
         else:
             u, v = (features @ raw.new_tensor(self.adapter['weights']).T).unbind(1)
             bound = math.log(self.adapter['scale_bound'])

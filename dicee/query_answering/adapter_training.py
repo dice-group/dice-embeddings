@@ -504,8 +504,12 @@ def fit_query_adapter(model, sources, *, feature_mode='context_scores', observed
                       train_shapes=None, training_sources=None, train_per_shape=None,
                       early_stopping_patience=None, validation_shapes=None, training_device='cpu',
                       training_cache_bytes=1536 * 1024**2, device_cache_bytes=512 * 1024**2,
-                      checkpoint_path=None, validation_device=None, tnorm='prod'):
-    """Fit a frozen-backbone adapter; optionally select epochs on source validation."""
+                      checkpoint_path=None, validation_device=None, tnorm='prod', score_input='raw'):
+    """Fit a frozen-backbone adapter; optionally select epochs on source validation.
+
+    ``score_input`` selects the adapter's input scores (``QueryScoreAdapter.scores``): the score banks keep the raw rows,
+    and the adapter applies the transform. The reported sigmoid baselines use the same input.
+    """
     sources = list(sources)
     if tnorm not in ('prod', 'min'):
         raise ValueError('Choose prod or min t-norm')
@@ -570,7 +574,7 @@ def fit_query_adapter(model, sources, *, feature_mode='context_scores', observed
         adapter = QueryScoreAdapter(feature_mode, observed_mix, metadata=dict(
             backbone_state_sha256=backbone, training=settings, score_banks=[bank['identity'] for bank in banks],
             sources={source.name: fingerprint(source.to_dict()) for source in sources}), bias_bound=bias_bound, scale_bound=scale_bound,
-            normalization=normalization, hidden_dim=hidden_dim, seed=seed).to(device)
+            normalization=normalization, hidden_dim=hidden_dim, seed=seed, score_input=score_input).to(device)
         prepared = [_prepared_bank(adapter, bank) for bank in banks]
         optimizer = torch.optim.Adam(adapter.parameters(), lr=learning_rate)
         examples = []
@@ -669,7 +673,8 @@ def fit_query_adapter(model, sources, *, feature_mode='context_scores', observed
         if state_fingerprint(model) != backbone:
             raise RuntimeError('Backbone changed during adapter fitting')
         settings['row_cache'] = {source.name: dict(bank['provider'].stats) for source, bank in zip(sources, banks) if 'provider' in bank}
-        variants = {'sigmoid': QueryScoreAdapter('global').to(device), 'observed': QueryScoreAdapter('global', 1.).to(device)}
+        variants = {'sigmoid': QueryScoreAdapter('global', score_input=score_input).to(device),
+                    'observed': QueryScoreAdapter('global', 1., score_input=score_input).to(device)}
         validation = {name: _baseline_validation(value, sources, banks, cache_dir) for name, value in variants.items()}
         validation['fitted'] = best[3] if best is not None and len(validation_indices) == len(sources) else _validation(adapter, sources, banks)
         return AdapterFitResult(adapter, history, validation)

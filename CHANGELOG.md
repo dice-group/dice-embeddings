@@ -23,6 +23,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ProofPFN (`dicee.synthetic_kg`): ULTRA pretrained on worlds of a synthetic prior, with presets of eleven arms, resumable runs and its own checkpoint format ([guide](docs/proofpfn.md))
 - `PCUltra` (`--model PCUltra`): ULTRA with count-weighted relation-graph edges and two pair edge types as a model of its own, with the relation graph and the inference of the relation model from sparse products; it loads the checkpoints of ProofPFN
 - `dicee_pretrain_synthetic`: the command that pretrains an arm, converts research exports into checkpoints and builds the real source graphs of arms R and M
+- Query answering with PCUltra: the method `pcultra-adapter` reads a ProofPFN checkpoint as a frozen backbone, and the option `score_input='log_softmax'` (adapters, recipes and `python -m dicee.query_answering fit --score-input`) gives the sigmoid calibrations each row's log-softmax over all entities instead of the raw logits
 - ProofPFN benchmark (`python -m benchmarks.proofpfn`): the manifest of the 54 graphs of the standard zero-shot suite, zero-shot ranks of checkpoints and of the released TRIX, ULTRA and Flock, a summary table over graphs and seeds, and the evaluation on held-out worlds of the prior
 - Golden tests against the code of the thesis runs: bitwise world orders, worlds, initial weights, first training updates, exports and ranks, and the values on worlds of the prior
 

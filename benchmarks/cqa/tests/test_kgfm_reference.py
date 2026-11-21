@@ -2,6 +2,7 @@
 
 import importlib.util
 import json
+import math
 from pathlib import Path
 
 import pytest
@@ -249,6 +250,126 @@ def test_reference_needs_no_rows_for_zero_prefix_but_requires_live_rows(operator
     assert torch.isneginf(reference.predict(contradiction, operator)).all()
     with pytest.raises(KeyError):
         reference.predict((0, (0, 1)), operator)
+
+
+class GridRows(torch.nn.Module):
+    """Logits at the level of a softmax-trained backbone (about +60, spread 20) on a float32 grid of step 1/1024, so
+    that sums of rows tie exactly for many entities. With an own z - logsumexp(z) in the reference, the identity
+    control of this model breaks such ties in 2i, 3i and 3in (as in the PCUltra integration checks)."""
+    num_entities, num_relations = 1024, 4
+
+    def __init__(self):
+        super().__init__()
+        values = torch.randn(1024, 4, 1024, generator=torch.Generator().manual_seed(11))
+        self.values = torch.nn.Parameter(60 + (values * 20 * 1024).round() / 1024)
+
+    def forward_k_vs_all(self, conditions):
+        return self.values[conditions[:, 0], conditions[:, 1]]
+
+
+def capture_all(reference, model, batch=256):
+    conditions = [(h, r) for h in range(model.num_entities) for r in range(model.num_relations)]
+    with torch.no_grad():
+        for start in range(0, len(conditions), batch):
+            rows = conditions[start:start + batch]
+            reference.capture(rows, model.forward_k_vs_all(torch.tensor(rows)))
+    return conditions
+
+
+def test_reference_reads_the_production_log_softmax_bits():
+    model = GridRows().eval()
+    adapter = QueryScoreAdapter('global', 0., score_input='log_softmax')   # the identity control: scale 1, shift 0
+    reference = reference_module.ReferenceKGFM([(0, 0, 1)], 1024, 4, adapter.to_dict(), beam_size=2, device='cpu',
+                                               restore_observed=False)
+    conditions = capture_all(reference, model)
+    with torch.no_grad():
+        expected = torch.nn.functional.logsigmoid(adapter.scores(model.forward_k_vs_all(torch.tensor(conditions))))
+    assert torch.equal(torch.stack([reference.rows[c] for c in conditions]), expected)
+
+
+@pytest.mark.parametrize('operator', ['product', 'min'])
+@pytest.mark.parametrize('mode', ['global', 'context_scores'])
+def test_reference_keeps_the_exact_ties_of_log_softmax_rows(operator, mode):
+    """The tie parity of verify_kgfm on every query shape: with log-softmax input, sums of rows that tie exactly in
+    production must tie in the reference too."""
+    model = GridRows().eval()
+    context = QueryContext([(0, 0, 1), (0, 0, 2), (2, 1, 6), (1, 1, 3), (3, 2, 4), (4, 3, 5)], 1024, 4)
+    weights = None if mode == 'global' else torch.randn(2, 8, generator=torch.Generator().manual_seed(9)).double() / 5
+    adapter = QueryScoreAdapter(mode, 0., bias_bound=8., weights=weights, score_input='log_softmax')
+    reference = reference_module.ReferenceKGFM(context.triples, 1024, 4, adapter.to_dict(), beam_size=4, device='cpu',
+                                               restore_observed=False)
+    capture_all(reference, model)
+    engine = QueryAnswerer(model, context=context, adapter=adapter, row_batch_size=64, restore_observed=False)
+    queries = [instantiate(shape) for shape in QUERY_SHAPES.values()]
+    engine.prefetch(queries)
+    tnorm = 'prod' if operator == 'product' else 'min'
+    ties = 0
+    for query in queries:
+        expected = reference.predict(query, operator)
+        actual = engine.predict(query, beam_size=4, tnorm=tnorm, return_log_scores=True)
+        order = expected.argsort(descending=True)
+        torch.testing.assert_close(actual, expected, atol=1e-12, rtol=1e-12)
+        assert torch.equal(actual.argsort(descending=True), order)
+        assert torch.equal(actual[order][1:] == actual[order][:-1], expected[order][1:] == expected[order][:-1])
+        ties += int((expected[order][1:] == expected[order][:-1]).sum())
+    assert ties > 0   # the grid makes exact ties, so the parity has something to compare
+
+
+def fit_context():
+    """A context of the grid model in which the anchors and many other rows have observed tails, so that FIT rescales
+    them; some rows have no observed tail and keep the softmax."""
+    g = torch.Generator().manual_seed(21)
+    triples = {(h, r, t) for h in range(7) for r in range(4) for t in torch.randint(0, 1024, (3,), generator=g).tolist()}
+    triples |= set(zip(torch.randint(0, 1024, (6000,), generator=g).tolist(), torch.randint(0, 4, (6000,), generator=g).tolist(),
+                       torch.randint(0, 1024, (6000,), generator=g).tolist()))
+    return QueryContext(sorted(triples), 1024, 4)
+
+
+def test_reference_computes_fit_with_the_production_bits():
+    """FIT (softmax-mass) in the reference equals production bit for bit, at the cap and in rows without observed
+    tails. The probability-space form softmax * count / mass rounds differently by about 1e-14, which broke the
+    exact-tie parity of the bracket integration checks (kiowl, 4 November 2026)."""
+    model, context = GridRows().eval(), fit_context()
+    adapter = QueryScoreAdapter('global', 0., fixed_calibration='softmax-mass')
+    reference = reference_module.ReferenceKGFM(context.triples, 1024, 4, adapter.to_dict(), beam_size=2, device='cpu',
+                                               restore_observed=False)
+    conditions = capture_all(reference, model)
+    observed = torch.zeros(len(conditions), 1024, dtype=torch.bool)
+    for h, r, t in context.triples:
+        observed[h * 4 + r, t] = True   # capture_all lists the conditions (h, r) in this order
+    base = torch.zeros(len(conditions), 4, dtype=torch.float64)
+    base[:, 0] = 1
+    with torch.no_grad():
+        expected = adapter(model.forward_k_vs_all(torch.tensor(conditions)), observed, base)
+    rows = torch.stack([reference.rows[c] for c in conditions])
+    assert int((expected == math.log(0.9999)).sum()) > 1000 and bool((~observed.any(1)).any())
+    assert torch.equal(rows, expected)
+
+
+@pytest.mark.parametrize('operator', ['product', 'min'])
+@pytest.mark.parametrize('facts', ['none', 'both'])
+def test_reference_keeps_the_exact_ties_of_fit_rows(operator, facts):
+    """The tie parity of verify_kgfm on every query shape for FIT: sums of rows that tie exactly in production must tie
+    in the reference too."""
+    model, context = GridRows().eval(), fit_context()
+    adapter = QueryScoreAdapter('global', float(facts != 'none'), bias_bound=8., fixed_calibration='softmax-mass')
+    reference = reference_module.ReferenceKGFM(context.triples, 1024, 4, adapter.to_dict(), beam_size=4, device='cpu',
+                                               restore_observed=facts == 'both')
+    capture_all(reference, model)
+    engine = QueryAnswerer(model, context=context, adapter=adapter, row_batch_size=64, restore_observed=facts == 'both')
+    queries = [instantiate(shape) for shape in QUERY_SHAPES.values()]
+    engine.prefetch(queries)
+    tnorm = 'prod' if operator == 'product' else 'min'
+    ties = 0
+    for query in queries:
+        expected = reference.predict(query, operator)
+        actual = engine.predict(query, beam_size=4, tnorm=tnorm, return_log_scores=True)
+        order = expected.argsort(descending=True)
+        torch.testing.assert_close(actual, expected, atol=1e-12, rtol=1e-12)
+        assert torch.equal(actual.argsort(descending=True), order)
+        assert torch.equal(actual[order][1:] == actual[order][:-1], expected[order][1:] == expected[order][:-1])
+        ties += int((expected[order][1:] == expected[order][:-1]).sum())
+    assert ties > 0
 
 
 def test_recipe_rules_of_the_opt_in_backbone_options():

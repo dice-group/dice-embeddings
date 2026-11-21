@@ -8,12 +8,13 @@ that the generator knows and the context does not show (the RB-W target). After 
 facts of real graphs without fine-tuning (zero-shot).
 
 The main model, PCUltra, is ULTRA with two relation-graph options: count weighting and pair channels. It is also a
-model of its own, `--model PCUltra` ([PCUltra](#pcultra)). This guide covers three parts:
+model of its own, `--model PCUltra` ([PCUltra](#pcultra)). This guide covers four parts:
 
 - `dicee/synthetic_kg/`: the prior, the eleven arms, the pretraining loop and the checkpoint format.
 - `dicee_pretrain_synthetic`: the command for pretraining, for the conversion of research exports and for the real
   source graphs.
 - `benchmarks/proofpfn/`: the zero-shot benchmark and the evaluation on worlds of the prior.
+- `dicee/query_answering/`: the method `pcultra-adapter`, which answers complex queries with a pretrained checkpoint.
 
 The code is a port of the research code of the thesis runs. Golden references of the research code test it bit for
 bit (see [Testing](#testing)).
@@ -312,6 +313,40 @@ python -m benchmarks.proofpfn table --set ultra54 --rows rows
 - A system whose result file exists is not run again.
 - The command `python -m dicee --model ULTRA ... --eval_model test --eval_tie_policy pessimistic` gives the same ranks
   on a graph that it reads. It does not read a graph with an empty `valid.txt`.
+
+## Query answering
+
+A pretrained checkpoint is also a frozen backbone for complex query answering (`dicee.query_answering`,
+[CQA guide](guides/multi_hop_queries.md)). The method name is `pcultra-adapter`.
+
+```python
+from dicee.query_answering import QueryScoreAdapter
+from dicee.query_answering.context import state_fingerprint
+from dicee.query_answering.method_evaluation import evaluate_method, load_kgfm_backbone
+
+checkpoint = "runs/S/42/export-24000-ema.pt"
+model, record = load_kgfm_backbone("pcultra", checkpoint)
+
+# The rule calibration: the degree-scaled softmax with ordered candidates at the cap. It needs no training.
+QueryScoreAdapter("global", 1., bias_bound=8., fixed_calibration="softmax-degree-ties",
+                  metadata={"backbone_state_sha256": state_fingerprint(model)}).save("rule.json")
+
+recipe = dict(method="pcultra-adapter", checkpoint=checkpoint, dataset="FB15k237+H", root="data/cqa",
+              adapters={"product": "rule.json"}, operators={"2p": "product", "2i": "product"},
+              query_types=["2p", "2i"], selection_protocol="source-validation",
+              options={"beam_size": 64})
+report = evaluate_method(recipe, output="results/pcultra-rule", device="cuda")
+```
+
+- `load_kgfm_backbone` checks the checkpoint format and builds ULTRA with the options of the checkpoint. The result
+  file records the arm, the seed and the update of the checkpoint under `inference.backbone`.
+- The rule calibrations always read the raw scores.
+- The sigmoid calibrations are the learned adapter and the control without an adapter. The backbone is trained with a
+  softmax over all entities, so the level of a score row is free and raw scores can saturate a sigmoid.
+- The recipe option `"score_input": "log_softmax"` makes the sigmoid calibrations read the log-softmax of each row.
+- A learned adapter must be fitted with the score input of its recipe.
+  `python -m dicee.query_answering fit --score-input log_softmax` fits one.
+- An adapter file with log-softmax input has version 4. All other adapter files and their results stay unchanged.
 
 ## Worlds of the prior
 

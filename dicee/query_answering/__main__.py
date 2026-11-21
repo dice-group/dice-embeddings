@@ -7,7 +7,7 @@ from pathlib import Path
 from .adapter_training import TRAINING_SHAPES, AdapterTrainingData, fit_query_adapter, prepare_adapter_data
 from .benchmark import add_benchmark_parser, run_benchmark_cli
 from .context import QueryContext
-from .score_adapter import FEATURE_COUNTS, QueryScoreAdapter, canonical_feature_mode
+from .score_adapter import FEATURE_COUNTS, SCORE_INPUTS, QueryScoreAdapter, canonical_feature_mode
 
 
 def main():
@@ -39,6 +39,8 @@ def main():
     fit.add_argument('--beam-size', type=int, default=64)
     fit.add_argument('--tnorm', choices=['prod', 'min'], default='prod')
     fit.add_argument('--normalization', choices=['none', 'standard'], default='none')
+    fit.add_argument('--score-input', choices=SCORE_INPUTS, default='raw',
+                     help='Adapter input: raw logits, or each row\'s log-softmax over all entities (softmax-trained backbones)')
     fit.add_argument('--hidden-dim', type=int, default=0)
     fit.add_argument('--validation-every', type=int)
     fit.add_argument('--early-stopping-patience', type=int, help='Epochs without source-validation MRR improvement')
@@ -83,7 +85,7 @@ def main():
                                    row_batch_size=args.row_batch_size, seed=args.seed, samples=args.samples,
                                    cache_dir=args.output / 'score-banks', bias_bound=args.bias_bound,
                                    scale_bound=args.scale_bound, beam_size=args.beam_size, tnorm=args.tnorm,
-                                   normalization=args.normalization, hidden_dim=args.hidden_dim,
+                                   normalization=args.normalization, hidden_dim=args.hidden_dim, score_input=args.score_input,
                                    validation_every=args.validation_every,
                                    early_stopping_patience=args.early_stopping_patience,
                                    training_device=args.training_device, training_cache_bytes=args.training_cache_mb * 2**20,

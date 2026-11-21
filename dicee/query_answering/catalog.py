@@ -51,9 +51,16 @@ REFERENCES = {
     'cone': ('MIRALab-USTC/QE-ConE', 'cc45b90e3cdce0f609670a257e6f756d28495a93'),
     'clmpt': ('qianlima-lab/CLMPT', '6c4f3b8a5e052e8bc1c0c93eaed18ef869a1bcd7'),
 }
-KGFM_ADAPTERS = ('ultra-adapter', 'trix-adapter', 'kgicl-adapter', 'flock-adapter')
+KGFM_ADAPTERS = ('ultra-adapter', 'trix-adapter', 'kgicl-adapter', 'flock-adapter', 'pcultra-adapter')
 # The upstream backbone each adapter method reproduces (KG-ICL with docs/kgicl.md's bug fixes).
 KGFM_BACKBONES = {'ultra-adapter': ULTRA, 'trix-adapter': TRIX, 'kgicl-adapter': KG_ICL, 'flock-adapter': FLOCK}
+# Adapter methods whose backbone has no upstream release, with the checkpoint format they read. PCUltra is ProofPFN's
+# prior-fitted ULTRA (dicee/synthetic_kg): dicee's ULTRA with count-weighted relation graphs and entity-pair channels,
+# built from the model_config of a proofpfn-checkpoint-v1 file. Every KGFM adapter is in exactly one of the two maps.
+NATIVE_KGFM_BACKBONES = {'pcultra-adapter': 'proofpfn-checkpoint-v1'}
+# The score z of a recipe's sigmoid calibrations (learned adapter and identity control): raw logits, or each atomic
+# row's log-softmax over all entities (score_adapter.SCORE_INPUTS). Fixed calibrations always read raw logits.
+SCORE_INPUTS = ('raw', 'log_softmax')
 METHODS = (*REFERENCES, *KGFM_ADAPTERS)
 # Methods whose checkpoints score queries without the inference graph.
 GRAPH_INDEPENDENT_METHODS = ('cone', 'clmpt', 'cqd')
@@ -150,6 +157,8 @@ def check_recipe(entry: dict, shapes: list[str] | tuple[str, ...]) -> None:
     if any(name in options and (method != 'flock-adapter' or type(options[name]) is not int or options[name] < 1)
            for name in ('test_samples', 'walk_num')):
         raise ValueError('Only Flock recipes take test_samples and walk_num, positive integers')
+    if options.get('score_input', 'raw') not in SCORE_INPUTS:
+        raise ValueError(f'score_input must be one of {", ".join(SCORE_INPUTS)}')
     if type(entry.get('adapter_ablation', False)) is not bool:
         raise ValueError('Adapter ablation must be a boolean')
     if entry.get('selection_protocol') not in ('source-validation', 'target-validation'):

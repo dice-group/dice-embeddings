@@ -34,8 +34,10 @@ def verify(bundle_dir, entry_id, root, output, *, device='cuda', probes=2):
         original_init(engine, *args, **kwargs)
         scorer = engine.scorer
         variant = 'without-adapter' if engine.adapter.metadata.get('calibration') == 'identity' else 'learned'
+        # The identity control reads the recipe's score input (raw logits unless score_input says otherwise).
         expected_adapter = adapter if variant == 'learned' else dict(adapter, feature_mode='global', weights=[[0.], [0.]],
-                                                                     membership_threshold=0., fixed_calibration=None)
+                                                                     membership_threshold=0., fixed_calibration=None,
+                                                                     score_input=entry['options'].get('score_input', 'raw'))
         reference = ReferenceKGFM(scorer.context.triples, scorer.n, scorer.nr, expected_adapter,
                                   beam_size=entry['options']['beam_size'], device=scorer.device,
                                   restore_observed=observed_facts in (None, 'both'),
@@ -79,6 +81,13 @@ def verify(bundle_dir, entry_id, root, output, *, device='cuda', probes=2):
              'fuzzy composition and positive observed-answer restoration. Shared native backbone logits; '
              'this is integration evidence, not an independent backbone reproduction. '
              'Paired entries also verify the identity-calibration control on every query type.')
+    if entry['options'].get('score_input', 'raw') == 'log_softmax':
+        scope += (' With log-softmax score input, the log-softmax of the shared logits (torch.log_softmax in float64) '
+                  'is shared too, so that exact ties of summed rows round alike in both paths.')
+    if adapter.get('fixed_calibration') == 'softmax-mass':
+        scope += (' FIT (softmax-mass) runs in log space with the operations of production (torch.log_softmax and '
+                  'logsumexp over the observed tails in float64), so that exact ties of summed rows round alike in '
+                  'both paths.')
     oracle = dict(version=1, **identity, validation_plan_sha256=bundle['plans'][f'{entry_id}/valid']['sha256'],
                   pilot_queries=probes, probe_only=True, scores=scores['learned'], orders=orders['learned'],
                   comparison_scores={key: value for key, value in scores.items() if key != 'learned'},
