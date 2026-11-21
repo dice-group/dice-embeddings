@@ -14,7 +14,6 @@ python -m benchmarks.proofpfn list --set ultra54 --view trans
 python -m benchmarks.proofpfn check --set ultra54 --model 'PCUltra-S=runs/PCUltra-S/{seed}/export-24000-ema.pt' --references trix,ultra3g,flock
 python -m benchmarks.proofpfn run --set ultra54 --out rows \
   --model 'PCUltra-S=runs/PCUltra-S/{seed}/export-24000-ema.pt' --references trix,ultra3g,flock
-python -m benchmarks.proofpfn table --set ultra54 --rows rows
 python -m benchmarks.proofpfn prior --model 'PCUltra-S=runs/PCUltra-S/{seed}/export-24000-ema.pt' \
   --model 'PCUltra-N=runs/PCUltra-N/{seed}/export-24000-ema.pt' --out prior.json
 ```
@@ -24,7 +23,6 @@ python -m benchmarks.proofpfn prior --model 'PCUltra-S=runs/PCUltra-S/{seed}/exp
 | `list` | the graphs of a manifest view (`--view`, `--graphs`) |
 | `check` | CPU only: the graphs' hash checks and counts, official Flock's setting, the systems' files, no score |
 | `run` | rank the graphs with the systems, one result file per graph and system |
-| `table` | the mean MRR and Hits@10 of the result files, per label and for the seeds of a name |
 | `prior` | score checkpoints on held-out worlds of the synthetic prior, per world family ([Worlds of the prior](#worlds-of-the-prior)) |
 
 `python -m benchmarks.proofpfn <command> --help` lists the options of a command.
@@ -71,17 +69,11 @@ A result file `<out>/<manifest>/<label>/<graph>.json` holds the graph, the syste
 `metrics` (MRR and Hits@1, 3, 10 for `both` directions, `tail` queries and `head` queries) and the rows as three lists
 of equal length: `index` (the position in `test.txt`), `head` (a head query) and `rank`.
 
-`table` reads the result files of a graph set. A collection value is the plain mean of the per-graph values. The labels
-`NAME.seed<S>` of one name also give a row with the mean and the sample standard deviation over the seeds. A label
-without every graph of the selection shows `-` for the views that it does not cover. `--direction` selects `both`
-(default), `tail` or `head`; `--json` also writes the summary with the values per graph.
-
 ## Worlds of the prior
 
 `prior` scores checkpoints on intact worlds of the synthetic prior that no training order reaches: up to 100 worlds
 (`--per-family`) of each of the families `rec1`, `attr2`, `list1`, `categorical2` and `plain` (`--families`). It prints
-the MRR per family and model name and writes the record to `--out`, with the values per world. With exactly two
-`--model` options it also gives their difference per family, D with its standard error
+the MRR per family and model name and writes the record to `--out`, with the values per world
 ([PROTOCOL.md](PROTOCOL.md), section Worlds of the prior). The thesis uses it for the structural null: PCUltra-S against
 PCUltra-N.
 

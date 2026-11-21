@@ -14,14 +14,10 @@ Per graph (``evaluate_graph``):
 A result file ``<out>/<manifest>/<label>/<graph>.json`` holds the graph, the system's record, ``metrics`` (MRR and
 Hits@1, 3, 10 for both directions, tail queries and head queries) and the rows as three lists of equal length:
 ``index`` (the position in test.txt), ``head`` (a head query) and ``rank``. The rows are in the order of the query groups.
-
-``summarize`` reads the result files of a graph set: per label and view the mean over the graphs, and for the labels
-``NAME.seed<S>`` of one name the mean and the sample standard deviation over the seeds.
 """
 import json
 import logging
 import platform
-import statistics
 import time
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence, Union
@@ -221,8 +217,6 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
     return {label: statuses[label] for label in labels}
 
 
-# --------------------------------------------------------------------------------------------------------- summary
-
 def read_result(path: PathLike) -> dict[str, Any]:
     """A result file.
 
@@ -242,70 +236,3 @@ def read_result(path: PathLike) -> dict[str, Any]:
     if not isinstance(result, dict) or result.get('format') != FORMAT:
         raise InputError(f'{path} is not a {FORMAT} file')
     return result
-
-
-def summarize(out: PathLike, manifest: Manifest, entries: Sequence[GraphEntry], direction: str = 'both') -> dict[str, Any]:
-    """The mean metrics of every label below ``<out>/<manifest>`` over the given graphs.
-
-    A collection value is the plain mean of the per-graph values. The labels ``NAME.seed<S>`` of one name also give a
-    seed group: the mean and the sample standard deviation over the seeds of the collection values.
-
-    Args:
-        out: The output root of the result files.
-        manifest: The graph set.
-        entries: The graphs of the summary.
-        direction: The direction of the metrics: ``both``, ``tail`` or ``head``.
-
-    Returns:
-        ``graphs`` (the graph names), ``views`` (view to graph names), ``labels`` (label to ``complete``, ``found`` and,
-        per view and ``all``, ``MRR`` and ``H@10`` over the graphs it has), ``per_graph`` (label to graph to ``MRR``
-        and ``H@10``) and ``groups`` (name to ``seeds``, ``complete`` and, per view and ``all``, the mean and the
-        sample standard deviation of ``MRR`` and ``H@10`` over the seeds; only names whose seeds are all complete).
-
-    Raises:
-        manifests.InputError: For an unknown direction, or a result file of another manifest file or sample rule.
-    """
-    if direction not in VIEWS:
-        raise InputError(f'direction {direction!r}: choose from {VIEWS}')
-    names = [e.name for e in entries]
-    views = {'all': names, **{view: [e.name for e in entries if e.view == view] for view in dict.fromkeys(e.view for e in entries)}}
-    folder = Path(out) / manifest.name
-    labels: dict[str, Any] = {}
-    per_graph: dict[str, dict[str, dict[str, float]]] = {}
-    for sub in sorted(p for p in folder.iterdir() if p.is_dir() and not p.name.startswith('.')) if folder.is_dir() else []:
-        found: dict[str, dict[str, float]] = {}
-        for name in names:
-            path = sub / f'{name}.json'
-            if not path.is_file():
-                continue
-            result = read_result(path)
-            if result['manifest']['sha256'] != manifest.sha256:
-                raise InputError(f'{path} belongs to another version of manifest {manifest.name}')
-            if direction in result['metrics']:
-                found[name] = {k: result['metrics'][direction][k] for k in ('MRR', 'H@10')}
-        if not found:
-            continue
-        per_graph[sub.name] = found
-        row: dict[str, Any] = dict(found=len(found), complete=len(found) == len(names))
-        for view, members in views.items():
-            have = [found[n] for n in members if n in found]
-            if have and len(have) == len(members):
-                row[view] = {k: statistics.fmean(v[k] for v in have) for k in ('MRR', 'H@10')}
-        labels[sub.name] = row
-    groups: dict[str, Any] = {}
-    for label in labels:
-        name, separator, seed = label.rpartition('.seed')
-        if separator and seed.isdigit():
-            groups.setdefault(name, []).append(label)
-    summary_groups = {}
-    for name, members in groups.items():
-        if len(members) < 2 or not all(labels[m]['complete'] for m in members):
-            continue
-        group: dict[str, Any] = dict(seeds=sorted(int(m.rpartition('.seed')[2]) for m in members))
-        for view in views:
-            if all(view in labels[m] for m in members):
-                group[view] = {k: dict(mean=statistics.fmean(labels[m][view][k] for m in members),
-                                       sd=statistics.stdev(labels[m][view][k] for m in members)) for k in ('MRR', 'H@10')}
-        summary_groups[name] = group
-    return dict(manifest=manifest.name, direction=direction, graphs=names, views={k: v for k, v in views.items() if k != 'all'},
-                labels=labels, per_graph=per_graph, groups=summary_groups)

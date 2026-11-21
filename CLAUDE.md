@@ -147,7 +147,7 @@ ULTRA pretrained only on worlds of a synthetic prior, then evaluated zero-shot. 
 - Regression pins: `tests/fixtures/proofpfn/pins.json` (worlds, world orders, initial weights, first training updates; `tests/proofpfn_fixtures.py`). Fixtures of the benchmark tests: `benchmarks/proofpfn/tests/fixtures/`. Real source graphs: `PROOFPFN_REAL_SOURCES` (`dicee_pretrain_synthetic sources` builds them).
 - **Never loosen a pin test**: no tolerance, no skip of a failing comparison. Write the pins again (`python -m tests.proofpfn_fixtures --write-pins`) only for an intended change of the worlds. The pinned training updates are bitwise in the recorded environment (torch 2.5.1, AVX-512 CPU kernels, 2 threads) and skip elsewhere. A mismatch means that the worlds of the thesis runs changed, so fix the code.
 - Add logged floats in a plain loop, as the research code did. Python 3.12's `sum()` uses compensated summation and changes the last bits.
-- Never run a model on a blind test set: `KGs/fresh-v1` and the block-3 graphs `KGs/lockbox3`. No manifest of the repository names them, and the code has no guard: do not write a manifest for them.
+- The graphs of the manifest `heldout44` are the held-out collection of the thesis. Use them to reproduce reported results. Do not select a model or a setting on them.
 
 ## Build, Lint, Test
 

@@ -1,6 +1,5 @@
-"""The evaluation runner on the CPU: ranks, the result file, stored results, the summary, and official Flock."""
+"""The evaluation runner on the CPU: ranks, the result file, stored results, and official Flock."""
 import shutil
-import statistics
 
 import numpy as np
 import pytest
@@ -89,34 +88,6 @@ def test_a_new_system_runs_beside_stored_results(tiny, tmp_path):
     assert a['rank'] == b['rank'] and a['model_sha256'] == b['model_sha256']
     with pytest.raises(mf.InputError, match='unique'):
         ev.evaluate_graph(manifest, entry, [systems[0], systems[0]], tmp_path / 'twice', root=root, device='cpu')
-
-
-def test_summary(tiny, tmp_path):
-    root, manifest, _ = tiny
-    out = tmp_path / 'out'
-    shutil.copytree(root / 'out', out)
-    (out / 'tiny' / 'tu' / 'h.json').unlink()   # a label without every graph
-    summary = ev.summarize(out, manifest, manifest.entries)
-    assert summary['graphs'] == ['g', 'h'] and summary['views'] == {'a': ['g'], 'b': ['h']} and summary['direction'] == 'both'
-    per_graph, row = summary['per_graph']['ts.seed42'], summary['labels']['ts.seed42']
-    assert row['complete'] and row['found'] == 2 and row['a'] == per_graph['g'] and row['b'] == per_graph['h']
-    assert row['all']['MRR'] == pytest.approx((per_graph['g']['MRR'] + per_graph['h']['MRR']) / 2)
-    partial = summary['labels']['tu']
-    assert not partial['complete'] and partial['found'] == 1 and 'a' in partial and 'b' not in partial and 'all' not in partial
-    values = [summary['labels'][f'ts.seed{seed}']['all']['MRR'] for seed in (42, 43, 44)]
-    group = summary['groups']['ts']
-    assert group['seeds'] == [42, 43, 44] and group['all']['MRR']['mean'] == pytest.approx(statistics.fmean(values))
-    assert group['all']['MRR']['sd'] == pytest.approx(statistics.stdev(values)) and 'tu' not in summary['groups']
-    tail = ev.summarize(out, manifest, [manifest.entry('g')], 'tail')
-    assert tail['graphs'] == ['g'] and tail['labels']['tu']['complete']
-    result = ev.read_result(ev.result_path(out, manifest, 'tu', manifest.entry('g')))
-    assert tail['per_graph']['tu']['g']['MRR'] == result['metrics']['tail']['MRR']
-    with pytest.raises(mf.InputError, match='direction'):
-        ev.summarize(out, manifest, manifest.entries, 'up')
-    changed = mf.read_manifest(write_manifest(tmp_path / 'tiny.json', root, {'g': root / 'KGs' / 'g'}))   # another file of the name "tiny"
-    with pytest.raises(mf.InputError, match='another version of manifest tiny'):
-        ev.summarize(out, changed, changed.entries)
-    assert ev.summarize(tmp_path / 'none', manifest, manifest.entries)['labels'] == {}
 
 
 def test_official_flock_gives_the_same_ranks_in_two_runs(tmp_path):

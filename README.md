@@ -759,10 +759,9 @@ runs fixed.
 # Pretrain PCUltra-S on the GPU, then repeat with the seeds 43 and 44
 dicee_pretrain_synthetic train --variant PCUltra-S --seed 42 --out runs/PCUltra-S/42
 
-# Rank the test facts of the standard suite with the three seeds, then print the table
+# Rank the test facts of the standard suite with the three seeds
 python -m benchmarks.proofpfn run --set ultra54 --out rows \
   --model 'PCUltra-S=runs/PCUltra-S/{seed}/export-24000-ema.pt'
-python -m benchmarks.proofpfn table --set ultra54 --rows rows
 
 # Use a pretrained checkpoint on a graph of your own
 python -m dicee --model PCUltra --dataset_dir KGs/UMLS \

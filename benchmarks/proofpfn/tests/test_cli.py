@@ -1,7 +1,6 @@
 """The command line: list, check, run and table on a tiny graph set, the refusals of wrong input with one error line, and the
 traceback of an internal error."""
 import argparse
-import json
 import os
 
 import pytest
@@ -32,7 +31,7 @@ def test_list(capsys):
     assert capsys.readouterr().out.split() == ['UMLS', 'NELLInductive_v1', 'grail-WN18RR_v1']
 
 
-def test_check_run_and_table(tmp_path, capsys):
+def test_check_and_run(tmp_path, capsys):
     folders = {'g': tiny_graph(tmp_path / 'KGs' / 'g'), 'h': tiny_graph(tmp_path / 'KGs' / 'h', seed=1)}
     manifest = write_manifest(tmp_path / 'tiny.json', tmp_path, folders)
     common = ['--set', str(manifest), '--data-root', str(tmp_path), '--model', f"ts={clean_checkpoints(tmp_path, 'PCUltra-S')}"]
@@ -43,13 +42,8 @@ def test_check_run_and_table(tmp_path, capsys):
     assert os.environ.get('CUBLAS_WORKSPACE_CONFIG') == workspace
     assert cli.main(['run', *common, '--seeds', '42', '--device', 'cpu', '--out', str(tmp_path / 'out')]) == 0
     assert capsys.readouterr().out.splitlines() == ['g ts.seed42:exists', 'h ts.seed42:exists']
-    assert cli.main(['table', '--set', str(manifest), '--rows', str(tmp_path / 'out'), '--json', str(tmp_path / 'summary.json')]) == 0
-    text = capsys.readouterr().out
-    assert '| ts (seeds 42, 43, 44) | 2 |' in text and '| ts.seed44 | 2 |' in text and ' ± ' in text
-    summary = json.loads((tmp_path / 'summary.json').read_text())
-    assert summary['groups']['ts']['seeds'] == [42, 43, 44] and summary == evaluate.summarize(tmp_path / 'out', mf.read_manifest(manifest),
-                                                                                             mf.read_manifest(manifest).entries)
-    assert cli.main(['table', '--set', str(manifest), '--rows', str(tmp_path / 'none')]) == cli.EXIT_INPUT
+    result = evaluate.read_result(tmp_path / 'out' / 'tiny' / 'ts.seed44' / 'h.json')
+    assert result['label'] == 'ts.seed44' and 0 < result['metrics']['both']['MRR'] <= 1
 
 
 def test_check_reports_every_failing_graph(tmp_path, capsys):

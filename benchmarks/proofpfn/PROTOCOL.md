@@ -28,7 +28,6 @@ evaluator with `--eval_tie_policy pessimistic` gives the ranks of this benchmark
 | view | `log_softmax(scores.double())` | `evaluate.rank_queries` |
 | rank | pessimistic: `#{v >= v[target]}` over the candidates outside the filter, the target included | `FilteredRanker(tie_policy='pessimistic')` |
 | metrics | MRR and Hits@1, 3, 10 over the rows of both directions, of the tail queries and of the head queries | `evaluate.metrics_of` |
-| collection | the plain mean of the per-graph values; for the seeds of a name, the mean and the sample standard deviation over the seeds of the collection values | `evaluate.summarize` |
 
 ## Official Flock
 
@@ -47,6 +46,5 @@ law, other walks). `check` prints the setting of each graph, and a result file r
 | scores | every model scores every query of a world (tasks sorted by name, tail then head queries, in chunks of 2) over all entities, through the training-mode path of pretraining | `prior.reciprocal_ranks` |
 | rank | among all entities, with the query's other true answers in the world's truth and the anchor removed, ties at their mean rank | `data.rank_of` |
 | metric | per world the mean reciprocal rank; per model name and family the mean over the seeds of the mean over the worlds | `prior.evaluate` |
-| difference | D = the seed mean of A minus the seed mean of B; SE = sqrt(SE_world^2 + SE_seed^2), SE_world = the SD over worlds of the per-world seed-mean difference / sqrt(worlds), SE_seed = sqrt(var(A's seed MRRs) / n_A + var(B's) / n_B) | `prior.compare` |
 
 The rank of this command is on purpose not the pessimistic rank of the evaluation on graphs.

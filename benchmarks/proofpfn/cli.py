@@ -23,7 +23,6 @@ COMMANDS = {
     'list': 'the graphs of a manifest view',
     'check': "CPU only: the graphs' hash checks and counts, and the systems' files; no score",
     'run': 'rank the test facts of the graphs with the systems: one result file per graph and system (evaluate.evaluate_graph)',
-    'table': 'the mean MRR and Hits@10 of the result files of a graph set, per label and for the seeds of a name (evaluate.summarize)',
     'prior': 'score checkpoints on held-out worlds of the synthetic prior, per world family (prior.evaluate)',
 }
 
@@ -57,7 +56,7 @@ def build_parser() -> argparse.ArgumentParser:
                                             'memory on a graph, 143 stopped by SIGTERM')
     commands = parser.add_subparsers(dest='command', required=True)
     sub = {name: commands.add_parser(name, help=text, description=text) for name, text in COMMANDS.items()}
-    for name in ('list', 'check', 'run', 'table'):
+    for name in ('list', 'check', 'run'):
         _graph_options(sub[name])
     for name in ('check', 'run'):
         _system_options(sub[name])
@@ -67,9 +66,6 @@ def build_parser() -> argparse.ArgumentParser:
                                help="run official Flock's passes of a query one after another, not as one microbatch")
     sub['run'].add_argument('--out', type=Path, required=True, help='the output root of the result files')
     sub['run'].add_argument('--device', default='cuda', help='the scoring device (default: cuda)')
-    sub['table'].add_argument('--rows', type=Path, required=True, help='the output root of a run (its --out)')
-    sub['table'].add_argument('--direction', default='both', choices=('both', 'tail', 'head'), help='the queries of the metrics (default: both)')
-    sub['table'].add_argument('--json', type=Path, default=None, help='also write the summary to this file')
     prior = sub['prior']
     _system_options(prior)
     prior.add_argument('--families', default=None, help='comma list of world families (default: rec1, attr2, list1, categorical2, plain)')
@@ -177,36 +173,6 @@ def _run(args: argparse.Namespace) -> int:
     return EXIT_OOM if oom else 0
 
 
-def _table(args: argparse.Namespace) -> int:
-    from dicee.synthetic_kg.checkpoint import atomic_write_bytes
-
-    from .evaluate import summarize
-    manifest, entries = _entries(args)
-    summary = summarize(args.rows, manifest, entries, args.direction)
-    if not summary['labels']:
-        raise UsageError(f'no result file of {manifest.name} below {args.rows}')
-    views = [*summary['views'], 'all']
-
-    def cell(value: Optional[dict[str, Any]], key: str) -> str:
-        if value is None:
-            return '-'
-        v = value[key]
-        return f"{100 * v['mean']:.1f} ± {100 * v['sd']:.1f}" if isinstance(v, dict) else f'{100 * v:.1f}'
-
-    print(f"{manifest.name}, {len(entries)} graphs, {args.direction} directions: MRR / Hits@10 in points")
-    print('| system | graphs | ' + ' | '.join(views) + ' |')
-    print('|---|---:|' + '---:|' * len(views))
-    for name, group in summary['groups'].items():
-        print(f"| {name} (seeds {', '.join(map(str, group['seeds']))}) | {len(entries)} | "
-              + ' | '.join(f"{cell(group.get(v), 'MRR')} / {cell(group.get(v), 'H@10')}" for v in views) + ' |')
-    for label, row in summary['labels'].items():
-        print(f"| {label} | {row['found']} | " + ' | '.join(f"{cell(row.get(v), 'MRR')} / {cell(row.get(v), 'H@10')}" for v in views) + ' |')
-    if args.json is not None:
-        atomic_write_bytes(args.json, (json.dumps(summary, indent=1) + '\n').encode())
-        print(f'-> {args.json}')
-    return 0
-
-
 def _prior(args: argparse.Namespace) -> int:
     from dicee.synthetic_kg.checkpoint import atomic_write_bytes
 
@@ -226,11 +192,6 @@ def _prior(args: argparse.Namespace) -> int:
     print('| family | worlds | ' + ' | '.join(f'MRR {name}' for name in groups) + ' |')
     for family in families:
         print(f"| {family} | {args.per_family} | " + ' | '.join(f"{record['results'][name][family]['MRR']:.4f}" for name in groups) + ' |')
-    if 'difference' in record:
-        d = record['difference']
-        print(f"| family | D = {d['a']} - {d['b']} | SE | reading |")
-        for family, value in d['families'].items():
-            print(f"| {family} | {value['D']:+.4f} | {value['se']:.4f} | {value['reading']} |")
     print(f'-> {args.out}')
     return 0
 
@@ -261,7 +222,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             for entry in _entries(args)[1]:
                 print(entry.name)
             return 0
-        commands: dict[str, Callable[[argparse.Namespace], int]] = {'check': _check, 'run': _run, 'table': _table, 'prior': _prior}
+        commands: dict[str, Callable[[argparse.Namespace], int]] = {'check': _check, 'run': _run, 'prior': _prior}
         if args.command in ('run', 'prior'):
             from dicee.synthetic_kg.determinism import cublas_workspace
             with cublas_workspace():   # dicee's models score on CUDA, which needs the setting first

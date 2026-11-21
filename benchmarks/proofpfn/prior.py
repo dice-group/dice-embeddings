@@ -14,11 +14,7 @@ trained with four families rewired (PCUltra-N), on intact worlds of each family.
   the world's truth and the anchor removed, ties at their mean (``data.rank_of``); per world the mean.
 - Per group of models (the seeds of one name) and family: MRR = the mean over the seeds of the mean over the family's
   worlds of the per-world MRR.
-- Comparison of two groups per family (``compare``): D = the mean over A's seeds minus the mean over B's seeds;
-  SE = sqrt(SE_world^2 + SE_seed^2), with SE_world = the SD over worlds of the per-world seed-mean difference /
-  sqrt(worlds) and SE_seed = sqrt(var(A's seed MRRs) / n_A + var(B's) / n_B).
 """
-import math
 import platform
 from collections import defaultdict
 from typing import Any, Mapping, Sequence, Union
@@ -127,37 +123,6 @@ def score(models: Mapping[str, Mapping[str, ULTRA]], families: Sequence[str] = F
     return dict(mrr={group: {label: dict(values) for label, values in members.items()} for group, members in mrr.items()}, queries=dict(queries))
 
 
-def compare(mrr: Mapping[str, Mapping[str, Mapping[str, Sequence[float]]]], families: Sequence[str] = FAMILIES, a: str = 'a',
-            b: str = 'b') -> dict[str, dict[str, Any]]:
-    """D = seed mean of group A minus seed mean of group B per family, with its SE (module docstring).
-
-    Args:
-        mrr: ``score``'s ``mrr``, with the groups ``a`` and ``b``, models in seed order.
-        families: The families.
-        a: The name of group A.
-        b: The name of group B.
-
-    Returns:
-        Per family: worlds, both MRRs, the seed MRRs, D, SE_world, SE_seed, SE, z and the reading of D against 2 SE.
-    """
-    out = {}
-    for family in families:
-        va = np.array([values[family] for values in mrr[a].values()])   # seeds x worlds
-        vb = np.array([values[family] for values in mrr[b].values()])
-        seeds_a, seeds_b = va.mean(1), vb.mean(1)
-        per_world = va.mean(0) - vb.mean(0)
-        worlds = len(per_world)
-        se_world = float(per_world.std(ddof=1) / math.sqrt(worlds)) if worlds > 1 else 0.0
-        se_seed = math.sqrt((seeds_a.var(ddof=1) / len(seeds_a) if len(seeds_a) > 1 else 0.0)
-                            + (seeds_b.var(ddof=1) / len(seeds_b) if len(seeds_b) > 1 else 0.0))
-        se = math.sqrt(se_world ** 2 + se_seed ** 2)
-        d = float(seeds_a.mean() - seeds_b.mean())
-        text = 'A above B by more than 2 SE' if d > 2 * se else 'within 2 SE' if abs(d) <= 2 * se else 'A below B by more than 2 SE'
-        out[family] = dict(worlds=worlds, mrr_a=float(seeds_a.mean()), mrr_b=float(seeds_b.mean()), seeds_a=seeds_a.tolist(),
-                           seeds_b=seeds_b.tolist(), D=d, se_world=se_world, se_seed=se_seed, se=se, z=d / se if se > 0 else None, reading=text)
-    return out
-
-
 def evaluate(groups: Mapping[str, Sequence[Checkpoint]], families: Sequence[str] = FAMILIES, per_family: int = PER_FAMILY,
              device: Union[str, torch.device] = 'cpu') -> dict[str, Any]:
     """Score groups of checkpoints on the held-out worlds of the prior.
@@ -170,8 +135,8 @@ def evaluate(groups: Mapping[str, Sequence[Checkpoint]], families: Sequence[str]
 
     Returns:
         The record: ``models`` (name to label to the SHA-256 of the file), the settings, ``results`` (name to family to
-        ``worlds``, ``MRR`` and ``seeds``, the MRR of each model), ``queries``, ``per_world`` (``score``'s MRRs),
-        with exactly two groups ``difference`` (``compare``, the first group minus the second), and ``provenance``.
+        ``worlds``, ``MRR`` and ``seeds``, the MRR of each model), ``queries``, ``per_world`` (``score``'s MRRs) and
+        ``provenance``.
 
     Raises:
         ValueError: Without a group, or for an unknown family or world count.
@@ -199,9 +164,6 @@ def evaluate(groups: Mapping[str, Sequence[Checkpoint]], families: Sequence[str]
     record: dict[str, Any] = dict(models={name: {s.label: s.sha256() for s in members} for name, members in groups.items()}, device=str(device),
                                   world_seed=WORLD_SEED, per_family=per_family, families=list(families), results=results, queries=scored['queries'],
                                   per_world=scored['mrr'])
-    if len(groups) == 2:
-        first, second = groups
-        record['difference'] = dict(a=first, b=second, families=compare(scored['mrr'], families, first, second))
     record['provenance'] = dict(python=platform.python_version(), torch=torch.__version__, numpy=np.__version__, device=str(device),
                                 deterministic=True, threads=THREADS)
     return record

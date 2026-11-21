@@ -1,26 +1,22 @@
 # ProofPFN in DICE
 
-ProofPFN pretrains [ULTRA](ultra.md) only on knowledge graphs that a synthetic prior generates, in the manner of
+ProofPFN pretrains [ULTRA](ultra.md) on knowledge graphs that a synthetic prior generates, in the manner of
 prior-data fitted networks (PFNs). Each update draws one world from the prior. A world holds the true facts of a
 generated graph, an observed part of them (the context) and queries about the hidden part. The model attaches the
 context as its graph and scores every entity for each query. The target of a query is uniform over all true answers
 that the generator knows and the context does not show (the RB-W target). After pretraining, the model ranks the test
 facts of real graphs without fine-tuning (zero-shot).
 
-The main model, PCUltra, is ULTRA with two relation-graph options: count weighting and pair channels. It is also a
-model of its own, `--model PCUltra` ([PCUltra](#pcultra)). This guide covers four parts:
+The main model is PCUltra: ULTRA with count-weighted relation-graph edges and pair channels. This guide covers four
+parts:
 
-- `dicee/synthetic_kg/`: the prior, the eleven model variants, the pretraining loop and the checkpoint format.
-- `dicee_pretrain_synthetic`: the command for pretraining and for the real source graphs.
-- `benchmarks/proofpfn/`: the zero-shot benchmark and the evaluation on worlds of the prior.
-- `dicee/query_answering/`: the method `pcultra-adapter`, which answers complex queries with a pretrained checkpoint.
-
-The code is a port of the research code of the thesis runs. Regression pins keep its worlds, world orders and
-initial weights fixed (see [Testing](#testing)).
+- [PCUltra](#pcultra): the model, `--model PCUltra`.
+- [Model variants](#model-variants) and [pretraining](#pretraining): `dicee/synthetic_kg/` and the command
+  `dicee_pretrain_synthetic`.
+- [Zero-shot evaluation](#zero-shot-evaluation): the benchmark `benchmarks/proofpfn/`.
+- [Query answering](#query-answering): a pretrained checkpoint as the backbone of `dicee.query_answering`.
 
 ## Install
-
-Install the package from a clone of the repository:
 
 ```bash
 pip install -e '.[dev]' --extra-index-url https://download.pytorch.org/whl/cpu   # CPU only
@@ -31,14 +27,8 @@ pip install -e '.[dev]'                                                         
   lock of a run folder uses `fcntl`.
 - In a clone without an install, run `python -m dicee.scripts.pretrain_synthetic` from the repository root instead.
 - The benchmark runs as `python -m benchmarks.proofpfn` from the repository root.
-- The reference systems of the benchmark read the released checkpoints below `checkpoints/`: TRIX
-  (`trix/entity_prediction.pth`), ULTRA-3g (`ultra_3g.pth`) and Flock (`flock/flock_entity.pth`). Their guides list
-  the downloads: [ULTRA](ultra.md), [TRIX](trix.md), [Flock](flock.md).
-- The pinned training updates are bitwise in the recorded environment: Python 3.12.2, torch 2.5.1 with AVX-512 CPU
-  kernels and 2 threads, numpy 1.26.4 ([Testing](#testing)). Elsewhere these tests skip. The real source graphs do not
-  depend on the torch version.
 
-## Model options
+## PCUltra
 
 Two options of `ULTRA` (`dicee/models/ultra.py`, fields of `dicee.config.Namespace`) extend its relation graph:
 
@@ -47,19 +37,15 @@ Two options of `ULTRA` (`dicee/models/ultra.py`, fields of `dicee.config.Namespa
 | `ultra_relation_weighting` | `binary` (default), `normalized` | `normalized` multiplies every relation-graph message by the normalized incidence count of its edge (count weighting) |
 | `ultra_pair_channels` | `off` (default), `on` | `on` adds two relation-graph edge types for the entity pairs that two relations share, in the same and in the reverse orientation (pair channels). The six relation tables get 6 rows instead of 4. Requires `normalized` |
 
-The defaults give official ULTRA, so the official checkpoints and every existing use of ULTRA stay unchanged.
-`dicee/models/_relation_weights.py` computes the weights on the CPU in float64. Pretraining and inference share this
-code.
+The defaults give official ULTRA, so the official checkpoints and every existing use of ULTRA stay unchanged. ULTRA
+with count weighting only is CountULTRA. `PCUltra` (`dicee/models/pcultra.py`) is `ULTRA` with both options on, as a
+model of its own. It has the same parameters and the same state dictionary.
 
-### PCUltra
-
-`PCUltra` (`dicee/models/pcultra.py`) is `ULTRA` with both options fixed: `ultra_relation_weighting='normalized'` and
-`ultra_pair_channels='on'`. It has the same parameters and the same state dictionary, so a checkpoint of a PCUltra variant (S, R, M,
-N, HT) loads into it. Use it for inference with a pretrained checkpoint on a graph of your own:
+Use a pretrained checkpoint on a graph of your own:
 
 ```bash
 python -m dicee --model PCUltra --dataset_dir KGs/UMLS \
-  --ultra_checkpoint runs/PCUltra-S/42/export-24000-ema.pt --num_epochs 0 \
+  --ultra_checkpoint checkpoints/PCUltra-S-42.pt --num_epochs 0 \
   --trainer torchCPUTrainer --scoring_technique NegSample \
   --batch_size 8 --eval_model test \
   --path_to_store_single_run Experiments/pcultra-zero-shot
@@ -72,7 +58,7 @@ kge = KGE(path="Experiments/pcultra-zero-shot")
 tail_scores = kge.predict_missing_tail_entity("entity_a", "relation_r")
 ```
 
-PCUltra computes in another way than the option form of `ULTRA`, with the same result up to float32 rounding:
+PCUltra computes in another way than `ULTRA` with the two options, with the same result up to float32 rounding:
 
 - It builds the relation graph and its weights from sparse products. The edges, their order and their float64 weights
   equal those of `ultra.relation_graph`, and the memory grows with the number of relation-graph edges.
@@ -82,58 +68,47 @@ PCUltra computes in another way than the option form of `ULTRA`, with the same r
   query batch 1, 60 queries).
 - Training, and inference with `--graph_inference_backend torch`, use the weighted layer of the option form. Then the
   scores are bitwise equal.
-- Scores differ by float32 rounding, so a rank can differ where two candidates have nearly equal scores. The benchmark
-  and pretraining use the option form, the form of the thesis runs.
-
-`GraphKGE` (`dicee/models/graph_model.py`) has three methods for pretraining:
-
-- `internal_graph` builds the inference graph of `set_graph` without a model, for example in a worker process.
-- `attach_graph` attaches such a graph, optionally with ULTRA's relation graph (`ultra.relation_graph`).
-- `forward_query_facts` scores every entity for the query facts on the whole attached graph. It hides no edge.
-  Pretraining masks the context answers in its loss instead.
+- Scores differ by float32 rounding, so a rank can differ where two candidates have nearly equal scores. Pretraining
+  and the benchmark use the option form.
 
 ## Model variants
 
-A model variant is a preset of `dicee/synthetic_kg/variants.py`. It fixes the prior, the two ULTRA options and the
-target. Its name is the model and a suffix for the training worlds. Every variant trains ULTRA with dimension 64 and
-6 layers, with the seeds 42, 43 and 44.
+A model variant is an architecture and its training worlds. `dicee/synthetic_kg/variants.py` holds the variants of the
+thesis as presets. Each preset fixes the prior, the two ULTRA options and the target.
 
-| Variant | Prior (order name) | Count weighting | Pair channels | Target |
-|---|---|---|---|---|
-| PCUltra-S | the synthetic mixture of seven world families (`REC10A-XLE`) | on | on | RB-W |
-| PCUltra-R | real subgraph worlds of FB15k-237, WN18RR and CoDEx-M (`RO2`) | on | on | RB-W |
-| PCUltra-M | the synthetic world families at half their shares, and real subgraph worlds at 0.5 (`M2-REC10A-XLE`) | on | on | RB-W |
-| PCUltra-N | the synthetic prior, with the structural null in the four record families | on | on | RB-W |
-| PCUltra-HT | the synthetic prior | on | on | hard: one answer per query, drawn from the RB-W target |
-| CountULTRA-S, CountULTRA-R, CountULTRA-M | the synthetic, the real and the mixed prior | on | off | RB-W |
-| ULTRA-S, ULTRA-R, ULTRA-M | the synthetic, the real and the mixed prior | off | off | RB-W |
+| Variant | Model | Training worlds | Target |
+|---|---|---|---|
+| `PCUltra-S` | PCUltra | synthetic worlds of the seven world families | RB-W |
+| `PCUltra-R` | PCUltra | real subgraph worlds of FB15k-237, WN18RR and CoDEx-M | RB-W |
+| `PCUltra-M` | PCUltra | synthetic worlds at half their shares, and real subgraph worlds at 0.5 | RB-W |
+| `CountULTRA-S`, `-R`, `-M` | CountULTRA | as PCUltra-S, -R and -M | RB-W |
+| `ULTRA-S`, `-R`, `-M` | ULTRA | as PCUltra-S, -R and -M | RB-W |
+| `PCUltra-HT` | PCUltra | as PCUltra-S | hard: one answer per query, drawn from the RB-W target |
+| `PCUltra-N` | PCUltra | as PCUltra-S, with the structural null in four world families | RB-W |
 
-The world families have fixed code names, because the names are part of the stream keys and of the world orders:
+The synthetic prior is a mixture of seven world families (`priors.FAMILY_TITLES`):
 
-| Code name | Family (`priors.FAMILY_TITLES`) | Share in the synthetic prior |
+| World family | Name in the code | Share |
 |---|---|---|
-| `plain` | Rule | 0.2925 |
-| `structured` | Structured | 0.0758 |
-| `statistical` | Statistical | 0.0817 |
-| `categorical2` | Categorical | 0.27 |
-| `attr2` | Attribute-dependency | 0.09 |
-| `rec1` | Record | 0.09 |
-| `list1` | List | 0.1 |
-| `real` | Real subgraph | 0 (1 in the real prior, 0.5 in the mixed prior) |
+| Rule | `plain` | 0.2925 |
+| Structured | `structured` | 0.0758 |
+| Statistical | `statistical` | 0.0817 |
+| Categorical | `categorical2` | 0.2700 |
+| Attribute-dependency | `attr2` | 0.0900 |
+| Record | `rec1` | 0.0900 |
+| List | `list1` | 0.1000 |
 
-- CountULTRA has the count weighting only. ULTRA is plain ULTRA.
-- The variants of one prior train on the same worlds in the same order for each seed. PCUltra-N and PCUltra-HT have
-  the world order of PCUltra-S.
-- The real prior has one world order, which is the same for every seed.
-- The structural null swaps the tails of fact pairs within each relation of a record world, before the observation
-  (swap budget 3). It keeps each relation's fact count and each entity's in-degree and out-degree per relation.
-- The mixture strings are those of the thesis runs, verbatim (`variants.SYNTHETIC_MIX`, `variants.MIXED_MIX`).
-- The presets pin the digests of the 24,000-slot world orders of the seeds 42, 43 and 44. A run refuses an
-  order that differs from its pin.
+- Every variant trains ULTRA with dimension 64 and 6 layers. The seeds of the thesis are 42, 43 and 44.
+- The variants of one prior train on the same worlds in the same order for each seed. The order of the real worlds is
+  the same for every seed.
+- The structural null swaps the tails of fact pairs within each relation of a world, before the observation (swap
+  budget 3). It keeps each relation's fact count and each entity's in-degree and out-degree per relation. It applies
+  to the Categorical, Attribute-dependency, Record and List families.
+- The names in the code, the mixture strings and the seeded streams fix the worlds. Each preset pins the digest of its
+  world order of 24,000 slots for the seeds 42, 43 and 44, and a run refuses an order that differs from its pin.
 - `dicee/synthetic_kg/recipe.py` holds the shared training values. AdamW runs with learning rate 5e-4 and weight decay
   0.01. The learning rate stays constant for 20,000 updates and decays linearly to zero over 4,000 more.
 - The EMA of the weights has decay 0.999. An update backpropagates its query rows in chunks of 2.
-- The initial weights come from the seeded stream `capacity-prior-v1:<seed>:initial:d64` (`variants.initial_model`).
 
 ## Pretraining
 
@@ -141,18 +116,16 @@ The world families have fixed code names, because the names are part of the stre
 # PCUltra-S, seed 42, on the GPU: 24,000 updates
 dicee_pretrain_synthetic train --variant PCUltra-S --seed 42 --out runs/PCUltra-S/42
 
-# The variants with real worlds (suffix R or M) also read the real source graphs
-dicee_pretrain_synthetic train --variant PCUltra-R --seed 42 --out runs/PCUltra-R/42 --real_sources data/real-sources
+# The variants with real worlds also read the real source graphs
+dicee_pretrain_synthetic train --variant PCUltra-M --seed 42 --out runs/PCUltra-M/42 --real_sources data/real-sources
 
 # A smoke run: 2 updates on the CPU, a checkpoint after each
 dicee_pretrain_synthetic train --variant PCUltra-S --seed 42 --out runs/smoke --device cpu --workers 0 --stop_after 2 --exports 1,2
 ```
 
-A model of the benchmark tables needs the seeds 42, 43 and 44 of one variant. Train each seed into its own folder.
-
 | Option | Default | Meaning |
 |---|---|---|
-| `--variant` | required | a model variant, for example `PCUltra-S` ([Model variants](#model-variants)) |
+| `--variant` | required | a name of the table above |
 | `--seed` | required | the run seed |
 | `--out` | required | the run folder |
 | `--device` | `cuda` | the training device |
@@ -174,16 +147,15 @@ Files of a run folder:
 | `progress.json` | the last logged update, every 50 updates and at the end |
 | `.lock` | the lock that the training process holds while it trains |
 
-Pretraining writes checkpoints at the export updates and after update 24,000. The thesis models are the EMA weights
-of update 24,000.
+The thesis models are the EMA weights of update 24,000.
 
 ### Resume
 
 - If the run folder holds a `last.pt`, the command resumes from it. To resume, run the same command again.
 - A resumed run gives the same updates as an uninterrupted run on the same torch version and device.
 - SIGINT and SIGTERM stop the run after the current update. The command then writes `last.pt` and exits with code 3.
-- The command refuses a folder that holds another run (another variant, seed or option), and a folder that another process
-  trains into (the run holds the folder's `.lock`).
+- The command refuses a folder that holds another run (another variant, seed or option), and a folder that another
+  process trains into (the run holds the folder's `.lock`).
 - If a source file of `dicee/synthetic_kg` or of the ULTRA model, the torch version or the GPU changed since the start,
   the command refuses to resume. Pass `--allow_code_change` to resume anyway; the result then can differ from the
   uninterrupted run.
@@ -191,32 +163,21 @@ of update 24,000.
 
 ### Real source graphs
 
-The variants on the real and the mixed prior build their real worlds from the train splits of FB15k-237, WN18RR and CoDEx-M. The command `sources` builds
+The real subgraph worlds come from the train splits of FB15k-237, WN18RR and CoDEx-M. The command `sources` builds
 the source files from the split files of the three graphs:
 
 ```bash
 dicee_pretrain_synthetic sources --graphs KGs --out data/real-sources
 ```
 
-```
-data/real-sources/
-  FB15k-237/data.pt
-  WN18RR/data.pt
-  CoDEx-M/data.pt
-```
-
 - `--graphs` names a folder with `train.txt`, `valid.txt` and `test.txt` of each graph in `<name>/`. `KGs.zip` holds
   FB15k-237 and WN18RR.
+- CoDEx-M comes from the repository tsafavi/codex at commit `3132e426c2a6b643b70bad679905a3a6270be440`. Copy its
+  files `data/triples/codex-m/train.txt`, `valid.txt` and `test.txt` into `KGs/CoDEx-M/`.
 - The command reads the split files with dicee's `KG`, which loads the GPT-2 encoding of tiktoken. Without that encoding
   in tiktoken's cache, the first run needs the network.
-- CoDEx-M comes from the repository tsafavi/codex at commit `3132e426c2a6b643b70bad679905a3a6270be440`. Copy its
-  files `data/triples/codex-m/train.txt`, `valid.txt` and `test.txt` into `KGs/CoDEx-M/`. The train file has the SHA-256
-  `d99c3437ab51690391a26d96976adf6e5494dba7ef6902e77000551bfa566556` (`tests/test_synthetic_real.py` lists all three).
-- Each `data.pt` holds the splits as id tensors, the entity names and the relation names. The command writes each file
-  as the research builders did. With torch 2.5.1 the bytes equal the research files.
-- A file pins its content, not its bytes: the names, the key order and the split tensors (`real.content_digest`,
-  `recipe.REAL_SOURCE_CONTENT_SHA256`). So every torch version builds and checks the files. The command refuses split
-  files with other triples and writes nothing then.
+- A source file pins its content: the names, the key order and the split tensors (`real.content_digest`,
+  `recipe.REAL_SOURCE_CONTENT_SHA256`). The command refuses split files with other triples and writes nothing then.
 - Give the folder to a run with `--real_sources` or with the environment variable `PROOFPFN_REAL_SOURCES`. Before
   training, the run checks the content of each file. `run.json` records the SHA-256 of each file.
 - The repository holds none of the three graphs. Check the licence of each graph at its upstream source: FB15k-237
@@ -225,14 +186,12 @@ data/real-sources/
 ### Devices and determinism
 
 - Every update runs under `determinism.deterministic_execution`: deterministic algorithms, float32 matmul precision
-  `highest` and no TF32 in cuDNN. A torch with per-backend precision settings gets `fp32_precision = 'ieee'` on every
-  backend.
+  `highest` and no TF32 in cuDNN.
 - Deterministic cuBLAS needs `CUBLAS_WORKSPACE_CONFIG=:4096:8` before CUDA starts. The command sets it when it is
   unset.
 - The updates do not depend on the number of workers. An update draws no global random number.
-- CPU results depend on the torch thread count (`--threads`) and on torch's CPU kernels
-  (`torch.backends.cpu.get_cpu_capability()`).
-- CPU and CUDA results differ from the first update on. CUDA results can also differ between GPU types.
+- CPU results depend on the torch thread count (`--threads`) and on torch's CPU kernels. CPU and CUDA results differ
+  from the first update on. CUDA results can also differ between GPU types and torch versions.
 - A run uses one device. Select the GPU with `CUDA_VISIBLE_DEVICES`. Without a GPU, pass `--device cpu`.
 
 ## Checkpoints
@@ -247,8 +206,8 @@ Pretraining writes checkpoints in the format `proofpfn-checkpoint-v1`. `torch.lo
 ```
 
 - The state dictionary has ULTRA's 82 keys. With pair channels, the six relation tables have 6 rows.
-- `model_config` holds the variant's ULTRA options. `weights` is `raw` or `ema`.
-- `provenance` records the origin of the weights, for example the run record with the versions and source hashes.
+- `model_config` holds the ULTRA options of the variant. `weights` is `raw` or `ema`.
+- `provenance` records the origin of the weights.
 
 The following code loads a checkpoint and scores a small graph:
 
@@ -256,7 +215,7 @@ The following code loads a checkpoint and scores a small graph:
 import torch
 from dicee.synthetic_kg.checkpoint import load_model
 
-model = load_model("runs/PCUltra-S/42/export-24000-ema.pt")      # the variant's ULTRA, frozen, on the CPU
+model = load_model("checkpoints/PCUltra-S-42.pt")        # ULTRA with the options of the variant, frozen, on the CPU
 facts = torch.tensor([[0, 0, 1], [1, 1, 2], [2, 0, 0]])  # (head, relation, tail) ids of the inference graph
 model.set_graph(facts, num_entities=3, num_relations=2)
 with torch.no_grad():
@@ -265,13 +224,16 @@ with torch.no_grad():
 ```
 
 - `load_model` checks the checkpoint, builds ULTRA with its `model_config` and loads the weights.
-  `model_from_checkpoint` does the same for a checkpoint dictionary that is already loaded.
-- `ULTRA(checkpoint['model_config']).load_pretrained(path)` also reads the format.
-- `ULTRA.load_pretrained` refuses a checkpoint whose `model_config` records other options than the model's.
-- The `dicee` command line loads a checkpoint with `--ultra_checkpoint` and the variant's options
-  `--ultra_relation_weighting` and `--ultra_pair_channels` ([ULTRA](ultra.md#relation-graph-options)).
-- `benchmarks/kgfm_zero_shot.py` takes no ProofPFN checkpoint: a third zero-shot path next to the `dicee` command line
-  and the benchmark has no use in the thesis.
+- `ULTRA(checkpoint['model_config']).load_pretrained(path)` and `PCUltra({}).load_pretrained(path)` also read the
+  format. They refuse a checkpoint whose `model_config` records other options than the model's.
+- The `dicee` command line loads a checkpoint with `--ultra_checkpoint`, for `--model PCUltra` or for `--model ULTRA`
+  with the two options ([ULTRA](ultra.md#relation-graph-options)).
+
+### Checkpoints of the thesis
+
+The thesis has 33 models: the eleven variants with the seeds 42, 43 and 44. Each checkpoint holds the EMA weights of
+update 24,000 and has the name `<variant>-<seed>.pt`, for example `PCUltra-S-42.pt`. Its `provenance` records the
+SHA-256 of the training export that it comes from.
 
 ## Zero-shot evaluation
 
@@ -282,24 +244,50 @@ The benchmark `benchmarks/proofpfn/` ranks the test facts of frozen graph sets. 
 ```bash
 # Hash checks, counts and the model files on the CPU; no score
 python -m benchmarks.proofpfn check --set ultra54 --view trans \
-  --model 'mine=runs/PCUltra-S/{seed}/export-24000-ema.pt' --references trix,ultra3g,flock
+  --model 'PCUltra-S=checkpoints/PCUltra-S-{seed}.pt' --references trix,ultra3g,flock
 
 # Rank the test facts of the 54 graphs with the three seeds and the references
 python -m benchmarks.proofpfn run --set ultra54 --out rows \
-  --model 'mine=runs/PCUltra-S/{seed}/export-24000-ema.pt' --references trix,ultra3g,flock
-
-# Mean MRR and Hits@10 per system, and mean and standard deviation over the seeds
-python -m benchmarks.proofpfn table --set ultra54 --rows rows
+  --model 'PCUltra-S=checkpoints/PCUltra-S-{seed}.pt' --references trix,ultra3g,flock
 ```
+
+| Graph set | Graphs |
+|---|---|
+| `ultra54` | the 54 graphs of the standard zero-shot suite, in the views `trans`, `ind_e` and `ind_er` |
+| `heldout44` | the 44 graphs of the held-out collection of the thesis, in the views `published` and `converted` |
 
 - A model is `--model NAME=TEMPLATE`. The template names a checkpoint. With `{seed}`, the benchmark fills in the seeds
   of `--seeds` (default 42, 43 and 44) and labels each checkpoint `NAME.seed<S>`.
-- A checkpoint carries its own model options, so the benchmark needs no variant name.
+- A checkpoint carries its own model options.
 - `run` scores on CUDA by default. For a run on the CPU, pass `--device cpu`.
-- The result file of seed 42 on CoDExSmall in this example is `rows/ultra54/mine.seed42/CoDExSmall.json`.
+- The result file of seed 42 on CoDExSmall in this example is `rows/ultra54/PCUltra-S.seed42/CoDExSmall.json`.
 - A system whose result file exists is not run again.
-- The command `python -m dicee --model ULTRA ... --eval_model test --eval_tie_policy pessimistic` gives the same ranks
-  on a graph that it reads. It does not read a graph with an empty `valid.txt`.
+- The reference systems read the released checkpoints below `checkpoints/`: TRIX (`trix/entity_prediction.pth`),
+  ULTRA-3g (`ultra_3g.pth`) and Flock (`flock/flock_entity.pth`). Their guides list the downloads:
+  [ULTRA](ultra.md), [TRIX](trix.md), [Flock](flock.md).
+- A result file holds the ranks of its graph and its metrics: MRR and Hits@1, 3 and 10 for both directions, for the
+  tail queries and for the head queries.
+- The thesis tables give, per graph set, the mean over the graphs of the MRR of both directions, and then the mean and
+  the sample standard deviation over the three seeds.
+- The graph files are not in the repository. A manifest names each folder and the SHA-256 of its three split files,
+  and a graph with another hash does not load.
+
+### Worlds of the prior
+
+The command `prior` scores checkpoints on intact worlds of the synthetic prior that no training order reaches. The
+thesis uses it for the structural null: PCUltra-S against PCUltra-N.
+
+```bash
+python -m benchmarks.proofpfn prior --model 'PCUltra-S=checkpoints/PCUltra-S-{seed}.pt' \
+  --model 'PCUltra-N=checkpoints/PCUltra-N-{seed}.pt' --out prior.json
+```
+
+- The worlds are held-out worlds of the synthetic prior, seed 42: up to 100 of each of the world families `rec1`,
+  `attr2`, `list1`, `categorical2` and `plain`.
+- Each model scores every query of a world against all entities, through the training-mode path of pretraining.
+- The value of a world is its mean reciprocal rank. The rank excludes the other true answers and the anchor, with
+  ties at their mean rank.
+- The command prints the MRR per world family and model name, and writes the values per world to `--out`.
 
 ## Query answering
 
@@ -308,15 +296,11 @@ A pretrained checkpoint is also a frozen backbone for complex query answering (`
 
 ```python
 from dicee.query_answering import QueryScoreAdapter
-from dicee.query_answering.context import state_fingerprint
 from dicee.query_answering.method_evaluation import evaluate_method, load_kgfm_backbone
 
-checkpoint = "runs/PCUltra-S/42/export-24000-ema.pt"
+checkpoint = "checkpoints/PCUltra-S-42.pt"
 model, record = load_kgfm_backbone("pcultra", checkpoint)
-
-# The rule calibration: the degree-scaled softmax with ordered candidates at the cap. It needs no training.
-QueryScoreAdapter("global", 1., bias_bound=8., fixed_calibration="softmax-degree-ties",
-                  metadata={"backbone_state_sha256": state_fingerprint(model)}).save("rule.json")
+QueryScoreAdapter.rule(model).save("rule.json")   # the rule calibration; it needs no training
 
 recipe = dict(method="pcultra-adapter", checkpoint=checkpoint, dataset="FB15k237+H", root="data/cqa",
               adapters={"product": "rule.json"}, operators={"2p": "product", "2i": "product"},
@@ -327,83 +311,32 @@ report = evaluate_method(recipe, output="results/pcultra-rule", device="cuda")
 
 - `load_kgfm_backbone` checks the checkpoint format and builds ULTRA with the options of the checkpoint. The result
   file records the variant, the seed and the update of the checkpoint under `inference.backbone`.
-- The rule calibrations always read the raw scores.
+- The rule calibration turns each score row into memberships with a softmax over the tails times the number of
+  observed tails, capped below one. Candidates at the cap keep the order of their scores. It reads the raw scores.
 - The sigmoid calibrations are the learned adapter and the control without an adapter. The backbone is trained with a
   softmax over all entities, so the level of a score row is free and raw scores can saturate a sigmoid.
 - The recipe option `"score_input": "log_softmax"` makes the sigmoid calibrations read the log-softmax of each row.
 - A learned adapter must be fitted with the score input of its recipe.
   `python -m dicee.query_answering fit --score-input log_softmax` fits one.
-- An adapter file with log-softmax input has version 4. All other adapter files and their results stay unchanged.
-
-## Worlds of the prior
-
-The command `prior` scores checkpoints on intact worlds of the synthetic prior that no training order reaches. The
-thesis uses it for the structural null: PCUltra-S against PCUltra-N.
-
-```bash
-python -m benchmarks.proofpfn prior --model 'mys=runs/PCUltra-S/{seed}/export-24000-ema.pt' \
-  --model 'myn=runs/PCUltra-N/{seed}/export-24000-ema.pt' --out prior.json
-```
-
-- The worlds are held-out worlds of S's prior, seed 42: up to 100 of each of the world families `rec1`, `attr2`,
-  `list1`, `categorical2` and `plain`.
-- Each model scores every query of a world against all entities, through the training-mode path of pretraining.
-- The value of a world is its mean reciprocal rank. The rank excludes the other true answers and the anchor, with
-  ties at their mean rank.
-- With two `--model` options, D is the mean over the seeds of the first model minus the mean over the seeds of the
-  second, per world family. Its standard error SE combines the spread over worlds and over seeds (`prior.compare`).
-- Options: `--per-family` (held-out worlds per world family, at most 100), `--families` and `--device` (default
-  `cuda`).
-- The command prints the MRR per world family and writes the record to `--out`, with the per-world values.
-
-## Reproducing the thesis results
-
-- The thesis rows come from the frozen run of the research code.
-- The checkpoints of the thesis models hold the EMA weights at update 24,000. Pass them to the benchmark with `--model`.
-- The thesis tables give, per collection, the mean over the graphs of the MRR of both directions, and then the mean and
-  the sample standard deviation over the three seeds. The command `table` computes these values.
-- The registered analysis of the held-out test and the runners of the external baselines (KGPFN, MERIT, AnyBURL)
-  are archived with the research code. They are not part of this package.
-- The manifest `heldout44` lists the 44 graphs of the held-out collection with their hashes.
 
 ## Testing
 
 ```bash
-# Fast tests
 python -m pytest tests/test_ultra_relation_options.py tests/test_graph_attach.py tests/test_pcultra.py \
   tests/test_synthetic_*.py benchmarks/proofpfn -m "not slow"
-
-# Every test, with the real source graphs
-export PROOFPFN_REAL_SOURCES=/path/to/real-sources
-python -m pytest tests/test_ultra_relation_options.py tests/test_graph_attach.py tests/test_pcultra.py \
-  tests/test_synthetic_*.py benchmarks/proofpfn
 ```
 
-Regression pins (`tests/fixtures/proofpfn/pins.json`) hold values that the package computes itself:
-
-| Pin | Content | Rule |
-|---|---|---|
-| worlds | 123 worlds of every world family: content, record and prepared tensors | bitwise |
-| orders, mixtures | the first 400 slots of each world order, the shares and bounds of each mixture | bitwise |
-| initial weights | per model and seed | bitwise |
-| training | the first two CPU updates of five variants: loss, gradient norm, weights, EMA | bitwise in the recorded environment |
-| prior | statistics of the evaluation on worlds of the prior | equal values |
-| gate | sizes and row order of three small graphs | bitwise |
-
-- The pins were recorded at a commit where the code passed the golden tests against the research code of the thesis
-  runs. `tests/fixtures/proofpfn/README.md` names the commit and the command that writes the pins again.
-- `PROOFPFN_REAL_SOURCES` names the real source folder for the tests of the real worlds.
+- The worlds, the world orders, the prepared tensors, the initial weights and the first training updates are pinned
+  in `tests/fixtures/proofpfn/pins.json`. A change of a generator changes a digest, and the test fails.
+- The pinned training updates are bitwise only for torch 2.5.1 with AVX-512 CPU kernels and 2 threads. Elsewhere these
+  tests skip, and a smoke test compares the losses of two updates within a tolerance.
+- `PROOFPFN_REAL_SOURCES` names the real source folder for the tests of the real worlds. Without it they skip.
 - pytest runs the tests marked `slow` by default, as in the rest of the repository. `-m "not slow"` deselects them.
-- The pinned training updates are bitwise in the recorded environment only: torch 2.5.1 with AVX-512 CPU kernels
-  (`torch.backends.cpu.get_cpu_capability()`) and 2 threads. Other CPU kernels change the last bits of the backward pass
-  and of AdamW, so elsewhere these tests skip. A smoke test then compares the losses of two updates within a relative
-  tolerance.
-- A failing pin means that a world, a world order or the initial weights changed. Then fix the code. Leave the pin
-  unchanged, unless the change of the worlds is intended.
 
 ## Known limits
 
-- CUDA results can differ between GPU types.
-- The graph files of the benchmark are not in the repository. The manifests name the folders and the hashes.
-- The real source graphs of the variants with real worlds are not in the repository. The command `sources` builds them from their split
-  files.
+- CUDA results can differ between GPU types and torch versions. On another GPU than the one of the thesis runs, a
+  rank can differ by a few places where two candidates have nearly equal scores.
+- The graph files of the benchmark and the real source graphs are not in the repository.
+- TRIX and Flock trained on the prior, the external baselines (KGPFN, MERIT, AnyBURL) and the fine-tuning study of the
+  thesis are not part of this package.

@@ -2,8 +2,8 @@
 
 ``tests/fixtures/proofpfn/pins.json`` holds values that the package computes itself (its README lists them). ``pins()``
 reads it. ``python -m tests.proofpfn_fixtures --write-pins`` computes the worlds, orders, mixtures and initial weights
-again and writes the file; the other sections (first training updates, the statistics of the evaluation on worlds of
-the prior, the gate graphs) are kept as they are. Write the pins again only for an intended change of the worlds, and
+again and writes the file; the other sections (first training updates, the held-out slots of the evaluation on worlds
+of the prior, the gate graphs) are kept as they are. Write the pins again only for an intended change of the worlds, and
 say so in the commit: the pins are what keeps the worlds of the thesis runs fixed.
 
 The pinned training updates are bitwise in their recorded environment only: torch 2.5.1 with AVX-512 CPU kernels and 2
