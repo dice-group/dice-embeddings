@@ -37,3 +37,17 @@ initial weights, conversions and CPU scores and ranks do not depend on the CPU k
 The research CPU ranks of `gul.seed44` differ from its G6 ranks, which were computed on the GPU; the benchmark's CPU
 rank test compares with the research CPU reference, its CUDA tests with G6. The benchmark tests read the two files
 above from this folder (`benchmarks/proofpfn/tests/golden.py`, `SHARED`).
+
+## Regression pins
+
+`pins.json` holds values that the package computes itself. They were recorded at commit `ea33c28b`, where the golden
+tests against the research code passed, and each pin was compared with the golden value that it replaces:
+
+- `worlds`: 123 worlds (the positions of G2). Per world the slot, the content digest, the digest of its record (task
+  order, metadata and template provenance) and the digest of its prepared tensors for PCUltra.
+- `orders` and `mixtures`: the digest of the first 400 slots of each world order, and the shares and cumulative bounds
+  of each mixture.
+- `initial_weights`: the digest of the initial weights per model and seed.
+- `training`: the first two CPU updates of five variants at seed 42 (bitwise for torch 2.5.1 with AVX-512 CPU kernels).
+- `prior`: per-world values and statistics of the evaluation on worlds of the prior, and the plain held-out slots.
+- `gate`: sizes, row order and Flock setting of the three graphs of `benchmarks/proofpfn/tests/golden/gate.json`.
