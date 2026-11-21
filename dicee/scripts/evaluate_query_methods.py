@@ -3,8 +3,8 @@
     python -m dicee.scripts.evaluate_query_methods --manifest recipe.json --output DIR
 
 A manifest holds one recipe or a list of recipes with unique ``id`` fields;
-results go to ``DIR/ID``. The reproducible benchmark suites, with frozen inputs
-and verification, run through ``python -m benchmarks.cqa``.
+results go to ``DIR/ID``. The benchmark suites and their public recipes run
+through ``python -m benchmarks.cqa``.
 """
 
 import argparse

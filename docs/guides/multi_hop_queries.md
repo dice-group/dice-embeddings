@@ -637,7 +637,7 @@ candidate_drugs = model.answer_multi_hop_query(
 
 - **Tests:** [test_answer_multi_hop_query.py](../../tests/test_answer_multi_hop_query.py) — Complete examples
 - **Research:** [Query2Box paper](https://arxiv.org/abs/2002.05969) — Theoretical foundation
-- **Benchmarks:** [benchmarks/cqa](../../benchmarks/cqa/README.md) — Reproducible UltraQuery and +H evaluation
+- **Benchmarks:** [benchmarks/cqa](../../benchmarks/cqa/README.md) — UltraQuery and +H evaluation
 
 ---
 
@@ -701,8 +701,7 @@ python -m dicee.scripts.evaluate_query_methods \
 
 It supports every loaded dataset family, including UltraQuery and +H. The
 [benchmark harness](../../benchmarks/cqa/README.md) selects methods, datasets and
-query types from the public recipes, freezes query batches, verifies upstream
-parity:
+query types from the public recipes:
 
 ```bash
 python -m benchmarks.cqa plus_h evaluate --methods ultra-adapter --datasets FB15k237+H \

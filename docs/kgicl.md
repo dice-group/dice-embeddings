@@ -1,8 +1,7 @@
 # KG-ICL in DICE
 
 [Paper](https://arxiv.org/abs/2410.12288) ·
-[Pinned official implementation](https://github.com/nju-websoft/KG-ICL/tree/6a3166e347ae468acdfb30a70a2cf3608b66b8f1) ·
-[Bug-fix patch](../tests/fixtures/kgicl/upstream-fixes.patch)
+[Pinned official implementation](https://github.com/nju-websoft/KG-ICL/tree/6a3166e347ae468acdfb30a70a2cf3608b66b8f1)
 
 KG-ICL answers a query `(s, q, ?)` in context. It samples a few example facts
 `(u, q, v)` of the query relation, extracts a prompt graph around each example
@@ -12,8 +11,7 @@ per layer from `s` over the inference graph. DICE provides `KGICL` for entity
 prediction with the graph, training and reload interfaces of [ULTRA](ultra.md),
 [TRIX](trix.md) and [Flock](flock.md). The official `KG-ICL-4L`, `KG-ICL-5L` and
 `KG-ICL-6L` checkpoints load without renaming or dropping parameters. Only
-PyTorch is required; Triton adds the fused CUDA inference path. NetworkX,
-torch-scatter and the official code are needed only to regenerate fixtures.
+PyTorch is required; Triton adds the fused CUDA inference path.
 
 ## Checkpoints and zero-shot evaluation
 
@@ -147,7 +145,7 @@ edges, deduplicates facts and resets prompt graphs; pass
 inverses. `prompt_graphs(relation)` returns the prompt graphs of an internal
 relation ID (inverses are `r + R`), `encode_prompts(relation, graphs)` encodes
 any prompt graphs, and `use_prompts({relation: graphs})` replays fixed prompt
-graphs, for example ones recorded from the official loader.
+graphs.
 
 ```python
 from dicee import KGE
@@ -184,13 +182,9 @@ settings, head and relation:
 `kgicl_query_batch_size` only trades memory for speed on the fused path: each
 query holds about `420 * entities` bytes of state, and 16 queries per pass are
 about 13% faster than 8 on FB15k-237. See [KGFM inference speed](kgfm_inference.md#kg-icl)
-for timings against the official code.
+for timings of query answering rows.
 
 ## Upstream defects corrected in DICE
-
-DICE implements the corrected behavior. `tests/fixtures/kgicl/upstream-fixes.patch`
-applies exactly these fixes to the pinned official code; all parity checks below
-compare against the patched official code. Effects are measured below.
 
 | ID | Location | Defect | Correction |
 |---|---|---|---|
@@ -201,55 +195,9 @@ compare against the patched official code. Effects are measured below.
 | B5 | `data_loader.py` | For a self-loop example `(u, q, u)` the tail token goes to local node 1, an unrelated entity. | Head and tail tokens go to the example entity (the tail token overwrites the head token, matching the token assignment order). |
 
 No defect leaks test facts: prompt graphs come from training facts, and the
-reasoning graph of test queries holds training and validation facts.
-
-### Measured effects
-
-Filtered MRR of the official code under the official protocol, relative to the
-code with all five fixes, on the five verification datasets below. Each row
-restores one defect: B1, B2 and B5 in the code, B3 and B4 in the prompt
-processing. Rows with random or order-dependent results give the mean and
-standard deviation over three query orders.
-
-| | WN V1 | FB V2 | NELL V2 | NL-0 | FB-25 |
-|---|---:|---:|---:|---:|---:|
-| MRR with all fixes | 0.7346 | 0.5635 | 0.6391 | 0.5655 | 0.4213 |
-| Range over three query orders | 0.7345–0.7346 | 0.5634–0.5635 | 0.6390–0.6391 | 0.5654–0.5674 | 0.4213–0.4213 |
-| B1 | −0.0008 ± 0.0006 | −0.0006 ± 0.0009 | −0.0031 ± 0.0022 | −0.0049 ± 0.0041 | +0.0001 ± 0.0002 |
-| B1, pessimistic ties | −0.0008 ± 0.0006 | +0.0004 ± 0.0009 | −0.0001 ± 0.0022 | +0.0006 ± 0.0041 | +0.0002 ± 0.0002 |
-| B2 | +0.0010 ± 0.0000 | +0.0003 ± 0.0003 | 0.0000 ± 0.0000 | −0.0002 ± 0.0000 | +0.0001 ± 0.0000 |
-| B3 | −0.0014 | +0.0021 | −0.0029 | −0.0100 | +0.0052 |
-| B4 | not present | not present | not present | −0.0010 | −0.0087 |
-| B5 | not present | not present | not present | 0.0000 | +0.0012 |
-| All five (released code) | +0.0027 ± 0.0011 | +0.0023 ± 0.0005 | −0.0039 ± 0.0021 | −0.0051 ± 0.0029 | −0.0022 ± 0.0002 |
-
-How many prompts each processing or loading defect touches, among the five
-examples per relation that evaluation loads:
-
-| | WN V1 | FB V2 | NELL V2 | NL-0 | FB-25 |
-|---|---:|---:|---:|---:|---:|
-| Relations with 2 to 4 examples (B2) | 2 of 8 | 32 of 172 | 9 of 79 | 21 of 112 | 23 of 216 |
-| Prompt entities with another entity's tokens (B3) | 237 of 396 | 25,236 of 43,692 | 14,745 of 27,634 | 17,090 of 33,480 | 52,901 of 98,725 |
-| Prompt graphs with duplicated self-loop facts (B4) | 0 of 36 | 0 of 710 | 0 of 353 | 95 of 470 | 949 of 979 |
-| Self-loop examples (B5) | 0 | 0 | 0 | 3 | 21 |
-
-- **B1** makes evaluation nondeterministic: the standard deviation of MRR over
-  three runs reaches 0.004 (NL-0). Its random slopes also break exact score ties
-  at random; under the official ranking, which orders ties by entity ID, this
-  lowers MRR on NL-0 and NELL V2, while pessimistic MRR changes by less than 0.001.
-- **B2** changes MRR by at most 0.0010 here, but makes a query's prediction
-  depend on which relations share its batch.
-- **B3** is the largest defect. The checkpoints were pretrained with the same
-  processing code (`datasets/utils_all.py` contains both B3 and B4), so the
-  correction changes prompts relative to training, and its effect varies in sign:
-  from −0.0100 to +0.0052 MRR.
-- **B4** lowers MRR on graphs with self-loop facts in prompts (−0.0087 on FB-25,
-  where almost every prompt graph has them).
-- **B5** affects only self-loop examples (+0.0012 on FB-25).
-
-Official-code differences of about 1e-4 are within the run-to-run noise of the
-official CUDA scatter kernels (range row). DICE always implements the
-corrected behavior; to evaluate the released behavior, run the official code.
+reasoning graph of test queries holds training and validation facts. DICE
+always implements the corrected behavior; to evaluate the released behavior,
+run the official code.
 
 ## Upstream behavior DICE keeps
 
@@ -270,68 +218,16 @@ the checkpoints depend on them; DICE matches them:
 - The official sigmoid attention (`attn_type='Sigmoid'`); the GAT option, which
   indexes its normalizer by a node ID where an edge ID is meant, is unused.
 
-## Verification
-
-Fixtures are generated by `tests/fixtures/kgicl/generate_reference.py` with the
-pinned official code plus the patch. It verifies the revision and that tracked
-files are unmodified, processes a fixture graph with the official prompt
-extraction (hubs, cycles, parallel facts, self-loop facts and examples,
-relations with one to five facts, a relation without facts, an isolated entity),
-loads it with the official data loader and records official outputs on CPU.
-`tiny` uses a small random model (dimension 8, three reasoner layers), `official`
-the released `KG-ICL-6L` weights. DICE replays the recorded prompt graphs:
-
-| Check (float32, CPU) | `tiny` | `official` |
-|---|---|---|
-| Prompt extraction of every relation's examples | identical entities, facts and tokens | (same graph) |
-| Prompt encodings, maximum absolute error | 9.5e-7 | 1.2e-6 |
-| All-entity scores of 16 queries, with and without the distance mask | 1.8e-7 | 5.3e-6 (scores up to 15.8) |
-| Gradients of every parameter (110 and 184 tensors), evaluation mode | within 3% of `atol = rtol = 1e-4` | within 82% of `atol = rtol = 1e-4` (gradients up to 454) |
-| Answer-distance rates | identical | identical |
-
-The tests use `atol = 2e-5, rtol = 1e-4` for prompts and scores. Prompt sampling
-is checked separately: seeded, independent of relation and call order, and
-identical after reattaching the graph or reloading an experiment.
-
-On real graphs, the official evaluation of five of the paper's zero-shot datasets
-ran with the patched official code (separate environment: PyTorch 2.7.1,
-torch-scatter 2.1.2) and with DICE replaying the prompt graphs the patched official
-loader assembles, both on CUDA in float32 with TF32 disabled. DICE used the fused
-Triton path. Metrics use the official ranking (ties by entity ID) unless noted:
-
-| Dataset | Queries × entities | Max. abs. score error | MRR official / DICE | Hits@10 official / DICE | Pessimistic MRR official / DICE | Answers ranked differently | Paper MRR / Hits@10 |
-|---|---|---:|---:|---:|---:|---:|---:|
-| WN V1 | 352 × 922 | 5.2e-5 | 0.73456 / 0.73455 | 0.8165 / 0.8165 | 0.73350 / 0.73349 | 2 of 376 | 0.733 / 0.838 |
-| FB V2 | 791 × 1660 | 6.8e-5 | 0.56350 / 0.56342 | 0.7542 / 0.7542 | 0.56247 / 0.56217 | 5 of 956 | 0.565 / 0.749 |
-| NELL V2 | 686 × 2086 | 7.7e-5 | 0.63907 / 0.63907 | 0.8330 / 0.8330 | 0.63605 / 0.63605 | 2 of 952 | 0.644 / 0.835 |
-| NL-0 | 1037 × 2026 | 7.2e-5 | 0.56551 / 0.56549 | 0.7870 / 0.7870 | 0.55995 / 0.55990 | 2 of 1526 | 0.557 / 0.777 |
-| FB-25 | 6656 × 4097 | 1.1e-4 | 0.42134 / 0.42134 | 0.6873 / 0.6873 | 0.42128 / 0.42123 | 22 of 11432 | 0.396 / 0.656 |
-
-All scores agree within `atol = rtol = 2e-4`. The differing ranks are near-ties
-(score gaps around `1e-5`) that are exact ties in one implementation only. The
-official code is not bitwise reproducible across query orders either (CUDA
-scatter atomics): its MRR varied by up to 9e-5 (2e-3 on NL-0, which has many
-exact ties) over three query orders, a range that contains DICE's values. The
-released official code (all five defects) averaged 0.7372, 0.5658, 0.6351,
-0.5604 and 0.4191 MRR over three runs, also close to the paper. FB-25 is about
-0.025 above the paper with both implementations and the released code.
+## Tests
 
 ```bash
-# Offline fixtures and DICE integration; no upstream packages required.
 python -m pytest tests/test_kgicl.py -q
-
-# Include the official KG-ICL-6L checkpoint, verified by SHA-256.
-KGICL_CHECKPOINT_DIR=checkpoints/kgicl/KG-ICL-6L python -m pytest tests/test_kgicl.py -q
 ```
 
-To regenerate the fixtures, create an isolated environment with PyTorch, a
-matching torch-scatter build, NumPy, SciPy and NetworkX (the fixtures used
-torch 2.7.1 and torch-scatter 2.1.2), check out the pinned commit, then run:
-
-```bash
-CUDA_VISIBLE_DEVICES='' python tests/fixtures/kgicl/generate_reference.py \
-  /path/to/KG-ICL tests/fixtures/kgicl --checkpoint-dir /path/to/KG-ICL/checkpoint/KG-ICL-6L
-```
+The tests need no checkpoint and no upstream package. They cover prompt
+sampling (seeded, independent of relation and call order, identical after
+reattaching the graph or reloading an experiment), the scoring interfaces,
+training, and batch-independent rows on CPU and CUDA.
 
 ## Complex query answering
 
@@ -362,5 +258,4 @@ algorithms, and the prompt encoder uses cuBLAS.
 The official KG-ICL code and checkpoints are distributed under GPL-3.0 by their
 authors; download the checkpoints from the official repository. DICE's
 implementation is an independent reimplementation that loads the released state
-dictionaries. The bug-fix patch modifies GPL-3.0 code and is distributed under
-GPL-3.0.
+dictionaries.

@@ -69,7 +69,8 @@ def evaluate_method(entry: Mapping[str, Any], *, output: str | Path, device: str
         query_plan: Explicit ordered queries.
         batch_ends: Explicit batch boundaries in ``query_plan``.
         rank_trace_path: Rank trace file (default: ``output/ranks.sqlite3``).
-        provenance: Identity of a frozen study, replacing the direct-run identity.
+        provenance: Caller-supplied run identity: recorded with a published method's
+            run, and used in place of the default identity of a KGFM adapter run.
         query_order: ``'relation'``, ``'canonical'`` or ``'upstream-pickle'``.
         write_result: Write ``result.json`` with run metadata.
         on_prediction: Called with each query and its scores.
