@@ -1,4 +1,4 @@
-"""The command line: list, check, run and table on a tiny graph set, the refusals of wrong input with one error line, and the
+"""The command line: list, check and run on a tiny graph set, the refusals of wrong input with one error line, and the
 traceback of an internal error."""
 import argparse
 import os

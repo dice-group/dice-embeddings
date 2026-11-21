@@ -289,7 +289,7 @@ def rank_of(score: np.ndarray, target: int, banned: Iterable[int]) -> float:
     Args:
         score: The scores over all entities.
         target: The target entity.
-        banned: The candidates that leave the ranking (the other true answers, the anchor).
+        banned: The candidates that leave the ranking (the other true answers and the anchor, without the target).
 
     Returns:
         ``1 + #{s > s[target]} + (#{s == s[target]} - 1) / 2`` over the candidates that are not banned.

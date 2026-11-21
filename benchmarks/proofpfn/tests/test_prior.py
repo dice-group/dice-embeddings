@@ -2,16 +2,27 @@
 
 The pins (``tests/fixtures/proofpfn/pins.json``, section ``prior``) hold the digest of the 100 plain held-out slots.
 """
+import numpy as np
 import pytest
+import torch
 
 from benchmarks.proofpfn import prior as pr
 from benchmarks.proofpfn import systems as sy
+from benchmarks.proofpfn.data import rank_of
 from dicee.synthetic_kg.priors import Slot
 from tests.proofpfn_fixtures import clean_checkpoints
 
 from .helpers import int_digest, pins
 
 PINS = pins()['prior']
+
+
+def test_the_answer_stays_a_candidate_also_as_its_own_anchor():
+    assert pr.banned_candidates({3, 5, 7}, anchor=1, target=5) == {1, 3, 7}
+    assert pr.banned_candidates({4, 6}, anchor=4, target=4) == {6}   # a self-loop fact: the anchor is the answer
+    scores = np.array([0.1, 0.9, 0.5, 0.7, 2.0])
+    assert rank_of(scores, 4, pr.banned_candidates({4, 1}, anchor=4, target=4)) == 1.0
+    assert rank_of(scores, 2, pr.banned_candidates({2, 3}, anchor=4, target=2)) == 2.0   # entity 1 scores higher; 3 and 4 leave
 
 
 def test_heldout_slots():
@@ -47,3 +58,16 @@ def test_two_models_score_one_world_of_a_family(tmp_path):
         assert len(values) == 1 and 0 < values[0] <= 1
         assert record['results'][name]['attr2'] == dict(worlds=1, MRR=values[0], seeds=values)
     assert record['provenance']['threads'] == 2 and record['world_seed'] == 42
+
+
+def test_a_score_that_is_not_finite_is_refused(tmp_path):
+    from dicee.synthetic_kg.prepare import prepare_world
+    from dicee.synthetic_kg.priors import world
+    from dicee.synthetic_kg.variants import VARIANTS, initial_model
+    slot = pr.heldout_slots('attr2', 1)[0]
+    generated = world(pr.WORLD_SEED, slot, VARIANTS['PCUltra-S'].prior)
+    model = initial_model('PCUltra-S', 42)
+    with torch.no_grad():
+        next(model.parameters()).fill_(float('nan'))
+    with pytest.raises(FloatingPointError, match='not finite'):
+        pr.reciprocal_ranks(model, generated, prepare_world(generated, slot, 'normalized', 'on'))

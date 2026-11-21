@@ -87,7 +87,12 @@ def test_checkpoint_checks(tmp_path):
         load_model(tmp_path / 'bad.pt')
     (tmp_path / 'text.pt').write_text('not a checkpoint')
     (tmp_path / 'empty.pt').write_bytes(b'')
-    for name in ('text.pt', 'empty.pt', 'missing.pt'):   # every load error is a CheckpointError
-        for reader in (read_checkpoint, load_model):
-            with pytest.raises(CheckpointError, match=f'{name} does not load'):
+    for name, message in (('text.pt', 'does not load'), ('empty.pt', 'does not load'), ('missing.pt', 'does not exist')):
+        for reader in (read_checkpoint, load_model):   # every load error is a CheckpointError
+            with pytest.raises(CheckpointError, match=f'{name} {message}'):
                 reader(tmp_path / name)
+    state = initial_model('PCUltra-S', 42).state_dict()
+    next(iter(state.values())).view(-1)[0] = float('nan')
+    with pytest.raises(CheckpointError, match='not finite'):
+        make_checkpoint(state, variant='PCUltra-S', seed=42, updates=0, weights='raw',
+                        order_sha256=str(VARIANTS['PCUltra-S'].pinned_order(42)), provenance={})

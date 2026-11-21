@@ -15,6 +15,7 @@ from torch import nn
 from torch.nn import functional as F
 
 from ._deferred import require
+from .catalog import SCORE_INPUTS
 from .context import checkpoint_state, state_fingerprint, state_token
 
 FEATURE_COUNTS = {'global': 1, 'context': 4, 'context_scores': 8}
@@ -51,8 +52,7 @@ OBSERVED_TIE_EPSILON = 1e-9
 # read: the backbone's raw row ('raw', the default of every artifact without this field), or the row's log-softmax over
 # all entities, z - logsumexp(z) in float64 ('log_softmax'). A softmax-trained backbone such as ProofPFN's PCUltra leaves
 # the level of a row unidentified, so its raw logits can sit far from zero; its log-softmax is its predictive
-# distribution. Fixed calibrations always read the raw row.
-SCORE_INPUTS = ('raw', 'log_softmax')
+# distribution. Fixed calibrations always read the raw row. The values are ``catalog.SCORE_INPUTS``.
 # Adapter artifacts with a score input other than 'raw' are version 4, which earlier readers refuse instead of
 # silently scoring raw logits; all other artifacts keep version 3 and their bytes.
 SCORE_INPUT_VERSION = 4

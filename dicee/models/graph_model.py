@@ -186,15 +186,23 @@ class GraphKGE(BaseKGE):
         if (graph_triples.ndim != 2 or graph_triples.shape[1] != 3 or not len(graph_triples) or tuple(relation_id_map.shape) != (num_relations,)
                 or graph_triples.dtype != torch.long or relation_id_map.dtype != torch.long or not 1 <= num_direct_relations <= num_relations):
             raise ValueError(f'{self.name} requires int64 internal graph triples [E, 3] and an int64 relation map of the vocabulary')
+        names = ('num_entities', 'num_relations', 'num_direct_relations', 'graph_triples', 'relation_id_map', 'edge_index', 'edge_type')
+        previous = {name: getattr(self, name, None) for name in names}
         self.num_entities, self.num_relations = int(num_entities), int(num_relations)
         self.num_direct_relations = int(num_direct_relations)
         self.graph_triples = to_device(graph_triples, self.device)
         self.relation_id_map = to_device(relation_id_map, self.device)
         self.edge_index, self.edge_type = self.graph_triples[:, [0, 2]].T, self.graph_triples[:, 1]
-        if relation_graph is None:
-            self._build_relation_graph()
-        else:
-            self._attach_relation_graph(relation_graph)
+        try:
+            if relation_graph is None:
+                self._build_relation_graph()
+            else:
+                self._attach_relation_graph(relation_graph)
+        except Exception:
+            # A refused relation graph must not leave this graph beside the relation graph of the earlier one.
+            for name, value in previous.items():
+                setattr(self, name, value)
+            raise
         return self
 
     def _attach_relation_graph(self, relation_graph):

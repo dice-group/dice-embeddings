@@ -45,8 +45,8 @@ def write_manifest(path: Path, root: Path, folders: dict[str, Path], name: str =
 
 
 def tiny_graph(folder: Path, entities: int = 16, relations: int = 3, seed: int = 0) -> Path:
-    """A small random graph: self-loops only in r0 (open under the rule), a duplicate train row, and a test fact of r1
-    whose answer is its anchor (closed under the rule)."""
+    """A small random graph: self-loops only in r0, a duplicate train row, and a test fact of r1 whose answer is its
+    anchor."""
     import random
     rng = random.Random(seed)
     names = [f'e{i:02d}' for i in range(entities)]

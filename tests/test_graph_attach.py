@@ -73,6 +73,16 @@ def test_attach_checks_its_inputs():
     assert torch.equal(trix.graph_triples, expected.graph_triples) and torch.equal(trix.edge_index, expected.edge_index)
 
 
+def test_a_refused_relation_graph_leaves_the_earlier_graph():
+    model = ultra(ultra_relation_weighting='normalized').set_graph(FACTS)
+    expected = ultra(ultra_relation_weighting='normalized').set_graph(FACTS)
+    other = torch.tensor([[0, 0, 1], [1, 1, 0], [2, 2, 1], [3, 0, 2]])
+    graph, mapping, num_direct = ULTRA.internal_graph(other, 5, 3)
+    with pytest.raises(ValueError, match='was built for'):   # a relation graph of other options
+        model.attach_graph(graph, mapping, 5, 3, num_direct, relation_graph(graph, 5, num_direct, 'binary', 'off'))
+    same_buffers(model, expected)
+
+
 def test_internal_graph_with_inverse_relations():
     model = ultra().set_graph(FACTS, inverse_relations={0: 2})
     graph, mapping, num_direct = ULTRA.internal_graph(FACTS, 5, 3, {0: 2})

@@ -17,7 +17,6 @@ from typing import Any, Callable, Optional, Sequence
 
 from .manifests import REPO, InputError, read_manifest
 
-logger = logging.getLogger(__name__)
 EXIT_INPUT, EXIT_OOM, EXIT_TERM = 2, 3, 143
 COMMANDS = {
     'list': 'the graphs of a manifest view',

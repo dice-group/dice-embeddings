@@ -5,7 +5,7 @@ The research code built its recipe through a chain of 12 configuration wrappers 
 up to ``architecture-affinity-v1-runtime/aa_common.cfg``). The legacy world generator reads four of its values: the run
 seed, the world sizes (``WorldConfig``), the query groups per world (``QUERIES``) and the negatives per group
 (``NEGATIVES``). These are the same at every level of the chain; the other fields describe research training that no
-ported component reads. The test compares the four values with a dump of the research chain.
+ported component reads. A test pins the four values.
 
 The parameters of the record families are the research ``PARAMS`` dictionaries (``pf_prior2f``, ``pf_attr2``,
 ``pf_rec1``, ``pf_list1``) with their key order. A family spec may override entries (``FamilySpec.params``).

@@ -45,7 +45,7 @@ Use a pretrained checkpoint on a graph of your own:
 
 ```bash
 python -m dicee --model PCUltra --dataset_dir KGs/UMLS \
-  --ultra_checkpoint checkpoints/PCUltra-S-42.pt --num_epochs 0 \
+  --ultra_checkpoint runs/PCUltra-S/42/export-24000-ema.pt --num_epochs 0 \
   --trainer torchCPUTrainer --scoring_technique NegSample \
   --batch_size 8 --eval_model test \
   --path_to_store_single_run Experiments/pcultra-zero-shot
@@ -215,7 +215,7 @@ The following code loads a checkpoint and scores a small graph:
 import torch
 from dicee.synthetic_kg.checkpoint import load_model
 
-model = load_model("checkpoints/PCUltra-S-42.pt")        # ULTRA with the options of the variant, frozen, on the CPU
+model = load_model("runs/PCUltra-S/42/export-24000-ema.pt")        # ULTRA with the options of the variant, frozen, on the CPU
 facts = torch.tensor([[0, 0, 1], [1, 1, 2], [2, 0, 0]])  # (head, relation, tail) ids of the inference graph
 model.set_graph(facts, num_entities=3, num_relations=2)
 with torch.no_grad():
@@ -231,9 +231,8 @@ with torch.no_grad():
 
 ### Checkpoints of the thesis
 
-The thesis has 33 models: the eleven variants with the seeds 42, 43 and 44. Each checkpoint holds the EMA weights of
-update 24,000 and has the name `<variant>-<seed>.pt`, for example `PCUltra-S-42.pt`. Its `provenance` records the
-SHA-256 of the training export that it comes from.
+The thesis has 33 models: the eleven variants with the seeds 42, 43 and 44. Each is the EMA checkpoint of update 24,000
+of its run (`export-24000-ema.pt`). The checkpoints are not in the repository.
 
 ## Zero-shot evaluation
 
@@ -244,11 +243,11 @@ The benchmark `benchmarks/proofpfn/` ranks the test facts of frozen graph sets. 
 ```bash
 # Hash checks, counts and the model files on the CPU; no score
 python -m benchmarks.proofpfn check --set ultra54 --view trans \
-  --model 'PCUltra-S=checkpoints/PCUltra-S-{seed}.pt' --references trix,ultra3g,flock
+  --model 'PCUltra-S=runs/PCUltra-S/{seed}/export-24000-ema.pt' --references trix,ultra3g,flock
 
 # Rank the test facts of the 54 graphs with the three seeds and the references
 python -m benchmarks.proofpfn run --set ultra54 --out rows \
-  --model 'PCUltra-S=checkpoints/PCUltra-S-{seed}.pt' --references trix,ultra3g,flock
+  --model 'PCUltra-S=runs/PCUltra-S/{seed}/export-24000-ema.pt' --references trix,ultra3g,flock
 ```
 
 | Graph set | Graphs |
@@ -278,15 +277,15 @@ The command `prior` scores checkpoints on intact worlds of the synthetic prior t
 thesis uses it for the structural null: PCUltra-S against PCUltra-N.
 
 ```bash
-python -m benchmarks.proofpfn prior --model 'PCUltra-S=checkpoints/PCUltra-S-{seed}.pt' \
-  --model 'PCUltra-N=checkpoints/PCUltra-N-{seed}.pt' --out prior.json
+python -m benchmarks.proofpfn prior --model 'PCUltra-S=runs/PCUltra-S/{seed}/export-24000-ema.pt' \
+  --model 'PCUltra-N=runs/PCUltra-N/{seed}/export-24000-ema.pt' --out prior.json
 ```
 
 - The worlds are held-out worlds of the synthetic prior, seed 42: up to 100 of each of the world families `rec1`,
   `attr2`, `list1`, `categorical2` and `plain`.
 - Each model scores every query of a world against all entities, through the training-mode path of pretraining.
 - The value of a world is its mean reciprocal rank. The rank excludes the other true answers and the anchor, with
-  ties at their mean rank.
+  ties at their mean rank. The answer stays a candidate also when it is the anchor of its query.
 - The command prints the MRR per world family and model name, and writes the values per world to `--out`.
 
 ## Query answering
@@ -298,7 +297,7 @@ A pretrained checkpoint is also a frozen backbone for complex query answering (`
 from dicee.query_answering import QueryScoreAdapter
 from dicee.query_answering.method_evaluation import evaluate_method, load_kgfm_backbone
 
-checkpoint = "checkpoints/PCUltra-S-42.pt"
+checkpoint = "runs/PCUltra-S/42/export-24000-ema.pt"
 model, record = load_kgfm_backbone("pcultra", checkpoint)
 QueryScoreAdapter.rule(model).save("rule.json")   # the rule calibration; it needs no training
 
@@ -337,6 +336,6 @@ python -m pytest tests/test_ultra_relation_options.py tests/test_graph_attach.py
 
 - CUDA results can differ between GPU types and torch versions. On another GPU than the one of the thesis runs, a
   rank can differ by a few places where two candidates have nearly equal scores.
-- The graph files of the benchmark and the real source graphs are not in the repository.
+- The graph files of the benchmark, the real source graphs and the checkpoints of the thesis are not in the repository.
 - TRIX and Flock trained on the prior, the external baselines (KGPFN, MERIT, AnyBURL) and the fine-tuning study of the
   thesis are not part of this package.

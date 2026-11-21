@@ -13,7 +13,6 @@ variant's (``Variant.model_config``), so ``ULTRA(model_config).load_pretrained(p
 ``provenance`` is a free dictionary that says where the weights come from.
 """
 import io
-import logging
 import os
 import pickle
 from functools import lru_cache
@@ -24,8 +23,6 @@ import torch
 
 from ..models.ultra import ULTRA
 from .variants import ULTRA_DIM, ULTRA_LAYERS, Variant, variant_of
-
-logger = logging.getLogger(__name__)
 
 FORMAT = 'proofpfn-checkpoint-v1'
 MODEL_NAME = 'ULTRA'
@@ -100,6 +97,8 @@ def check_checkpoint(checkpoint: Mapping[str, Any]) -> None:
         problems.append('model is not a state dictionary')
     elif {k: tuple(v.shape) for k, v in state.items()} != shapes:
         problems.append(f"the state dictionary does not have the keys and shapes of {preset.name}")
+    elif not all(bool(torch.isfinite(v).all()) for v in state.values()):
+        problems.append('the state dictionary holds a value that is not finite')
     if problems:
         raise CheckpointError('; '.join(problems))
 
@@ -192,6 +191,8 @@ def _load(path: Union[str, Path]) -> Any:
     Raises:
         CheckpointError: When the file is missing or unreadable, empty, not a pickle or a broken archive.
     """
+    if not Path(path).is_file():
+        raise CheckpointError(f'{Path(path).name} does not exist')
     try:
         return torch.load(path, map_location='cpu', weights_only=True)
     except (pickle.UnpicklingError, EOFError, RuntimeError, OSError) as error:

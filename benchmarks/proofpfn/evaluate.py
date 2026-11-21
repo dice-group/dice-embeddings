@@ -154,6 +154,22 @@ def _result(manifest: Manifest, entry: GraphEntry, graph: GraphData, queries: Qu
     return result
 
 
+def _check_stored(path: Path, manifest: Manifest, system: System) -> None:
+    """Refuse a stored result file that belongs to another manifest file, sample rule or model file.
+
+    A stored result counts as done, so its label must still mean the same graph set and the same model.
+
+    Raises:
+        manifests.InputError: When the stored file differs in one of the three.
+    """
+    stored = read_result(path)
+    differs = [what for what, old, new in (('manifest file', stored.get('manifest', {}).get('sha256'), manifest.sha256),
+                                           ('sample rule', stored.get('sample_rule'), manifest.sample_rule),
+                                           ('model file', stored.get('model_sha256'), system.sha256())) if old != new]
+    if differs:
+        raise InputError(f'{path} is a result of another {" and ".join(differs)}; remove it, or choose another --out or model name')
+
+
 def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[System], out: PathLike, *, root: PathLike = REPO,
                    device: Union[str, torch.device] = 'cuda') -> dict[str, str]:
     """Evaluate one graph with every system that has no result file yet, and write the result files.
@@ -175,7 +191,8 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
 
     Raises:
         manifests.ManifestError: When the graph fails its hash check.
-        manifests.InputError: For systems with the same label.
+        manifests.InputError: For systems with the same label, for a stored result file of another manifest file, sample
+            rule or model file, and for a graph without a test fact.
         systems.SystemCheckError: When a system cannot run on the graph.
         FloatingPointError: When a model returns a score that is not finite.
         RuntimeError: On CUDA, when ``CUBLAS_WORKSPACE_CONFIG`` is not a deterministic setting.
@@ -184,7 +201,12 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
     labels = [s.label for s in systems]
     if len(set(labels)) != len(labels):
         raise InputError(f'system labels must be unique: {labels}')
-    statuses = {s.label: 'exists' for s in systems if result_path(out, manifest, s.label, entry).exists()}
+    statuses: dict[str, str] = {}
+    for system in systems:
+        path = result_path(out, manifest, system.label, entry)
+        if path.exists():
+            _check_stored(path, manifest, system)
+            statuses[system.label] = 'exists'
     todo = [s for s in systems if s.label not in statuses]
     if not todo:
         return statuses
@@ -193,6 +215,8 @@ def evaluate_graph(manifest: Manifest, entry: GraphEntry, systems: Sequence[Syst
     with deterministic_execution(), torch_threads(THREADS):
         graph = load_graph(entry, root)
         queries = prepare_queries(graph, manifest.sample_rule)
+        if not queries.facts:
+            raise InputError(f'{entry.name}: test.txt holds no fact to rank')
         for system in todo:
             began = time.monotonic()
             system.check()

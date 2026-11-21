@@ -56,10 +56,13 @@ KGFM_ADAPTERS = ('ultra-adapter', 'trix-adapter', 'kgicl-adapter', 'flock-adapte
 KGFM_BACKBONES = {'ultra-adapter': ULTRA, 'trix-adapter': TRIX, 'kgicl-adapter': KG_ICL, 'flock-adapter': FLOCK}
 # Adapter methods whose backbone has no upstream release, with the checkpoint format they read. PCUltra is ProofPFN's
 # prior-fitted ULTRA (dicee/synthetic_kg): dicee's ULTRA with count-weighted relation graphs and entity-pair channels,
-# built from the model_config of a proofpfn-checkpoint-v1 file. Every KGFM adapter is in exactly one of the two maps.
+# built from the model_config of a proofpfn-checkpoint-v1 file. The method takes the checkpoint of every model variant
+# of ProofPFN, and the options of the checkpoint decide the relation graph. Every KGFM adapter is in exactly one of the
+# two maps.
 NATIVE_KGFM_BACKBONES = {'pcultra-adapter': 'proofpfn-checkpoint-v1'}
 # The score z of a recipe's sigmoid calibrations (learned adapter and identity control): raw logits, or each atomic
-# row's log-softmax over all entities (score_adapter.SCORE_INPUTS). Fixed calibrations always read raw logits.
+# row's log-softmax over all entities (score_adapter.QueryScoreAdapter.scores). Fixed calibrations always read raw
+# logits.
 SCORE_INPUTS = ('raw', 'log_softmax')
 METHODS = (*REFERENCES, *KGFM_ADAPTERS)
 # Methods whose checkpoints score queries without the inference graph.

@@ -11,7 +11,8 @@ trained with four families rewired (PCUltra-N), on intact worlds of each family.
   over all entities through the training-mode path of pretraining (``GraphKGE.forward_query_facts`` in training
   mode on the prepared graph, deterministic execution).
 - Metric: per query the reciprocal of the rank of the answer among all entities with the query's other true answers in
-  the world's truth and the anchor removed, ties at their mean (``data.rank_of``); per world the mean.
+  the world's truth and the anchor removed, ties at their mean (``data.rank_of``); per world the mean. The answer itself
+  always stays a candidate, also when it is the anchor of its query (a self-loop fact).
 - Per group of models (the seeds of one name) and family: MRR = the mean over the seeds of the mean over the family's
   worlds of the per-world MRR.
 """
@@ -66,6 +67,21 @@ def heldout_slots(family: str, count: int = PER_FAMILY) -> list[Slot]:
     raise ValueError(f'fewer than {count} plain worlds in the held-out range')
 
 
+def banned_candidates(answers: set[int], anchor: int, target: int) -> set[int]:
+    """The candidates that leave the ranking of one query.
+
+    Args:
+        answers: The true answers of the query in the world's truth.
+        anchor: The given entity of the query.
+        target: The answer that is ranked.
+
+    Returns:
+        The other true answers and the anchor. The target is never in the set: in a query whose answer is its own anchor
+        (a self-loop fact), the anchor stays a candidate.
+    """
+    return (set(answers) | {anchor}) - {target}
+
+
 def reciprocal_ranks(model: ULTRA, generated: World, prepared: PreparedWorld) -> np.ndarray:
     """The per-query reciprocal ranks of a model on a world.
 
@@ -88,11 +104,12 @@ def reciprocal_ranks(model: ULTRA, generated: World, prepared: PreparedWorld) ->
             for start in range(0, len(rows_of_direction), CHUNK):
                 rows = rows_of_direction[start:start + CHUNK]
                 scores = model.forward_query_facts(queries[rows], head).detach().double().cpu().numpy()
+                if not np.isfinite(scores).all():
+                    raise FloatingPointError(f'{name}: the model returned a score that is not finite')
                 for j, q in enumerate(rows):
                     h, r, t = task.queries[q].tolist()
                     anchor, target = (t, h) if head else (h, t)
-                    banned = ((heads[r, t] if head else tails[h, r]) - {target}) | {anchor}
-                    out.append(1.0 / rank_of(scores[j], target, banned))
+                    out.append(1.0 / rank_of(scores[j], target, banned_candidates(heads[r, t] if head else tails[h, r], anchor, target)))
     return np.array(out)
 
 

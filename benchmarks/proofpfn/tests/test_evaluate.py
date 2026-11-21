@@ -90,6 +90,27 @@ def test_a_new_system_runs_beside_stored_results(tiny, tmp_path):
         ev.evaluate_graph(manifest, entry, [systems[0], systems[0]], tmp_path / 'twice', root=root, device='cpu')
 
 
+def test_a_stored_result_of_another_model_or_manifest_is_refused(tiny, tmp_path):
+    root, manifest, systems = tiny
+    shutil.copytree(root / 'out', tmp_path / 'out')
+    entry = manifest.entry('g')
+    renamed = sy.checkpoints(f"tu={root / 'PCUltra-S-42.pt'}")   # the label of the stored ULTRA-S result, another model file
+    with pytest.raises(mf.InputError, match='another model file'):
+        ev.evaluate_graph(manifest, entry, renamed, tmp_path / 'out', root=root, device='cpu')
+    changed = mf.read_manifest(write_manifest(tmp_path / 'tiny.json', root, {'g': root / 'KGs' / 'g'}))   # another file of the name "tiny"
+    with pytest.raises(mf.InputError, match='another manifest file'):
+        ev.evaluate_graph(changed, changed.entry('g'), systems[:1], tmp_path / 'out', root=root, device='cpu')
+
+
+def test_a_graph_without_a_test_fact_is_refused(tmp_path):
+    folder = write_graph(tmp_path / 'KGs' / 'e', ['a\tr\tb', 'b\tr\tc'], ['c\tr\ta'], [])
+    manifest = mf.read_manifest(write_manifest(tmp_path / 'empty.json', tmp_path, {'e': folder}))
+    systems = sy.checkpoints(f"ts={clean_checkpoints(tmp_path, 'PCUltra-S').format(seed=42)}")
+    with pytest.raises(mf.InputError, match='no fact to rank'):
+        ev.evaluate_graph(manifest, manifest.entry('e'), systems, tmp_path / 'out', root=tmp_path, device='cpu')
+    assert not (tmp_path / 'out').exists()
+
+
 def test_official_flock_gives_the_same_ranks_in_two_runs(tmp_path):
     """Official Flock draws the walks of each query from a generator seeded per call."""
     flock = sy.reference('flock')
