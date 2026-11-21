@@ -506,7 +506,9 @@ def test_frozen_ultra_with_query_conditioning_equals_the_ultraquery_projection(t
 @pytest.mark.parametrize('index', [0])
 @pytest.mark.parametrize('traversal', [False, True])
 def test_ultraquery_softmax_degree_calibration_follows_its_closed_form(tmp_path, index, traversal):
-    """Calibrated projections: min(d * softmax(logits), 0.9999), d the observed-tail mass reached from the fuzzy set."""
+    """Calibrated projections: min(d * softmax(logits), 0.9999), d the observed-tail mass reached from the fuzzy set. The
+    control with tied candidates at the cap has this closed form in float32; the rule calibration equals it within a
+    millionth in float64 and orders the candidates at the cap by their logits."""
     from dicee.query_answering.methods._common import fuzzy_combine
     fixture = torch.load(ROOT / 'ultra.pt', weights_only=True, map_location='cpu')
     case = fixture['cases'][index]
@@ -515,8 +517,12 @@ def test_ultraquery_softmax_degree_calibration_follows_its_closed_form(tmp_path,
     torch.save({'model_state_dict': case['state']}, path)
     config = dict(case['config'], threshold=0.)
     plain = load_method('ultraquery', path, context, **config)
-    model = load_method('ultraquery', path, context, **config, observed_traversal=traversal, calibration='softmax-degree')
-    assert model.provenance['configuration']['calibration'] == 'softmax-degree'
+    model = load_method('ultraquery', path, context, **config, observed_traversal=traversal, calibration='softmax-degree-tied-cap')
+    assert model.provenance['configuration']['calibration'] == 'softmax-degree-tied-cap' and not model.double_precision
+    ordered = load_method('ultraquery', path, context, **config, observed_traversal=traversal, calibration='softmax-degree-ties')
+    control = load_method('ultraquery', path, context, **config, observed_traversal=traversal, calibration='softmax-degree-tied-cap',
+                          double_precision=True)
+    assert ordered.double_precision and control.double_precision
 
     def symbolic(source, relation):
         result = torch.zeros_like(source)
@@ -542,6 +548,12 @@ def test_ultraquery_softmax_degree_calibration_follows_its_closed_form(tmp_path,
         for shape, query in fixture['queries'].items():
             tree = compile_query(query)
             torch.testing.assert_close(model.membership(tree), membership(tree), atol=1e-6, rtol=1e-5, msg=shape)
+            # float64 memberships: the control differs from float32 by rounding only, and the order at the cap moves a
+            # membership by less than a millionth, relative.
+            exact, tied = ordered.membership(tree), control.membership(tree)
+            assert exact.dtype == tied.dtype == torch.float64
+            torch.testing.assert_close(tied.float(), model.membership(tree), atol=1e-6, rtol=1e-5, msg=shape)
+            torch.testing.assert_close(exact, tied, atol=1e-6, rtol=1e-5, msg=shape)
         # A single anchor head: d is its number of observed tails, as in the beam executor's calibration.
         anchor, (relation,) = fixture['queries']['1p']
         tails = sorted(context.outgoing.get(anchor, {}).get(relation, ()))
@@ -552,6 +564,40 @@ def test_ultraquery_softmax_degree_calibration_follows_its_closed_form(tmp_path,
             expected[tails] = 1.
         torch.testing.assert_close(model.membership(compile_query(fixture['queries']['1p'])), expected, atol=1e-6, rtol=1e-5)
     with pytest.raises(ValueError, match='threshold'):
-        load_method('ultraquery', path, context, **dict(case['config'], threshold=.5), calibration='softmax-degree')
+        load_method('ultraquery', path, context, **dict(case['config'], threshold=.5), calibration='softmax-degree-ties')
     with pytest.raises(ValueError, match='calibration'):
         load_method('ultraquery', path, context, **config, calibration='minmax')
+    with pytest.raises(ValueError, match='softmax-degree-tied-cap'):   # the earlier name of the control
+        load_method('ultraquery', path, context, **config, calibration='softmax-degree')
+    with pytest.raises(ValueError, match='float64'):
+        load_method('ultraquery', path, context, **config, calibration='softmax-degree-ties', double_precision=False)
+    with pytest.raises(ValueError, match='calibrated projection'):
+        load_method('ultraquery', path, context, **config, double_precision=True)
+
+
+def test_calibrated_executor_orders_the_candidates_at_the_cap():
+    """Two tails above the cap: the control gives both the cap, the rule calibration keeps the order of their logits."""
+    from dicee.query_answering.methods._common import FuzzyGNN
+
+    class Projection(FuzzyGNN):
+        def __init__(self, context, **options):
+            super().__init__(context, **options)
+            self.anchor = torch.nn.Parameter(torch.zeros(1))
+
+        def project_batch(self, membership, relation, *, relation_ids=None, logits=False):
+            assert membership.dtype == torch.float32 and logits   # the projection model reads float32 fuzzy sets
+            return torch.tensor([[0., 30., 30.5, 2., 1.]]).expand(len(membership), -1) + self.anchor
+
+    context = QueryContext([(0, 0, 0), (0, 0, 3), (0, 0, 4)], 5, 1)
+    tree = compile_query((0, (0,)))
+    with torch.no_grad():
+        tied = Projection(context, calibration='softmax-degree-tied-cap').membership(tree)
+        control = Projection(context, calibration='softmax-degree-tied-cap', double_precision=True).membership(tree)
+        ordered = Projection(context, calibration='softmax-degree-ties').membership(tree)
+        scores = Projection(context, calibration='softmax-degree-ties').predict_batch([(0, (0,))])[0]
+    # d = 3 observed tails: entities 1 and 2 both exceed the cap.
+    assert tied.dtype == torch.float32 and tied[1] == tied[2]
+    assert control.dtype == torch.float64 and control[1] == control[2] == .9999
+    assert ordered.dtype == torch.float64 and ordered[2] > ordered[1] and float(control[1] - ordered[1]) < 1e-6
+    assert bool((ordered[[0, 3, 4]] == control[[0, 3, 4]]).all())
+    assert scores.dtype == torch.float64 and scores[2] > scores[1] > scores[3]

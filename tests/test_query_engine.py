@@ -12,7 +12,7 @@ from dicee import KGE
 from dicee.query_answering import QueryAnswerer, QueryContext, QueryScoreAdapter
 from dicee.query_answering._query import QUERY_SHAPES, compile_query, index_query
 from dicee.query_answering.context import state_fingerprint
-from dicee.query_answering.score_adapter import score_features
+from dicee.query_answering.score_adapter import RULE_CALIBRATION, score_features
 
 
 class TableModel(nn.Module):
@@ -570,28 +570,39 @@ def test_training_free_calibrations_follow_cqd_hybrid_and_qto(tmp_path):
     # CQD-Hybrid: 0.9 (s - min) / (max - min); a constant row has no order and gets zero everywhere.
     torch.testing.assert_close(minmax[0], .9 * (raw[0] + 2) / 5, rtol=0, atol=1e-15)
     assert bool((minmax[1] == 0).all())
-    softmax = QueryScoreAdapter('global', 0., fixed_calibration='softmax-degree')(raw, observed, base).exp()
+    softmax = QueryScoreAdapter('global', 0., fixed_calibration='softmax-degree-tied-cap')(raw, observed, base).exp()
     # QTO: softmax times the observed tail count (two for (0, 0), at least one otherwise), capped at 0.9999.
     expected = (raw.softmax(1) * torch.tensor([[2.], [1.]], dtype=torch.float64)).clamp_max(.9999)
     torch.testing.assert_close(softmax, expected, rtol=1e-12, atol=0)
-    facts = QueryScoreAdapter('global', 1., fixed_calibration='softmax-degree',
+    facts = QueryScoreAdapter('global', 1., fixed_calibration='softmax-degree-ties',
                               metadata={'backbone_state_sha256': state_fingerprint(model), 'calibration': 'documentation only'})
     scores = facts(raw, observed, base)
     assert scores[0, 0] == 0 and scores[0, 1] == 0 and scores[0, 3] < 0
     facts.save(tmp_path / 'adapter.json')
     loaded = QueryScoreAdapter.load(tmp_path / 'adapter.json', model=model)
-    assert loaded.configuration == facts.configuration and loaded.fixed_calibration == 'softmax-degree' and loaded.needs_context
+    assert loaded.configuration == facts.configuration and loaded.fixed_calibration == 'softmax-degree-ties' and loaded.needs_context
     assert loaded.metadata['calibration'] == 'documentation only'
+    # The rule calibration is the default of ``rule``; it binds to the backbone and reloads for it.
+    rule = QueryScoreAdapter.rule(model)
+    assert (rule.fixed_calibration, rule.observed_mix) == (RULE_CALIBRATION, 1.) == ('softmax-degree-ties', 1.)
+    assert torch.equal(rule(raw, observed, base), scores)
+    rule.save(tmp_path / 'rule.json')
+    assert QueryScoreAdapter.load(tmp_path / 'rule.json', model=model).configuration == rule.configuration
+    assert QueryScoreAdapter.rule(model, calibration='softmax-mass-ties', observed_mix=0.).fixed_calibration == 'softmax-mass-ties'
+    # The earlier names of the tied controls are refused with their new names.
+    for old, new in (('softmax-degree', 'softmax-degree-tied-cap'), ('softmax-mass', 'softmax-mass-tied-cap')):
+        with pytest.raises(ValueError, match=new):
+            QueryScoreAdapter('global', fixed_calibration=old)
     # The default sigmoid keeps every existing configuration, artifact and cache key unchanged.
     assert 'fixed_calibration' not in QueryScoreAdapter('global').configuration and not QueryScoreAdapter('global').needs_context
     with pytest.raises(ValueError, match='Training-free'):
         QueryScoreAdapter('global', fixed_calibration='minmax', weights=[[1.], [0.]])
     with pytest.raises(ValueError, match='Training-free'):
-        QueryScoreAdapter('context_scores', fixed_calibration='softmax-degree')
+        QueryScoreAdapter('context_scores', fixed_calibration='softmax-degree-ties')
     with pytest.raises(ValueError, match='fixed calibration'):
         QueryScoreAdapter('global', fixed_calibration='temperature')
     with pytest.raises(ValueError, match='context graph'):
-        QueryScoreAdapter('global', fixed_calibration='softmax-degree')(raw)
+        QueryScoreAdapter('global', fixed_calibration='softmax-degree-ties')(raw)
 
 
 def test_observed_ties_follow_the_backbone_only_when_asked():
@@ -616,13 +627,13 @@ def test_softmax_calibration_variants_and_known_tail_masking():
     softmax = QueryScoreAdapter('global', 0., fixed_calibration='softmax')(raw, observed, base).exp()
     # d = 1: the plain softmax, capped below one.
     torch.testing.assert_close(softmax, raw.softmax(1).clamp_max(.9999), rtol=1e-12, atol=0)
-    qto = QueryScoreAdapter('global', 0., fixed_calibration='softmax-degree')(raw, observed, base)
+    qto = QueryScoreAdapter('global', 0., fixed_calibration='softmax-degree-tied-cap')(raw, observed, base)
     ties = QueryScoreAdapter('global', 0., fixed_calibration='softmax-degree-ties')(raw, observed, base)
     # QTO's memberships up to a millionth; with d = 3, entities 1 and 2 of row 0 both exceed the cap and tie under QTO.
     assert float((qto - ties).abs().max()) <= 1e-6
     assert qto[0, 1] == qto[0, 2] and ties[0, 2] > ties[0, 1]
     assert bool((qto[1] == ties[1]).all())
-    masked = QueryScoreAdapter('global', 1., fixed_calibration='softmax-degree', mask_known_logits=True)
+    masked = QueryScoreAdapter('global', 1., fixed_calibration='softmax-degree-tied-cap', mask_known_logits=True)
     scores = masked(raw, observed, base)
     # Known tails (entities 0, 3 and 4 of row 0) leave the softmax and keep membership one through the override.
     expected = (raw[0, 1:3].softmax(0) * 3).clamp_max(.9999).log()
@@ -633,7 +644,7 @@ def test_softmax_calibration_variants_and_known_tail_masking():
         QueryScoreAdapter('global', fixed_calibration='minmax', mask_known_logits=True)
     # FIT: the softmax times the observed tail count over the softmax mass on the observed tails, so that the observed
     # tails of row 0 (entities 0, 3 and 4) together hold three before the cap; row 1 has none and keeps the softmax.
-    fit = QueryScoreAdapter('global', 0., fixed_calibration='softmax-mass')(raw, observed, base).exp()
+    fit = QueryScoreAdapter('global', 0., fixed_calibration='softmax-mass-tied-cap')(raw, observed, base).exp()
     share = raw.softmax(1)
     factor = 3 / share[0, [0, 3, 4]].sum()
     torch.testing.assert_close(fit[0], (share[0] * factor).clamp_max(.9999), rtol=1e-12, atol=0)
@@ -642,5 +653,13 @@ def test_softmax_calibration_variants_and_known_tail_masking():
     # softmax mass, so the factor is large and lifts them to the cap, above two of the three observed tails.
     torch.testing.assert_close((share[0, [0, 3, 4]] * factor).sum(), torch.tensor(3., dtype=torch.float64), rtol=1e-12, atol=0)
     assert float(factor) > 1e11 and fit[0, 1] == fit[0, 2] == .9999 and fit[0, 0] < fit[0, 4] < .9999
-    with pytest.raises(ValueError, match='softmax-mass'):
-        QueryScoreAdapter('global', fixed_calibration='softmax-mass', mask_known_logits=True)
+    # With ordered candidates, FIT keeps every membership within a millionth, and the three candidates at the cap
+    # (entities 1 and 2, and the observed tail 3) follow their raw scores. Rows and entries below the cap are equal.
+    fit_tied = QueryScoreAdapter('global', 0., fixed_calibration='softmax-mass-tied-cap')(raw, observed, base)
+    fit_ties = QueryScoreAdapter('global', 0., fixed_calibration='softmax-mass-ties')(raw, observed, base)
+    assert float((fit_ties - fit_tied).abs().max()) <= 1e-6 and fit_tied[0, 1] == fit_tied[0, 2] == fit_tied[0, 3]
+    assert fit_ties[0, 2] > fit_ties[0, 1] > fit_ties[0, 3] > fit_ties[0, 4]
+    assert bool((fit_ties[1] == fit_tied[1]).all()) and bool((fit_ties[0, [0, 4]] == fit_tied[0, [0, 4]]).all())
+    for calibration in ('softmax-mass-ties', 'softmax-mass-tied-cap'):
+        with pytest.raises(ValueError, match='softmax-mass'):
+            QueryScoreAdapter('global', fixed_calibration=calibration, mask_known_logits=True)

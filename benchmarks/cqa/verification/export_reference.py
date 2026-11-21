@@ -290,8 +290,12 @@ def predictor(entry, upstream, checkpoint, n, nr, triples, queries, device, prob
         model = UltraQuery(backbone, threshold=options['threshold'], logic=options['logic'])
         backbone.load_state_dict(state, strict=True)
         model.to(device).eval()
-        if options.get('calibration') == 'softmax-degree':
-            # DICE's opt-in calibrated variant, built from upstream parts: upstream's relation and entity models give the
+        if options.get('calibration') and (options['calibration'] != 'softmax-degree-tied-cap' or options.get('double_precision')):
+            # The executor with ordered candidates holds its memberships in float64, which the upstream executor does
+            # not. So only the float32 control has a reference built from upstream parts.
+            raise ValueError("The upstream reference covers the calibrated executor only as the float32 control 'softmax-degree-tied-cap'")
+        if options.get('calibration') == 'softmax-degree-tied-cap':
+            # DICE's opt-in calibrated control, built from upstream parts: upstream's relation and entity models give the
             # projection logits; the softmax over entities times the observed-tail mass that upstream's SymbolicTraversal
             # reaches from the fuzzy set (at least one), capped at 0.9999, replaces the sigmoid; with observed_traversal
             # the result also takes the maximum with that traversal.

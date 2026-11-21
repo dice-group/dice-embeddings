@@ -19,6 +19,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--log_level` CLI flag; TriX model
 - KG-ICL (`KGICL`): official checkpoints in pure PyTorch with seeded, batch-independent prompt graphs, deterministic fused Triton inference, parity fixtures against the pinned official code with five upstream defects corrected, zero-shot benchmarks, and pinned +H and UltraQuery adapter recipes
 - Complex query answering (`dicee.query_answering`): CQD beam search over KGEs and KGFMs with learned score adapters, negated query types, native UltraQuery, GNN-QE, QTO, CQD, CQD-Hybrid, ConE and CLMPT checked against their upstream implementations, and resumable filtered evaluation with exact expected ranks under ties
+- Rule calibration for query answering (`QueryScoreAdapter.rule`): the training-free calibrations of QTO and FIT with the candidates at the cap in the order of their scores, for the beam executor and for UltraQuery's executor (float64 memberships); the forms with tied candidates at the cap stay as controls
 - Reproducible UltraQuery and +H benchmarks (`python -m benchmarks.cqa`): frozen studies verified against the pinned upstream implementations, a pinned Docker runtime, paired adapter, answer-filter and inference-graph ablations
 
 ### Changed

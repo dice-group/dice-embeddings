@@ -11,7 +11,8 @@ class ReferenceKGFM:
         if (adapter['feature_mode'] not in ('context_scores', 'context_scores_v1', 'global') or adapter['hidden_dim']
                 or adapter['normalization'] != 'none' or adapter['observed_mix'] not in (0, 1)
                 or not 0 <= adapter.get('membership_threshold', 0.) < 1
-                or adapter.get('fixed_calibration') not in (None, 'minmax', 'softmax-degree', 'softmax', 'softmax-degree-ties', 'softmax-mass')
+                or adapter.get('fixed_calibration') not in (None, 'minmax', 'softmax', 'softmax-degree-ties', 'softmax-mass-ties',
+                                                             'softmax-degree-tied-cap', 'softmax-mass-tied-cap')
                 or (adapter.get('fixed_calibration')
                     and (adapter['feature_mode'] != 'global' or any(w for row in adapter['weights'] for w in row)))):
             raise ValueError('This reference covers the frozen linear observed-fact recipe')
@@ -59,9 +60,10 @@ class ReferenceKGFM:
             low, high = raw.min(1, keepdim=True).values, raw.max(1, keepdim=True).values
             spread = high - low
             calibrated = torch.where(spread > 0, 0.9 * (raw - low) / torch.where(spread > 0, spread, 1.), 0.).log()
-        elif calibration in ('softmax-degree', 'softmax', 'softmax-degree-ties'):
+        elif calibration in ('softmax-degree-ties', 'softmax-degree-tied-cap', 'softmax'):
             # QTO: softmax over tails times the observed tail count (at least one), capped at 0.9999 below one; 'softmax'
-            # drops the count, '-ties' orders capped tails by the raw score. Masked known tails leave the softmax.
+            # drops the count, '-ties' orders capped tails by the raw score, '-tied-cap' leaves them tied. Masked known
+            # tails leave the softmax.
             scores = raw
             if self.adapter.get('mask_known_logits'):
                 keep = ~observed | observed.all(1, keepdim=True)
@@ -73,13 +75,21 @@ class ReferenceKGFM:
             if calibration == 'softmax-degree-ties':
                 calibrated = calibrated - torch.where(level >= math.log(0.9999), 1e-6 * torch.atan2(torch.ones_like(raw), raw) / math.pi,
                                                       raw.new_zeros(()))
-        elif calibration == 'softmax-mass':
+        elif calibration in ('softmax-mass-ties', 'softmax-mass-tied-cap'):
             # FIT: softmax times the observed tail count over the softmax mass on the observed tails (no factor for a row
-            # without observed tails), capped at 0.9999 below one.
-            share = torch.softmax(raw, 1)
-            mass = (share * observed).sum(1)
-            factor = torch.where(count > 0, count.double() / mass, raw.new_ones(()))
-            calibrated = torch.minimum((share * factor[:, None]).log(), raw.new_tensor(math.log(0.9999)))
+            # without observed tails), capped at 0.9999 below one; '-ties' orders capped tails by the raw score. In log
+            # space, with the operations and their order of production: log_softmax, logsumexp over the observed tails,
+            # log count minus that mass, one addition. The probability-space form softmax * count / mass rounds
+            # differently by about 1e-14, which moves sums of rows into or out of exact ties, so the tie parity fails
+            # although the scores agree within 1e-12.
+            level = torch.log_softmax(raw, 1)
+            mass = level.masked_fill(~observed, -math.inf).logsumexp(1, keepdim=True)
+            counts = count[:, None]
+            level = level + torch.where(counts > 0, counts.clamp_min(1).to(raw.dtype).log() - mass, 0.)
+            calibrated = torch.minimum(level, raw.new_tensor(math.log(0.9999)))
+            if calibration == 'softmax-mass-ties':
+                calibrated = calibrated - torch.where(level >= math.log(0.9999), 1e-6 * torch.atan2(torch.ones_like(raw), raw) / math.pi,
+                                                      raw.new_zeros(()))
         else:
             u, v = (features @ raw.new_tensor(self.adapter['weights']).T).unbind(1)
             bound = math.log(self.adapter['scale_bound'])

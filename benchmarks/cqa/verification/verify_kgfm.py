@@ -79,6 +79,10 @@ def verify(bundle_dir, entry_id, root, output, *, device='cuda', probes=2):
              'fuzzy composition and positive observed-answer restoration. Shared native backbone logits; '
              'this is integration evidence, not an independent backbone reproduction. '
              'Paired entries also verify the identity-calibration control on every query type.')
+    if adapter.get('fixed_calibration') in ('softmax-mass-ties', 'softmax-mass-tied-cap'):
+        scope += (' FIT (softmax-mass) runs in log space with the operations of production (torch.log_softmax and '
+                  'logsumexp over the observed tails in float64), so that exact ties of summed rows round alike in '
+                  'both paths.')
     oracle = dict(version=1, **identity, validation_plan_sha256=bundle['plans'][f'{entry_id}/valid']['sha256'],
                   pilot_queries=probes, probe_only=True, scores=scores['learned'], orders=orders['learned'],
                   comparison_scores={key: value for key, value in scores.items() if key != 'learned'},
