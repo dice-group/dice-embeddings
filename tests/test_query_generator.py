@@ -58,16 +58,29 @@ def test_save_queries_rejects_unknown_type(generator, tmp_path):
         generator.save_queries("not-a-type", 5, str(tmp_path))
 
 
+class _LogitTable(torch.nn.Module):
+    """Atomic model whose raw logits depend on the relation only, the same for every head."""
+
+    name = "LogitTable"
+
+    def __init__(self, logits):
+        super().__init__()
+        num_relations, num_entities = logits.shape
+        self.table = torch.nn.Parameter(logits.to(torch.float64).expand(num_entities, num_relations, num_entities).clone())
+        self.num_entities, self.num_relations = num_entities, num_relations
+
+    def forward_k_vs_all(self, pairs):
+        return self.table[pairs[:, 0], pairs[:, 1]]
+
+
 class _StubKGE(KGE):
     """KGE whose atomic predictions are fixed raw logits, so no training is needed."""
 
     def __init__(self):
         self.entity_to_idx = {f"e{i}": i for i in range(3)}
-        self._logits = {"a": torch.tensor([-3.0, -1.0, 2.0]), "b": torch.tensor([-2.0, -4.0, 3.0])}
-
-    def predict(self, h=None, r=None, t=None, within=None, logits=True):
-        scores = self._logits[r[0] if isinstance(r, list) else r]
-        return scores if logits else torch.sigmoid(scores)
+        self.relation_to_idx = {"a": 0, "b": 1}
+        # answer_multi_hop_query scores atomic queries with the model's forward_k_vs_all.
+        self.model = _LogitTable(torch.tensor([[-3.0, -1.0, 2.0], [-2.0, -4.0, 3.0]]))
 
 
 def test_intersection_defaults_to_probabilities_and_ranks_correctly():

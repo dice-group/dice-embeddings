@@ -1,0 +1,636 @@
+{
+  "version": "2.0",
+  "source": "https://zenodo.org/records/7306046",
+  "files": {
+    "106": {
+      "train_answers_valid.pkl": {
+        "bytes": 222615050,
+        "crc32": 2127457251
+      },
+      "val_predict.txt": {
+        "bytes": 146463,
+        "crc32": 1962570836
+      },
+      "test_answers_hard.pkl": {
+        "bytes": 8012856,
+        "crc32": 4274819325
+      },
+      "valid_answers_easy.pkl": {
+        "bytes": 190930802,
+        "crc32": 2032002918
+      },
+      "stats.txt": {
+        "bytes": 110,
+        "crc32": 916940677
+      },
+      "valid_answers_hard.pkl": {
+        "bytes": 9337662,
+        "crc32": 2641552673
+      },
+      "test_queries.pkl": {
+        "bytes": 3904572,
+        "crc32": 3909217021
+      },
+      "train_queries.pkl": {
+        "bytes": 33327290,
+        "crc32": 170044298
+      },
+      "og_mappings.pkl": {
+        "bytes": 351138,
+        "crc32": 614139134
+      },
+      "val_inference.txt": {
+        "bytes": 829929,
+        "crc32": 3500356919
+      },
+      "train_answers_test.pkl": {
+        "bytes": 221922191,
+        "crc32": 61633874
+      },
+      "test_predict.txt": {
+        "bytes": 114275,
+        "crc32": 515135815
+      },
+      "train_answers_hard.pkl": {
+        "bytes": 256358832,
+        "crc32": 537753088
+      },
+      "test_inference.txt": {
+        "bytes": 647847,
+        "crc32": 3601583391
+      },
+      "test_answers_easy.pkl": {
+        "bytes": 195359464,
+        "crc32": 2584167393
+      },
+      "train_graph.txt": {
+        "bytes": 6397355,
+        "crc32": 956701669
+      },
+      "valid_queries.pkl": {
+        "bytes": 3928336,
+        "crc32": 1356027438
+      }
+    },
+    "113": {
+      "train_answers_valid.pkl": {
+        "bytes": 225603284,
+        "crc32": 4279546648
+      },
+      "val_predict.txt": {
+        "bytes": 225526,
+        "crc32": 2153236401
+      },
+      "test_answers_hard.pkl": {
+        "bytes": 10082998,
+        "crc32": 2283473921
+      },
+      "valid_answers_easy.pkl": {
+        "bytes": 157677730,
+        "crc32": 4145877345
+      },
+      "stats.txt": {
+        "bytes": 112,
+        "crc32": 4251385914
+      },
+      "valid_answers_hard.pkl": {
+        "bytes": 11342559,
+        "crc32": 415546472
+      },
+      "test_queries.pkl": {
+        "bytes": 3981855,
+        "crc32": 903912400
+      },
+      "train_queries.pkl": {
+        "bytes": 32966406,
+        "crc32": 1582195831
+      },
+      "og_mappings.pkl": {
+        "bytes": 350013,
+        "crc32": 1962790053
+      },
+      "val_inference.txt": {
+        "bytes": 1277765,
+        "crc32": 1428619069
+      },
+      "train_answers_test.pkl": {
+        "bytes": 218874594,
+        "crc32": 991468924
+      },
+      "test_predict.txt": {
+        "bytes": 211532,
+        "crc32": 2320895943
+      },
+      "train_answers_hard.pkl": {
+        "bytes": 239712017,
+        "crc32": 2821696352
+      },
+      "test_inference.txt": {
+        "bytes": 1198069,
+        "crc32": 2029575231
+      },
+      "test_answers_easy.pkl": {
+        "bytes": 153584506,
+        "crc32": 2208956229
+      },
+      "train_graph.txt": {
+        "bytes": 5141002,
+        "crc32": 89518030
+      },
+      "valid_queries.pkl": {
+        "bytes": 3989231,
+        "crc32": 4285792803
+      }
+    },
+    "122": {
+      "train_answers_valid.pkl": {
+        "bytes": 227775955,
+        "crc32": 1925017448
+      },
+      "val_predict.txt": {
+        "bytes": 288572,
+        "crc32": 427082963
+      },
+      "test_answers_hard.pkl": {
+        "bytes": 17676225,
+        "crc32": 1069461696
+      },
+      "valid_answers_easy.pkl": {
+        "bytes": 166736811,
+        "crc32": 3894232451
+      },
+      "stats.txt": {
+        "bytes": 112,
+        "crc32": 4038247536
+      },
+      "valid_answers_hard.pkl": {
+        "bytes": 15165545,
+        "crc32": 4175911720
+      },
+      "test_queries.pkl": {
+        "bytes": 5128445,
+        "crc32": 2878735352
+      },
+      "train_queries.pkl": {
+        "bytes": 32535566,
+        "crc32": 3346475155
+      },
+      "og_mappings.pkl": {
+        "bytes": 349725,
+        "crc32": 1969171057
+      },
+      "val_inference.txt": {
+        "bytes": 1635657,
+        "crc32": 805202829
+      },
+      "train_answers_test.pkl": {
+        "bytes": 227079621,
+        "crc32": 1548910851
+      },
+      "test_predict.txt": {
+        "bytes": 333248,
+        "crc32": 3875030041
+      },
+      "train_answers_hard.pkl": {
+        "bytes": 226863249,
+        "crc32": 3565487833
+      },
+      "test_inference.txt": {
+        "bytes": 1886648,
+        "crc32": 1080774119
+      },
+      "test_answers_easy.pkl": {
+        "bytes": 166213516,
+        "crc32": 3869019787
+      },
+      "train_graph.txt": {
+        "bytes": 3816444,
+        "crc32": 146621670
+      },
+      "valid_queries.pkl": {
+        "bytes": 5089342,
+        "crc32": 113618264
+      }
+    },
+    "134": {
+      "train_answers_valid.pkl": {
+        "bytes": 232388780,
+        "crc32": 638433923
+      },
+      "val_predict.txt": {
+        "bytes": 340343,
+        "crc32": 1546527536
+      },
+      "test_answers_hard.pkl": {
+        "bytes": 45573463,
+        "crc32": 3916559349
+      },
+      "valid_answers_easy.pkl": {
+        "bytes": 327167263,
+        "crc32": 132510776
+      },
+      "stats.txt": {
+        "bytes": 111,
+        "crc32": 3490429564
+      },
+      "valid_answers_hard.pkl": {
+        "bytes": 44755981,
+        "crc32": 1021389800
+      },
+      "test_queries.pkl": {
+        "bytes": 15812052,
+        "crc32": 1569178564
+      },
+      "train_queries.pkl": {
+        "bytes": 32230339,
+        "crc32": 1812113743
+      },
+      "og_mappings.pkl": {
+        "bytes": 346933,
+        "crc32": 4124865534
+      },
+      "val_inference.txt": {
+        "bytes": 1932846,
+        "crc32": 3024773898
+      },
+      "train_answers_test.pkl": {
+        "bytes": 232194115,
+        "crc32": 1820189611
+      },
+      "test_predict.txt": {
+        "bytes": 348401,
+        "crc32": 1832583827
+      },
+      "train_answers_hard.pkl": {
+        "bytes": 216024902,
+        "crc32": 1503661660
+      },
+      "test_inference.txt": {
+        "bytes": 1977504,
+        "crc32": 903245296
+      },
+      "test_answers_easy.pkl": {
+        "bytes": 334834974,
+        "crc32": 3316223477
+      },
+      "train_graph.txt": {
+        "bytes": 2884883,
+        "crc32": 2461824179
+      },
+      "valid_queries.pkl": {
+        "bytes": 15823689,
+        "crc32": 4154145113
+      }
+    },
+    "150": {
+      "train_answers_valid.pkl": {
+        "bytes": 206829540,
+        "crc32": 2622602600
+      },
+      "val_predict.txt": {
+        "bytes": 345019,
+        "crc32": 374871620
+      },
+      "test_answers_hard.pkl": {
+        "bytes": 72097527,
+        "crc32": 3921641806
+      },
+      "valid_answers_easy.pkl": {
+        "bytes": 429105480,
+        "crc32": 1305220952
+      },
+      "stats.txt": {
+        "bytes": 111,
+        "crc32": 1969255981
+      },
+      "valid_answers_hard.pkl": {
+        "bytes": 59967681,
+        "crc32": 3458923041
+      },
+      "test_queries.pkl": {
+        "bytes": 19385640,
+        "crc32": 2409607166
+      },
+      "train_queries.pkl": {
+        "bytes": 31225181,
+        "crc32": 380877425
+      },
+      "og_mappings.pkl": {
+        "bytes": 347176,
+        "crc32": 2345290980
+      },
+      "val_inference.txt": {
+        "bytes": 1956323,
+        "crc32": 2462227954
+      },
+      "train_answers_test.pkl": {
+        "bytes": 222962542,
+        "crc32": 655110866
+      },
+      "test_predict.txt": {
+        "bytes": 425310,
+        "crc32": 457502557
+      },
+      "train_answers_hard.pkl": {
+        "bytes": 177217090,
+        "crc32": 774506850
+      },
+      "test_inference.txt": {
+        "bytes": 2412571,
+        "crc32": 545194768
+      },
+      "test_answers_easy.pkl": {
+        "bytes": 472301691,
+        "crc32": 575961351
+      },
+      "train_graph.txt": {
+        "bytes": 2045704,
+        "crc32": 1094433206
+      },
+      "valid_queries.pkl": {
+        "bytes": 19336144,
+        "crc32": 3799685740
+      }
+    },
+    "175": {
+      "train_answers_valid.pkl": {
+        "bytes": 231658132,
+        "crc32": 2338021379
+      },
+      "val_predict.txt": {
+        "bytes": 374452,
+        "crc32": 3645624910
+      },
+      "test_answers_hard.pkl": {
+        "bytes": 70174732,
+        "crc32": 1097366851
+      },
+      "valid_answers_easy.pkl": {
+        "bytes": 309746882,
+        "crc32": 263560611
+      },
+      "stats.txt": {
+        "bytes": 111,
+        "crc32": 1426340539
+      },
+      "valid_answers_hard.pkl": {
+        "bytes": 62065943,
+        "crc32": 3481264274
+      },
+      "test_queries.pkl": {
+        "bytes": 20586045,
+        "crc32": 2267890764
+      },
+      "train_queries.pkl": {
+        "bytes": 30744012,
+        "crc32": 1428388548
+      },
+      "og_mappings.pkl": {
+        "bytes": 337664,
+        "crc32": 3639673031
+      },
+      "val_inference.txt": {
+        "bytes": 2125466,
+        "crc32": 245359974
+      },
+      "train_answers_test.pkl": {
+        "bytes": 237446394,
+        "crc32": 2418683699
+      },
+      "test_predict.txt": {
+        "bytes": 408845,
+        "crc32": 970098317
+      },
+      "train_answers_hard.pkl": {
+        "bytes": 170942744,
+        "crc32": 3838087073
+      },
+      "test_inference.txt": {
+        "bytes": 2320451,
+        "crc32": 1307371129
+      },
+      "test_answers_easy.pkl": {
+        "bytes": 341969689,
+        "crc32": 2430511246
+      },
+      "train_graph.txt": {
+        "bytes": 1268480,
+        "crc32": 3026052970
+      },
+      "valid_queries.pkl": {
+        "bytes": 20594963,
+        "crc32": 3394616982
+      }
+    },
+    "217": {
+      "train_answers_valid.pkl": {
+        "bytes": 136495499,
+        "crc32": 3465188741
+      },
+      "val_predict.txt": {
+        "bytes": 403705,
+        "crc32": 87815284
+      },
+      "test_answers_hard.pkl": {
+        "bytes": 65584728,
+        "crc32": 1167581732
+      },
+      "valid_answers_easy.pkl": {
+        "bytes": 221899548,
+        "crc32": 3501421439
+      },
+      "stats.txt": {
+        "bytes": 111,
+        "crc32": 3317629882
+      },
+      "valid_answers_hard.pkl": {
+        "bytes": 70989244,
+        "crc32": 39487799
+      },
+      "test_queries.pkl": {
+        "bytes": 20618039,
+        "crc32": 849975777
+      },
+      "train_queries.pkl": {
+        "bytes": 28096983,
+        "crc32": 1210595688
+      },
+      "og_mappings.pkl": {
+        "bytes": 338157,
+        "crc32": 2367516723
+      },
+      "val_inference.txt": {
+        "bytes": 2290131,
+        "crc32": 3491177888
+      },
+      "train_answers_test.pkl": {
+        "bytes": 141649548,
+        "crc32": 2003735472
+      },
+      "test_predict.txt": {
+        "bytes": 389882,
+        "crc32": 1434760274
+      },
+      "train_answers_hard.pkl": {
+        "bytes": 94947311,
+        "crc32": 3826735907
+      },
+      "test_inference.txt": {
+        "bytes": 2212932,
+        "crc32": 349255903
+      },
+      "test_answers_easy.pkl": {
+        "bytes": 219221355,
+        "crc32": 2211991067
+      },
+      "train_graph.txt": {
+        "bytes": 640360,
+        "crc32": 2677427181
+      },
+      "valid_queries.pkl": {
+        "bytes": 20668742,
+        "crc32": 1513051335
+      }
+    },
+    "300": {
+      "train_answers_valid.pkl": {
+        "bytes": 211853710,
+        "crc32": 1083432408
+      },
+      "val_predict.txt": {
+        "bytes": 353491,
+        "crc32": 2721905548
+      },
+      "test_answers_hard.pkl": {
+        "bytes": 75406827,
+        "crc32": 275037086
+      },
+      "valid_answers_easy.pkl": {
+        "bytes": 205819376,
+        "crc32": 2104015365
+      },
+      "stats.txt": {
+        "bytes": 111,
+        "crc32": 1757620724
+      },
+      "valid_answers_hard.pkl": {
+        "bytes": 64180660,
+        "crc32": 2866994750
+      },
+      "test_queries.pkl": {
+        "bytes": 20550283,
+        "crc32": 1154687234
+      },
+      "train_queries.pkl": {
+        "bytes": 24113843,
+        "crc32": 2428668404
+      },
+      "og_mappings.pkl": {
+        "bytes": 332839,
+        "crc32": 1225606516
+      },
+      "val_inference.txt": {
+        "bytes": 2009632,
+        "crc32": 1759567357
+      },
+      "train_answers_test.pkl": {
+        "bytes": 224335036,
+        "crc32": 364211603
+      },
+      "test_predict.txt": {
+        "bytes": 391694,
+        "crc32": 490777807
+      },
+      "train_answers_hard.pkl": {
+        "bytes": 102976653,
+        "crc32": 2066889623
+      },
+      "test_inference.txt": {
+        "bytes": 2225314,
+        "crc32": 1460261459
+      },
+      "test_answers_easy.pkl": {
+        "bytes": 258478502,
+        "crc32": 1161846747
+      },
+      "train_graph.txt": {
+        "bytes": 288179,
+        "crc32": 1711314424
+      },
+      "valid_queries.pkl": {
+        "bytes": 20523744,
+        "crc32": 2538452426
+      }
+    },
+    "550": {
+      "train_answers_valid.pkl": {
+        "bytes": 67939823,
+        "crc32": 1612544607
+      },
+      "val_predict.txt": {
+        "bytes": 300357,
+        "crc32": 964660324
+      },
+      "test_answers_hard.pkl": {
+        "bytes": 64205685,
+        "crc32": 2309798725
+      },
+      "valid_answers_easy.pkl": {
+        "bytes": 138521541,
+        "crc32": 2605770060
+      },
+      "stats.txt": {
+        "bytes": 111,
+        "crc32": 109310899
+      },
+      "valid_answers_hard.pkl": {
+        "bytes": 57947005,
+        "crc32": 2281276267
+      },
+      "test_queries.pkl": {
+        "bytes": 20293809,
+        "crc32": 816724508
+      },
+      "train_queries.pkl": {
+        "bytes": 20499571,
+        "crc32": 630566200
+      },
+      "og_mappings.pkl": {
+        "bytes": 314875,
+        "crc32": 298538
+      },
+      "val_inference.txt": {
+        "bytes": 1716884,
+        "crc32": 335509201
+      },
+      "train_answers_test.pkl": {
+        "bytes": 75661505,
+        "crc32": 3447717392
+      },
+      "test_predict.txt": {
+        "bytes": 305168,
+        "crc32": 1714620031
+      },
+      "train_answers_hard.pkl": {
+        "bytes": 39959829,
+        "crc32": 412282031
+      },
+      "test_inference.txt": {
+        "bytes": 1742124,
+        "crc32": 362131730
+      },
+      "test_answers_easy.pkl": {
+        "bytes": 174113211,
+        "crc32": 2351455741
+      },
+      "train_graph.txt": {
+        "bytes": 57819,
+        "crc32": 3024727647
+      },
+      "valid_queries.pkl": {
+        "bytes": 20303298,
+        "crc32": 820371586
+      }
+    }
+  }
+}

@@ -316,6 +316,60 @@ class Flock(FlockBase):
     """Entity-prediction Flock with official ``flock_entity.pth`` parameters."""
     name = "Flock"
 
+    @torch.no_grad()
+    def forward_k_vs_all_seeded(self, queries, seeds, *, samples=None):
+        """Batch inference with independent, batch-invariant sampling seeds."""
+        if self.training:
+            raise ValueError('Seeded scoring requires evaluation mode')
+        n, _ = self._require_graph()
+        samples = self.test_samples if samples is None else samples
+        if type(samples) is not int or samples < 1 or len(seeds) != len(queries):
+            raise ValueError('Provide a seed per query and a positive sample count')
+        if any(type(seed) is not int or not 0 <= seed < 2**63 for seed in seeds):
+            raise ValueError('Seeds must be integers in [0, 2**63)')
+        queries = torch.as_tensor(queries, device=self.device, dtype=torch.long)
+        if queries.ndim != 2 or queries.shape[1] != 2:
+            raise ValueError('Expected [batch, 2] head/relation queries')
+        if not len(queries):
+            return self.node_init.new_empty((0, n))
+        if ((queries[:, 0] < 0) | (queries[:, 0] >= n) | (queries[:, 1] < 0) | (queries[:, 1] >= self.num_relations)).any():
+            raise ValueError('Query outside the public vocabulary')
+        heads = queries[:, 0].repeat_interleave(samples)
+        relations = self.relation_id_map[queries[:, 1]].repeat_interleave(samples)
+        cpu_heads = heads.cpu()
+        generators = {}
+
+        def draw(start):
+            records = []
+            for index in range(start, min(start + self.query_batch_size, len(heads))):
+                row = index // samples
+                if row not in generators:
+                    generators[row] = torch.Generator().manual_seed(seeds[row])
+                records.append(self._draw_walks(self._walk_graph, cpu_heads[index:index + 1], None, generators[row]))
+                if index % samples == samples - 1:
+                    del generators[row]
+            packed = tuple(torch.cat(parts, dim=1) for parts in zip(*records))
+            return self._transfer_records(packed) if self.device.type == 'cuda' else packed
+
+        def score(start, records):
+            stop = min(start + self.query_batch_size, len(heads))
+            candidates = torch.arange(n, device=self.device).expand(stop - start, -1)
+            return self.score_walks(heads[start:stop], relations[start:stop], candidates, records)
+
+        starts = range(0, len(heads), self.query_batch_size)
+        if self.prefetch_walks and self.device.type == 'cuda' and len(heads) > self.query_batch_size:
+            with ThreadPoolExecutor(max_workers=1) as pool:
+                future = pool.submit(draw, 0)
+                output = []
+                for start in starts:
+                    records = future.result()
+                    if start + self.query_batch_size < len(heads):
+                        future = pool.submit(draw, start + self.query_batch_size)
+                    output.append(score(start, records))
+        else:
+            output = [score(start, draw(start)) for start in starts]
+        return torch.cat(output).view(len(queries), samples, n).mean(1)
+
     def _score(self, heads, relations, candidates, query_relations, edges):
         # Unlike ULTRA/TRIX, query conditioning occurs after head-to-tail
         # conversion, using the actual (possibly inverse) relation ID.

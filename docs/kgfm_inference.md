@@ -82,6 +82,27 @@ YAGO3-10 Flock had higher timing variance: official native repeats ranged
 394–583 ms/query (DICE 65–67), and replay repeats ranged 76–170 ms/query
 (DICE 47–54). Treat its reported median speedups as approximate.
 
+## KG-ICL
+
+Warm atomic rows of [KG-ICL](kgicl.md) in the query evaluator under deterministic
+algorithms, as in complex query answering: batches of 8 random head–relation pairs
+scored against all entities, on an RTX 5070 Laptop GPU (8 GiB), with the KG-ICL
+recipes' 512 MiB cache of per-layer relation tables (`projection_cache_mb`):
+
+| Inference graph | Entities | Relations with inverses | Edges | ms/row | First pass over all relations |
+|---|---:|---:|---:|---:|---:|
+| FB15k237+H | 14,505 | 474 | 544,230 | 1.01 | 16.9 s |
+| NELL995+H | 63,361 | 400 | 228,426 | 1.71 | 8.4 s |
+| ICEWS18+H | 20,840 | 500 | 426,608 | 1.04 | 20.0 s |
+| UltraQuery FB15k237 | 14,505 | 474 | 544,230 | 0.98 | 14.1 s |
+| UltraQuery NELL995 | 63,361 | 400 | 228,426 | 1.68 | 7.9 s |
+| UltraQuery inductive FB15k237 (550) | 13,438 | 312 | 136,560 | 0.54 | 5.7 s |
+| UltraQuery WikiTopics art | 10,000 | 129 | 54,524 | 0.55 | 2.7 s |
+
+The first pass samples and encodes the prompt graphs of every relation. With the
+default 64 MiB table cache, graphs with hundreds of relations recompute tables:
+FB15k237+H then takes 2.55 ms/row.
+
 ## Reproduce
 
 Use the pinned official checkout with PyTorch 2.5.1/CUDA 12.4, PyG 2.4.0,

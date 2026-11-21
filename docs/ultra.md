@@ -61,6 +61,13 @@ For direct model use, import `ULTRA` from `dicee.models`, load weights with
 `load_pretrained(path)`, and attach indexed training triples with `set_graph(...)`.
 Triples follow DICE's `(head, relation, tail)` order.
 
+Like upstream link prediction, ULTRA conditions the relation graph of a tail query
+`(h, r, ?)` on the direct relation, also when `r` is an inverse relation.
+`ultra_relation_conditioning="query"` conditions it on `r` itself, as UltraQuery's
+projection does; with UltraQuery's weights the model then scores atoms exactly
+like UltraQuery's single-source projection. It applies to tail queries
+(`forward_k_vs_all`, `forward_k_vs_sample`).
+
 ## Tests
 
 ```bash

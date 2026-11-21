@@ -8,6 +8,7 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 
+from .query_answering._query import QUERY_SHAPES, compile_query, exact_answers
 from .static_funcs import load_pickle, save_pickle
 
 logger = logging.getLogger(__name__)
@@ -34,26 +35,27 @@ class QueryGenerator:
         self.rel2id: Dict = rel2id
         self.ent_in: Dict = {}
         self.ent_out: Dict = {}
-        self.query_name_to_struct = {"1p": ['e', ['r']],
-                                     "2p": ['e', ['r', 'r']],
-                                     "3p": ['e', ['r', 'r', 'r']],
-                                     "2i": [['e', ['r']], ['e', ['r']]], # @TODO: double check the evaluation
-                                     "3i": [['e', ['r']], ['e', ['r']], ['e', ['r']]],
-                                     "pi": [['e', ['r', 'r']], ['e', ['r']]],
-                                     "ip": [[['e', ['r']], ['e', ['r']]], ['r']],
-                                     "2in": [['e', ['r']], ['e', ['r', 'n']]],
-                                     "3in": [['e', ['r']], ['e', ['r']], ['e', ['r', 'n']]],
-                                     "pin": [['e', ['r', 'r']], ['e', ['r', 'n']]],
-                                     "pni": [['e', ['r', 'r', 'n']], ['e', ['r']]],
-                                     "inp": [[['e', ['r']], ['e', ['r', 'n']]], ['r']],
-                                     # union
-                                     "2u": [['e', ['r']], ['e', ['r']], ['u']],
-                                     "up": [[['e', ['r']], ['e', ['r']], ['u']], ['r']]}
+        self.query_name_to_struct = {name: self.tuple2list(shape) for name, shape in QUERY_SHAPES.items()}
         self.set_global_seed(seed)
 
         # Sanity checking
         assert isinstance(self.ent2id, dict) or self.ent2id is None
         assert isinstance(self.rel2id, dict) or self.rel2id is None
+
+    @classmethod
+    def from_context(cls, context, *, seed=1):
+        """Ground queries from an in-memory context without files or global RNG changes."""
+        instance = cls.__new__(cls)
+        instance.num_entities = context.num_entities
+        instance.ent2id = {str(i): i for i in range(context.num_entities)}
+        instance.rng = random.Random(seed)
+        instance.inverse_relations = {a: b for h, t in context.inverse_relations for a, b in ((h, t), (t, h))}
+        instance.ent_in = defaultdict(lambda: defaultdict(set))
+        instance.ent_out = defaultdict(lambda: defaultdict(set))
+        for h, r, t in context.triples:
+            instance.ent_in[t][r].add(h)
+            instance.ent_out[h][r].add(t)
+        return instance
 
     def list2tuple(self, list_data):
         # @TODO: add description
@@ -70,6 +72,7 @@ class QueryGenerator:
 
     def set_global_seed(self, seed: int):
         """Set seed"""
+        self.rng = random.Random(seed)
         np.random.seed(seed)
         random.seed(seed)
 
@@ -117,15 +120,15 @@ class QueryGenerator:
                 for j in range(40):
                     if len(ent_in[answer].keys()) < 1:
                         return True  # not enough relations, return True to indicate broken flag
-                    r_tmp = random.sample(list(ent_in[answer].keys()), 1)[0]
-                    if r_tmp // 2 != r // 2 or r_tmp == r:
+                    r_tmp = self.rng.sample(sorted(ent_in[answer]), 1)[0]
+                    if (r_tmp != self.inverse_relations.get(r) if hasattr(self, 'inverse_relations') else r_tmp // 2 != r // 2 or r_tmp == r):
                         r = r_tmp
                         found = True
                         break
                 if not found:
                     return True
                 query_structure[-1][i] = r
-                answer = random.sample(list(ent_in[answer][r]), 1)[0]
+                answer = self.rng.sample(sorted(ent_in[answer][r]), 1)[0]
             if query_structure[0] == 'e':
                 query_structure[0] = answer
             else:
@@ -156,40 +159,10 @@ class QueryGenerator:
         Private method for achieve_answer logic.
         @TODO: Document the code
         """
-        assert isinstance(query[-1], list)
-        all_relation_flag = True
-        for ele in query[-1]:
-            # @TODO: unclear
-            if not isinstance(ele, int) or (ele == -1):
-                all_relation_flag = False
-                break
-        if all_relation_flag:
-            if isinstance(query[0], int):
-                # @TODO: unclear
-                ent_set = set([query[0]])
-            else:
-                ent_set = self.achieve_answer(query[0], ent_in, ent_out)
-            for i in range(len(query[-1])):
-                if query[-1][i] == -2:
-                    ent_set = set(range(len(ent_in))) - ent_set
-                else:
-                    ent_set_traverse = set()
-                    for ent in ent_set:
-                        ent_set_traverse = ent_set_traverse.union(ent_out[ent][query[-1][i]])
-                    ent_set = ent_set_traverse
-        else:
-            ent_set = self.achieve_answer(query[0], ent_in, ent_out)
-            union_flag = False
-            if len(query[-1]) == 1 and query[-1][0] == -1:
-                union_flag = True
-            for i in range(1, len(query)):
-                if not union_flag:
-                    ent_set = ent_set.intersection(self.achieve_answer(query[i], ent_in, ent_out))
-                else:
-                    if i == len(query) - 1:
-                        continue
-                    ent_set = ent_set.union(self.achieve_answer(query[i], ent_in, ent_out))
-        return ent_set
+        num_entities = getattr(self, 'num_entities', None)
+        if num_entities is None:
+            num_entities = len(self.ent2id) if self.ent2id is not None else max(set(ent_in) | set(ent_out), default=-1) + 1
+        return exact_answers(compile_query(query), ent_out, num_entities)
 
     def write_links(self, ent_out, small_ent_out):
         # @TODO: Explain why this is needed
