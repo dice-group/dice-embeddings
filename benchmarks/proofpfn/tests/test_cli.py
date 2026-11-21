@@ -1,5 +1,5 @@
-"""The command line: family options, list, check, run and cells on a tiny graph set, the refusals of wrong input with
-one error line, and the traceback of an internal error."""
+"""The command line: family options, list, check and run on a tiny graph set, the refusals of wrong input with one error
+line, and the traceback of an internal error."""
 import argparse
 import json
 import os
@@ -35,13 +35,13 @@ def test_every_command_and_option_has_a_help_text(capsys):
 
 
 def test_list(capsys):
-    assert cli.main(['list', '--set', 'dev121', '--view', 'apart']) == 0
-    assert capsys.readouterr().out.split() == ['UMLS']
+    assert cli.main(['list', '--set', 't1', '--view', 'trans']) == 0
+    assert capsys.readouterr().out.split() == [e.key for e in mf.read_manifest('t1').select('trans')]
     assert cli.main(['list', '--set', 'gate']) == 0
     assert capsys.readouterr().out.split() == [e.key for e in mf.read_manifest('gate').entries]
 
 
-def test_check_run_and_cells(tmp_path, capsys):
+def test_check_and_run(tmp_path, capsys):
     folder = tiny_graph(tmp_path / 'KGs' / 'g')
     manifest = write_manifest(tmp_path / 'tiny.json', tmp_path, {'g': folder})
     family = f"ts=S:{clean_checkpoints(tmp_path, 'S')}"
@@ -54,8 +54,6 @@ def test_check_run_and_cells(tmp_path, capsys):
     doc = json.loads((tmp_path / 'out' / 'tiny' / 'ts' / 'g.json').read_text())
     assert doc['families'] == ['ts'] and os.environ.get('CUBLAS_WORKSPACE_CONFIG') == workspace
     assert final.is_file() and not earlier.exists()   # a graph that is done loses the record of its earlier failure
-    assert cli.main(['cells', '--set', str(manifest), '--data-root', str(tmp_path), '--out', str(tmp_path / 'queries.csv')]) == 0
-    assert (tmp_path / 'queries.csv').read_text().count('\n') == 1 + len(doc['rows'])
 
 
 def test_check_reports_every_failing_graph(tmp_path, capsys):
@@ -87,7 +85,7 @@ def test_refusals(tmp_path, capsys):
                     ['run', '--set', 'gate', '--references', 'trix', '--device', 'cuda:99', '--out', str(tmp_path / 'rows')],
                     ['gate', '--family', f'gs=S:{template}', '--family', f'gn=N:{template}', '--per-family', '101', '--out', str(tmp_path / 'g.json')],
                     ['gate', '--family', f'gs=S:{template}', '--family', f'gn=N:{template}', '--device', 'cuda:99', '--out', str(tmp_path / 'g.json')],
-                    ['list', '--set', 'dev121', '--codes', 'Z'], ['list', '--set', 'dev121', '--view', 'main', '--graphs', 'UMLS'],
+                    ['list', '--set', 't1', '--view', 'trans', '--graphs', 'FBIngram_25'],
                     ['list', '--set', 'gate', '--view', 'nosuch', '--graphs', 'UMLS'],
                     ['check', '--set', 'gate', '--family', f'ts=S:{tmp_path}/{{seed}}-{{other}}.pt'],
                     ['check', '--set', 'gate', '--family', f'ts=S:{tmp_path}/{{seed}}-{{}}.pt'], ['check', '--set', 'gate', '--family', 'ts=S:{seed']):

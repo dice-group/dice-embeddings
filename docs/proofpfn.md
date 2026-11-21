@@ -31,13 +31,12 @@ pip install -e '.[dev]'                                                         
   lock of a run folder uses `fcntl`.
 - In a clone without an install, run `python -m dicee.scripts.pretrain_synthetic` from the repository root instead.
 - The benchmark runs as `python -m benchmarks.proofpfn` from the repository root.
-- The benchmark's `cells` command needs scipy. The `dev` extra installs it.
 - The reference systems of the benchmark read the released checkpoints below `checkpoints/`: TRIX
   (`trix/entity_prediction.pth`), ULTRA-3g (`ultra_3g.pth`) and Flock (`flock/flock_entity.pth`). Their guides list
   the downloads: [ULTRA](ultra.md), [TRIX](trix.md), [Flock](flock.md).
 - The training and GPU goldens are bitwise in the recorded environment: Python 3.12.2, torch 2.5.1 with AVX-512 CPU
-  kernels and 2 threads, numpy 1.26.4 ([Testing](#testing)). Elsewhere these tests skip, and so do the analysis checks
-  of the registered files. The cells and the real source graphs do not depend on the scipy or torch version.
+  kernels and 2 threads, numpy 1.26.4 ([Testing](#testing)). Elsewhere these tests skip. The real source graphs do not
+  depend on the torch version.
 
 ## Model options
 
@@ -257,11 +256,11 @@ Its [README](../benchmarks/proofpfn/README.md) lists the commands, the graph set
 
 ```bash
 # Hash checks, counts and the model files on the CPU; no score
-python -m benchmarks.proofpfn check --set dev121 --graphs UMLS \
+python -m benchmarks.proofpfn check --set gate --graphs UMLS \
   --family mine=S:runs/S/{seed}/export-24000-ema.pt --references trix,ultra3g,flockoff
 
 # Rank the test facts of UMLS with the model family and the references
-python -m benchmarks.proofpfn run --set dev121 --graphs UMLS --out rows \
+python -m benchmarks.proofpfn run --set gate --graphs UMLS --out rows \
   --family mine=S:runs/S/{seed}/export-24000-ema.pt --references trix,ultra3g,flockoff
 ```
 
@@ -333,7 +332,6 @@ Golden references (goldens) record what the research code computes at small size
 | G4 | the first 20 or 100 updates on the CPU: loss, gradient norm, weights, EMA, AdamW state | bitwise |
 | G5 | the research exports and the checkpoints converted from them | bitwise per tensor |
 | G6 | every row key of the research harness on three development graphs | bitwise |
-| G7 | the query cells of the gate graphs | byte-identical |
 | G9 | the N validity gate | equal values |
 | G10 | the first updates of the research trainer on the GPU | bitwise on the golden GPU |
 

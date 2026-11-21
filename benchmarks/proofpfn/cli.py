@@ -25,7 +25,6 @@ COMMANDS = {
     'list': 'the graphs of a manifest view',
     'check': "CPU only: the graphs' hash checks, counts and official Flock's setting, and the systems' files and pins; no score",
     'run': 'rank the graphs with the systems and write one row file per graph (evaluate.evaluate_graph)',
-    'cells': 'the query cells of the graphs: queries.csv and its .meta.json (cells.write_queries)',
     'gate': 'the N validity gate of amendment A1: S and N on held-out worlds of the prior (gate.gate)',
 }
 
@@ -63,10 +62,9 @@ def parse_family(spec: str, models: Any) -> tuple[str, str, str]:
 
 def _graph_options(sub: argparse.ArgumentParser) -> None:
     """The options that select the graphs of a manifest."""
-    sub.add_argument('--set', required=True, help='a manifest name (dev121, t1, gate) or a manifest file')
-    sub.add_argument('--view', default=None, help='a view of the manifest (dev121: main, contamination, apart; default: all)')
+    sub.add_argument('--set', required=True, help='a manifest name (t1, gate) or a manifest file')
+    sub.add_argument('--view', default=None, help='a view of the manifest (t1: trans, ind_e, ind_er; default: all)')
     sub.add_argument('--graphs', default=None, help='comma list of graph names or keys')
-    sub.add_argument('--codes', default=None, help='comma list of audit group codes (E, L, B, S, O, R, C, T)')
     sub.add_argument('--release', default=None, help='the name of the blind test set that this run opens')
     sub.add_argument('--data-root', type=Path, default=REPO, help='the folder that the manifest paths are relative to (default: the repository)')
 
@@ -82,7 +80,7 @@ def build_parser() -> argparse.ArgumentParser:
                                             'in .errors/), 76 stopped at --max-minutes, 143 stopped by SIGTERM (README.md, Quick start)')
     commands = parser.add_subparsers(dest='command', required=True)
     sub = {name: commands.add_parser(name, help=text, description=text) for name, text in COMMANDS.items()}
-    for name in ('list', 'check', 'run', 'cells'):
+    for name in ('list', 'check', 'run'):
         _graph_options(sub[name])
     models = 'the model pins (default: manifests/models.json)'
     for name in ('check', 'run'):
@@ -99,7 +97,6 @@ def build_parser() -> argparse.ArgumentParser:
     run.add_argument('--parts', action='store_true', help='keep a part file (and resume from it) also without shards')
     run.add_argument('--save-minutes', type=float, default=10.0, help='minutes between two saves of a part file (default: 10)')
     run.add_argument('--max-minutes', type=float, default=0.0, help='save and stop after this time (default: 0, no limit)')
-    sub['cells'].add_argument('--out', type=Path, required=True, help='the queries.csv file')
     gate = sub['gate']
     gate.add_argument('--family', action='append', default=[], help='[KEY=]S:TEMPLATE and [KEY=]N:TEMPLATE, each with {seed}')
     gate.add_argument('--families', default=None, help='comma list of held-out families (default: rec1, attr2, list1, categorical2, plain)')
@@ -113,10 +110,9 @@ def build_parser() -> argparse.ArgumentParser:
 def _entries(args: argparse.Namespace) -> tuple[Any, list[Any]]:
     manifest = read_manifest(args.set, release=args.release)
     graphs = [g for g in args.graphs.split(',') if g] if args.graphs else None
-    codes = args.codes.split(',') if args.codes else None
     try:
-        entries = manifest.select(view=args.view or (None if graphs else 'all'), graphs=graphs, codes=codes)
-    except KeyError as error:   # a graph, view or code that the manifest does not hold
+        entries = manifest.select(view=args.view or (None if graphs else 'all'), graphs=graphs)
+    except KeyError as error:   # a graph or view that the manifest does not hold
         raise UsageError(error.args[0]) from None
     if not entries:
         raise UsageError(f'no graph of {manifest.name} matches the selection')
@@ -209,14 +205,6 @@ def _run(args: argparse.Namespace) -> int:
     return EXIT_PARTIAL if 'stopped' in statuses.values() else 0
 
 
-def _cells(args: argparse.Namespace) -> int:
-    from .cells import write_queries
-    manifest, entries = _entries(args)
-    meta = write_queries(manifest, entries, args.out, args.data_root)
-    print(f"{len(meta['graphs'])} graphs, {sum(meta['graphs'].values())} queries -> {args.out}")
-    return 0
-
-
 def _gate(args: argparse.Namespace) -> int:
     from dicee.synthetic_kg.checkpoint import atomic_write_bytes
 
@@ -266,7 +254,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             for entry in _entries(args)[1]:
                 print(entry.key)
             return 0
-        commands: dict[str, Callable[[argparse.Namespace], int]] = {'check': _check, 'run': _run, 'cells': _cells, 'gate': _gate}
+        commands: dict[str, Callable[[argparse.Namespace], int]] = {'check': _check, 'run': _run, 'gate': _gate}
         if args.command in ('run', 'gate'):
             from dicee.synthetic_kg.determinism import cublas_workspace
             with cublas_workspace():   # dicee's models score on CUDA, which needs the setting first

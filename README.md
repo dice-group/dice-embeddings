@@ -760,7 +760,7 @@ of the research code in the recorded environment.
 dicee_pretrain_synthetic train --arm S --seed 42 --out runs/S/42
 
 # Rank the test facts of UMLS with the three seeds of S
-python -m benchmarks.proofpfn run --set dev121 --graphs UMLS --out rows \
+python -m benchmarks.proofpfn run --set gate --graphs UMLS --out rows \
   --family mine=S:runs/S/{seed}/export-24000-ema.pt
 ```
 

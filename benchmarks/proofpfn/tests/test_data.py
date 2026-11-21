@@ -91,14 +91,15 @@ def test_gate_graphs_give_the_research_rows(name):
 
 
 @pytest.mark.parametrize('name', ['FB15k-237', 'YAGO3-10', 'FB15k'])
-def test_sampled_graphs_give_the_research_sample(name):
+def test_sampled_graphs_give_the_research_sample(name, tmp_path):
     """The first-1000 rule on the test split of a sampled development graph equals the research ``ag_eval.sample_positions``
     on the research loader's test split (golden ``sample_positions.json``)."""
     record = fixture('sample_positions.json')['graphs'][name]
-    manifest = mf.read_manifest(record['manifest'])
-    entry = manifest.entry(record['key'])
-    if not (mf.REPO / entry.path / 'test.txt').is_file():
-        pytest.skip(f'{entry.path} is not available')
+    folder = mf.REPO / 'KGs' / record['key']
+    if not (folder / 'test.txt').is_file():
+        pytest.skip(f'KGs/{record["key"]} is not available')
+    manifest = mf.read_manifest(write_manifest(tmp_path / 'sampled.json', mf.REPO, {name: folder}))
+    entry = manifest.entry(name)
     graph = D.load_graph(manifest, entry, mf.REPO)
     assert {f'{s}.txt': graph.hashes[f'{s}.txt'] for s in mf.SPLITS} == record['sha256']   # the files of the golden
     positions = D.ranked_positions(D.as_triples(graph.test), manifest.sample_rule)

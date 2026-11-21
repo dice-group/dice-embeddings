@@ -92,16 +92,5 @@ The gate (`gate.py`, the command `gate`) is the manipulation check of arm N in a
 | comparison | per family: D = the mean over S's seeds minus the mean over N's seeds of the seed's mean over the worlds. SE = sqrt(SE_world^2 + SE_seed^2), with SE_world = the SD over worlds of the per-world seed-mean difference / sqrt(worlds), SE_seed = sqrt(var(S's seed MRRs) / 3 + var(N's) / 3) | `s5_manip.py` | `gate.compare` |
 | reading | `n_validity` is `pass` when D > 2 SE on each of the four nulled families and abs(D) <= 2 SE on plain, else `fail` | the registration | `gate.reading` |
 
-The gate's rank is the mean-tie rank of the cells (below), not the pessimistic rank of the evaluation.
-
-## Cells
-
-`cells.py` reproduces `fresh-v1-runtime/fv1_cells.py` with `icml-roadmap-20261025/step5/s5_measure.evaluate_rows` and
-the predictors R1, R2 and PEER of `realsrc-v1/xrel/xr_diag.py` (module docstring). Their rank `data.rank_of` puts ties
-at their mean rank and excludes the anchor, on purpose a different rule from the ranks above. The predictors POP, VOTE
-and CF are not ported: no output holds them and they draw no random numbers.
-
-The CSR matrix of a relation lists the edges of each row in train.txt order and keeps a repeated fact as its own entry,
-as scipy 1.13.0 of the frozen run built it. R2 samples facts by their position in a row, and scipy 1.13.1 and later sort
-the rows of `csr_matrix((data, (row, col)))`. So `cells.py` builds each matrix from an explicit stable sort and
-`indptr`, and its `queries.csv` does not depend on the scipy version.
+The gate's rank is `data.rank_of`: it puts ties at their mean rank and excludes the anchor. It is not the pessimistic rank
+of the evaluation.

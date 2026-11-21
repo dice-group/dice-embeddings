@@ -21,23 +21,9 @@ GATE_GRAPHS = ('UMLS', 'ultra-suite-v1/NELLInductive_v1', 'inductive/grail-WN18R
 
 
 def test_manifests_resolve_without_torch():
-    code = ('import sys; import benchmarks.proofpfn.manifests as m; [m.read_manifest(n) for n in ("dev121", "t1", "gate")]; '
+    code = ('import sys; import benchmarks.proofpfn.manifests as m; [m.read_manifest(n) for n in ("t1", "gate")]; '
             'm.read_models(); assert "torch" not in sys.modules, "torch was imported"')
     subprocess.run([sys.executable, '-B', '-c', code], cwd=mf.REPO, check=True)
-
-
-def test_dev121_views():
-    dev = mf.read_manifest('dev121')
-    views = {k: len(v) for k, v in dev.views.items()}
-    assert views == {'all': 121, 'main': 91, 'contamination': 29, 'apart': 1} and dev.views['apart'] == ('UMLS',)
-    main = dev.select('main')
-    assert abs(sum(e.weight for e in main) - 1.0) < 1e-12 and all(e.code is not None and e.code in 'ELBSOR' for e in main)
-    assert {e.code for e in dev.select('contamination')} == {'C'} and dev.sample_rule == 'first-1000' and not dev.blind
-    assert all(e.content_sha256.keys() == {'train', 'test'} for e in dev.entries)
-    assert not any('lockbox3' in e.path or 'fresh-v1' in e.path for e in dev.entries)
-    assert 'grail-WN18RR_v1' not in dev.views['all']   # the audit excludes the copy; the gate lists it
-    assert [e.name for e in dev.select(graphs=['NELLInductive_v1', 'UMLS'])] == ['NELLInductive_v1', 'UMLS']
-    assert [e.name for e in dev.select('main', codes=['T'])] == []
 
 
 def test_t1_suite():
@@ -147,28 +133,6 @@ def audit_entry(g: Mapping[str, Any], inventory: Mapping[str, Mapping[str, Any]]
                 sha256=dict.fromkeys(mf.SPLITS), content_sha256={s: inv[f'sha_{s}'] for s in mf.CONTENT_SPLITS}, counts=None, tail_only_view=None)
 
 
-def build_dev121(audit: Mapping[str, Any], inventory: Sequence[Mapping[str, Any]], suite: Mapping[str, Any], sources: Mapping[str, str]) -> dict:
-    """``dev121`` from ``graph-audit-v1/graphs.json``, its ``stats/inventory.json`` and ``p0-suite-v1/manifest.json``: the 121
-    graphs with an audit group, in audit order; the file hashes from the suite manifest where it records the same folder."""
-    inv = {e['key']: e for e in inventory}
-    files = {g['folder']: g['files'] for g in suite['graphs'].values()}
-    graphs = []
-    for g in audit['graphs']:
-        if g['group'] is None:
-            continue
-        assert 'lockbox3' not in g['path'], f"{g['key']}: an audited path names lockbox3"
-        entry = audit_entry(g, inv)
-        if g['path'] in files:
-            entry['sha256'] = {s: files[g['path']][s]['sha256'] for s in mf.SPLITS}
-        graphs.append(entry)
-    assert len(graphs) == len({g['name'] for g in graphs}) == 121   # as ag_eval asserts
-    about = ('The 121 audited development graphs of graph-audit-v1 (16 October 2026): views main (91 graphs of the groups E, L, '
-             'B, S, O, R; weights sum to 1), contamination (29) and apart (UMLS). Content hashes of train.txt and test.txt '
-             'from the audit inventory (checked before a graph loads); file hashes from the standard suite manifest where it '
-             'records the same folder, else null (the research harness checked the content hashes only).')
-    return manifest('dev121', about, 'first-1000', sources, graphs)
-
-
 def build_t1(suite: Mapping[str, Any], audit: Mapping[str, Any], sources: Mapping[str, str]) -> dict:
     """``t1``: the 54 zero-shot graphs of ``p0-suite-v1/manifest.json``, named by suite id with ``:`` as ``_``; ``size`` from
     the audit entry of the same folder."""
@@ -204,8 +168,8 @@ def build_gate(audit: Mapping[str, Any], inventory: Sequence[Mapping[str, Any]],
         entry = audit_entry(by_key[key], inv, view='gate')
         entry['sha256'] = {s: recorded[key][s] for s in mf.SPLITS}
         graphs.append(entry)
-    about = ('The gate graphs of the exact-rank goldens G6 and G7: UMLS, NELLInductive_v1 and grail-WN18RR_v1. The audit excludes '
-             'grail-WN18RR_v1 (X2: a copy of ultra-suite-v1/WN18RRInductive_v1), so it is listed here and not in dev121. File '
+    about = ('The gate graphs of the exact-rank golden G6: UMLS, NELLInductive_v1 and grail-WN18RR_v1. The audit excludes '
+             'grail-WN18RR_v1 (X2: a copy of ultra-suite-v1/WN18RRInductive_v1), so it is listed here explicitly. File '
              'SHA-256 as the golden runs hashed the files; content hashes from the audit inventory.')
     return manifest('gate', about, 'first-1000', sources, graphs)
 
@@ -215,15 +179,13 @@ def test_manifests_rebuild_from_their_inputs():
     kiowl = root / 'inputs' / 'kiowl'
     audit, inventory, suite = (json.loads((kiowl / p).read_text()) for p in
                                ('graph-audit-v1/graphs.json', 'graph-audit-v1/stats/inventory.json', 'p0-suite-v1/manifest.json'))
-    for name in ('dev121', 't1', 'gate'):
+    for name in ('t1', 'gate'):
         committed = (mf.MANIFESTS / f'{name}.json').read_text()
         sources = json.loads(committed)['sources']
         for source, digest in sources.items():   # 'K/<file>' (a kiowl input) or 'golden/small/<file> (what it holds)'
             path = kiowl / source.removeprefix('K/') if source.startswith('K/') else root / source.split(' ')[0]
             assert mf.file_sha256(path) == digest, source
-        if name == 'dev121':
-            doc = build_dev121(audit, inventory, suite, sources)
-        elif name == 't1':
+        if name == 't1':
             doc = build_t1(suite, audit, sources)
         else:
             g6 = json.loads(gzip.decompress((root / 'golden' / 'small' / 'g6_ranks.json.gz').read_bytes()))

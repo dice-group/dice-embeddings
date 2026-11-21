@@ -1,7 +1,7 @@
 {
  "format": "proofpfn-graph-manifest-v1",
  "name": "gate",
- "about": "The gate graphs of the exact-rank goldens G6 and G7: UMLS, NELLInductive_v1 and grail-WN18RR_v1. The audit excludes grail-WN18RR_v1 (X2: a copy of ultra-suite-v1/WN18RRInductive_v1), so it is listed here and not in dev121. File SHA-256 as the golden runs hashed the files; content hashes from the audit inventory.",
+ "about": "The gate graphs of the exact-rank golden G6: UMLS, NELLInductive_v1 and grail-WN18RR_v1. The audit excludes grail-WN18RR_v1 (X2: a copy of ultra-suite-v1/WN18RRInductive_v1), so it is listed here explicitly. File SHA-256 as the golden runs hashed the files; content hashes from the audit inventory.",
  "blind": false,
  "sample_rule": "first-1000",
  "sources": {

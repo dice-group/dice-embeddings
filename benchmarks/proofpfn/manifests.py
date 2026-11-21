@@ -3,16 +3,11 @@
 A graph manifest (``manifests/<name>.json``) lists graphs with their folders, their audit fields and the hashes that
 each graph must match before it loads:
 
-- ``dev121``: the 121 audited development graphs of ``graph-audit-v1``. Views: ``main`` (the 91 graphs of the groups
-  E, L, B, S, O and R, with their weights), ``contamination`` (29) and ``apart`` (UMLS). The audit recorded the content
-  hashes of ``train.txt`` and ``test.txt`` (SHA-256 of the sorted distinct triples); the file hashes of a folder are
-  listed where the standard suite manifest records the same folder, and ``null`` elsewhere. Test sample: the
-  ``first-1000`` rule.
 - ``t1``: the 54 zero-shot graphs of the standard suite ``p0-suite-v1`` with their suite ids (the keys of Flock's walk
   table), file hashes and counts. Views: the suite groups ``trans``, ``ind_e`` and ``ind_er``. Every test row is ranked.
 - ``gate``: the three graphs of the exact-rank goldens (UMLS, ``ultra-suite-v1/NELLInductive_v1``,
-  ``inductive/grail-WN18RR_v1``), with file and content hashes. The audit excludes grail-WN18RR_v1 as a copy of
-  ``ultra-suite-v1/WN18RRInductive_v1``, so it is not a graph of ``dev121``; the gate lists it explicitly.
+  ``inductive/grail-WN18RR_v1``), with file and content hashes (SHA-256 of the sorted distinct triples of ``train.txt``
+  and ``test.txt``). Test sample: the ``first-1000`` rule.
 
 Blind sets. A manifest with ``"blind": true`` (a confirmatory test set) is opened only with a release flag that names
 it. Any other manifest is refused when it names a blind folder: a path with a part ``fresh-v1`` or ``lockbox3``, or a
@@ -154,7 +149,7 @@ class Manifest:
     """A frozen graph set.
 
     Attributes:
-        name: The manifest name (``dev121``, ``t1``, ``gate``).
+        name: The manifest name (``t1``, ``gate``).
         blind: True for a confirmatory test set, which opens only with its release flag.
         sample_rule: ``first-1000`` or ``all`` (``SAMPLE_RULES``).
         entries: The graphs, in manifest order.

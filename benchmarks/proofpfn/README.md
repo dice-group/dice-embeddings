@@ -11,11 +11,10 @@ graphs.
 Everything runs from the repository root:
 
 ```bash
-python -m benchmarks.proofpfn list --set dev121 --view main
+python -m benchmarks.proofpfn list --set t1 --view trans
 python -m benchmarks.proofpfn check --set gate --family S:/runs/S/training/{seed}/export-24000.pt
-python -m benchmarks.proofpfn run --set dev121 --view main --out rows \
+python -m benchmarks.proofpfn run --set t1 --view trans --out rows \
   --family S:/runs/S/training/{seed}/export-24000.pt --references trix,ultra3g,flockoff
-python -m benchmarks.proofpfn cells --set gate --out queries.csv
 python -m benchmarks.proofpfn gate --family S:/runs/S/training/{seed}/export-24000.pt \
   --family N:/runs/N/training/{seed}/export-24000.pt --out gate.json
 ```
@@ -25,7 +24,6 @@ python -m benchmarks.proofpfn gate --family S:/runs/S/training/{seed}/export-240
 | `list` | the graphs of a manifest view (`--view`, `--graphs`, `--codes`) |
 | `check` | CPU only: the graphs' hash checks and counts, official Flock's setting, the systems' files and pins, no score |
 | `run` | rank the graphs with the systems, one row file per graph |
-| `cells` | the query cells of the registered analysis (`queries.csv` and its `.meta.json`) |
 | `gate` | the N validity gate: S and N on held-out worlds of the prior ([N validity gate](#n-validity-gate)) |
 
 `python -m benchmarks.proofpfn <command> --help` lists the options of a command.
@@ -53,12 +51,10 @@ exit code 1.
 
 | Manifest | Graphs | Hashes checked before a graph loads | Test rows | Source |
 |---|---|---|---|---|
-| `dev121` | 121 audited development graphs, views `main` (91, with weights), `contamination` (29), `apart` (UMLS) | content of train.txt and test.txt, file SHA-256 where the suite manifest records the folder | `first-1000` rule | `graph-audit-v1/graphs.json`, `stats/inventory.json` |
 | `t1` | 54 graphs of the standard zero-shot suite, views `trans`, `ind_e`, `ind_er` | file SHA-256 of the three splits, counts | all | `p0-suite-v1/manifest.json` |
 | `gate` | UMLS, `ultra-suite-v1/NELLInductive_v1`, `inductive/grail-WN18RR_v1` | file SHA-256 and content | `first-1000` rule (all rows here) | the audit and the golden records |
 
-The audit excludes grail-WN18RR_v1 as a copy of `ultra-suite-v1/WN18RRInductive_v1`, so it is in `gate` and not in
-`dev121`. Each manifest lists its inputs and their SHA-256 under `sources`. The builders of `tests/test_manifests.py`
+Each manifest lists its inputs and their SHA-256 under `sources`. The builders of `tests/test_manifests.py`
 derive the files from them and compare them with the committed files when the inputs are available.
 
 Blind sets. A manifest with `"blind": true` opens only with `--release NAME` naming it. Any other manifest is refused
@@ -104,11 +100,9 @@ GPU and goldens are present. Goldens (`tests/golden/README.md`):
 | Golden | Test | Needs |
 |---|---|---|
 | G6, ranks | every key on the gate graphs equals the research rows: families S, CU, UL, HT of the G4 exports and the three references (about 7 minutes), and the per-seed raw ranks of S, CU and UL on UMLS on the CPU | `PROOFPFN_GOLDEN` (the exports), and for the GPU CUDA on the golden GPU (RTX 4070 Ti SUPER) with `CUBLAS_WORKSPACE_CONFIG` |
-| G7, cells | `queries.csv` of the gate graphs byte-identical | the gate graphs |
 | G9, gate | the per-world MRRs, D, SE and the reading of the research gate on the G4 exports of S and N at update 20 | `PROOFPFN_GOLDEN` (the exports) |
 | sample | the `first-1000` sample of FB15k-237, YAGO3-10 and FB15k equals the research `ag_eval.sample_positions` | the three graphs |
 
 `PROOFPFN_GOLDEN` names the proofpfn-golden folder with the large goldens. Tests that need them skip without it. The
 goldens are bitwise in the recorded environment: Python 3.12.2, torch 2.5.1 (CUDA 11.8 on an RTX 4070 Ti SUPER for
-G6 on the GPU) and numpy 1.26.4. Elsewhere the GPU test of G6 skips. G7 does not depend on the scipy version
-([PROTOCOL.md](PROTOCOL.md), section Cells).
+G6 on the GPU) and numpy 1.26.4. Elsewhere the GPU test of G6 skips.
