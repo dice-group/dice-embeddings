@@ -15,7 +15,9 @@ jobs:
       contents: write
     strategy:
       matrix:
-        python-version: [ "3.11.14" ]
+        # The newest 3.11 that setup-python provides for the runner image; an exact patch release
+        # can be missing for a newer image (3.11.14 has no build for Ubuntu 26.04).
+        python-version: [ "3.11" ]
       max-parallel: 5
 
     steps:
